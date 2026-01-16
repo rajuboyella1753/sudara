@@ -11,7 +11,6 @@ export default function OwnerDashboard() {
   const [loading, setLoading] = useState(true);
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  // FIX: profileForm లో లొకేషన్ ఫీల్డ్స్ యాడ్ చేశాను
   const [profileForm, setProfileForm] = useState({ 
     name: "", phone: "", busyStatus: "Low", collegeName: "", hotelImage: "",
     latitude: null, longitude: null
@@ -59,15 +58,20 @@ export default function OwnerDashboard() {
     finally { setLoading(false); }
   };
 
-  // FIX: లొకేషన్ పట్టుకోవడానికి ఫంక్షన్
+  // ✅ FIXED: లొకేషన్ పక్కాగా పట్టుకుని స్టేట్ లో సేవ్ చేయడం
   const handleGetLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          setProfileForm(prev => ({ ...prev, latitude: pos.coords.latitude, longitude: pos.coords.longitude }));
-          alert("Location Captured! Click Save to update.");
+          const { latitude, longitude } = pos.coords;
+          setProfileForm(prev => ({ 
+            ...prev, 
+            latitude: latitude, 
+            longitude: longitude 
+          }));
+          alert(`Location Captured: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}. Now click 'Save Profile'.`);
         },
-        (err) => alert("Please enable location access.")
+        (err) => alert("Please enable location access in browser settings.")
       );
     }
   };
@@ -147,6 +151,7 @@ export default function OwnerDashboard() {
              <form onSubmit={async (e) => {
                 e.preventDefault();
                 try {
+                  // ✅ FIXED: profileForm మొత్తాన్ని ఇక్కడ పంపిస్తున్నాం (With Lat/Long)
                   const res = await api.put(`/owner/update-profile/${owner._id}`, profileForm);
                   setOwner(res.data);
                   localStorage.setItem("owner", JSON.stringify(res.data));
@@ -173,11 +178,13 @@ export default function OwnerDashboard() {
                   {dbColleges.map(c => <option key={c} value={c} className="bg-[#0f172a]">{c}</option>)}
                 </select>
 
-                {/* FIX: లొకేషన్ బటన్ సెక్షన్ */}
+                {/* ✅ FIXED SECTION: లొకేషన్ బటన్ సెక్షన్ */}
                 <div className="p-4 bg-orange-500/5 border border-orange-500/20 rounded-xl flex items-center justify-between">
                    <div className="flex flex-col">
                       <span className="text-[8px] font-black uppercase text-orange-500">Live Location</span>
-                      <span className="text-[10px] font-bold text-slate-400">{profileForm.latitude ? "Location Captured ✅" : "Not Set ❌"}</span>
+                      <span className="text-[10px] font-bold text-slate-400">
+                        {profileForm.latitude ? `Set (${profileForm.latitude.toFixed(2)}) ✅` : "Not Set ❌"}
+                      </span>
                    </div>
                    <button type="button" onClick={handleGetLocation} className="text-[9px] font-black bg-orange-500/20 text-orange-500 px-3 py-1.5 rounded-lg border border-orange-500/30">GET GPS</button>
                 </div>

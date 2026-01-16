@@ -12,7 +12,7 @@ const ownerSchema = new mongoose.Schema(
     collegeName: { type: String, default: "General" }, 
     hotelImage: { type: String, default: "" },
     isStoreOpen: { type: Boolean, default: true },
-    busyStatus: { type: String, enum: ['Free', 'Normal', 'Busy'], default: 'Normal' },
+    busyStatus: { type: String, enum: ['Low', 'Medium', 'High','Free', 'Normal', 'Busy'], default: 'Low' },
     latitude: { type: Number, default: 0 },
     longitude: { type: Number, default: 0 },
     address: { type: String, default: "" },
