@@ -7,12 +7,14 @@ export default function OwnerDashboard() {
   const navigate = useNavigate();
   const [owner, setOwner] = useState(null);
   const [items, setItems] = useState([]);
-  const [dbColleges, setDbColleges] = useState([]); // DB నుండి కాలేజీల కోసం
+  const [dbColleges, setDbColleges] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  // FIX: profileForm లో లొకేషన్ ఫీల్డ్స్ యాడ్ చేశాను
   const [profileForm, setProfileForm] = useState({ 
-    name: "", phone: "", busyStatus: "Low", collegeName: "", hotelImage: "" 
+    name: "", phone: "", busyStatus: "Low", collegeName: "", hotelImage: "",
+    latitude: null, longitude: null
   });
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -26,8 +28,6 @@ export default function OwnerDashboard() {
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("owner"));
     if (!stored) { navigate("/owner"); return; }
-    
-    // Initial Data Fetch
     fetchData(stored._id);
     fetchColleges();
   }, [navigate]);
@@ -48,14 +48,28 @@ export default function OwnerDashboard() {
         phone: oRes.data.phone, 
         busyStatus: oRes.data.busyStatus || "Low",
         collegeName: oRes.data.collegeName || "",
-        hotelImage: oRes.data.hotelImage || ""
+        hotelImage: oRes.data.hotelImage || "",
+        latitude: oRes.data.latitude || null,
+        longitude: oRes.data.longitude || null
       });
 
       const iRes = await api.get("/items/all");
-      // Filtering items based on ownerId
       setItems(iRes.data.filter(i => (i.ownerId?._id || i.ownerId) === id));
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
+  };
+
+  // FIX: లొకేషన్ పట్టుకోవడానికి ఫంక్షన్
+  const handleGetLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setProfileForm(prev => ({ ...prev, latitude: pos.coords.latitude, longitude: pos.coords.longitude }));
+          alert("Location Captured! Click Save to update.");
+        },
+        (err) => alert("Please enable location access.")
+      );
+    }
   };
 
   const toggleShopStatus = async () => {
@@ -67,7 +81,6 @@ export default function OwnerDashboard() {
     } catch (err) { alert("Failed to update status"); }
   };
 
-  // --- Image Optimization & Fix ---
   const optimizeImage = (file, callback) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -89,17 +102,13 @@ export default function OwnerDashboard() {
 
   const handleItemImage = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      optimizeImage(file, (base64) => setForm({ ...form, image: base64 }));
-    }
-    e.target.value = ""; // ఇమేజ్ అప్‌లోడ్ ఫిక్స్: దీన్ని ఖాళీ చేస్తేనే మళ్ళీ కొత్తది తీసుకోవడానికి వీలవుతుంది
+    if (file) optimizeImage(file, (base64) => setForm({ ...form, image: base64 }));
+    e.target.value = ""; 
   };
 
   const handleHotelProfileImage = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      optimizeImage(file, (base64) => setProfileForm({ ...profileForm, hotelImage: base64 }));
-    }
+    if (file) optimizeImage(file, (base64) => setProfileForm({ ...profileForm, hotelImage: base64 }));
     e.target.value = ""; 
   };
 
@@ -113,7 +122,6 @@ export default function OwnerDashboard() {
         const res = await api.post("/items/add", { ...form, ownerId: owner._id });
         setItems([res.data, ...items]);
       }
-      // Resetting Form Completely
       setForm({ name: "", price: "", discountPrice: "", image: "", category: "Veg" });
       setIsEditingItem(false);
       setEditItemId(null);
@@ -129,7 +137,6 @@ export default function OwnerDashboard() {
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 flex flex-col font-sans overflow-x-hidden text-sm">
       
-      {/* ⚙️ Settings Modal */}
       {isEditingProfile && (
         <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-[#0f172a] w-full max-w-md p-6 md:p-8 rounded-[2.5rem] border border-white/10 shadow-2xl">
@@ -166,6 +173,15 @@ export default function OwnerDashboard() {
                   {dbColleges.map(c => <option key={c} value={c} className="bg-[#0f172a]">{c}</option>)}
                 </select>
 
+                {/* FIX: లొకేషన్ బటన్ సెక్షన్ */}
+                <div className="p-4 bg-orange-500/5 border border-orange-500/20 rounded-xl flex items-center justify-between">
+                   <div className="flex flex-col">
+                      <span className="text-[8px] font-black uppercase text-orange-500">Live Location</span>
+                      <span className="text-[10px] font-bold text-slate-400">{profileForm.latitude ? "Location Captured ✅" : "Not Set ❌"}</span>
+                   </div>
+                   <button type="button" onClick={handleGetLocation} className="text-[9px] font-black bg-orange-500/20 text-orange-500 px-3 py-1.5 rounded-lg border border-orange-500/30">GET GPS</button>
+                </div>
+
                 <div className="flex flex-wrap gap-2">
                   {["Low", "Medium", "High"].map(level => (
                     <button key={level} type="button" onClick={() => setProfileForm({...profileForm, busyStatus: level})} className={`flex-1 py-3 rounded-xl text-[10px] font-black uppercase border transition-all ${profileForm.busyStatus === level ? 'bg-orange-600 border-orange-600 text-white' : 'border-white/10 text-slate-500'}`}>{level}</button>
@@ -177,7 +193,6 @@ export default function OwnerDashboard() {
         </div>
       )}
 
-      {/* 🚀 Navbar */}
       <nav className="bg-[#0f172a]/90 backdrop-blur-xl border-b border-white/5 px-4 md:px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4 shrink-0 z-50 sticky top-0">
         <div className="flex items-center justify-between w-full md:w-auto gap-4">
           <div className="flex items-center gap-3">
@@ -205,7 +220,6 @@ export default function OwnerDashboard() {
       </nav>
 
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        {/* 📝 Left Side: Form */}
         <aside className="w-full lg:w-[380px] bg-[#020617] p-4 md:p-6 flex flex-col gap-6 border-b lg:border-r border-white/5 overflow-y-auto shrink-0 scrollbar-hide">
           <div className={`p-6 rounded-[2.5rem] border-2 transition-all duration-300 ${isEditingItem ? 'border-blue-500 bg-blue-500/5' : 'border-white/5 bg-[#0f172a]'}`}>
             <h3 className="text-[10px] font-black uppercase text-slate-400 mb-6 italic tracking-widest">
@@ -237,7 +251,6 @@ export default function OwnerDashboard() {
           </div>
         </aside>
 
-        {/* 🍕 Right Side: Menu Grid */}
         <main className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-10 bg-[#020617] scroll-smooth">
           <div className="mb-8 flex flex-col gap-6 sticky top-0 bg-[#020617] z-40 pb-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

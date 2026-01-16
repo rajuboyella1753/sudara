@@ -72,7 +72,8 @@ export default function Home() {
   }, [searchTerm, selectedCollege, restaurants]);
 
   const getDistance = (lat1, lon1, lat2, lon2) => {
-    if (!lat1 || !lon1 || !lat2 || !lon2) return "0.0";
+    // FIX: లొకేషన్ లేకపోతే 0 కాకుండా ప్రాపర్ చెక్
+    if (!lat1 || !lon1 || !lat2 || !lon2) return "---";
     const R = 6371;
     const dLat = (lat2 - lat1) * (Math.PI / 180);
     const dLon = (lon2 - lon1) * (Math.PI / 180);
@@ -84,7 +85,6 @@ export default function Home() {
     <div className="min-h-screen bg-[#020617] text-white font-sans selection:bg-orange-500/30">
       <Navbar />
 
-      {/* --- HERO & UPGRADED SEARCH --- */}
       <section className="relative pt-32 pb-16 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-orange-500/10 blur-[120px] -z-10"></div>
         <div className="max-w-7xl mx-auto px-6 text-center">
@@ -98,7 +98,6 @@ export default function Home() {
               <input type="text" placeholder="Search your craving..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-transparent py-5 pl-14 pr-6 rounded-3xl text-lg outline-none font-bold italic" />
             </div>
             
-            {/* --- UPGRADED DROPDOWN --- */}
             <div className="relative w-full md:w-64 group">
               <Filter className="absolute left-5 top-1/2 -translate-y-1/2 text-orange-500 w-4 h-4 z-10" />
               <select value={selectedCollege} onChange={(e) => setSelectedCollege(e.target.value)} className="w-full bg-white/5 md:bg-black/40 border border-white/10 md:border-transparent py-5 pl-12 pr-10 rounded-[1.8rem] text-[11px] font-black uppercase italic outline-none cursor-pointer appearance-none hover:border-orange-500/50 transition-all text-orange-500">
@@ -111,7 +110,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* --- UPGRADED RESTAURANT CARDS --- */}
       <main className="max-w-7xl mx-auto px-6 py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           <AnimatePresence>
@@ -124,28 +122,24 @@ export default function Home() {
                 key={res._id} 
                 className="group relative h-full"
               >
-                {/* Neon Glow Layer */}
                 <div className="absolute inset-0 bg-orange-500/5 rounded-[3rem] blur-2xl group-hover:bg-orange-500/10 transition-all duration-500"></div>
 
                 <div className="relative h-full bg-[#0f172a]/60 backdrop-blur-xl rounded-[3rem] border border-white/10 overflow-hidden flex flex-col transition-all duration-500 group-hover:border-orange-500/40 group-hover:shadow-[0_0_40px_rgba(249,115,22,0.15)]">
                   
-                  {/* Image Section */}
                   <div className="h-60 relative">
                     <img src={res.hotelImage || 'https://via.placeholder.com/400x300'} alt={res.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 opacity-90" />
                     
-                    {/* Distance Badge */}
                     <div className="absolute top-5 left-5 bg-black/60 backdrop-blur-md px-4 py-2 rounded-2xl text-[9px] font-black border border-white/10 flex items-center gap-2">
                       <MapPin className="w-3 h-3 text-orange-500" /> 
+                      {/* FIX: కరెక్ట్ డిస్టెన్స్ ఫంక్షన్ కాల్ */}
                       {getDistance(userCoords?.lat, userCoords?.lng, res.latitude, res.longitude)} KM
                     </div>
 
-                    {/* Status Badge */}
                     <div className={`absolute top-5 right-5 px-4 py-2 rounded-2xl text-[9px] font-black uppercase tracking-widest border backdrop-blur-md ${res.isStoreOpen ? 'bg-green-500/20 border-green-500/50 text-green-500' : 'bg-red-500/20 border-red-500/50 text-red-500'}`}>
                        {res.isStoreOpen ? 'Active' : 'Offline'}
                     </div>
                   </div>
 
-                  {/* Body Content */}
                   <div className="p-8 flex flex-col flex-1">
                     <div className="flex justify-between items-start mb-4">
                       <div>
@@ -166,7 +160,6 @@ export default function Home() {
                         {res.isStoreOpen ? 'Enter Restaurant' : 'Closed for Now'}
                       </button>
                       
-                      {/* Rating trigger */}
                       <button onClick={(e) => handleRateClick(res._id, e)} className="w-full mt-4 text-[9px] font-black text-slate-500 uppercase tracking-widest hover:text-orange-500 transition-colors">
                         Add Rating +
                       </button>
@@ -179,7 +172,6 @@ export default function Home() {
         </div>
       </main>
 
-      {/* --- RATING MODAL (CSS UPDATED) --- */}
       <AnimatePresence>
         {showRatingModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center px-6 bg-black/90 backdrop-blur-xl">
