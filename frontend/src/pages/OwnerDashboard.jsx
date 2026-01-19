@@ -58,7 +58,6 @@ export default function OwnerDashboard() {
     finally { setLoading(false); }
   };
 
-  // ✅ FIXED: లొకేషన్ పక్కాగా పట్టుకుని స్టేట్ లో సేవ్ చేయడం
   const handleGetLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -85,6 +84,7 @@ export default function OwnerDashboard() {
     } catch (err) { alert("Failed to update status"); }
   };
 
+  // ✅ UPGRADED: Better Image Compression to handle high length images
   const optimizeImage = (file, callback) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -93,13 +93,22 @@ export default function OwnerDashboard() {
       img.src = e.target.result;
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        const MAX_WIDTH = 500;
-        const scale = MAX_WIDTH / img.width;
-        canvas.width = MAX_WIDTH;
-        canvas.height = img.height * scale;
+        const MAX_WIDTH = 500; // Limits width to 500px for DB safety
+        let width = img.width;
+        let height = img.height;
+
+        if (width > MAX_WIDTH) {
+          height *= MAX_WIDTH / width;
+          width = MAX_WIDTH;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
         const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        callback(canvas.toDataURL("image/jpeg", 0.7));
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Quality reduced to 0.6 (60%) for better performance
+        callback(canvas.toDataURL("image/jpeg", 0.6)); 
       };
     };
   };
@@ -144,21 +153,20 @@ export default function OwnerDashboard() {
       {isEditingProfile && (
         <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-[#0f172a] w-full max-w-md p-6 md:p-8 rounded-[2.5rem] border border-white/10 shadow-2xl">
-             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl md:text-2xl font-black italic uppercase tracking-tighter">Shop Settings</h2>
-                <button onClick={() => setIsEditingProfile(false)} className="text-slate-500 hover:text-white font-bold text-[10px] tracking-widest uppercase">CLOSE</button>
-             </div>
-             <form onSubmit={async (e) => {
-                e.preventDefault();
-                try {
-                  // ✅ FIXED: profileForm మొత్తాన్ని ఇక్కడ పంపిస్తున్నాం (With Lat/Long)
-                  const res = await api.put(`/owner/update-profile/${owner._id}`, profileForm);
-                  setOwner(res.data);
-                  localStorage.setItem("owner", JSON.stringify(res.data));
-                  setIsEditingProfile(false);
-                  alert("Settings Updated! ✅");
-                } catch(err) { alert("Update failed"); }
-             }} className="space-y-5">
+              <div className="flex justify-between items-center mb-6">
+                 <h2 className="text-xl md:text-2xl font-black italic uppercase tracking-tighter">Shop Settings</h2>
+                 <button onClick={() => setIsEditingProfile(false)} className="text-slate-500 hover:text-white font-bold text-[10px] tracking-widest uppercase">CLOSE</button>
+              </div>
+              <form onSubmit={async (e) => {
+                 e.preventDefault();
+                 try {
+                   const res = await api.put(`/owner/update-profile/${owner._id}`, profileForm);
+                   setOwner(res.data);
+                   localStorage.setItem("owner", JSON.stringify(res.data));
+                   setIsEditingProfile(false);
+                   alert("Settings Updated! ✅");
+                 } catch(err) { alert("Update failed"); }
+              }} className="space-y-5">
                 
                 <div className="flex flex-col items-center gap-3 p-4 border border-dashed border-white/10 rounded-2xl bg-black/20">
                   {profileForm.hotelImage ? (
@@ -178,7 +186,6 @@ export default function OwnerDashboard() {
                   {dbColleges.map(c => <option key={c} value={c} className="bg-[#0f172a]">{c}</option>)}
                 </select>
 
-                {/* ✅ FIXED SECTION: లొకేషన్ బటన్ సెక్షన్ */}
                 <div className="p-4 bg-orange-500/5 border border-orange-500/20 rounded-xl flex items-center justify-between">
                    <div className="flex flex-col">
                       <span className="text-[8px] font-black uppercase text-orange-500">Live Location</span>
@@ -195,7 +202,7 @@ export default function OwnerDashboard() {
                   ))}
                 </div>
                 <button type="submit" className="w-full bg-orange-600 py-4 rounded-xl font-black uppercase italic tracking-widest text-white shadow-lg">Save Profile</button>
-             </form>
+              </form>
           </div>
         </div>
       )}

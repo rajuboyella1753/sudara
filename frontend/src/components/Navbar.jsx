@@ -14,9 +14,14 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
 
         {/* ☄️ Logo - Sudara */}
-        <Link to="/" className="flex items-center gap-2 group">
+        {/* <Link to="/" className="flex items-center gap-2 group">
           <div className="w-8 h-8 bg-orange-600 rounded-lg shadow-lg shadow-orange-600/20 group-hover:rotate-12 transition-transform"></div>
           <h1 className="text-2xl font-black italic tracking-tighter text-white uppercase">
+            Sudara<span className="text-orange-500">.</span>
+          </h1>
+        </Link> */}
+        <Link to="/" className="flex items-center group">
+          <h1 className="text-2xl font-black italic tracking-tighter text-white uppercase group-hover:scale-105 transition-transform">
             Sudara<span className="text-orange-500">.</span>
           </h1>
         </Link>

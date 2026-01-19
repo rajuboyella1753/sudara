@@ -4,6 +4,7 @@ export default {
     "./index.html",
     "./src/**/*.{js,jsx}",
   ],
+  darkMode: "class", // ఇది యాడ్ చేశాను
   theme: {
     extend: {},
   },

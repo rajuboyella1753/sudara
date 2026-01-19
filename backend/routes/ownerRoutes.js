@@ -92,20 +92,35 @@ router.put("/update-status/:id", async (req, res) => {
   }
 });
 
+/* ================= 6. UPDATES & RATINGS ================= */
+
 router.put("/rate-restaurant/:id", async (req, res) => {
   try {
     const { rating } = req.body;
     const owner = await Owner.findById(req.params.id);
-    const newNumberOfReviews = owner.numberOfReviews + 1;
-    const newTotalRatings = owner.totalRatings + rating;
+
+    // ఒకవేళ డేటాబేస్‌లో ఇప్పుడే ఫస్ట్ టైమ్ రివ్యూ ఇస్తుంటే 0 తీసుకోవడానికి || 0 పెట్టాలి
+    const newNumberOfReviews = (owner.numberOfReviews || 0) + 1;
+    const newTotalRatings = (owner.totalRatings || 0) + rating;
     const newAverageRating = (newTotalRatings / newNumberOfReviews).toFixed(1);
 
     const updatedOwner = await Owner.findByIdAndUpdate(
       req.params.id,
-      { numberOfReviews: newNumberOfReviews, totalRatings: newTotalRatings, averageRating: parseFloat(newAverageRating) },
+      { 
+        numberOfReviews: newNumberOfReviews, 
+        totalRatings: newTotalRatings, 
+        averageRating: parseFloat(newAverageRating) 
+      },
       { new: true }
     );
-    res.json({ success: true, averageRating: updatedOwner.averageRating });
+
+    // ✅ ఇక్కడ మార్పు చేశాను: numberOfReviews ని కూడా రెస్పాన్స్‌లో పంపిస్తున్నాం
+    res.json({ 
+      success: true, 
+      averageRating: updatedOwner.averageRating,
+      numberOfReviews: updatedOwner.numberOfReviews // 👈 ఇది లేకపోవడం వల్లే నీకు 0 అని వస్తోంది
+    });
+    
   } catch (err) {
     res.status(500).json({ message: "Rating failed" });
   }
