@@ -1,4 +1,4 @@
-# ☄️ SUDARA 
+# ☄️ SUDARA.in
 
 > **Empowering Students with Seamless Access to Nearby Campus Food Hubs.** > Built for convenience, speed, and mental freedom.
 
