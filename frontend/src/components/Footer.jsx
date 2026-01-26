@@ -116,7 +116,7 @@ export default function Footer() {
           </p>
           <div className="flex items-center gap-8">
             <span className="text-[10px] font-black uppercase tracking-widest text-slate-700 italic">
-              Designed for Students
+              Designed for Students By Student
             </span>
           </div>
         </div>

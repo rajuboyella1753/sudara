@@ -3,8 +3,8 @@ import { useParams } from "react-router-dom";
 import api from "../api/api-base"; 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { motion } from "framer-motion";
-import { Heart, Share2, Clock, MapPin, Search } from "lucide-react"; // ✅ Added Icons
+import { motion, AnimatePresence } from "framer-motion";
+import { Heart, Share2, Clock, MapPin, Search, Camera, CreditCard, X, PhoneCall, Plus, Minus, ShoppingBag } from "lucide-react"; // ✅ Added Icons
 
 export default function RestaurantProfile() {
   const { id } = useParams();
@@ -13,7 +13,12 @@ export default function RestaurantProfile() {
   const [filter, setFilter] = useState("All");
   const [itemSearch, setItemSearch] = useState(""); 
   const [loading, setLoading] = useState(true);
-  const [isFavorite, setIsFavorite] = useState(false); // ✅ Favorite State
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [selectedImg, setSelectedImg] = useState(null); 
+  const [showQRModal, setShowQRModal] = useState(false); // ✅ Added for Payment Pop-up
+
+  // ✨ NEW: Smart Calculator State
+  const [cart, setCart] = useState({}); 
 
   useEffect(() => {
     const fetchData = async () => {
@@ -24,7 +29,6 @@ export default function RestaurantProfile() {
         const iRes = await api.get("/items/all");
         setItems(iRes.data.filter(i => (i.ownerId?._id || i.ownerId) === id));
         
-        // ✅ Check Favorite Status
         const favorites = JSON.parse(localStorage.getItem("favRestaurants") || "[]");
         setIsFavorite(favorites.includes(id));
       } catch (err) {
@@ -36,7 +40,28 @@ export default function RestaurantProfile() {
     if (id) fetchData();
   }, [id]);
 
-  // ✅ Toggle Favorite
+  // ✨ Calculator Functions
+  const addToCart = (item) => {
+    setCart(prev => ({
+      ...prev,
+      [item._id]: { ...item, qty: (prev[item._id]?.qty || 0) + 1 }
+    }));
+  };
+
+  const removeFromCart = (item) => {
+    setCart(prev => {
+      const currentQty = prev[item._id]?.qty || 0;
+      if (currentQty <= 1) {
+        const { [item._id]: removed, ...rest } = prev;
+        return rest;
+      }
+      return { ...prev, [item._id]: { ...item, qty: currentQty - 1 } };
+    });
+  };
+
+  const totalAmount = Object.values(cart).reduce((acc, curr) => acc + (curr.price * curr.qty), 0);
+  const halfAmount = (totalAmount / 2).toFixed(2);
+
   const toggleFavorite = () => {
     let favorites = JSON.parse(localStorage.getItem("favRestaurants") || "[]");
     if (isFavorite) {
@@ -48,14 +73,12 @@ export default function RestaurantProfile() {
     setIsFavorite(!isFavorite);
   };
 
-  // ✅ Estimated Wait Time Logic
   const getWaitTime = (status) => {
     if (status === "High") return "30-45 Mins";
     if (status === "Medium") return "15-20 Mins";
     return "5-10 Mins";
   };
 
-  // ✅ Search & Filter Logic
   const searchFiltered = items.filter(item => {
     const matchesFilter = filter === "All" ? true : item.category === filter;
     const matchesSearch = item.name.toLowerCase().includes(itemSearch.toLowerCase());
@@ -70,8 +93,7 @@ export default function RestaurantProfile() {
     const destination = owner.latitude && owner.longitude 
       ? `${owner.latitude},${owner.longitude}` 
       : encodeURIComponent(`${owner.name} ${owner.collegeName}`);
-    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
-    window.open(googleMapsUrl, "_blank");
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${destination}`, "_blank");
   };
 
   const handleWhatsAppShare = () => {
@@ -96,38 +118,68 @@ export default function RestaurantProfile() {
     <div className="min-h-screen bg-[#020617] text-white overflow-x-hidden selection:bg-blue-500 selection:text-white transition-colors duration-500">
       <Navbar />
       
-      {/* 🏗️ Header Section */}
-      <div className="h-[250px] md:h-[400px] flex flex-col items-center justify-center border-b border-indigo-500/20 relative px-4 text-center overflow-hidden">
+      {/* 🏗️ Header Section (Responsive Height) */}
+      <div className="h-[280px] sm:h-[350px] md:h-[450px] flex flex-col items-center justify-center border-b border-indigo-500/20 relative px-4 text-center overflow-hidden">
           {owner.hotelImage && (
             <div className="absolute inset-0 opacity-30 blur-md overflow-hidden scale-110">
-               <img src={owner.hotelImage} className="w-full h-full object-cover" alt="" />
+                <img src={owner.hotelImage} className="w-full h-full object-cover" alt="" />
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-[#020617]/40 to-transparent"></div>
-          <div className="absolute inset-0 bg-blue-600/10 blur-[100px] md:blur-[150px] animate-pulse"></div>
+          <div className="absolute inset-0 bg-blue-600/10 blur-[80px] md:blur-[150px] animate-pulse"></div>
           
-          {/* Favorite Button */}
-          <button onClick={toggleFavorite} className="absolute top-6 right-6 md:top-10 md:right-10 z-20 bg-black/40 p-3 md:p-4 rounded-full backdrop-blur-md border border-white/10 hover:scale-110 transition-all">
-            <Heart className={`w-5 h-5 md:w-6 h-6 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
+          <button onClick={toggleFavorite} className="absolute top-4 right-4 sm:top-6 sm:right-6 md:top-10 md:right-10 z-20 bg-black/40 p-2.5 sm:p-3 md:p-4 rounded-full backdrop-blur-md border border-white/10 hover:scale-110 transition-all">
+            <Heart className={`w-4 h-4 sm:w-5 h-5 md:w-6 h-6 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-white'}`} />
           </button>
 
-          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black italic uppercase tracking-tighter relative z-10 break-words max-w-5xl drop-shadow-2xl">
+          <h1 className="text-3xl sm:text-5xl md:text-7xl font-black italic uppercase tracking-tighter relative z-10 break-words max-w-full sm:max-w-5xl drop-shadow-2xl px-2">
              {owner.name}
           </h1>
-          <div className="flex items-center gap-4 mt-4 relative z-10">
-             <span className="w-10 h-[2px] bg-blue-500 shadow-[0_0_10px_#3b82f6]"></span>
-             <p className="text-indigo-200/60 font-black uppercase tracking-[0.3em] md:tracking-[0.6em] text-[8px] md:text-[10px] italic">
+          <div className="flex items-center gap-2 sm:gap-4 mt-4 relative z-10">
+             <span className="w-6 sm:w-10 h-[2px] bg-blue-500 shadow-[0_0_10px_#3b82f6]"></span>
+             <p className="text-indigo-200/60 font-black uppercase tracking-[0.2em] sm:tracking-[0.6em] text-[7px] sm:text-[10px] italic">
                 {owner.collegeName} • Exclusive Menu
              </p>
-             <span className="w-10 h-[2px] bg-blue-500 shadow-[0_0_10px_#3b82f6]"></span>
+             <span className="w-6 sm:w-10 h-[2px] bg-blue-500 shadow-[0_0_10px_#3b82f6]"></span>
           </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 md:py-12 grid grid-cols-1 lg:grid-cols-12 gap-8 md:gap-10">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 md:py-12 grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 md:gap-10">
         
-        {/* 🥗 Left: Menu Items */}
+        {/* 🥗 Left Content (Order 2 on Mobile, 1 on Desktop) */}
         <div className="order-2 lg:order-1 lg:col-span-8">
             
+            {/* ✨ Interior Gallery Section */}
+            {owner.interiorImages?.length > 0 && (
+              <div className="mb-6 sm:mb-10 bg-[#0f172a]/40 p-4 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] border border-white/5">
+                <div className="flex items-center gap-3 mb-4 sm:mb-6">
+                  <div className="p-1.5 sm:p-2 bg-blue-500/10 rounded-lg sm:rounded-xl">
+                    <Camera className="w-4 h-4 sm:w-5 h-5 text-blue-500" />
+                  </div>
+                  <div className="flex flex-col">
+                    <h3 className="text-[10px] sm:text-[12px] font-black uppercase tracking-widest text-white italic">Inside Ambience</h3>
+                    <span className="text-[6px] sm:text-[8px] font-bold text-indigo-400/60 uppercase">Check the vibes before you arrive</span>
+                  </div>
+                </div>
+                <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 scrollbar-hide">
+                  {owner.interiorImages.map((img, idx) => (
+                    <motion.div 
+                      key={idx} 
+                      className="shrink-0 group relative cursor-zoom-in"
+                      whileHover={{ scale: 1.02 }}
+                      onClick={() => setSelectedImg(img)}
+                    >
+                      <img 
+                        src={img} 
+                        className="w-48 h-32 sm:w-56 sm:h-36 md:w-72 md:h-48 object-cover rounded-[1.5rem] sm:rounded-[2rem] border-2 border-white/5 shadow-2xl transition-all group-hover:border-blue-500/50" 
+                        alt="Interior" 
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* 🔍 Food Search Input */}
             <div className="relative mb-6 group">
                 <input 
@@ -135,55 +187,62 @@ export default function RestaurantProfile() {
                     placeholder="Search for biryani, pizza, drinks..." 
                     value={itemSearch}
                     onChange={(e) => setItemSearch(e.target.value)}
-                    className="w-full bg-white/5 border border-white/10 py-5 px-8 rounded-[2rem] text-sm font-bold italic outline-none focus:border-blue-500/50 transition-all placeholder:text-slate-600 shadow-2xl backdrop-blur-md"
+                    className="w-full bg-white/5 border border-white/10 py-4 sm:py-5 px-6 sm:px-8 rounded-[1.5rem] sm:rounded-[2rem] text-xs sm:text-sm font-bold italic outline-none focus:border-blue-500/50 transition-all placeholder:text-slate-600 shadow-2xl backdrop-blur-md"
                 />
-                <div className="absolute right-8 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-blue-500 transition-colors">
-                    <Search className="h-6 w-6" />
+                <div className="absolute right-6 sm:right-8 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-blue-500 transition-colors">
+                    <Search className="h-5 w-5 sm:h-6 w-6" />
                 </div>
             </div>
 
             {/* Category Filters */}
-            <div className="flex gap-3 mb-8 overflow-x-auto pb-4 scrollbar-hide sticky top-20 z-20 bg-[#020617]/95 backdrop-blur-xl py-4 border-b border-indigo-500/20">
+            <div className="flex gap-2 sm:gap-3 mb-6 sm:mb-8 overflow-x-auto pb-4 scrollbar-hide sticky top-16 sm:top-20 z-20 bg-[#020617]/95 backdrop-blur-xl py-3 sm:py-4 border-b border-indigo-500/20">
               {["All", "Veg", "Non-Veg"].map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setFilter(cat)}
-                  className={`px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] transition-all border shrink-0 ${
+                  className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-full text-[8px] sm:text-[10px] font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] transition-all border shrink-0 ${
                     filter === cat 
                     ? "bg-blue-600 border-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.4)]" 
                     : "bg-[#1e293b]/40 border-white/10 text-indigo-300/60 hover:border-blue-500/50"
                   }`}
                 >
-                  {cat === "Veg" ? "🥦 Veg Only" : cat === "Non-Veg" ? "🥩 Non-Veg" : "🔥 All Menu"}
+                  {cat === "Veg" ? "🥦 Veg" : cat === "Non-Veg" ? "🥩 Non-Veg" : "🔥 All"}
                 </button>
               ))}
             </div>
 
             {/* 🥗 Live Items Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
               {availableItems.map((item) => (
                 <div 
                   key={item._id} 
-                  className="bg-white/5 backdrop-blur-sm p-4 rounded-[2rem] border border-white/10 flex items-center justify-between gap-4 group relative overflow-hidden transition-all hover:bg-white/[0.08] hover:border-blue-500/30 hover:-translate-y-1"
+                  className="bg-white/5 backdrop-blur-sm p-3 sm:p-4 rounded-[1.5rem] sm:rounded-[2rem] border border-white/10 flex items-center justify-between gap-3 sm:gap-4 group relative overflow-hidden transition-all hover:bg-white/[0.08] hover:border-blue-500/30"
                 >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                       <div className="relative flex-shrink-0">
                         <img 
                           src={item.image || "https://via.placeholder.com/150"} 
-                          className="w-20 h-20 md:w-24 md:h-24 rounded-[1.5rem] object-cover shadow-2xl transition-transform duration-500 group-hover:scale-110" 
+                          className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-[1rem] sm:rounded-[1.5rem] object-cover shadow-2xl transition-transform duration-500 group-hover:scale-105" 
                           alt={item.name} 
                         />
-                        <div className={`absolute top-2 left-2 w-3 h-3 rounded-full border-2 border-[#020617] shadow-lg ${item.category === 'Veg' ? 'bg-green-500 shadow-green-500/50' : 'bg-red-500 shadow-red-500/50'}`}></div>
+                        <div className={`absolute top-1 left-1 w-2.5 h-2.5 rounded-full border-2 border-[#020617] shadow-lg ${item.category === 'Veg' ? 'bg-green-500' : 'bg-red-500'}`}></div>
                       </div>
                       <div className="min-w-0">
-                         <h4 className="font-black uppercase text-xs md:text-sm mb-0.5 truncate text-white group-hover:text-blue-400 transition-colors tracking-tight">{item.name}</h4>
-                         <div className="flex items-baseline gap-2">
-                           <p className="text-xl md:text-2xl font-black text-blue-500 italic drop-shadow-sm">₹{item.price}</p>
-                           {item.discountPrice && <p className="text-[10px] line-through text-slate-500 font-bold opacity-60">₹{item.discountPrice}</p>}
-                         </div>
+                         <h4 className="font-black uppercase text-[10px] sm:text-[12px] md:text-sm mb-0.5 truncate text-white tracking-tight">{item.name}</h4>
+                         <p className="text-sm sm:text-xl md:text-2xl font-black text-blue-500 italic">₹{item.price}</p>
                       </div>
                     </div>
-                    <div className="px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-tighter border bg-green-500/10 text-green-500 border-green-500/20">Live</div>
+
+                    {/* Add/Remove Item Controls */}
+                    <div className="flex items-center gap-2 sm:gap-3 bg-black/40 p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border border-white/10 shrink-0">
+                      <button onClick={() => removeFromCart(item)} className="p-1 hover:text-red-500 transition-colors">
+                        <Minus className="w-3 h-3 sm:w-4 h-4" />
+                      </button>
+                      <span className="text-[10px] sm:text-xs font-black min-w-[15px] sm:min-w-[20px] text-center">{cart[item._id]?.qty || 0}</span>
+                      <button onClick={() => addToCart(item)} className="p-1 hover:text-green-500 transition-colors">
+                        <Plus className="w-3 h-3 sm:w-4 h-4" />
+                      </button>
+                    </div>
                 </div>
               ))}
             </div>
@@ -191,118 +250,185 @@ export default function RestaurantProfile() {
             {/* 🌑 Sold Out Items Section */}
             {soldOutItems.length > 0 && (
                 <>
-                    <div className="flex items-center gap-4 mt-12 mb-6 opacity-40">
-                        <h3 className="font-black uppercase italic text-xs tracking-[0.3em] shrink-0">Sold Out Items</h3>
+                    <div className="flex items-center gap-4 mt-8 sm:mt-12 mb-4 sm:mb-6 opacity-40">
+                        <h3 className="font-black uppercase italic text-[9px] sm:text-xs tracking-[0.3em] shrink-0">Sold Out</h3>
                         <div className="h-[1px] w-full bg-white/10"></div>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                         {soldOutItems.map((item) => (
-                            <div key={item._id} className="bg-white/5 p-4 rounded-[2rem] border border-white/5 flex items-center justify-between gap-4 opacity-50 grayscale group relative">
-                                <div className="flex items-center gap-4">
+                            <div key={item._id} className="bg-white/5 p-3 sm:p-4 rounded-[1.5rem] sm:rounded-[2rem] border border-white/5 flex items-center justify-between gap-4 opacity-50 grayscale">
+                                <div className="flex items-center gap-3 sm:gap-4">
                                     <div className="relative flex-shrink-0">
-                                        <img src={item.image || "https://via.placeholder.com/150"} className="w-20 h-20 md:w-24 md:h-24 rounded-[1.5rem] object-cover" alt={item.name} />
-                                        <div className="absolute inset-0 bg-black/70 rounded-[1.5rem] flex items-center justify-center">
-                                            <span className="uppercase text-[8px] font-black tracking-widest text-white -rotate-12 border border-white/30 px-1 bg-red-600/20">Over</span>
-                                        </div>
+                                        <img src={item.image || "https://via.placeholder.com/150"} className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-[1rem] sm:rounded-[1.5rem] object-cover" alt={item.name} />
                                     </div>
                                     <div className="min-w-0">
-                                        <h4 className="font-black uppercase text-xs text-white/60 tracking-tight">{item.name}</h4>
-                                        <p className="text-xl font-black text-slate-600 italic">₹{item.price}</p>
+                                        <h4 className="font-black uppercase text-[10px] sm:text-xs text-white/60 tracking-tight">{item.name}</h4>
+                                        <p className="text-sm sm:text-xl font-black text-slate-600 italic">₹{item.price}</p>
                                     </div>
                                 </div>
-                                <div className="px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-tighter border bg-red-500/10 text-red-500 border-red-500/20">Empty</div>
+                                <div className="px-2 py-0.5 rounded-full text-[6px] sm:text-[7px] font-black uppercase tracking-tighter border bg-red-500/10 text-red-500 border-red-500/20">Empty</div>
                             </div>
                         ))}
                     </div>
                 </>
             )}
-            
-            {searchFiltered.length === 0 && (
-              <div className="py-20 text-center border-4 border-dashed border-indigo-500/20 rounded-[2rem]">
-                <p className="text-indigo-400/60 font-black uppercase tracking-[0.3em] text-xs italic">No items found for "{itemSearch}"</p>
-              </div>
-            )}
         </div>
 
-        {/* 📞 Right Section */}
+        {/* 📞 Right Sidebar (Order 1 on Mobile, 2 on Desktop) */}
         <div className="order-1 lg:order-2 lg:col-span-4">
-           <div className="bg-[#0f172a] text-white p-8 rounded-[2.5rem] lg:sticky lg:top-32 shadow-[0_20px_50px_rgba(59,130,246,0.1)] border-4 border-indigo-500/10 transition-all duration-500">
-              
-              {/* Wait Time Display */}
-              <div className="flex items-center justify-between mb-6 bg-blue-600/5 p-4 rounded-2xl border border-blue-500/10">
-                <div className="flex items-center gap-3">
-                  <Clock className="w-4 h-4 text-blue-500" />
-                  <span className="text-[9px] font-black uppercase tracking-widest text-indigo-300">Wait Time</span>
+           <div className="bg-[#0f172a] text-white p-5 sm:p-8 rounded-[1.5rem] sm:rounded-[2.5rem] lg:sticky lg:top-32 shadow-[0_20px_50px_rgba(59,130,246,0.1)] border-2 sm:border-4 border-indigo-500/10 transition-all duration-500">
+             
+              {/* ✨ SMART CALCULATOR SUMMARY */}
+              <div className="mb-4 sm:mb-6 p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-blue-600/10 border-2 border-dashed border-blue-500/30">
+                <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                  <ShoppingBag className="w-3.5 h-3.5 sm:w-4 h-4 text-blue-500" />
+                  <span className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-indigo-300 italic">Pre-Order Summary</span>
                 </div>
-                <span className="text-[10px] font-black text-white italic">{getWaitTime(owner.busyStatus)}</span>
-              </div>
+                
+                <div className="space-y-2 mb-3 sm:mb-4 max-h-32 sm:max-h-40 overflow-y-auto scrollbar-hide">
+                  {Object.values(cart).length > 0 ? (
+                    Object.values(cart).map((i) => (
+                      <div key={i._id} className="flex justify-between text-[9px] sm:text-[10px] font-bold text-slate-300">
+                        <span className="truncate pr-2">{i.qty} x {i.name}</span>
+                        <span className="shrink-0">₹{i.price * i.qty}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-[8px] sm:text-[9px] text-slate-500 italic text-center py-2">Select items from menu</p>
+                  )}
+                </div>
 
-              <div className="flex justify-between items-start mb-5">
-                <div>
-                  <p className="text-[9px] font-black uppercase text-indigo-400/60 mb-1 italic tracking-widest">Status</p>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2.5 h-2.5 rounded-full shadow-[0_0_8px] ${owner.isStoreOpen ? 'bg-green-500 shadow-green-500 animate-pulse' : 'bg-red-500 shadow-red-500'}`}></div>
-                    <span className="font-black text-[10px] uppercase tracking-widest">{owner.isStoreOpen ? 'Online' : 'Closed'}</span>
+                <div className="border-t border-white/5 pt-3 mt-3">
+                  <div className="flex justify-between text-[8px] sm:text-[10px] font-black uppercase text-slate-400 mb-1">
+                    <span>Grand Total:</span>
+                    <span>₹{totalAmount}</span>
+                  </div>
+                  <div className="flex justify-between text-lg sm:text-xl font-black italic text-blue-500">
+                    <span>Advance (50%):</span>
+                    <span>₹{halfAmount}</span>
                   </div>
                 </div>
-                <div className="text-right">
-                    <p className="text-[9px] font-black uppercase text-indigo-400/60 mb-1 italic tracking-widest">Campus</p>
-                    <span className="font-black text-[10px] uppercase text-blue-500">{owner.collegeName}</span>
-                </div>
               </div>
 
-              <h3 className="text-2xl font-black tracking-tighter uppercase italic leading-tight mb-6">
-                Hungry? <br/>
-                <span className="text-blue-500 text-3xl">Order Now!</span>
-              </h3>
-              
+              {/* Wait Time Display */}
+              {/* <div className="flex items-center justify-between mb-4 sm:mb-6 bg-blue-600/5 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-blue-500/10">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <Clock className="w-3.5 h-3.5 sm:w-4 h-4 text-blue-500" />
+                  <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-indigo-300">Wait Time</span>
+                </div>
+                <span className="text-[9px] sm:text-[10px] font-black text-white italic">{getWaitTime(owner.busyStatus)}</span>
+              </div> */}
+              <div className="flex items-center justify-between mb-4 sm:mb-6 bg-blue-600/5 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-blue-500/10">
+  <div className="flex items-center gap-2 sm:gap-3">
+    <Clock className="w-3.5 h-3.5 sm:w-4 h-4 text-blue-500" />
+    <div className="flex flex-col">
+      <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-indigo-300">Wait Time</span>
+      {/* ✨ Added Rush Level Indicator */}
+      <span className={`text-[7px] font-black uppercase italic ${
+        owner.busyStatus === 'High' ? 'text-red-500' : 
+        owner.busyStatus === 'Medium' ? 'text-yellow-500' : 'text-green-500'
+      }`}>
+        {owner.busyStatus} Rush
+      </span>
+    </div>
+  </div>
+  <div className="text-right">
+    <span className="text-[10px] sm:text-[12px] font-black text-white italic block">{getWaitTime(owner.busyStatus)}</span>
+  </div>
+</div>
+
               <div className="space-y-3">
-                <a 
-                    href={owner.isStoreOpen ? `tel:${owner.phone}` : "#"} 
-                    className={`w-full block py-4 rounded-2xl font-black uppercase text-center text-[11px] tracking-[0.2em] transition-all shadow-xl ${
-                    owner.isStoreOpen 
-                    ? 'bg-blue-600 text-white hover:bg-indigo-600 active:scale-95 shadow-blue-500/20 border border-blue-400/30' 
+                <button 
+                    onClick={() => {
+                      if(totalAmount > 0) setShowQRModal(true);
+                      else alert("Please select food Items before Call! 🍲");
+                    }}
+                    className={`w-full block py-3.5 sm:py-4 rounded-xl sm:rounded-2xl font-black uppercase text-center text-[10px] sm:text-[11px] tracking-[0.1em] sm:tracking-[0.2em] transition-all shadow-xl ${
+                    owner.isStoreOpen && totalAmount > 0
+                    ? 'bg-blue-600 text-white hover:bg-indigo-600 shadow-blue-500/20 border border-blue-400/30 active:scale-95' 
                     : 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-50'
                     }`}
                 >
                     {owner.isStoreOpen ? '📞 Call to Order' : 'Offline'}
-                </a>
-
-                {/* ✅ Get Route Button */}
-                <button 
-                    onClick={handleGetDirections}
-                    className="w-full block py-4 rounded-2xl font-black uppercase text-center text-[11px] tracking-[0.2em] transition-all bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-blue-500/50 active:scale-95"
-                >
-                    📍 Get Directions
                 </button>
 
-                {/* ✅ WhatsApp Share Button */}
-                <button 
-                    onClick={handleWhatsAppShare}
-                    className="w-full block py-4 rounded-2xl font-black uppercase text-center text-[11px] tracking-[0.2em] transition-all bg-green-600/10 border border-green-500/20 text-green-500 hover:bg-green-600 hover:text-white active:scale-95"
-                >
-                    <span className="flex items-center justify-center gap-2">
-                        <Share2 className="w-4 h-4" /> Share Menu
-                    </span>
-                </button>
-              </div>
-
-              <div className="mt-8 pt-6 border-t border-indigo-500/20">
-                <p className="text-[9px] font-black uppercase text-indigo-400/60 mb-3 italic tracking-widest text-center">Crowd Rush</p>
-                <div className="flex gap-1.5 h-1.5">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className={`flex-1 rounded-full transition-all ${i <= (owner.busyStatus === "High" ? 5 : owner.busyStatus === "Medium" ? 3 : 1) ? 'bg-blue-500 shadow-[0_0_5px_#3b82f6]' : 'bg-slate-800'}`}></div>
-                  ))}
+                <div className="grid grid-cols-2 gap-3">
+                  <button onClick={handleGetDirections} className="py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black uppercase text-center text-[9px] sm:text-[10px] bg-white/5 border border-white/10 text-white hover:bg-white/10 active:scale-95 transition-all">
+                      📍 Route
+                  </button>
+                  <button onClick={handleWhatsAppShare} className="py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black uppercase text-center text-[9px] sm:text-[10px] bg-green-600/10 border border-green-500/20 text-green-500 hover:bg-green-600/20 active:scale-95 transition-all">
+                      Share
+                  </button>
                 </div>
-                <p className="text-[8px] font-bold mt-2 uppercase text-indigo-300 italic text-center">Traffic: {owner.busyStatus}</p>
               </div>
-
-              <p className="mt-6 text-[8px] text-center font-bold text-indigo-300/40 uppercase italic leading-relaxed">
-                Calling <span className="text-white font-black underline decoration-blue-500">{owner.name}</span> directly helps students get food faster!
-              </p>
            </div>
         </div>
       </main>
+
+      {/* 🚀 SMART PAYMENT MODAL (Responsive & Fullscreen on Small devices) */}
+      <AnimatePresence>
+        {showQRModal && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[110] bg-black/95 backdrop-blur-xl flex items-center justify-center p-2 sm:p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+              className="bg-[#0f172a] w-full max-w-md max-h-[90vh] overflow-y-auto p-6 sm:p-8 rounded-[2rem] sm:rounded-[3rem] border border-blue-500/30 relative shadow-2xl text-center scrollbar-hide"
+            >
+              <button onClick={() => setShowQRModal(false)} className="absolute top-5 right-5 sm:top-6 sm:right-6 text-slate-500 hover:text-white transition-colors p-2">
+                <X className="w-5 h-5 sm:w-6 h-6" />
+              </button>
+
+              <h2 className="text-lg sm:text-xl font-black italic uppercase text-white mb-1">Pay ₹{halfAmount} Now</h2>
+              <p className="text-[7px] sm:text-[9px] font-bold text-indigo-400 uppercase tracking-widest mb-4 sm:mb-6 underline decoration-blue-500/30">Scan and complete your pre-order</p>
+
+              {/* Clear & Scannable QR */}
+              <div className="bg-white p-3 sm:p-4 rounded-[1.5rem] sm:rounded-[2.5rem] shadow-2xl inline-block mb-4 sm:mb-6 group">
+                <img src={owner.upiQR} className="w-40 h-40 sm:w-56 sm:h-56 object-contain" alt="Payment QR" />
+              </div>
+
+              <div className="bg-blue-600/5 p-4 sm:p-5 rounded-xl sm:rounded-2xl border border-blue-500/10 text-left space-y-3 sm:space-y-4 mb-6 sm:mb-8">
+                <div className="flex items-start gap-3 text-[9px] sm:text-[10px] font-bold text-slate-300 uppercase">
+                  <span className="w-4 h-4 sm:w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center shrink-0">1</span>
+                  <p>Pay <span className="text-blue-500 font-black italic">₹{halfAmount}</span> via QR.</p>
+                </div>
+                <div className="flex items-start gap-3 text-[9px] sm:text-[10px] font-bold text-slate-300 uppercase">
+                  <span className="w-4 h-4 sm:w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center shrink-0">2</span>
+                  <p>Take a <span className="text-white font-black">Screenshot</span> of payment.</p>
+                </div>
+                <div className="flex items-start gap-3 text-[9px] sm:text-[10px] font-bold text-slate-300 uppercase">
+                  <span className="w-4 h-4 sm:w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center shrink-0">3</span>
+                  <p className="leading-normal">Call owner & say <span className="text-blue-500 font-black italic">Last 5 Digits</span> of Transaction-ID and Food-Items and your arrival time.</p>
+                </div>
+              </div>
+
+              <a 
+                href={`tel:${owner.phone}`}
+                className="w-full flex items-center justify-center gap-2 sm:gap-3 bg-blue-600 hover:bg-blue-500 text-white py-4 sm:py-5 rounded-xl sm:rounded-2xl font-black uppercase italic tracking-[0.1em] sm:tracking-[0.2em] shadow-xl transition-all active:scale-95"
+              >
+                <PhoneCall className="w-4 h-4 sm:w-5 h-5" /> Call Owner Now
+              </a>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 🖼️ Image Zoom Modal (Responsive Image size) */}
+      <AnimatePresence>
+        {selectedImg && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setSelectedImg(null)}
+            className="fixed inset-0 z-[120] bg-black/90 flex items-center justify-center p-4 backdrop-blur-md"
+          >
+            <motion.img 
+              initial={{ scale: 0.8 }} animate={{ scale: 1 }}
+              src={selectedImg} className="max-w-full max-h-[85vh] sm:max-h-full rounded-2xl sm:rounded-3xl shadow-2xl border border-white/10 object-contain" 
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       <Footer />
       <style>{`

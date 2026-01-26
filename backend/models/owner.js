@@ -17,14 +17,16 @@ const ownerSchema = new mongoose.Schema(
     longitude: { type: Number, default: 0 },
     address: { type: String, default: "" },
 
-    // 🔥 NEW SPICY FEATURES: RANKING & USER COUNT
-    // ఎంతమంది యూజర్స్ రేటింగ్ ఇచ్చారో ఈ కౌంట్ చెప్తుంది
+    // ✨ NEW STARTUP FEATURES (Adding these now)
+    // హోటల్ లోపల ఫోటోల గ్యాలరీ కోసం (Base64 strings array)
+    interiorImages: { type: [String], default: [] }, 
+    
+    // ఓనర్ యొక్క పర్సనల్ UPI QR ఇమేజ్ కోసం
+    upiQR: { type: String, default: "" },
+
+    // 🔥 RANKING & USER COUNT
     numberOfReviews: { type: Number, default: 0 }, 
-    
-    // అన్ని రేటింగ్స్ యొక్క మొత్తం (Stars sum)
     totalRatings: { type: Number, default: 0 }, 
-    
-    // సగటు రేటింగ్ (దీని బేస్ మీద మనం ర్యాంక్ ఇస్తాం)
     averageRating: { type: Number, default: 0 },
   },
   { timestamps: true }
