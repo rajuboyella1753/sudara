@@ -4,7 +4,7 @@ import api from "../api/api-base";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Share2, Clock, MapPin, Search, Camera, CreditCard, X, PhoneCall, Plus, Minus, ShoppingBag } from "lucide-react"; // ✅ Added Icons
+import { Heart, Share2, Clock, MapPin, Search, Camera, CreditCard, X, PhoneCall, Plus, Minus, ShoppingBag, UtensilsCrossed } from "lucide-react"; // ✅ Added Icons & UtensilsCrossed
 
 export default function RestaurantProfile() {
   const { id } = useParams();
@@ -15,19 +15,30 @@ export default function RestaurantProfile() {
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
   const [selectedImg, setSelectedImg] = useState(null); 
-  const [showQRModal, setShowQRModal] = useState(false); // ✅ Added for Payment Pop-up
+  const [showQRModal, setShowQRModal] = useState(false); 
 
   // ✨ NEW: Smart Calculator State
   const [cart, setCart] = useState({}); 
 
+  // లైన్ 25 నుండి 45 మధ్యలో కరెక్షన్ చేసాను రాజు..
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         const oRes = await api.get(`/owner/${id}`);
         setOwner(oRes.data);
+
+        // 1. అన్ని ఐటమ్స్ తెచ్చుకుంటున్నాం
         const iRes = await api.get("/items/all");
-        setItems(iRes.data.filter(i => (i.ownerId?._id || i.ownerId) === id));
+
+        // 2. పక్కా ఫిల్టర్ లాజిక్ ఇక్కడ ఉంది ✅
+        const filteredItems = iRes.data.filter(i => {
+          const itemOwnerId = i.ownerId?._id || i.ownerId;
+          return itemOwnerId?.toString() === id?.toString();
+        });
+
+        // 3. ఫిల్టర్ అయిన ఐటమ్స్ ని సెట్ చేస్తున్నాం
+        setItems(filteredItems);
         
         const favorites = JSON.parse(localStorage.getItem("favRestaurants") || "[]");
         setIsFavorite(favorites.includes(id));
@@ -118,13 +129,14 @@ export default function RestaurantProfile() {
     <div className="min-h-screen bg-[#020617] text-white overflow-x-hidden selection:bg-blue-500 selection:text-white transition-colors duration-500">
       <Navbar />
       
-      {/* 🏗️ Header Section (Responsive Height) */}
+      {/* 🏗️ Header Section */}
       <div className="h-[280px] sm:h-[350px] md:h-[450px] flex flex-col items-center justify-center border-b border-indigo-500/20 relative px-4 text-center overflow-hidden">
-          {owner.hotelImage && (
+          {/* ✅ Fixed src="" bug with conditional rendering */}
+          {owner.hotelImage ? (
             <div className="absolute inset-0 opacity-30 blur-md overflow-hidden scale-110">
                 <img src={owner.hotelImage} className="w-full h-full object-cover" alt="" />
             </div>
-          )}
+          ) : null}
           <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-[#020617]/40 to-transparent"></div>
           <div className="absolute inset-0 bg-blue-600/10 blur-[80px] md:blur-[150px] animate-pulse"></div>
           
@@ -146,7 +158,7 @@ export default function RestaurantProfile() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 md:py-12 grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 md:gap-10">
         
-        {/* 🥗 Left Content (Order 2 on Mobile, 1 on Desktop) */}
+        {/* 🥗 Left Content */}
         <div className="order-2 lg:order-1 lg:col-span-8">
             
             {/* ✨ Interior Gallery Section */}
@@ -169,8 +181,9 @@ export default function RestaurantProfile() {
                       whileHover={{ scale: 1.02 }}
                       onClick={() => setSelectedImg(img)}
                     >
+                      {/* ✅ Fixed src="" bug */}
                       <img 
-                        src={img} 
+                        src={img ? img : null} 
                         className="w-48 h-32 sm:w-56 sm:h-36 md:w-72 md:h-48 object-cover rounded-[1.5rem] sm:rounded-[2rem] border-2 border-white/5 shadow-2xl transition-all group-hover:border-blue-500/50" 
                         alt="Interior" 
                       />
@@ -220,8 +233,9 @@ export default function RestaurantProfile() {
                 >
                     <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                       <div className="relative flex-shrink-0">
+                        {/* ✅ Fixed src="" bug with placeholder */}
                         <img 
-                          src={item.image || "https://via.placeholder.com/150"} 
+                          src={item.image ? item.image : "https://via.placeholder.com/150"} 
                           className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-[1rem] sm:rounded-[1.5rem] object-cover shadow-2xl transition-transform duration-500 group-hover:scale-105" 
                           alt={item.name} 
                         />
@@ -233,7 +247,6 @@ export default function RestaurantProfile() {
                       </div>
                     </div>
 
-                    {/* Add/Remove Item Controls */}
                     <div className="flex items-center gap-2 sm:gap-3 bg-black/40 p-1.5 sm:p-2 rounded-xl sm:rounded-2xl border border-white/10 shrink-0">
                       <button onClick={() => removeFromCart(item)} className="p-1 hover:text-red-500 transition-colors">
                         <Minus className="w-3 h-3 sm:w-4 h-4" />
@@ -247,6 +260,29 @@ export default function RestaurantProfile() {
               ))}
             </div>
 
+            {/* 🔍 NOT FOUND SECTION ✅ */}
+            {itemSearch && availableItems.length === 0 && soldOutItems.length === 0 && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }} 
+                animate={{ opacity: 1, y: 0 }}
+                className="col-span-full py-20 text-center bg-white/5 rounded-[2.5rem] border border-dashed border-white/10 mt-8"
+              >
+                <UtensilsCrossed className="w-16 h-16 text-slate-800 mx-auto mb-6 opacity-20" />
+                <h3 className="text-xl font-black italic uppercase text-slate-500 tracking-[0.2em]">
+                  "{itemSearch}" Not Found
+                </h3>
+                <p className="text-[10px] font-bold text-slate-600 uppercase mt-3 tracking-widest">
+                  This item isn't on the menu today
+                </p>
+                <button 
+                  onClick={() => setItemSearch("")}
+                  className="mt-8 px-8 py-3 bg-blue-600/10 border border-blue-500/20 rounded-full text-blue-500 font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 hover:text-white transition-all active:scale-95"
+                >
+                  Show Full Menu
+                </button>
+              </motion.div>
+            )}
+
             {/* 🌑 Sold Out Items Section */}
             {soldOutItems.length > 0 && (
                 <>
@@ -259,7 +295,7 @@ export default function RestaurantProfile() {
                             <div key={item._id} className="bg-white/5 p-3 sm:p-4 rounded-[1.5rem] sm:rounded-[2rem] border border-white/5 flex items-center justify-between gap-4 opacity-50 grayscale">
                                 <div className="flex items-center gap-3 sm:gap-4">
                                     <div className="relative flex-shrink-0">
-                                        <img src={item.image || "https://via.placeholder.com/150"} className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-[1rem] sm:rounded-[1.5rem] object-cover" alt={item.name} />
+                                        <img src={item.image ? item.image : "https://via.placeholder.com/150"} className="w-14 h-14 sm:w-20 sm:h-20 md:w-24 md:h-24 rounded-[1rem] sm:rounded-[1.5rem] object-cover" alt={item.name} />
                                     </div>
                                     <div className="min-w-0">
                                         <h4 className="font-black uppercase text-[10px] sm:text-xs text-white/60 tracking-tight">{item.name}</h4>
@@ -274,7 +310,7 @@ export default function RestaurantProfile() {
             )}
         </div>
 
-        {/* 📞 Right Sidebar (Order 1 on Mobile, 2 on Desktop) */}
+        {/* 📞 Right Sidebar */}
         <div className="order-1 lg:order-2 lg:col-span-4">
            <div className="bg-[#0f172a] text-white p-5 sm:p-8 rounded-[1.5rem] sm:rounded-[2.5rem] lg:sticky lg:top-32 shadow-[0_20px_50px_rgba(59,130,246,0.1)] border-2 sm:border-4 border-indigo-500/10 transition-all duration-500">
              
@@ -311,31 +347,23 @@ export default function RestaurantProfile() {
               </div>
 
               {/* Wait Time Display */}
-              {/* <div className="flex items-center justify-between mb-4 sm:mb-6 bg-blue-600/5 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-blue-500/10">
+              <div className="flex items-center justify-between mb-4 sm:mb-6 bg-blue-600/5 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-blue-500/10">
                 <div className="flex items-center gap-2 sm:gap-3">
                   <Clock className="w-3.5 h-3.5 sm:w-4 h-4 text-blue-500" />
-                  <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-indigo-300">Wait Time</span>
+                  <div className="flex flex-col">
+                    <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-indigo-300">Wait Time</span>
+                    <span className={`text-[7px] font-black uppercase italic ${
+                      owner.busyStatus === 'High' ? 'text-red-500' : 
+                      owner.busyStatus === 'Medium' ? 'text-yellow-500' : 'text-green-500'
+                    }`}>
+                      {owner.busyStatus} Rush
+                    </span>
+                  </div>
                 </div>
-                <span className="text-[9px] sm:text-[10px] font-black text-white italic">{getWaitTime(owner.busyStatus)}</span>
-              </div> */}
-              <div className="flex items-center justify-between mb-4 sm:mb-6 bg-blue-600/5 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-blue-500/10">
-  <div className="flex items-center gap-2 sm:gap-3">
-    <Clock className="w-3.5 h-3.5 sm:w-4 h-4 text-blue-500" />
-    <div className="flex flex-col">
-      <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest text-indigo-300">Wait Time</span>
-      {/* ✨ Added Rush Level Indicator */}
-      <span className={`text-[7px] font-black uppercase italic ${
-        owner.busyStatus === 'High' ? 'text-red-500' : 
-        owner.busyStatus === 'Medium' ? 'text-yellow-500' : 'text-green-500'
-      }`}>
-        {owner.busyStatus} Rush
-      </span>
-    </div>
-  </div>
-  <div className="text-right">
-    <span className="text-[10px] sm:text-[12px] font-black text-white italic block">{getWaitTime(owner.busyStatus)}</span>
-  </div>
-</div>
+                <div className="text-right">
+                  <span className="text-[10px] sm:text-[12px] font-black text-white italic block">{getWaitTime(owner.busyStatus)}</span>
+                </div>
+              </div>
 
               <div className="space-y-3">
                 <button 
@@ -365,7 +393,7 @@ export default function RestaurantProfile() {
         </div>
       </main>
 
-      {/* 🚀 SMART PAYMENT MODAL (Responsive & Fullscreen on Small devices) */}
+      {/* 🚀 SMART PAYMENT MODAL */}
       <AnimatePresence>
         {showQRModal && (
           <motion.div 
@@ -383,9 +411,9 @@ export default function RestaurantProfile() {
               <h2 className="text-lg sm:text-xl font-black italic uppercase text-white mb-1">Pay ₹{halfAmount} Now</h2>
               <p className="text-[7px] sm:text-[9px] font-bold text-indigo-400 uppercase tracking-widest mb-4 sm:mb-6 underline decoration-blue-500/30">Scan and complete your pre-order</p>
 
-              {/* Clear & Scannable QR */}
               <div className="bg-white p-3 sm:p-4 rounded-[1.5rem] sm:rounded-[2.5rem] shadow-2xl inline-block mb-4 sm:mb-6 group">
-                <img src={owner.upiQR} className="w-40 h-40 sm:w-56 sm:h-56 object-contain" alt="Payment QR" />
+                {/* ✅ Fixed QR Check */}
+                <img src={owner.upiQR ? owner.upiQR : null} className="w-40 h-40 sm:w-56 sm:h-56 object-contain" alt="Payment QR" />
               </div>
 
               <div className="bg-blue-600/5 p-4 sm:p-5 rounded-xl sm:rounded-2xl border border-blue-500/10 text-left space-y-3 sm:space-y-4 mb-6 sm:mb-8">
@@ -399,7 +427,7 @@ export default function RestaurantProfile() {
                 </div>
                 <div className="flex items-start gap-3 text-[9px] sm:text-[10px] font-bold text-slate-300 uppercase">
                   <span className="w-4 h-4 sm:w-5 h-5 bg-blue-500 text-white rounded-full flex items-center justify-center shrink-0">3</span>
-                  <p className="leading-normal">Call owner & say <span className="text-blue-500 font-black italic">Last 5 Digits</span> of Transaction-ID and Food-Items and your arrival time.</p>
+                  <p className="leading-normal">Call owner & confirm order.</p>
                 </div>
               </div>
 
@@ -414,7 +442,7 @@ export default function RestaurantProfile() {
         )}
       </AnimatePresence>
 
-      {/* 🖼️ Image Zoom Modal (Responsive Image size) */}
+      {/* 🖼️ Image Zoom Modal */}
       <AnimatePresence>
         {selectedImg && (
           <motion.div 
@@ -424,7 +452,7 @@ export default function RestaurantProfile() {
           >
             <motion.img 
               initial={{ scale: 0.8 }} animate={{ scale: 1 }}
-              src={selectedImg} className="max-w-full max-h-[85vh] sm:max-h-full rounded-2xl sm:rounded-3xl shadow-2xl border border-white/10 object-contain" 
+              src={selectedImg ? selectedImg : null} className="max-w-full max-h-[85vh] sm:max-h-full rounded-2xl sm:rounded-3xl shadow-2xl border border-white/10 object-contain" 
             />
           </motion.div>
         )}

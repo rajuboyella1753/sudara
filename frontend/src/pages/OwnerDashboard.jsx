@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api-base"; 
 import { motion, AnimatePresence } from "framer-motion";
+import Footer from "../components/Footer";
 
 export default function OwnerDashboard() {
   const navigate = useNavigate();
@@ -14,7 +15,7 @@ export default function OwnerDashboard() {
   const [profileForm, setProfileForm] = useState({ 
     name: "", phone: "", busyStatus: "Low", collegeName: "", hotelImage: "",
     latitude: null, longitude: null,
-    interiorImages: [], upiQR: "" // ✨ Added for Startup MVP
+    interiorImages: [], upiQR: "" 
   });
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -44,7 +45,7 @@ export default function OwnerDashboard() {
       const oRes = await api.get(`/owner/${id}`);
       setOwner(oRes.data);
       setProfileForm({ 
-        ...oRes.data, // ✨ Automatically maps all fields including new ones
+        ...oRes.data, 
         busyStatus: oRes.data.busyStatus || "Low",
         collegeName: oRes.data.collegeName || "",
         hotelImage: oRes.data.hotelImage || "",
@@ -144,7 +145,6 @@ export default function OwnerDashboard() {
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 flex flex-col font-sans overflow-x-hidden text-sm">
       
-      {/* Settings Modal (Responsive) */}
       <AnimatePresence>
         {isEditingProfile && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
@@ -165,8 +165,9 @@ export default function OwnerDashboard() {
                 }} className="space-y-5">
                   
                   <div className="flex flex-col items-center gap-3 p-4 border border-dashed border-indigo-500/20 rounded-2xl bg-black/20">
+                    {/* 1. Hotel Logo Update ✅ */}
                     {profileForm.hotelImage ? (
-                      <img src={profileForm.hotelImage} className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-2 border-blue-500" alt="Hotel" />
+                      <img src={profileForm.hotelImage ? profileForm.hotelImage : null} className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover border-2 border-blue-500" alt="Hotel" />
                     ) : (
                       <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-white/5 flex items-center justify-center text-[8px] font-black text-slate-700 text-center uppercase px-4 leading-tight">No Photo</div>
                     )}
@@ -192,18 +193,19 @@ export default function OwnerDashboard() {
                      <button type="button" onClick={handleGetLocation} className="text-[9px] font-black bg-blue-500/20 text-blue-500 px-3 py-1.5 rounded-lg border border-blue-500/30">GET GPS</button>
                   </div>
 
-                  {/* ✨ QR & INTERIOR GALLERY SECTION (Responsive) */}
                   <div className="space-y-4 pt-4 border-t border-white/5">
                     <div className="flex flex-col gap-2">
                       <label className="text-[8px] font-black uppercase text-indigo-400 italic">QR Code & Gallery</label>
                       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                         <label className="shrink-0 w-16 h-16 border-2 border-dashed border-indigo-500/30 rounded-2xl flex flex-col items-center justify-center bg-indigo-500/5 cursor-pointer">
-                          {profileForm.upiQR ? <img src={profileForm.upiQR} className="w-full h-full rounded-2xl object-cover" /> : <span className="text-[7px] font-black text-indigo-500">QR</span>}
+                          {/* 2. UPI QR Update ✅ */}
+                          {profileForm.upiQR ? <img src={profileForm.upiQR ? profileForm.upiQR : null} className="w-full h-full rounded-2xl object-cover" alt="QR" /> : <span className="text-[7px] font-black text-indigo-500">QR</span>}
                           <input type="file" className="hidden" onChange={handleQRUpload} accept="image/*" />
                         </label>
+                        {/* 3. Interior Gallery Images ✅ */}
                         {profileForm.interiorImages.map((img, idx) => (
                           <div key={idx} className="relative shrink-0 w-16 h-16">
-                            <img src={img} className="w-full h-full rounded-2xl object-cover border border-white/10" />
+                            <img src={img ? img : null} className="w-full h-full rounded-2xl object-cover border border-white/10" alt="Interior" />
                             <button type="button" onClick={() => setProfileForm(p => ({...p, interiorImages: p.interiorImages.filter((_, i) => i !== idx)}))} className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full w-4 h-4 text-[8px]">×</button>
                           </div>
                         ))}
@@ -227,11 +229,11 @@ export default function OwnerDashboard() {
         )}
       </AnimatePresence>
 
-      {/* Nav Bar (Responsive) */}
       <nav className="bg-[#0f172a]/90 backdrop-blur-xl border-b border-indigo-500/20 px-4 sm:px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4 shrink-0 z-50 sticky top-0">
         <div className="flex items-center justify-between w-full md:w-auto gap-4">
           <div className="flex items-center gap-3">
-            <img src={owner?.hotelImage || "https://via.placeholder.com/50"} className="w-10 h-10 rounded-xl object-cover border border-white/10 shadow-lg" alt="Hotel Logo" />
+            {/* 4. Owner Nav Logo ✅ */}
+            <img src={owner?.hotelImage ? owner.hotelImage : "https://via.placeholder.com/50"} className="w-10 h-10 rounded-xl object-cover border border-white/10 shadow-lg" alt="Hotel Logo" />
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${owner?.isStoreOpen ? 'bg-green-500 shadow-[0_0_8px_green]' : 'bg-red-500 shadow-[0_0_8px_red]'}`}></div>
@@ -255,7 +257,6 @@ export default function OwnerDashboard() {
       </nav>
 
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        {/* Sidebar / Add Form (Responsive) */}
         <aside className="w-full lg:w-[380px] bg-[#020617] p-4 sm:p-6 flex flex-col gap-6 border-b lg:border-r border-indigo-500/20 overflow-y-auto shrink-0 scrollbar-hide lg:h-[calc(100vh-80px)]">
           <div className={`p-6 rounded-[2rem] sm:rounded-[2.5rem] border-2 transition-all duration-300 ${isEditingItem ? 'border-blue-500 bg-blue-500/5' : 'border-white/5 bg-[#0f172a]'}`}>
             <h3 className="text-[10px] font-black uppercase text-indigo-300 mb-6 italic tracking-widest">
@@ -263,7 +264,8 @@ export default function OwnerDashboard() {
             </h3>
             <form onSubmit={handleSubmitItem} className="space-y-4">
               <div className="flex flex-col items-center gap-2 p-4 border border-dashed border-indigo-500/20 rounded-2xl bg-black/20">
-                {form.image ? <img src={form.image} className="w-20 h-20 rounded-xl object-cover shadow-lg" alt="Preview" /> : <div className="text-[8px] font-black text-slate-800 italic">DISH IMAGE</div>}
+                {/* 5. Add Dish Preview ✅ */}
+                {form.image ? <img src={form.image ? form.image : null} className="w-20 h-20 rounded-xl object-cover shadow-lg" alt="Preview" /> : <div className="text-[8px] font-black text-slate-800 italic">DISH IMAGE</div>}
                 <label className="text-[8px] font-black bg-white/10 px-4 py-2 rounded-lg cursor-pointer uppercase hover:bg-white/20">
                   UPLOAD <input type="file" className="hidden" onChange={handleItemImage} accept="image/*" />
                 </label>
@@ -287,7 +289,6 @@ export default function OwnerDashboard() {
           </div>
         </aside>
 
-        {/* Main Content / Kitchen Menu (Responsive) */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 lg:p-10 bg-[#020617] scroll-smooth lg:h-[calc(100vh-80px)]">
           <div className="mb-6 sm:mb-8 flex flex-col gap-6 sticky top-0 bg-[#020617] z-40 pb-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -303,7 +304,8 @@ export default function OwnerDashboard() {
               <div key={i._id} className={`group bg-[#0f172a] p-4 sm:p-5 rounded-[2rem] sm:rounded-[2.5rem] border border-white/5 flex flex-col gap-5 transition-all hover:border-blue-500/30 ${!i.isAvailable && 'opacity-40 grayscale'}`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-                    <img src={i.image || "https://via.placeholder.com/150"} className="w-16 h-16 sm:w-20 sm:h-20 rounded-[1.2rem] sm:rounded-[1.5rem] object-cover shrink-0" alt={i.name} />
+                    {/* 6. Kitchen Menu Item List ✅ */}
+                    <img src={i.image ? i.image : "https://via.placeholder.com/150"} className="w-16 h-16 sm:w-20 sm:h-20 rounded-[1.2rem] sm:rounded-[1.5rem] object-cover shrink-0" alt={i.name} />
                     <div className="min-w-0">
                       <h4 className="font-black uppercase text-[10px] sm:text-xs text-white italic truncate">{i.name}</h4>
                       <div className="flex items-center gap-2 mt-2">
@@ -331,12 +333,33 @@ export default function OwnerDashboard() {
         </main>
       </div>
 
+      <footer className="w-full border-t border-indigo-500/10 bg-[#020617] relative z-50 p-4">
+        <Footer />
+      </footer>
+
       <style>{`
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: #020617; }
-        ::-webkit-scrollbar-thumb { background: #1e1b4b; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #312e81; }
+        /* ✨ Fixed Scroll Bar Logic ✅ */
+        main {
+          scrollbar-gutter: stable;
+        }
+
+        ::-webkit-scrollbar {
+          width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+          background: #020617;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: #1e1b4b;
+          border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: #312e81;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
       `}</style>
     </div>
   );

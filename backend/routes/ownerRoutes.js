@@ -1,5 +1,6 @@
 import express from "express";
 import Owner from "../models/owner.js";
+import Item from "../models/item.js";
 const router = express.Router();
 
 /* ================= 1. GET UNIQUE COLLEGES (Login/Register కోసం) ================= */
@@ -15,12 +16,23 @@ router.get("/colleges", async (req, res) => {
 
 /* ================= 2. GET ALL OWNERS ================= */
 router.get("/all-owners", async (req, res) => {
-  try {
-    const owners = await Owner.find();
-    res.status(200).json(owners);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to fetch owners" });
-  }
+  try {
+    // 1. మొదట ఓనర్స్ అందరినీ తీసుకుంటున్నాం
+    const owners = await Owner.find().lean(); 
+
+    // 2. ప్రతి ఓనర్ కి వాళ్ళ రిలేటెడ్ ఐటమ్స్ ని మాన్యువల్ గా యాడ్ చేస్తున్నాం
+    const ownersWithItems = await Promise.all(
+      owners.map(async (owner) => {
+        const items = await Item.find({ ownerId: owner._id });
+        return { ...owner, items }; // ఓనర్ డేటా + వాళ్ళ మెనూ ఐటమ్స్
+      })
+    );
+
+    res.status(200).json(ownersWithItems);
+  } catch (err) {
+    console.error("Error in all-owners API:", err);
+    res.status(500).json({ message: "Failed to fetch owners with items" });
+  }
 });
 
 /* ================= 3. REGISTER ================= */

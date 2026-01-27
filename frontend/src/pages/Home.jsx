@@ -72,17 +72,23 @@ export default function Home() {
     }
   };
 
-  useEffect(() => {
-    let result = restaurants;
-    if (selectedCollege !== "All") {
-      result = result.filter(r => r.collegeName === selectedCollege);
-    }
-    if (searchTerm.trim() !== "") {
-      const query = searchTerm.toLowerCase();
-      result = result.filter(r => r.name.toLowerCase().includes(query) || (r.collegeName && r.collegeName.toLowerCase().includes(query)));
-    }
-    setFilteredRestaurants(result);
-  }, [searchTerm, selectedCollege, restaurants]);
+useEffect(() => {
+  let result = restaurants;
+  if (selectedCollege !== "All") {
+    result = result.filter(r => r.collegeName === selectedCollege);
+  }
+  if (searchTerm.trim() !== "") {
+    const query = searchTerm.toLowerCase();
+    result = result.filter(r => {
+      const matchesRestaurant = r.name.toLowerCase().includes(query);
+      const matchesFoodItem = r.items && r.items.some(item => 
+        item.name.toLowerCase().includes(query) && item.isAvailable === true
+      );
+      return matchesRestaurant || matchesFoodItem;
+    });
+  }
+  setFilteredRestaurants(result);
+}, [searchTerm, selectedCollege, restaurants]);
 
   const getDistance = (lat1, lon1, lat2, lon2) => {
     if (!lat1 || !lon1 || !lat2 || !lon2) return "---";
@@ -177,16 +183,24 @@ export default function Home() {
                 <div className="relative h-full bg-[#0f172a]/40 backdrop-blur-md rounded-[2.5rem] border border-white/5 overflow-hidden flex flex-col transition-all duration-500 group-hover:border-blue-500/30 group-hover:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)]">
                   
                   <div className="h-64 relative overflow-hidden">
+                    {res.hotelImage ? (
                     <img 
-                      src={res.hotelImage || 'https://via.placeholder.com/400x300'} 
+                      src={res.hotelImage} 
                       alt={res.name} 
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000 opacity-80 group-hover:opacity-100" 
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-transparent to-transparent opacity-60"></div>
-                    <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-4 py-2 rounded-2xl text-[10px] font-black border border-white/10 flex items-center gap-2 tracking-widest shadow-xl">
-                      <MapPin className="w-3 h-3 text-blue-500" /> 
-                      {getDistance(userCoords?.lat, userCoords?.lng, res.latitude, res.longitude)} KM
+                  ) : (
+                    <div className="w-full h-full bg-[#0f172a] flex items-center justify-center border-b border-white/5">
+                      <UtensilsCrossed className="w-12 h-12 text-indigo-500/20" />
                     </div>
+                  )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0f172a] via-transparent to-transparent opacity-60"></div>
+                   {userCoords?.lat && res.latitude ? (
+                    <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-4 py-2 rounded-2xl text-[10px] font-black border border-white/10 flex items-center gap-2 tracking-widest shadow-xl z-20">
+                      <MapPin className="w-3 h-3 text-blue-500" /> 
+                      {getDistance(userCoords.lat, userCoords.lng, res.latitude, res.longitude)} KM
+                    </div>
+                  ) : null}
                     <div className={`absolute top-4 right-4 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-tighter border backdrop-blur-md shadow-xl transition-colors ${res.isStoreOpen ? 'bg-green-500/20 border-green-500/40 text-green-400' : 'bg-red-500/20 border-red-500/40 text-red-400'}`}>
                        <div className="flex items-center gap-1.5">
                         <div className={`w-1.5 h-1.5 rounded-full ${res.isStoreOpen ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
@@ -207,8 +221,20 @@ export default function Home() {
                         </h3>
                         <div className="flex items-center gap-2 mt-1.5">
                           <Compass className="w-3 h-3 text-slate-500" />
-                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{res.collegeName}</p>
+                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{res.collegeName}</p> 
                         </div>
+                        {searchTerm && res.items?.some(i => i.name.toLowerCase().includes(searchTerm.toLowerCase())) && (
+  <motion.div 
+    initial={{ opacity: 0, scale: 0.9 }}
+    animate={{ opacity: 1, scale: 1 }}
+    className="mt-3 px-4 py-2 bg-blue-500/10 border border-blue-500/30 rounded-2xl flex items-center gap-2 shadow-[0_0_15px_rgba(59,130,246,0.1)]"
+  >
+    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
+    <p className="text-[10px] font-black text-blue-400 uppercase italic tracking-wider">
+      "{searchTerm}" Available Here
+    </p>
+  </motion.div>
+)}
                       </div>
                       <div className="flex flex-col items-end gap-1">
                         <div className="flex items-center gap-1.5 bg-blue-500/10 px-3 py-1.5 rounded-xl border border-blue-500/20">
@@ -254,7 +280,7 @@ export default function Home() {
         {filteredRestaurants.length === 0 && !loading && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-40">
             <UtensilsCrossed className="w-20 h-20 text-slate-800 mx-auto mb-6 opacity-20" />
-            <h3 className="text-2xl font-black italic uppercase text-slate-600 tracking-widest">No results found for your craving</h3>
+            <h3 className="text-2xl font-black italic uppercase text-slate-600 tracking-widest">"{searchTerm}" matches no restaurants or dishes</h3>
             <button onClick={() => {setSearchTerm(""); setSelectedCollege("All")}} className="mt-6 text-blue-500 font-black uppercase text-[10px] tracking-[0.3em] border-b border-blue-500/50 pb-1 hover:text-white transition-colors">Clear All Filters</button>
           </motion.div>
         )}
