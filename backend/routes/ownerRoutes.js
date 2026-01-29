@@ -137,5 +137,27 @@ router.put("/rate-restaurant/:id", async (req, res) => {
     res.status(500).json({ message: "Rating failed" });
   }
 });
+// routes/ownerRoutes.js
+router.post("/rate-restaurant/:id", async (req, res) => {
+  try {
+    const { comment, rating } = req.body;
+    const owner = await Owner.findById(req.params.id);
+
+    if (!owner) return res.status(404).json({ message: "Owner not found" });
+
+    // 1. కొత్త రివ్యూని ఎర్రేలోకి నెట్టడం
+    const newReview = { comment, rating: rating || 5 };
+    owner.reviews.unshift(newReview); // పైన కనిపించడానికి unshift వాడుతున్నాం
+
+    // 2. Average Rating క్యాలిక్యులేట్ చేయడం
+    const totalRating = owner.reviews.reduce((acc, rev) => acc + rev.rating, 0);
+    owner.averageRating = totalRating / owner.reviews.length;
+
+    await owner.save();
+    res.status(200).json({ success: true, message: "Review added!" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
 
 export default router;

@@ -4,7 +4,7 @@ import api from "../api/api-base";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Share2, Clock, MapPin, Search, Camera, CreditCard, X, PhoneCall, Plus, Minus, ShoppingBag, UtensilsCrossed } from "lucide-react"; // ✅ Added Icons & UtensilsCrossed
+import { Heart, Share2, Clock, MapPin, Search, Camera, CreditCard, X, PhoneCall, Plus, Minus, ShoppingBag, UtensilsCrossed , MessageSquare, Star} from "lucide-react"; // ✅ Added Icons & UtensilsCrossed
 
 export default function RestaurantProfile() {
   const { id } = useParams();
@@ -19,7 +19,9 @@ export default function RestaurantProfile() {
 
   // ✨ NEW: Smart Calculator State
   const [cart, setCart] = useState({}); 
-
+const [showReviews, setShowReviews] = useState(false); // Toggle logic కోసం
+const [newComment, setNewComment] = useState(""); // కొత్త కామెంట్ కోసం
+const [isSubmitting, setIsSubmitting] = useState(false); // సబ్మిట్ లోడింగ్ కోసం
   // లైన్ 25 నుండి 45 మధ్యలో కరెక్షన్ చేసాను రాజు..
   useEffect(() => {
     const fetchData = async () => {
@@ -50,7 +52,26 @@ export default function RestaurantProfile() {
     };
     if (id) fetchData();
   }, [id]);
-
+const handlePostReview = async () => {
+  if (!newComment.trim()) return;
+  try {
+    setIsSubmitting(true);
+    const res = await api.post(`/owner/rate-restaurant/${id}`, { 
+      comment: newComment,
+      rating: 5 // Default గా 5 ఇస్తున్నాం, లేదా నువ్వు రేటింగ్ సెలెక్టర్ పెట్టొచ్చు
+    });
+    if (res.data.success) {
+      alert("Review posted successfully! 🍲");
+      setNewComment("");
+      // రెస్టారెంట్ డేటా మళ్ళీ లోడ్ చేయడానికి లేదా స్టేట్ అప్‌డేట్ చేయడానికి
+      window.location.reload(); 
+    }
+  } catch (err) {
+    console.error("Post Review Error:", err);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
   // ✨ Calculator Functions
   const addToCart = (item) => {
     setCart(prev => ({
@@ -308,6 +329,100 @@ export default function RestaurantProfile() {
                     </div>
                 </>
             )}
+{/***! reviews section start */}
+{/* ⭐ User Reviews Section - Clean Toggle & Input Feature */}
+<div className="mt-16 border-t border-indigo-500/10 pt-10">
+  
+  {/* 🔗 Toggle Link */}
+  <button 
+    onClick={() => setShowReviews(!showReviews)}
+    className="flex items-center gap-2 text-[10px] sm:text-[11px] font-black uppercase tracking-[0.3em] text-blue-500 hover:text-white transition-all group mb-8"
+  >
+    <MessageSquare className={`w-4 h-4 ${showReviews ? 'fill-blue-500' : ''}`} />
+    {showReviews ? "Close Reviews" : "Read & Write Reviews"}
+    <Plus className={`w-3 h-3 transition-transform duration-500 ${showReviews ? 'rotate-45' : ''}`} />
+  </button>
+
+  <AnimatePresence>
+    {showReviews && (
+      <motion.div 
+        initial={{ opacity: 0, height: 0 }}
+        animate={{ opacity: 1, height: "auto" }}
+        exit={{ opacity: 0, height: 0 }}
+        className="overflow-hidden"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+          
+          {/* ✍️ Post a Review Form */}
+          <div className="bg-white/5 p-6 sm:p-8 rounded-[2rem] border border-white/10 shadow-2xl relative overflow-hidden">
+            <div className="absolute -top-4 -right-4 opacity-5 rotate-12">
+               <UtensilsCrossed className="w-24 h-24 text-blue-500" />
+            </div>
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-5 italic">Share Your Vibe</h4>
+            <textarea 
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="How's the food? Service? Ambience? Type here..."
+              className="w-full bg-black/40 border border-white/5 rounded-2xl p-4 text-xs sm:text-sm font-medium outline-none focus:border-blue-500/50 transition-all min-h-[120px] resize-none placeholder:text-slate-700"
+            />
+           <button 
+  type="button" // ఫార్మ్ రీలోడ్ అవ్వకుండా
+  onClick={handlePostReview} // <--- కచ్చితంగా ఇది ఉండాలి రాజు! ✅
+  disabled={!newComment.trim() || isSubmitting}
+  className="mt-6 w-full py-4 bg-blue-600 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-indigo-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all active:scale-95 shadow-lg shadow-blue-500/20"
+>
+  {isSubmitting ? "Syncing..." : "Post Review"}
+</button>
+          </div>
+
+          {/* ⭐ Review Statistics Summary */}
+          <div className="bg-blue-600/5 p-8 rounded-[2rem] border border-blue-500/10 flex flex-col items-center justify-center text-center">
+             <div className="flex items-center gap-3 mb-4">
+                <Star className="w-8 h-8 text-blue-500 fill-blue-500 drop-shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+                <span className="text-5xl font-black italic">{owner.averageRating?.toFixed(1) || "0.0"}</span>
+             </div>
+             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-300 opacity-60">Global Student Rating</p>
+             <p className="mt-4 text-[9px] font-bold text-slate-500 uppercase tracking-widest">{owner.reviews?.length || 0} Total Feedbacks</p>
+          </div>
+        </div>
+
+        {/* 📜 Display Reviews List */}
+        <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2 scrollbar-hide mb-10">
+          <div className="flex items-center gap-4 mb-6">
+             <span className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-700">Recent Stories</span>
+             <div className="h-[1px] flex-1 bg-white/5"></div>
+          </div>
+          
+          {owner.reviews?.length > 0 ? (
+            owner.reviews.map((rev, idx) => (
+              <motion.div 
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                key={idx} 
+                className="bg-[#0f172a]/40 p-6 rounded-[1.8rem] border border-white/5 flex flex-col gap-4 group hover:border-blue-500/20 transition-all"
+              >
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
+                     <span className="text-[9px] font-black uppercase tracking-widest text-blue-400 italic">Verified Peer</span>
+                  </div>
+                  <span className="text-[8px] font-bold text-slate-600 uppercase tracking-tighter">{new Date(rev.createdAt).toLocaleDateString()}</span>
+                </div>
+                <p className="text-sm text-slate-300 italic leading-relaxed group-hover:text-white transition-colors font-medium">"{rev.comment}"</p>
+              </motion.div>
+            ))
+          ) : (
+            <div className="text-center py-20 border border-dashed border-white/5 rounded-[2.5rem]">
+              <MessageSquare className="w-12 h-12 text-slate-800 mx-auto mb-4 opacity-20" />
+              <p className="text-slate-600 italic uppercase text-[10px] font-black tracking-widest">The wall is empty. Be the first to shout!</p>
+            </div>
+          )}
+        </div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+</div>
+{/* !! review section close */}
         </div>
 
         {/* 📞 Right Sidebar */}

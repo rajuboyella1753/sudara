@@ -28,6 +28,13 @@ const ownerSchema = new mongoose.Schema(
     numberOfReviews: { type: Number, default: 0 }, 
     totalRatings: { type: Number, default: 0 }, 
     averageRating: { type: Number, default: 0 },
+    reviews: [
+    {
+      comment: { type: String, required: true },
+      rating: { type: Number, default: 5 },
+      createdAt: { type: Date, default: Date.now }
+    }
+  ],
   },
   { timestamps: true }
 );

@@ -7,11 +7,13 @@ import RestaurantProfile from "./pages/RestaurantProfile";
 import About from "./pages/AboutUs"; 
 import Contact from "./pages/Contact";
 import Terms from "./pages/Terms";
+// import Maintenance from "./pages/Maintenance";
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
+        {/* <Route path="/" element={<Maintenance />} /> */}
         <Route path="/owner" element={<OwnerLogin />} />
         <Route path="/owner/register" element={<OwnerRegister />} />
         <Route path="/owner/dashboard" element={<OwnerDashboard />} />

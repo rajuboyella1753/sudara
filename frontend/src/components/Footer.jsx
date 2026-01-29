@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Mail, Youtube, Instagram, ArrowUpRight, MessageSquare, PlusCircle, AlertTriangle } from "lucide-react"; 
+import { Mail, Youtube, Instagram, ArrowUpRight, MessageSquare, PlusCircle,ShieldCheck, AlertTriangle } from "lucide-react"; 
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -60,15 +60,25 @@ export default function Footer() {
             <ul className="space-y-4">
               <li>
                 <a 
-                  href={getMailLink("Inquiry about Terms & Policy")} 
+                  href={getMailLink("FeedBack from Users")} 
                   className="text-slate-400 hover:text-blue-400 transition-all font-bold text-[13px] uppercase flex items-center group"
                 >
                   <MessageSquare className="w-3 h-3 mr-2 opacity-50 group-hover:opacity-100" />
-                  Terms Inquiry
+                  FeedBack link
                   <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all ml-1" />
                 </a>
               </li>
               <li>
+              <Link 
+                to="/terms" 
+                className="text-slate-400 hover:text-blue-400 transition-all font-bold text-[13px] uppercase flex items-center group"
+              >
+                <ShieldCheck className="w-3 h-3 mr-2 opacity-50 group-hover:opacity-100" />
+                Terms & Conditions
+                <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all ml-1" />
+              </Link>
+            </li>
+              {/* <li>
                 <a 
                   href={getMailLink("New Hotel Registration Request")} 
                   className="text-slate-400 hover:text-blue-400 transition-all font-bold text-[13px] uppercase flex items-center group"
@@ -77,8 +87,8 @@ export default function Footer() {
                   Add Your Hotel
                   <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all ml-1" />
                 </a>
-              </li>
-              <li>
+              </li> */}
+              {/* <li>
                 <a 
                   href={getMailLink("Reporting an Issue/Abuse")} 
                   className="text-slate-400 hover:text-blue-400 transition-all font-bold text-[13px] uppercase flex items-center group"
@@ -87,7 +97,7 @@ export default function Footer() {
                   Report Abuse
                   <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all ml-1" />
                 </a>
-              </li>
+              </li> */}
             </ul>
           </div>
 
@@ -101,7 +111,7 @@ export default function Footer() {
               <div>
                 <p className="text-[10px] font-black uppercase text-slate-500 mb-1 tracking-widest">Email Us At</p>
                 <a href={socialLinks.email} className="text-sm font-bold text-slate-300 hover:text-white transition-colors">
-                  codewithraju1753@gmail.com
+                  rajuboyella737@gmail.com
                 </a>
               </div>
             </div>
