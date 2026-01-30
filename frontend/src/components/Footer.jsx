@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Mail, Youtube, Instagram, ArrowUpRight, MessageSquare, PlusCircle,ShieldCheck, AlertTriangle } from "lucide-react"; 
+import { Mail, Youtube, Instagram, ArrowUpRight, MessageSquare, ShieldCheck } from "lucide-react"; 
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -16,17 +16,17 @@ export default function Footer() {
   };
 
   return (
-    <footer className="bg-[#020617] border-t border-indigo-500/20 pt-20 pb-10 relative overflow-hidden">
-      {/* Background Decorative Glow - Switched to Indigo/Blue */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-[300px] bg-blue-600/5 blur-[120px] -z-10"></div>
+    <footer className="bg-white border-t border-slate-100 pt-20 pb-10 relative overflow-hidden">
+      {/* Background Decorative Glow - Adjusted for Light Theme */}
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-[300px] bg-blue-500/5 blur-[120px] -z-10"></div>
 
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
           
           {/* Brand Section */}
           <div className="md:col-span-2">
-            <Link to="/" className="text-3xl font-black italic tracking-tighter uppercase text-white group">
-              SUDARA<span className="text-blue-500 group-hover:drop-shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all">HUB</span>
+            <Link to="/" className="text-3xl font-black italic tracking-tighter uppercase text-slate-900 group">
+              SUDARA<span className="text-blue-600 group-hover:drop-shadow-[0_0_10px_rgba(37,99,235,0.2)] transition-all">HUB</span>
             </Link>
             <p className="mt-6 text-slate-500 font-medium leading-relaxed max-w-sm">
               Empowering students with seamless access to nearby campus food hubs. 
@@ -38,7 +38,7 @@ export default function Footer() {
                 href={socialLinks.instagram} 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="p-3 bg-white/5 rounded-full border border-white/10 hover:border-blue-500/50 hover:text-blue-500 transition-all shadow-lg"
+                className="p-3 bg-slate-50 rounded-full border border-slate-100 hover:border-blue-500/50 hover:text-blue-600 transition-all shadow-sm"
               >
                 <Instagram className="w-5 h-5" />
               </a>
@@ -47,7 +47,7 @@ export default function Footer() {
                 href={socialLinks.youtube} 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className="p-3 bg-white/5 rounded-full border border-white/10 hover:border-red-500/50 hover:text-red-500 transition-all shadow-lg group"
+                className="p-3 bg-slate-50 rounded-full border border-slate-100 hover:border-red-500/50 hover:text-red-600 transition-all shadow-sm group"
               >
                 <Youtube className="w-5 h-5" />
               </a>
@@ -56,12 +56,12 @@ export default function Footer() {
 
           {/* Quick Support */}
           <div>
-            <h4 className="text-xs font-black uppercase tracking-[0.2em] text-white mb-6 italic">Support & Help</h4>
+            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 mb-6 italic">Support & Help</h4>
             <ul className="space-y-4">
               <li>
                 <a 
                   href={getMailLink("FeedBack from Users")} 
-                  className="text-slate-400 hover:text-blue-400 transition-all font-bold text-[13px] uppercase flex items-center group"
+                  className="text-slate-400 hover:text-blue-600 transition-all font-bold text-[11px] uppercase flex items-center group"
                 >
                   <MessageSquare className="w-3 h-3 mr-2 opacity-50 group-hover:opacity-100" />
                   FeedBack link
@@ -71,46 +71,26 @@ export default function Footer() {
               <li>
               <Link 
                 to="/terms" 
-                className="text-slate-400 hover:text-blue-400 transition-all font-bold text-[13px] uppercase flex items-center group"
+                className="text-slate-400 hover:text-blue-600 transition-all font-bold text-[11px] uppercase flex items-center group"
               >
                 <ShieldCheck className="w-3 h-3 mr-2 opacity-50 group-hover:opacity-100" />
                 Terms & Conditions
                 <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all ml-1" />
               </Link>
             </li>
-              {/* <li>
-                <a 
-                  href={getMailLink("New Hotel Registration Request")} 
-                  className="text-slate-400 hover:text-blue-400 transition-all font-bold text-[13px] uppercase flex items-center group"
-                >
-                  <PlusCircle className="w-3 h-3 mr-2 opacity-50 group-hover:opacity-100" />
-                  Add Your Hotel
-                  <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all ml-1" />
-                </a>
-              </li> */}
-              {/* <li>
-                <a 
-                  href={getMailLink("Reporting an Issue/Abuse")} 
-                  className="text-slate-400 hover:text-blue-400 transition-all font-bold text-[13px] uppercase flex items-center group"
-                >
-                  <AlertTriangle className="w-3 h-3 mr-2 opacity-50 group-hover:opacity-100" />
-                  Report Abuse
-                  <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-all ml-1" />
-                </a>
-              </li> */}
             </ul>
           </div>
 
           {/* Contact Section */}
           <div>
-            <h4 className="text-xs font-black uppercase tracking-[0.2em] text-white mb-6 italic">Direct Contact</h4>
+            <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-900 mb-6 italic">Direct Contact</h4>
             <div className="flex items-start gap-3 group">
-              <div className="p-2 bg-blue-600/10 rounded-lg group-hover:bg-blue-600 transition-colors">
-                <Mail className="w-4 h-4 text-blue-500 group-hover:text-white" />
+              <div className="p-2 bg-blue-50 rounded-lg group-hover:bg-blue-600 transition-colors">
+                <Mail className="w-4 h-4 text-blue-600 group-hover:text-white" />
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase text-slate-500 mb-1 tracking-widest">Email Us At</p>
-                <a href={socialLinks.email} className="text-sm font-bold text-slate-300 hover:text-white transition-colors">
+                <p className="text-[9px] font-black uppercase text-slate-400 mb-1 tracking-widest">Email Us At</p>
+                <a href={socialLinks.email} className="text-[13px] font-bold text-slate-600 hover:text-blue-600 transition-colors">
                   rajuboyella737@gmail.com
                 </a>
               </div>
@@ -120,12 +100,12 @@ export default function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-10 border-t border-indigo-500/20 flex flex-col md:flex-row justify-between items-center gap-6">
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">
-            © {currentYear} <span className="text-slate-400">SUDARA HUB</span>. All rights reserved.
+        <div className="pt-10 border-t border-slate-100 flex flex-col md:flex-row justify-between items-center gap-6">
+          <p className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+            © {currentYear} <span className="text-slate-600">SUDARA HUB</span>. All rights reserved.
           </p>
           <div className="flex items-center gap-8">
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-700 italic">
+            <span className="text-[9px] font-black uppercase tracking-widest text-slate-300 italic">
               Designed for Students By Student
             </span>
           </div>

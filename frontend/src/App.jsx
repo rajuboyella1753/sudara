@@ -6,7 +6,7 @@ import OwnerDashboard from "./pages/OwnerDashboard";
 import RestaurantProfile from "./pages/RestaurantProfile";
 import About from "./pages/AboutUs"; 
 import Contact from "./pages/Contact";
-import Terms from "./pages/Terms";
+import Terms from "./components/Terms";
 // import Maintenance from "./pages/Maintenance";
 function App() {
   return (

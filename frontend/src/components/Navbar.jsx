@@ -9,32 +9,26 @@ export default function Navbar() {
   const hideOwnerBtn = location.pathname.startsWith("/owner");
 
   return (
-    <nav className="bg-[#020617]/80 backdrop-blur-xl border-b border-indigo-500/20 sticky top-0 z-[100]">
+    <nav className="bg-white border-b border-slate-100 sticky top-0 z-[100] shadow-sm">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
 
-        {/* ☄️ Logo - Sudara */}
-        {/* <Link to="/" className="flex items-center gap-2 group">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg shadow-lg shadow-blue-600/20 group-hover:rotate-12 transition-transform"></div>
-          <h1 className="text-2xl font-black italic tracking-tighter text-white uppercase">
-            Sudara<span className="text-blue-500">.</span>
-          </h1>
-        </Link> */}
+        {/* ☄️ Logo - Sudara (Solid Black/Blue for Light Theme) */}
         <Link to="/" className="flex items-center group">
-          <h1 className="text-2xl font-black italic tracking-tighter text-white uppercase group-hover:scale-105 transition-transform">
-            Sudara<span className="text-blue-500">.</span>
+          <h1 className="text-2xl font-black italic tracking-tighter text-slate-900 uppercase group-hover:scale-105 transition-transform">
+            Sudara<span className="text-blue-600">.</span>
           </h1>
         </Link>
 
         {/* 💻 Desktop Menu */}
         <div className="hidden md:flex items-center space-x-8">
-          <Link to="/" className="text-xs font-black uppercase tracking-widest text-indigo-200/60 hover:text-blue-400 transition-colors">Home</Link>
-          <Link to="/about" className="text-xs font-black uppercase tracking-widest text-indigo-200/60 hover:text-blue-400 transition-colors">About</Link>
-          <Link to="/contact" className="text-xs font-black uppercase tracking-widest text-indigo-200/60 hover:text-blue-400 transition-colors">Contact</Link>
+          <Link to="/" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 transition-colors">Home</Link>
+          <Link to="/about" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 transition-colors">About</Link>
+          <Link to="/contact" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 transition-colors">Contact</Link>
 
           {!hideOwnerBtn && (
             <Link
               to="/owner"
-              className="bg-blue-600 text-white px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-blue-500/20 active:scale-95 border border-blue-400/30"
+              className="bg-slate-900 text-white px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-lg shadow-slate-200 active:scale-95"
             >
               Owner Login
             </Link>
@@ -43,31 +37,31 @@ export default function Navbar() {
 
         {/* 📱 Mobile Menu Button */}
         <button
-          className="md:hidden text-white p-2"
+          className="md:hidden p-2 focus:outline-none"
           onClick={() => setOpen(!open)}
         >
           {open ? (
-            <span className="text-2xl text-blue-400">✕</span>
+            <span className="text-2xl text-blue-600 font-bold">✕</span>
           ) : (
             <div className="space-y-1.5">
-              <div className="w-6 h-0.5 bg-white"></div>
-              <div className="w-4 h-0.5 bg-blue-500"></div>
-              <div className="w-6 h-0.5 bg-white"></div>
+              <div className="w-6 h-0.5 bg-slate-900"></div>
+              <div className="w-4 h-0.5 bg-blue-600 ml-auto"></div>
+              <div className="w-6 h-0.5 bg-slate-900"></div>
             </div>
           )}
         </button>
       </div>
 
-      {/* 📱 Mobile Menu Overlay */}
+      {/* 📱 Mobile Menu Overlay (Solid Background Fix) */}
       {open && (
-        <div className="md:hidden bg-[#020617] border-b border-indigo-500/20 px-6 py-8 space-y-6 absolute w-full left-0 animate-in slide-in-from-top duration-300">
-          <Link onClick={() => setOpen(false)} to="/" className="block text-sm font-black uppercase tracking-[0.2em] text-indigo-100 hover:text-blue-400">
+        <div className="md:hidden bg-white border-b border-slate-100 px-6 py-8 space-y-6 absolute w-full left-0 shadow-2xl animate-in slide-in-from-top duration-300">
+          <Link onClick={() => setOpen(false)} to="/" className="block text-sm font-black uppercase tracking-[0.2em] text-slate-800 hover:text-blue-600">
             Home
           </Link>
-          <Link onClick={() => setOpen(false)} to="/about" className="block text-sm font-black uppercase tracking-[0.2em] text-indigo-100 hover:text-blue-400">
+          <Link onClick={() => setOpen(false)} to="/about" className="block text-sm font-black uppercase tracking-[0.2em] text-slate-800 hover:text-blue-600">
             About
           </Link>
-          <Link onClick={() => setOpen(false)} to="/contact" className="block text-sm font-black uppercase tracking-[0.2em] text-indigo-100 hover:text-blue-400">
+          <Link onClick={() => setOpen(false)} to="/contact" className="block text-sm font-black uppercase tracking-[0.2em] text-slate-800 hover:text-blue-600">
             Contact
           </Link>
 
@@ -75,7 +69,7 @@ export default function Navbar() {
             <Link
               onClick={() => setOpen(false)}
               to="/owner"
-              className="block bg-blue-600 text-white text-center py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-lg shadow-blue-600/20 border border-blue-400/30"
+              className="block bg-blue-600 text-white text-center py-4 rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-blue-100"
             >
               Owner Login
             </Link>
