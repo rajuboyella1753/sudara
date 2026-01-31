@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../api/api-base"; 
 import { motion, AnimatePresence } from "framer-motion";
 import Footer from "../components/Footer";
-import { ShieldCheck, Compass, UtensilsCrossed, Plus, Search } from "lucide-react"; 
+import { ShieldCheck, Compass, UtensilsCrossed, Plus, Search, Filter } from "lucide-react"; 
 
 export default function OwnerDashboard() {
   const navigate = useNavigate();
@@ -20,6 +20,10 @@ export default function OwnerDashboard() {
   });
 
   const [searchTerm, setSearchTerm] = useState("");
+  // 🔥 NEW FILTER STATES
+  const [categoryFilter, setCategoryFilter] = useState("All"); 
+  const [availabilityFilter, setAvailabilityFilter] = useState("All");
+
   const [isEditingItem, setIsEditingItem] = useState(false);
   const [editItemId, setEditItemId] = useState(null);
   
@@ -47,7 +51,6 @@ export default function OwnerDashboard() {
       const ownerData = oRes.data;
       setOwner(ownerData);
       
-      // ✅ FIX: Ensuring no value is undefined or null to prevent "controlled to uncontrolled" warning
       setProfileForm({ 
         name: ownerData.name || "", 
         phone: ownerData.phone || "",
@@ -145,7 +148,15 @@ export default function OwnerDashboard() {
     } catch (err) { alert("Error saving item!"); }
   };
 
-  const filteredItems = items.filter(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  // 🔥 ADVANCED FILTERING LOGIC
+  const filteredItems = items.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = categoryFilter === "All" || item.category === categoryFilter;
+    const matchesAvailability = availabilityFilter === "All" || 
+                               (availabilityFilter === "Live" ? item.isAvailable : !item.isAvailable);
+    
+    return matchesSearch && matchesCategory && matchesAvailability;
+  });
 
   if (loading) return <div className="h-screen bg-white flex items-center justify-center text-blue-600 font-black animate-pulse text-2xl md:text-4xl italic tracking-tighter uppercase">Scanning Kitchen...</div>;
 
@@ -295,16 +306,33 @@ export default function OwnerDashboard() {
           <div className="mb-6 sm:mb-8 flex flex-col gap-6 sticky top-0 bg-white z-40 pb-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <h2 className="text-2xl sm:text-3xl md:text-4xl font-black italic uppercase tracking-tighter text-slate-900">Kitchen Menu</h2>
-                <div className="relative w-full sm:w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
-                    <input type="text" placeholder="Search dish..." value={searchTerm || ""} onChange={(e)=>setSearchTerm(e.target.value)} className="w-full bg-slate-50 border border-slate-100 p-3.5 pl-10 rounded-2xl text-xs text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm" />
+                <div className="flex flex-col md:flex-row gap-3 items-center">
+                  {/* 🔍 SEARCH */}
+                  <div className="relative w-full sm:w-64">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+                      <input type="text" placeholder="Search dish..." value={searchTerm || ""} onChange={(e)=>setSearchTerm(e.target.value)} className="w-full bg-slate-50 border border-slate-100 p-3.5 pl-10 rounded-2xl text-xs text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm" />
+                  </div>
+
+                  {/* 🥗 CATEGORY FILTER */}
+                  <div className="flex bg-slate-50 p-1 rounded-2xl border border-slate-100 shadow-sm overflow-x-auto scrollbar-hide max-w-full">
+                    {["All", "Veg", "Non-Veg"].map(cat => (
+                      <button key={cat} onClick={() => setCategoryFilter(cat)} className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all whitespace-nowrap ${categoryFilter === cat ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400'}`}>{cat}</button>
+                    ))}
+                  </div>
+
+                  {/* 🚫 AVAILABILITY FILTER */}
+                  <div className="flex bg-slate-50 p-1 rounded-2xl border border-slate-100 shadow-sm">
+                    {["All", "Live", "Sold Out"].map(avail => (
+                      <button key={avail} onClick={() => setAvailabilityFilter(avail)} className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase transition-all whitespace-nowrap ${availabilityFilter === avail ? (avail === "Sold Out" ? 'bg-red-500 text-white shadow-md' : 'bg-green-500 text-white shadow-md') : 'text-slate-400'}`}>{avail}</button>
+                    ))}
+                  </div>
                 </div>
               </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
             {filteredItems.map(i => (
-              <div key={i._id} className={`group bg-white p-4 sm:p-5 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 flex flex-col gap-5 transition-all hover:border-blue-200 hover:shadow-xl shadow-sm ${!i.isAvailable && 'opacity-50 grayscale bg-slate-50'}`}>
+              <div key={i._id} className={`group bg-white p-4 sm:p-5 rounded-[2rem] sm:rounded-[2.5rem] border border-slate-100 flex flex-col gap-5 transition-all hover:border-blue-200 hover:shadow-xl shadow-sm ${!i.isAvailable && 'opacity-70 grayscale-[0.5] bg-slate-50'}`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                     <img src={i.image ? i.image : "https://via.placeholder.com/150"} className="w-16 h-16 sm:w-20 sm:h-20 rounded-[1.2rem] sm:rounded-[1.5rem] object-cover shrink-0 shadow-sm border border-slate-50" alt={i.name} />
@@ -332,6 +360,12 @@ export default function OwnerDashboard() {
               </div>
             ))}
           </div>
+
+          {filteredItems.length === 0 && (
+            <div className="h-64 flex flex-col items-center justify-center text-slate-300 font-black uppercase italic tracking-widest opacity-50">
+              No Dishes Found In This Filter
+            </div>
+          )}
         </main>
       </div>
 

@@ -8,6 +8,7 @@ import About from "./pages/AboutUs";
 import Contact from "./pages/Contact";
 import Terms from "./components/Terms";
 // import Maintenance from "./pages/Maintenance";
+import AdminDashboard from "./pages/Admin";
 function App() {
   return (
     <BrowserRouter>
@@ -21,6 +22,7 @@ function App() {
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/terms" element={<Terms />} />
+        <Route path="/sudara-admin-control" element={<AdminDashboard />} />
       </Routes>
     </BrowserRouter>
   );

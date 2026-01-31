@@ -23,7 +23,7 @@ const ownerSchema = new mongoose.Schema(
     
     // ఓనర్ యొక్క పర్సనల్ UPI QR ఇమేజ్ కోసం
     upiQR: { type: String, default: "" },
-
+    isApproved: { type: Boolean, default: false },
     // 🔥 RANKING & USER COUNT
     numberOfReviews: { type: Number, default: 0 }, 
     totalRatings: { type: Number, default: 0 }, 

@@ -47,21 +47,26 @@ export default function RestaurantProfile() {
     if (id) fetchData();
   }, [id]);
 
-  const handlePostReview = async () => {
+const handlePostReview = async () => {
     if (!newComment.trim()) return;
     try {
       setIsSubmitting(true);
-      const res = await api.post(`/owner/rate-restaurant/${id}`, { 
+      
+      // ✅ రాజు, ఇక్కడ రూట్ మార్చాను. నీ బ్యాకెండ్ లో '/review/:id' అని ఉంది.
+      const res = await api.post(`/owner/review/${id}`, { 
         comment: newComment,
         rating: 5 
       });
+
       if (res.data.success) {
         alert("Review posted successfully! 🍲");
         setNewComment("");
+        // పేజీ రిఫ్రెష్ అవ్వకుండానే కొత్త డేటా కనిపించేలా fetchData ని మళ్ళీ పిలవచ్చు
         window.location.reload(); 
       }
     } catch (err) {
       console.error("Post Review Error:", err);
+      alert("Review పోస్ట్ అవ్వలేదు బాడీ, ఒక్కసారి బ్యాకెండ్ చెక్ చెయ్!");
     } finally {
       setIsSubmitting(false);
     }
@@ -321,87 +326,107 @@ export default function RestaurantProfile() {
             )}
 
             {/* ⭐ User Reviews Section */}
-            <div className="mt-16 border-t border-slate-100 pt-10">
-              <button 
-                onClick={() => setShowReviews(!showReviews)}
-                className="flex items-center gap-2 text-[10px] sm:text-[11px] font-black uppercase tracking-[0.3em] text-blue-600 hover:text-slate-900 transition-all group mb-8"
-              >
-                <MessageSquare className={`w-4 h-4 ${showReviews ? 'fill-blue-600' : ''}`} />
-                {showReviews ? "Close Reviews" : "Read & Write Reviews"}
-                <Plus className={`w-3 h-3 transition-transform duration-500 ${showReviews ? 'rotate-45' : ''}`} />
-              </button>
+<div className="mt-16 border-t border-slate-100 pt-10 relative">
+  <button 
+    onClick={() => setShowReviews(!showReviews)}
+    className="flex items-center gap-2 text-[10px] sm:text-[11px] font-black uppercase tracking-[0.3em] text-blue-600 hover:text-slate-900 transition-all group mb-8 relative z-10"
+  >
+    <MessageSquare className={`w-4 h-4 transition-all duration-300 ${showReviews ? 'fill-blue-600' : ''}`} />
+    {showReviews ? "Close Reviews" : "Read & Write Reviews"}
+    <Plus className={`w-3 h-3 transition-transform duration-500 ${showReviews ? 'rotate-45 text-red-500' : ''}`} />
+  </button>
 
-              <AnimatePresence>
-                {showReviews && (
+  <AnimatePresence>
+    {showReviews && (
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 20 }}
+        transition={{ duration: 0.5, ease: "circOut" }}
+        className="relative"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-slate-50 p-6 sm:p-8 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden"
+          >
+            <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-5 italic">Share Your Vibe</h4>
+            <textarea 
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="How's the food? Service? Ambience?"
+              className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-xs sm:text-sm font-medium outline-none focus:border-blue-400 transition-all min-h-[120px] resize-none shadow-sm"
+            />
+            <button 
+              type="button" 
+              onClick={handlePostReview}
+              disabled={!newComment.trim() || isSubmitting}
+              className="mt-6 w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-slate-200 disabled:opacity-30 active:scale-95 transition-all"
+            >
+              {isSubmitting ? "Syncing..." : "Post Review"}
+            </button>
+          </motion.div>
+
+          {/* <div className="bg-blue-50 p-8 rounded-[2rem] border border-blue-100 flex flex-col items-center justify-center text-center shadow-sm relative overflow-hidden">
+             <Star className="absolute -bottom-4 -right-4 w-24 h-24 text-blue-100 rotate-12" />
+             <div className="flex items-center gap-3 mb-4 relative z-10">
+                <Star className="w-8 h-8 text-blue-600 fill-blue-600 drop-shadow-sm" />
+                <span className="text-5xl font-black italic text-slate-900">{owner.averageRating?.toFixed(1) || "5.0"}</span>
+             </div>
+             <p className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-600 opacity-60 relative z-10">Campus Rating</p>
+          </div> */}
+        </div>
+
+        {/* --- Scrollable Review List with Masking --- */}
+        <div className="relative mt-10">
+          <div className="flex items-center gap-4 mb-6 sticky top-0 bg-white z-20 py-4">
+             <span className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-300">Recent Stories</span>
+             <div className="h-[1px] flex-1 bg-slate-50"></div>
+          </div>
+          
+          {/* ✅ Masking container to hide reviews while scrolling outside the box */}
+          <div className="relative max-h-[450px] overflow-hidden rounded-[2rem]">
+            <div className="max-h-[450px] overflow-y-auto pr-4 scrollbar-custom space-y-6 pb-10">
+              {owner.reviews?.length > 0 ? (
+                owner.reviews.map((rev, idx) => (
                   <motion.div 
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="overflow-hidden"
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: idx * 0.1 }}
+                    key={idx} 
+                    className="bg-slate-50/50 p-6 rounded-[1.8rem] border border-slate-100 flex flex-col gap-4 group hover:border-blue-200 hover:bg-white hover:shadow-xl hover:shadow-blue-50/50 transition-all duration-500"
                   >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-                      <div className="bg-slate-50 p-6 sm:p-8 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-5 italic">Share Your Vibe</h4>
-                        <textarea 
-                          value={newComment}
-                          onChange={(e) => setNewComment(e.target.value)}
-                          placeholder="How's the food? Service? Ambience?"
-                          className="w-full bg-white border border-slate-200 rounded-2xl p-4 text-xs sm:text-sm font-medium outline-none focus:border-blue-300 transition-all min-h-[120px] resize-none shadow-sm"
-                        />
-                        <button 
-                          type="button" 
-                          onClick={handlePostReview}
-                          disabled={!newComment.trim() || isSubmitting}
-                          className="mt-6 w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-slate-200 disabled:opacity-30 active:scale-95"
-                        >
-                          {isSubmitting ? "Syncing..." : "Post Review"}
-                        </button>
+                    <div className="flex justify-between items-center">
+                      <div className="flex items-center gap-2">
+                         <div className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></div>
+                         <span className="text-[9px] font-black uppercase tracking-widest text-blue-600 italic">Student Peer</span>
                       </div>
-
-                      {/* <div className="bg-blue-50 p-8 rounded-[2rem] border border-blue-100 flex flex-col items-center justify-center text-center shadow-sm">
-                         <div className="flex items-center gap-3 mb-4">
-                            <Star className="w-8 h-8 text-blue-600 fill-blue-600 drop-shadow-sm" />
-                            <span className="text-5xl font-black italic text-slate-900">{owner.averageRating?.toFixed(1) || "0.0"}</span>
-                         </div>
-                         <p className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-600 opacity-60">Campus Rating</p>
-                      </div> */}
+                      <span className="text-[8px] font-bold text-slate-300 uppercase tracking-tighter">
+                        {new Date(rev.createdAt).toLocaleDateString()}
+                      </span>
                     </div>
-
-                    <div className="space-y-6 max-h-[400px] overflow-y-auto pr-4 scrollbar-custom mb-10 border-t border-slate-50 pt-6">
-                      <div className="flex items-center gap-4 mb-6 sticky top-0 bg-white z-10 py-2">
-                         <span className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-300">Recent Stories</span>
-                         <div className="h-[1px] flex-1 bg-slate-50"></div>
-                      </div>
-                      
-                      {owner.reviews?.length > 0 ? (
-                        owner.reviews.map((rev, idx) => (
-                          <motion.div 
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            key={idx} 
-                            className="bg-slate-50 p-6 rounded-[1.8rem] border border-slate-100 flex flex-col gap-4 group hover:border-blue-200 transition-all shadow-sm"
-                          >
-                            <div className="flex justify-between items-center">
-                              <div className="flex items-center gap-2">
-                                 <div className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></div>
-                                 <span className="text-[9px] font-black uppercase tracking-widest text-blue-600 italic">Student Peer</span>
-                              </div>
-                              <span className="text-[8px] font-bold text-slate-300 uppercase tracking-tighter">{new Date(rev.createdAt).toLocaleDateString()}</span>
-                            </div>
-                            <p className="text-sm text-slate-600 italic leading-relaxed font-medium">"{rev.comment}"</p>
-                          </motion.div>
-                        ))
-                      ) : (
-                        <div className="text-center py-20 border border-dashed border-slate-100 rounded-[2.5rem]">
-                          <MessageSquare className="w-12 h-12 text-slate-100 mx-auto mb-4" />
-                          <p className="text-slate-300 italic uppercase text-[10px] font-black tracking-widest">The wall is empty.</p>
-                        </div>
-                      )}
-                    </div>
+                    <p className="text-sm text-slate-600 italic leading-relaxed font-medium">"{rev.comment}"</p>
                   </motion.div>
-                )}
-              </AnimatePresence>
+                ))
+              ) : (
+                <div className="text-center py-20 border border-dashed border-slate-100 rounded-[2.5rem]">
+                  <MessageSquare className="w-12 h-12 text-slate-100 mx-auto mb-4" />
+                  <p className="text-slate-300 italic uppercase text-[10px] font-black tracking-widest">The wall is empty.</p>
+                </div>
+              )}
             </div>
+            
+            {/* ✅ Bottom Fade Effect */}
+            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none z-10"></div>
+          </div>
+        </div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+</div>
+
         </div>
 
         {/* 📞 Right Sidebar */}

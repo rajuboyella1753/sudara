@@ -91,7 +91,7 @@ export default function Footer() {
               <div>
                 <p className="text-[9px] font-black uppercase text-slate-400 mb-1 tracking-widest">Email Us At</p>
                 <a href={socialLinks.email} className="text-[13px] font-bold text-slate-600 hover:text-blue-600 transition-colors">
-                  rajuboyella737@gmail.com
+                  codewithraju1753@gmail.com
                 </a>
               </div>
             </div>

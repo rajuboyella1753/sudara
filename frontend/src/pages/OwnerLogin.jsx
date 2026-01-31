@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api-base"; 
-import { motion } from "framer-motion";
-import { ShieldCheck, Mail, Lock, Building2, LayoutGrid, ChevronDown } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion"; 
+import { ShieldCheck, Mail, Lock, Building2, LayoutGrid, ChevronDown, AlertCircle } from "lucide-react"; 
 
 export default function OwnerLogin() {
   const navigate = useNavigate();
   const [dbColleges, setDbColleges] = useState([]); 
+  const [verificationMessage, setVerificationMessage] = useState(""); 
   const [form, setForm] = useState({
     email: "", password: "", category: "food", collegeName: "", 
   });
@@ -25,19 +26,47 @@ export default function OwnerLogin() {
       }
     };
     fetchColleges();
-    if (localStorage.getItem("owner")) navigate("/owner/dashboard");
+
+    // ✅ రాజు, ఇక్కడ పాత లాజిక్ తీసేసి వెరిఫికేషన్ చెక్ పెట్టాలి
+    const storedOwner = JSON.parse(localStorage.getItem("owner"));
+    if (storedOwner) {
+      // ఒకవేళ ఆల్రెడీ లాగిన్ అయ్యి ఉండి, అప్రూవ్ అయ్యి ఉంటేనే పంపించు
+      if (storedOwner.isApproved) {
+        navigate("/owner/dashboard");
+      } else {
+        // ఒకవేళ అప్రూవ్ కాకపోతే లోకల్ స్టోరేజ్ క్లియర్ చేసి ఇక్కడే ఉంచు
+        localStorage.removeItem("owner");
+        setVerificationMessage("Your account is still under review.");
+      }
+    }
   }, [navigate]);
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+    setVerificationMessage(""); 
+  };
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
+    setVerificationMessage(""); 
     try {
       const res = await api.post("/owner/login", form);
-      localStorage.setItem("owner", JSON.stringify(res.data.owner));
-      navigate("/owner/dashboard");
+      
+      // ✅ రాజు, ఒకవేళ నువ్వు అడ్మిన్ లాగిన్ అయితే సీక్రెట్ పేజీకి పంపిస్తుంది
+      if (res.data.isAdmin) {
+        navigate("/sudara-admin-control");
+        return;
+      }
+
+      if (res.data.owner.isApproved) {
+        localStorage.setItem("owner", JSON.stringify(res.data.owner));
+        navigate("/owner/dashboard");
+      } else {
+        setVerificationMessage("Account pending admin approval! ⏳");
+      }
     } catch (error) {
-      alert(error.response?.data?.message || "Login failed ❌");
+      const msg = error.response?.data?.message || "Login failed ❌";
+      setVerificationMessage(msg);
     }
   };
 
@@ -45,7 +74,6 @@ export default function OwnerLogin() {
     <div className="min-h-screen bg-white text-slate-900 selection:bg-blue-500/30 overflow-hidden font-sans">
       <Navbar />
 
-      {/* 🌌 Background Atmosphere - Subtle Blue Glow */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-blue-500/5 blur-[120px] rounded-full"></div>
       </div>
@@ -56,19 +84,33 @@ export default function OwnerLogin() {
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-md bg-white rounded-[3rem] shadow-[0_30px_70px_-15px_rgba(0,0,0,0.1)] border border-slate-100 p-8 sm:p-12 relative overflow-hidden"
         >
-          {/* Top Branding */}
           <div className="text-center mb-12 relative z-10">
             <div className="w-16 h-16 bg-blue-50 border border-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
               <ShieldCheck className="text-blue-600 w-8 h-8" />
             </div>
             <h2 className="text-4xl font-black italic uppercase text-slate-900 tracking-tighter">
-              Admin <span className="text-blue-600">Access</span>
+              Owner <span className="text-blue-600">Access</span>
             </h2>
             <p className="text-slate-400 text-[9px] font-black uppercase mt-3 tracking-[0.3em]">Guardian Protocol v2.0</p>
           </div>
 
+          <AnimatePresence>
+            {verificationMessage && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mb-6 bg-red-50 border border-red-100 p-4 rounded-2xl flex items-center gap-3"
+              >
+                <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+                <p className="text-[11px] font-bold text-red-600 uppercase tracking-tight leading-tight">
+                  {verificationMessage}
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
-            {/* Email Input */}
             <div className="relative group">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors w-5 h-5" />
               <input 
@@ -83,7 +125,6 @@ export default function OwnerLogin() {
               />
             </div>
 
-            {/* Password Input */}
             <div className="relative group">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors w-5 h-5" />
               <input 
@@ -98,7 +139,6 @@ export default function OwnerLogin() {
               />
             </div>
 
-            {/* Selectors Grid */}
             <div className="grid grid-cols-2 gap-4">
               <div className="relative group">
                 <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 w-4 h-4 pointer-events-none" />
@@ -127,7 +167,6 @@ export default function OwnerLogin() {
               </div>
             </div>
 
-            {/* Submit Button */}
             <button 
               type="submit" 
               className="w-full bg-slate-900 hover:bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] italic transition-all active:scale-95 shadow-xl shadow-slate-200"
@@ -136,7 +175,6 @@ export default function OwnerLogin() {
             </button>
           </form>
 
-          {/* Bottom Link */}
           <div className="mt-10 text-center border-t border-slate-50 pt-8 relative z-10">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
               Unrecognized? 
