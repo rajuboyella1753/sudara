@@ -9,32 +9,48 @@ const ownerSchema = new mongoose.Schema(
     profileImage: { type: String, default: "" },
     phone: String,
     district: { type: String, default: "Tirupati" },
-    collegeName: { type: String, default: "General" }, 
+    collegeName: { type: String, default: "General" },
     hotelImage: { type: String, default: "" },
     isStoreOpen: { type: Boolean, default: true },
-    busyStatus: { type: String, enum: ['Low', 'Medium', 'High','Free', 'Normal', 'Busy'], default: 'Low' },
+    busyStatus: { 
+        type: String, 
+        enum: ['Low', 'Medium', 'High', 'Free', 'Normal', 'Busy'], 
+        default: 'Low' 
+    },
     latitude: { type: Number, default: 0 },
     longitude: { type: Number, default: 0 },
     address: { type: String, default: "" },
 
-    // ✨ NEW STARTUP FEATURES (Adding these now)
-    // హోటల్ లోపల ఫోటోల గ్యాలరీ కోసం (Base64 strings array)
-    interiorImages: { type: [String], default: [] }, 
+    // ✨ NEW STARTUP FEATURES
+    interiorImages: { type: [String], default: [] },
     
-    // ఓనర్ యొక్క పర్సనల్ UPI QR ఇమేజ్ కోసం
-    upiQR: { type: String, default: "" },
+    // ✅ రాజు, ఇక్కడ రెండు ఫీల్డ్స్ ఉన్నాయి:
+    upiQR: { type: String, default: "" }, // ఇది పాత ఇమేజ్ కోసం
+    upiID: { type: String, default: "" }, // 🚀 ఇక్కడ ఓనర్ UPI ID (e.g. name@okaxis) స్టోర్ అవుతుంది
+    
     isApproved: { type: Boolean, default: false },
+
     // 🔥 RANKING & USER COUNT
-    numberOfReviews: { type: Number, default: 0 }, 
-    totalRatings: { type: Number, default: 0 }, 
+    numberOfReviews: { type: Number, default: 0 },
+    totalRatings: { type: Number, default: 0 },
     averageRating: { type: Number, default: 0 },
     reviews: [
-    {
-      comment: { type: String, required: true },
-      rating: { type: Number, default: 5 },
-      createdAt: { type: Date, default: Date.now }
-    }
-  ],
+      {
+        comment: { type: String, required: true },
+        rating: { type: Number, default: 5 },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
+
+    // ✅ అనలిటిక్స్ ఫీల్డ్
+    analytics: {
+      type: Map,
+      of: {
+        kitchen_entry: { type: Number, default: 0 },
+        food_clicks: { type: Map, of: Number } 
+      },
+      default: {},
+    },
   },
   { timestamps: true }
 );

@@ -140,7 +140,25 @@ export default function Home() {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return (R * c).toFixed(1); 
   };
-
+  const handleRestaurantClick = async (resId) => {
+  try {
+    // 1. ఈరోజు డేట్ ని ఫార్మాట్ చెయ్ (DB లో సేవ్ అయినట్టు "4/2/2026")
+    const today = new Date().toLocaleDateString('en-GB').split('/').map(n => parseInt(n)).join('/');
+    
+    // 2. బ్యాకెండ్ కి హిట్ పంపించు
+    await api.put(`/owner/track-analytics/${resId}`, {
+      action: "kitchen_entry",
+      date: today
+    });
+    
+    console.log("Visit tracked! ✅");
+  } catch (err) {
+    console.error("Tracking failed but moving to profile...");
+  } finally {
+    // 3. హిట్ వెళ్ళినా వెళ్ళకపోయినా యూజర్ ని పేజీ లోపలికి తీసుకెళ్ళు
+    navigate(`/restaurant/${resId}`);
+  }
+};
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-blue-500/30 overflow-x-hidden">
       <Navbar />
@@ -233,7 +251,8 @@ export default function Home() {
                 }} 
                 key={res._id} 
                 className="group cursor-pointer h-full"
-                onClick={() => res.isStoreOpen && navigate(`/restaurant/${res._id}`)}
+                // onClick={() => res.isStoreOpen && navigate(`/restaurant/${res._id}`)}
+                   onClick={() => res.isStoreOpen && handleRestaurantClick(res._id)}
               >
                 <div className="relative flex flex-col h-full transition-all duration-500">
                   <div className="relative h-64 w-full overflow-hidden rounded-[2.5rem] mb-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.1)] transition-all duration-500 shrink-0">

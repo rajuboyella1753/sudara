@@ -4,243 +4,195 @@ import api from "../api/api-base";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ShieldCheck, CheckCircle, Building2, Phone, Users, 
-  ShieldAlert, RefreshCcw, Compass, LogOut, Search, Filter, 
-  BarChart3, GraduationCap, Zap, Store, ExternalLink, Menu, X
+  ShieldAlert, LogOut, Search, BarChart3, Store, X, 
+  TrendingUp, Calendar, Activity, Star, MapPin, CreditCard,
+  ArrowUpRight, LayoutDashboard, Globe, Menu
 } from "lucide-react";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [owners, setOwners] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("pending");
-  const [selectedCollege, setSelectedCollege] = useState("All");
+  const [activeTab, setActiveTab] = useState("analytics");
   const [searchTerm, setSearchTerm] = useState("");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile menu కోసం
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false); 
+  const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
 
-  useEffect(() => {
-    fetchOwners();
-  }, []);
+  useEffect(() => { fetchOwners(); }, []);
 
   const fetchOwners = async () => {
     try {
       setLoading(true);
       const res = await api.get("/owner/all-owners");
       setOwners(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      console.error("Admin Fetch Error:", err);
-      setOwners([]);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error("Fetch Error:", err); } finally { setLoading(false); }
   };
 
   const updateApprovalStatus = async (id, status) => {
     try {
-      const res = await api.put(`/owner/approve-owner/${id}`, { isApproved: status });
-      if (res.status === 200) {
-        setOwners(prev => prev.map(o => o._id === id ? { ...o, isApproved: status } : o));
-      }
-    } catch (err) {
-      alert("Verification update failed ❌");
-    }
+      await api.put(`/owner/approve-owner/${id}`, { isApproved: status });
+      setOwners(prev => prev.map(o => o._id === id ? { ...o, isApproved: status } : o));
+    } catch (err) { alert("Status Update Failed ❌"); }
   };
 
-  const collegeStats = owners.reduce((acc, owner) => {
-    const name = owner.collegeName || "General";
-    acc[name] = (acc[name] || 0) + 1;
-    return acc;
-  }, {});
-
-  const colleges = ["All", ...Object.keys(collegeStats)];
+  // ✅ రాజు, ఈ డేట్ ఫార్మాట్ నీ DB లో ఉన్న "4/2/2026" కి పక్కాగా మ్యాచ్ అవుతుంది
+  const todayFormatted = new Date(filterDate).toLocaleDateString('en-GB').split('/').map(n => parseInt(n)).join('/');
 
   const filteredList = owners.filter(o => {
-    const matchesTab = activeTab === "pending" ? !o.isApproved : o.isApproved;
-    const matchesCollege = selectedCollege === "All" || o.collegeName === selectedCollege;
-    const matchesSearch = o.name?.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesTab && matchesCollege && matchesSearch;
+    const matchesTab = activeTab === "pending" ? !o.isApproved : 
+                       activeTab === "approved" ? o.isApproved : true;
+    const matchesSearch = o.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          o.collegeName?.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesTab && matchesSearch;
   });
 
   if (loading) return (
-    <div className="h-screen flex flex-col items-center justify-center bg-[#0F172A] text-blue-500">
-      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}>
-        <ShieldCheck className="w-12 h-12" />
-      </motion.div>
-      <p className="mt-4 font-bold text-[10px] uppercase tracking-[0.4em] text-slate-500 text-center px-6">Initializing Secure Systems...</p>
+    <div className="h-screen flex flex-col items-center justify-center bg-[#0F172A] text-blue-500 font-black px-6">
+      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: "linear" }}><ShieldCheck className="w-12 h-12 sm:w-16 sm:h-16" /></motion.div>
+      <p className="mt-4 tracking-[0.3em] uppercase text-[8px] sm:text-[10px] text-slate-500 text-center">Syncing Matrix...</p>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#F1F5F9] text-slate-900 font-sans flex flex-col lg:flex-row overflow-x-hidden">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col lg:flex-row overflow-hidden relative">
       
-      {/* 📱 MOBILE HEADER */}
-      <div className="lg:hidden bg-[#1E293B] text-white p-4 flex items-center justify-between sticky top-0 z-[60] shadow-xl">
-        <div className="flex items-center gap-2">
-          <ShieldCheck className="text-blue-500 w-6 h-6" />
-          <span className="font-black tracking-tighter text-sm uppercase">Sudara Hub</span>
-        </div>
-        <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 bg-slate-800 rounded-lg">
-          {isSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
+      {/* 📱 MOBILE NAVIGATION BAR */}
+      <div className="lg:hidden bg-[#1E293B] p-4 flex justify-between items-center text-white sticky top-0 z-[60] shadow-xl">
+         <div className="flex items-center gap-2">
+            <div className="bg-blue-600 p-1.5 rounded-lg"><ShieldCheck className="w-5 h-5"/></div>
+            <span className="font-black italic tracking-tighter text-sm uppercase">Sudara Hub</span>
+         </div>
+         <button onClick={() => setIsSidebarOpen(true)} className="p-2 bg-slate-800 rounded-xl active:scale-90 transition-all">
+            <Menu className="w-5 h-5 text-blue-400"/>
+         </button>
       </div>
 
-      {/* 🚀 SIDEBAR (Desktop & Mobile) */}
-      <aside className={`fixed inset-y-0 left-0 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 lg:relative w-72 bg-[#1E293B] text-white flex flex-col shrink-0 z-50 transition-transform duration-300 ease-in-out`}>
-        <div className="p-8 hidden lg:flex items-center gap-3">
-          <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg">
-            <ShieldCheck className="text-white w-6 h-6" />
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] lg:hidden" />
+        )}
+      </AnimatePresence>
+
+      <aside className={`fixed inset-y-0 left-0 transform ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 lg:relative w-72 bg-[#1E293B] text-white flex flex-col z-[80] transition-transform duration-300 ease-in-out shadow-2xl`}>
+        <div className="p-8 flex items-center justify-between border-b border-slate-800/50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-900/40"><ShieldCheck className="text-white w-6 h-6" /></div>
+            <span className="font-black text-xl italic leading-none tracking-tighter">SUDARA <span className="text-blue-400 block text-[9px] tracking-[0.4em] not-italic font-bold">INTEL V5.5</span></span>
           </div>
-          <span className="font-black text-xl tracking-tighter italic">SUDARA <span className="text-blue-400 text-sm block tracking-widest font-bold not-italic opacity-70">ADMIN HUB</span></span>
+          <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-2 text-slate-400 hover:text-white"><X /></button>
         </div>
-
-        <nav className="flex-1 px-4 space-y-2 mt-8 lg:mt-4">
-          <button onClick={() => { setActiveTab("pending"); setIsSidebarOpen(false); }} className={`w-full flex items-center justify-between p-4 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all ${activeTab === 'pending' ? 'bg-blue-600 shadow-lg' : 'hover:bg-slate-800 text-slate-400'}`}>
-            <div className="flex items-center gap-3"><ShieldAlert className="w-4 h-4"/> Pending Requests</div>
-            <span className="bg-black/20 px-2 py-0.5 rounded-lg text-[10px]">{owners.filter(o=>!o.isApproved).length}</span>
-          </button>
-          <button onClick={() => { setActiveTab("approved"); setIsSidebarOpen(false); }} className={`w-full flex items-center justify-between p-4 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all ${activeTab === 'approved' ? 'bg-blue-600 shadow-lg' : 'hover:bg-slate-800 text-slate-400'}`}>
-            <div className="flex items-center gap-3"><CheckCircle className="w-4 h-4"/> Verified Partners</div>
-            <span className="bg-black/20 px-2 py-0.5 rounded-lg text-[10px]">{owners.filter(o=>o.isApproved).length}</span>
-          </button>
+        <nav className="flex-1 p-6 space-y-3">
+          {[{ id: 'analytics', label: 'Daily Insights', icon: BarChart3 }, { id: 'approved', label: 'Active Partners', icon: Store }, { id: 'pending', label: 'Verification Queue', icon: ShieldAlert }].map(tab => (
+            <button key={tab.id} onClick={() => { setActiveTab(tab.id); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 p-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-blue-600 shadow-xl' : 'hover:bg-slate-800 text-slate-400'}`}>
+              <tab.icon className="w-4 h-4"/> {tab.label}
+            </button>
+          ))}
         </nav>
-
-        <div className="p-6 mt-auto border-t border-slate-700/50">
-          <button onClick={() => navigate("/owner")} className="w-full flex items-center gap-3 p-4 rounded-2xl text-slate-400 hover:text-red-400 hover:bg-red-400/10 transition-all font-bold text-xs uppercase tracking-widest">
-            <LogOut className="w-4 h-4" /> Sign Out
-          </button>
+        <div className="p-6 border-t border-slate-800/50">
+          <button onClick={() => navigate("/owner")} className="w-full flex items-center gap-3 p-4 rounded-2xl text-slate-400 hover:text-red-400 hover:bg-red-400/10 transition-all font-black text-[10px] uppercase tracking-widest"><LogOut className="w-4 h-4" /> Sign Out</button>
         </div>
       </aside>
 
-      {/* 🏙️ MAIN CONTENT AREA */}
-      <main className="flex-1 overflow-y-auto max-h-screen relative flex flex-col">
-        
-        {/* Top Header Bar */}
-        <header className="sticky top-0 lg:top-0 bg-white/70 backdrop-blur-md z-40 border-b border-slate-200 px-6 sm:px-10 py-6 flex flex-col md:flex-row justify-between items-center gap-4">
-           <h2 className="text-sm lg:text-xl font-black uppercase tracking-tight text-slate-800">
-             Dashboard / <span className="text-blue-600">{activeTab}</span>
-           </h2>
-           <div className="flex items-center gap-3 w-full md:w-auto">
-              <div className="relative flex-1 md:w-80">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                <input type="text" placeholder="Search restaurant..." value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)} className="w-full bg-white border border-slate-200 py-3 pl-11 pr-4 rounded-2xl outline-none text-xs font-bold shadow-sm transition-all"/>
-              </div>
-              <div className="bg-white border border-slate-200 p-3 rounded-2xl shadow-sm shrink-0">
-                <Filter className="w-4 h-4 text-slate-400" />
-              </div>
+      <main className="flex-1 overflow-y-auto h-screen relative bg-[#F8FAFC] scroll-smooth">
+        <header className="sticky top-0 bg-white/80 backdrop-blur-xl z-40 border-b p-4 sm:p-6 lg:p-8 flex flex-col gap-4">
+           <div className="flex justify-between items-center gap-4">
+             <div className="min-w-0">
+               <h2 className="text-lg sm:text-2xl font-black italic uppercase text-slate-900 tracking-tighter flex items-center gap-2 truncate">
+                 {activeTab === 'analytics' ? 'Matrix' : 'Partners'}
+               </h2>
+               <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5 truncate">Date: <span className="text-blue-600">{todayFormatted}</span></p>
+             </div>
+             
+             <div className="relative group">
+                <input 
+                  type="date" 
+                  value={filterDate} 
+                  onChange={(e) => setFilterDate(e.target.value)} 
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                />
+                <div className="bg-slate-900 text-white p-2.5 sm:px-4 sm:py-2 rounded-xl text-[9px] font-black shadow-lg flex items-center gap-2 transition-all group-hover:bg-blue-600">
+                   <Calendar className="w-4 h-4 text-blue-400" />
+                   <span className="hidden sm:inline uppercase">Change Date</span>
+                </div>
+             </div>
+           </div>
+           <div className="relative w-full">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+              <input type="text" placeholder="Search by name or college..." value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)} className="w-full bg-slate-100/50 border border-slate-200 p-3 pl-12 rounded-2xl text-[11px] font-bold outline-none focus:bg-white transition-all shadow-inner" />
            </div>
         </header>
 
-        <div className="p-4 sm:p-10 max-w-7xl mx-auto w-full flex-1">
-          
-          {/* Dashboard Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6 mb-10">
-             <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex items-center gap-4">
-                <div className="bg-blue-50 p-3 rounded-2xl text-blue-600"><Users className="w-6 h-6" /></div>
-                <div>
-                  <h4 className="text-[9px] font-black uppercase tracking-widest text-slate-400">Database</h4>
-                  <p className="text-2xl font-black text-slate-900">{owners.length}</p>
-                </div>
-             </div>
-             <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex items-center gap-4">
-                <div className="bg-purple-50 p-3 rounded-2xl text-purple-600"><GraduationCap className="w-6 h-6" /></div>
-                <div>
-                  <h4 className="text-[9px] font-black uppercase tracking-widest text-slate-400">Colleges</h4>
-                  <p className="text-2xl font-black text-slate-900">{Object.keys(collegeStats).length}</p>
-                </div>
-             </div>
-             <div className="bg-white p-6 rounded-[2rem] border border-slate-200 shadow-sm flex items-center gap-4 sm:col-span-2 lg:col-span-1">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                <div>
-                  <h4 className="text-[9px] font-black uppercase tracking-widest text-slate-400">System Status</h4>
-                  <p className="text-sm font-black text-slate-900 uppercase">Operational</p>
-                </div>
-             </div>
-          </div>
+        <div className="p-4 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
+          {activeTab === "analytics" && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-[1.5rem] sm:rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden mb-20">
+                <div className="overflow-x-auto scrollbar-hide">
+                  <table className="w-full text-left border-collapse min-w-[600px]">
+                    <thead>
+                      <tr className="bg-slate-50/80 text-[9px] sm:text-[10px] font-black uppercase text-slate-400 tracking-widest border-b">
+                        <th className="p-4 sm:p-8">Restaurant</th>
+                        <th className="p-4 sm:p-8 text-center">Hits (Visits Today)</th>
+                        <th className="p-4 sm:p-8 text-center">Engagement</th>
+                        <th className="p-4 sm:p-8 text-right">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {filteredList.map((res) => {
+                        // ✅ రాజు, ఇక్కడ మ్యాప్ నుండి డేటా తీసుకునే ట్రిక్ ఇది
+                        const analyticsObj = res.analytics instanceof Map ? Object.fromEntries(res.analytics) : res.analytics;
+                        const dayHits = analyticsObj?.[todayFormatted]?.kitchen_entry || 0;
 
-          {/* College Filter Chips */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-6 scrollbar-hide">
-             {colleges.map(clg => (
-               <button key={clg} onClick={() => setSelectedCollege(clg)} className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all whitespace-nowrap border ${selectedCollege === clg ? 'bg-slate-900 border-slate-900 text-white shadow-lg' : 'bg-white border-slate-200 text-slate-500 hover:border-blue-400'}`}>
-                 {clg} <span className={`ml-1 opacity-50`}>{clg === 'All' ? owners.length : collegeStats[clg]}</span>
-               </button>
-             ))}
-          </div>
+                        return (
+                          <tr key={res._id} className="hover:bg-blue-50/30 transition-all group">
+                            <td className="p-4 sm:p-6">
+                              <div className="flex items-center gap-3">
+                                <img src={res.hotelImage || "https://via.placeholder.com/60"} className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl object-cover border shadow-sm" />
+                                <div className="min-w-0"><span className="font-black text-[11px] sm:text-sm uppercase italic text-slate-800 leading-tight block truncate">{res.name}</span><span className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase truncate block mt-0.5">{res.collegeName}</span></div>
+                              </div>
+                            </td>
+                            <td className="p-4 sm:p-6 text-center">
+                              <div className="inline-flex flex-col items-center justify-center p-2 bg-slate-50 rounded-xl min-w-[60px] sm:min-w-[80px]">
+                                <span className="text-lg sm:text-xl font-black text-blue-600">
+                                  {dayHits}
+                                </span>
+                                <span className="text-[7px] font-black text-slate-400 uppercase">Hits</span>
+                              </div>
+                            </td>
+                            <td className="p-4 sm:p-6 text-center">
+                               <div className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto ${dayHits > 0 ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-300'}`}><TrendingUp className="w-4 h-4"/></div>
+                            </td>
+                            <td className="p-4 sm:p-6 text-right">
+                               <div className={`inline-block px-3 py-1 rounded-full text-[8px] font-black uppercase ${dayHits > 0 ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-slate-50 text-slate-400'}`}>{dayHits > 0 ? 'Active Today' : 'No Hits'}</div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </motion.div>
+          )}
 
-          {/* Data Records */}
-          <div className="space-y-3">
-            <AnimatePresence mode="popLayout">
-              {filteredList.length > 0 ? (
-                filteredList.map((owner) => (
-                  <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} key={owner._id} className="bg-white p-4 rounded-3xl border border-slate-200 hover:border-blue-300 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm group">
-                    <div className="flex items-center gap-4 min-w-0">
-                      <div className="relative shrink-0">
-                        <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center border-2 transition-all duration-500 ${owner.isApproved ? 'border-green-100 bg-green-50' : 'border-slate-100 bg-slate-50'}`}>
-                           {owner.hotelImage ? (
-                             <img src={owner.hotelImage} className="w-full h-full object-cover rounded-2xl" alt="logo" />
-                           ) : (
-                             <Building2 className={`w-6 h-6 sm:w-8 sm:h-8 ${owner.isApproved ? 'text-green-500' : 'text-slate-300'}`} />
-                           )}
-                        </div>
-                        <div className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-4 border-white ${owner.isStoreOpen ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                      </div>
-                      
-                      <div className="min-w-0 flex-1">
-                         <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-bold text-sm sm:text-base text-slate-900 group-hover:text-blue-600 transition-colors uppercase tracking-tight truncate">{owner.name || "N/A"}</h3>
-                            <a href={`/restaurant/${owner._id}`} target="_blank" rel="noreferrer" className="text-slate-300 hover:text-blue-500 transition-all"><ExternalLink className="w-3.5 h-3.5" /></a>
-                         </div>
-                         <div className="flex items-center gap-3 text-[9px] font-bold uppercase tracking-widest text-slate-400">
-                            <span className="flex items-center gap-1"><Compass className="w-3 h-3 text-blue-500"/> {owner.collegeName}</span>
-                            <span className="hidden xs:flex items-center gap-1"><Phone className="w-3 h-3 text-slate-300"/> {owner.phone}</span>
-                         </div>
-                      </div>
+          {(activeTab === "pending" || activeTab === "approved") && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 pb-24">
+              <AnimatePresence mode="popLayout">
+                {filteredList.map((owner) => (
+                  <motion.div layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} key={owner._id} className="bg-white p-5 sm:p-8 rounded-[1.5rem] sm:rounded-[2.5rem] border border-slate-100 shadow-sm relative group">
+                    <div className="flex items-start gap-4 sm:gap-6">
+                      <div className="relative shrink-0"><img src={owner.hotelImage || "https://via.placeholder.com/100"} className="w-16 h-16 sm:w-24 sm:h-24 rounded-2xl sm:rounded-[2rem] object-cover border shadow-md" /><div className={`absolute -bottom-1 -right-1 p-1.5 rounded-lg shadow-lg border border-white ${owner.isStoreOpen ? 'bg-green-500' : 'bg-red-500'}`}><Store className="w-3 h-3 text-white"/></div></div>
+                      <div className="flex-1 min-w-0"><h3 className="text-sm sm:text-xl font-black text-slate-900 uppercase italic truncate">{owner.name}</h3><p className="text-[9px] sm:text-[11px] font-bold text-slate-400 uppercase truncate mt-1">{owner.collegeName}</p><div className="mt-3 flex items-center gap-2"><Star className="w-3 h-3 text-blue-600 fill-blue-600" /><span className="text-[10px] font-black text-slate-700">{owner.averageRating?.toFixed(1) || "5.0"}</span></div></div>
                     </div>
-
-                    <div className="flex items-center gap-2 shrink-0 border-t sm:border-t-0 pt-3 sm:pt-0">
-                      {activeTab === "pending" ? (
-                        <button onClick={() => updateApprovalStatus(owner._id, true)} className="flex-1 sm:flex-none bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold uppercase text-[9px] tracking-widest hover:bg-blue-700 shadow-md active:scale-95 transition-all">Verify Partner</button>
-                      ) : (
-                        <button onClick={() => updateApprovalStatus(owner._id, false)} className="flex-1 sm:flex-none bg-slate-50 text-slate-400 border border-slate-200 px-6 py-2.5 rounded-xl font-bold uppercase text-[9px] tracking-widest hover:text-red-500 hover:border-red-200 active:scale-95 transition-all">Revoke Access</button>
-                      )}
+                    <div className="mt-6 space-y-2 border-t pt-4">
+                       <div className="flex items-center justify-between text-[10px] sm:text-[11px]"><span className="text-slate-400 font-bold uppercase">Approval</span><span className={`font-black uppercase italic ${owner.isApproved ? 'text-green-500' : 'text-amber-500'}`}>{owner.isApproved ? 'Verified ✅' : 'Pending ⏳'}</span></div>
+                       <button onClick={() => updateApprovalStatus(owner._id, !owner.isApproved)} className={`w-full py-3.5 rounded-xl sm:rounded-2xl font-black text-[10px] uppercase italic transition-all shadow-lg active:scale-95 ${owner.isApproved ? 'bg-red-50 text-red-500' : 'bg-blue-600 text-white'}`}>{owner.isApproved ? 'Deactivate Account' : 'Verify & Approve'}</button>
                     </div>
                   </motion.div>
-                ))
-              ) : (
-                <div className="text-center py-20 bg-white rounded-[2.5rem] border border-dashed border-slate-200">
-                   <Store className="w-10 h-10 text-slate-200 mx-auto mb-4" />
-                   <p className="text-slate-400 font-bold uppercase tracking-widest text-[9px]">Empty Registry</p>
-                </div>
-              )}
-            </AnimatePresence>
-          </div>
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
         </div>
-
-        {/* 🚀 IN-BUILT FOOTER */}
-        <footer className="bg-white border-t border-slate-200 py-8 px-6 sm:px-10 mt-auto w-full">
-           <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-              <div className="flex items-center gap-2 opacity-50">
-                 <ShieldCheck className="w-4 h-4 text-slate-900" />
-                 <span className="text-[9px] font-black uppercase tracking-[0.2em]">Sudara Protocol v4.2.1</span>
-              </div>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">
-                 © 2026 Sudara Hub • Central Intelligence Panel
-              </p>
-              <div className="flex gap-4">
-                 <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                 <span className="text-[8px] font-black uppercase text-slate-300">Server: Active</span>
-              </div>
-           </div>
-        </footer>
       </main>
-
-      <style>{`
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        @media (max-width: 450px) {
-          .xs\\:flex { display: flex !important; }
-        }
-      `}</style>
+      <style>{`.scrollbar-hide::-webkit-scrollbar { display: none; }.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }`}</style>
     </div>
   );
 }
