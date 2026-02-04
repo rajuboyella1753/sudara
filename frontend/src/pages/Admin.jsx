@@ -35,7 +35,7 @@ export default function AdminDashboard() {
     } catch (err) { alert("Status Update Failed ❌"); }
   };
 
-  // ✅ రాజు, ఈ డేట్ ఫార్మాట్ నీ DB లో ఉన్న "4/2/2026" కి పక్కాగా మ్యాచ్ అవుతుంది
+  // ✅ Date formatting logic for DB Match (e.g., 4/2/2026)
   const todayFormatted = new Date(filterDate).toLocaleDateString('en-GB').split('/').map(n => parseInt(n)).join('/');
 
   const filteredList = owners.filter(o => {
@@ -67,6 +67,7 @@ export default function AdminDashboard() {
          </button>
       </div>
 
+      {/* 🚀 RESPONSIVE SIDEBAR */}
       <AnimatePresence>
         {isSidebarOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] lg:hidden" />
@@ -137,7 +138,6 @@ export default function AdminDashboard() {
                     </thead>
                     <tbody className="divide-y divide-slate-50">
                       {filteredList.map((res) => {
-                        // ✅ రాజు, ఇక్కడ మ్యాప్ నుండి డేటా తీసుకునే ట్రిక్ ఇది
                         const analyticsObj = res.analytics instanceof Map ? Object.fromEntries(res.analytics) : res.analytics;
                         const dayHits = analyticsObj?.[todayFormatted]?.kitchen_entry || 0;
 
@@ -161,7 +161,7 @@ export default function AdminDashboard() {
                                <div className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto ${dayHits > 0 ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-300'}`}><TrendingUp className="w-4 h-4"/></div>
                             </td>
                             <td className="p-4 sm:p-6 text-right">
-                               <div className={`inline-block px-3 py-1 rounded-full text-[8px] font-black uppercase ${dayHits > 0 ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-slate-50 text-slate-400'}`}>{dayHits > 0 ? 'Active Today' : 'No Hits'}</div>
+                               <div className={`inline-block px-3 py-1 rounded-full text-[8px] font-black uppercase ${dayHits > 0 ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-slate-50 text-slate-400'}`}>{dayHits > 0 ? 'Active' : 'No Hits'}</div>
                             </td>
                           </tr>
                         );
@@ -179,7 +179,23 @@ export default function AdminDashboard() {
                   <motion.div layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} key={owner._id} className="bg-white p-5 sm:p-8 rounded-[1.5rem] sm:rounded-[2.5rem] border border-slate-100 shadow-sm relative group">
                     <div className="flex items-start gap-4 sm:gap-6">
                       <div className="relative shrink-0"><img src={owner.hotelImage || "https://via.placeholder.com/100"} className="w-16 h-16 sm:w-24 sm:h-24 rounded-2xl sm:rounded-[2rem] object-cover border shadow-md" /><div className={`absolute -bottom-1 -right-1 p-1.5 rounded-lg shadow-lg border border-white ${owner.isStoreOpen ? 'bg-green-500' : 'bg-red-500'}`}><Store className="w-3 h-3 text-white"/></div></div>
-                      <div className="flex-1 min-w-0"><h3 className="text-sm sm:text-xl font-black text-slate-900 uppercase italic truncate">{owner.name}</h3><p className="text-[9px] sm:text-[11px] font-bold text-slate-400 uppercase truncate mt-1">{owner.collegeName}</p><div className="mt-3 flex items-center gap-2"><Star className="w-3 h-3 text-blue-600 fill-blue-600" /><span className="text-[10px] font-black text-slate-700">{owner.averageRating?.toFixed(1) || "5.0"}</span></div></div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm sm:text-xl font-black text-slate-900 uppercase italic truncate">{owner.name}</h3>
+                        <p className="text-[9px] sm:text-[11px] font-bold text-slate-400 uppercase truncate mt-1">{owner.collegeName}</p>
+                        
+                        {/* ⭐ రేటింగ్ సెక్షన్ */}
+                        <div className="mt-2 flex items-center gap-2">
+                          <Star className="w-3 h-3 text-blue-600 fill-blue-600" />
+                          <span className="text-[10px] font-black text-slate-700">{owner.averageRating?.toFixed(1) || "5.0"}</span>
+                        </div>
+
+                        {/* ✅ రాజు, ఇక్కడ కొత్తగా UPI ID డిస్‌ప్లే ఫీచర్ యాడ్ చేశాను */}
+                        <div className="mt-2 flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-lg border border-slate-100 w-fit">
+                          <CreditCard className="w-3 h-3 text-blue-500" />
+                          <span className="text-[9px] font-black text-slate-600 tracking-tight">{owner.upiID || "UPI NOT SET"}</span>
+                        </div>
+
+                      </div>
                     </div>
                     <div className="mt-6 space-y-2 border-t pt-4">
                        <div className="flex items-center justify-between text-[10px] sm:text-[11px]"><span className="text-slate-400 font-bold uppercase">Approval</span><span className={`font-black uppercase italic ${owner.isApproved ? 'text-green-500' : 'text-amber-500'}`}>{owner.isApproved ? 'Verified ✅' : 'Pending ⏳'}</span></div>

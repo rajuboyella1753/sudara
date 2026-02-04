@@ -6,7 +6,7 @@ import Footer from "../components/Footer";
 
 const Contact = () => {
   const contactInfo = {
-    email: "codewithraju1753@gmail.com",
+    email: "sudaraofficial703@gmail.com",
     whatsapp: "917569896128"
   };
 

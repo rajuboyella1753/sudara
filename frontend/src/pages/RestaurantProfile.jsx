@@ -22,7 +22,7 @@ export default function RestaurantProfile() {
   const [newComment, setNewComment] = useState(""); 
   const [isSubmitting, setIsSubmitting] = useState(false); 
 
-  // ✅ ఆర్డర్ ఫామ్ స్టేట్స్
+  // ఆర్డర్ ఫామ్ స్టేట్స్
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [orderData, setOrderData] = useState({ name: "", phone: "", txId: "", arrivalTime: "" });
 
@@ -251,7 +251,21 @@ export default function RestaurantProfile() {
                </div>
                <div className="border-t border-blue-100 pt-2 flex justify-between text-base font-black italic"><span>Pay (50%):</span><span className="text-blue-600">₹{halfAmount}</span></div>
              </div>
-             <button onClick={() => totalAmount > 0 ? setShowOrderForm(true) : alert("Select items!")} className={`w-full py-3 rounded-lg font-black uppercase text-[10px] tracking-widest ${owner.isStoreOpen && totalAmount > 0 ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-100 text-slate-300'}`}>Pre-Order Now</button>
+             
+             {/* 🚀 BUTTONS CONTAINER */}
+             <div className="flex flex-col gap-3">
+               <button onClick={() => totalAmount > 0 ? setShowOrderForm(true) : alert("Select items!")} className={`w-full py-3 rounded-lg font-black uppercase text-[10px] tracking-widest ${owner.isStoreOpen && totalAmount > 0 ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-100 text-slate-300'}`}>
+                 Pre-Order Now
+               </button>
+
+               {/* ✅ రాజు, ఇక్కడ కొత్తగా "Call to Owner" బటన్ యాడ్ చేశాను */}
+               <a 
+                 href={`tel:${owner.phone}`} 
+                 className="w-full py-3 rounded-lg font-black uppercase text-[10px] tracking-widest bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 hover:bg-blue-700 transition-all active:scale-95"
+               >
+                 <PhoneCall className="w-3.5 h-3.5" /> Call to Owner
+               </a>
+             </div>
            </div>
         </div>
       </main>
@@ -270,7 +284,7 @@ export default function RestaurantProfile() {
                 <input type="text" placeholder="Arrival Time" value={orderData.arrivalTime} onChange={(e)=>setOrderData({...orderData, arrivalTime:e.target.value})} className="w-full bg-slate-50 border p-2.5 rounded-lg text-xs" />
                 <input type="number" placeholder="Txn ID (Last 5)" value={orderData.txId} onChange={(e)=>setOrderData({...orderData, txId:e.target.value})} className="w-full bg-slate-50 border p-2.5 rounded-lg text-xs" />
               </div>
-              <button onClick={handleConfirmOrder} className="w-full py-3.5 bg-green-600 text-white rounded-lg font-black uppercase text-[10px] flex items-center justify-center gap-2"><Send className="w-4 h-4" /> Send to owner</button>
+              <button onClick={handleConfirmOrder} className="w-full py-3.5 bg-green-600 text-white rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2"><Send className="w-4 h-4" /> Send to owner</button>
             </motion.div>
           </motion.div>
         )}

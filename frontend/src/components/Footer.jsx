@@ -7,12 +7,12 @@ export default function Footer() {
   const socialLinks = {
     instagram: "https://www.instagram.com/sudara_1753",
     youtube: "https://www.youtube.com/@BOYELLA-B21", 
-    email: "mailto:codewithraju1753@gmail.com"
+    email: "mailto:sudaraofficial703@gmail.com"
   };
 
   // మెయిల్ సబ్జెక్ట్స్ మరియు బాడీ సెట్ చేయడం కోసం ఫంక్షన్
   const getMailLink = (subject) => {
-    return `mailto:codewithraju1753@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent("Hi Raju, I want to talk about...")}`;
+    return `mailto:sudaraofficial703@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent("Hi Raju, I want to talk about...")}`;
   };
 
   return (
@@ -26,7 +26,7 @@ export default function Footer() {
           {/* Brand Section */}
           <div className="md:col-span-2">
             <Link to="/" className="text-3xl font-black italic tracking-tighter uppercase text-slate-900 group">
-              SUDARA<span className="text-blue-600 group-hover:drop-shadow-[0_0_10px_rgba(37,99,235,0.2)] transition-all">HUB</span>
+              SUDARA<span className="text-blue-600 group-hover:drop-shadow-[0_0_10px_rgba(37,99,235,0.2)] transition-all"> HUB</span>
             </Link>
             <p className="mt-6 text-slate-500 font-medium leading-relaxed max-w-sm">
               Empowering students with seamless access to nearby campus food hubs. 
@@ -91,7 +91,7 @@ export default function Footer() {
               <div>
                 <p className="text-[9px] font-black uppercase text-slate-400 mb-1 tracking-widest">Email Us At</p>
                 <a href={socialLinks.email} className="text-[13px] font-bold text-slate-600 hover:text-blue-600 transition-colors">
-                  codewithraju1753@gmail.com
+                  sudaraofficial703@gmail.com
                 </a>
               </div>
             </div>
