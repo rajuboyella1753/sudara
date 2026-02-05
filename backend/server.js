@@ -7,7 +7,8 @@ import { createRequire } from "module";
 
 const require = createRequire(import.meta.url);
 const serviceAccount = require("./serviceAccountKey.json"); 
-
+import ownerRoutes from "./routes/ownerRoutes.js";
+import itemRoutes from "./routes/itemRoutes.js";
 dotenv.config();
 const app = express();
 
