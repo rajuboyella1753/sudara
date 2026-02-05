@@ -6,7 +6,7 @@ import {
   ShieldCheck, CheckCircle, Building2, Phone, Users, 
   ShieldAlert, LogOut, Search, BarChart3, Store, X, 
   TrendingUp, Calendar, Activity, Star, MapPin, CreditCard,
-  ArrowUpRight, LayoutDashboard, Globe, Menu
+  ArrowUpRight, LayoutDashboard, Globe, Menu, Bell
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -17,6 +17,11 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); 
   const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
+
+  // --- NEW NOTIFICATION STATES ---
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const [broadcastMsg, setBroadcastMsg] = useState({ title: "", body: "" });
+  const [sending, setSending] = useState(false);
 
   useEffect(() => { fetchOwners(); }, []);
 
@@ -35,7 +40,24 @@ export default function AdminDashboard() {
     } catch (err) { alert("Status Update Failed ❌"); }
   };
 
-  // ✅ Date formatting logic for DB Match (e.g., 4/2/2026)
+  // --- BROADCAST FUNCTION ---
+  const sendAdminBroadcast = async () => {
+    if (!broadcastMsg.title || !broadcastMsg.body) return alert("Title and Body are required! 📢");
+    try {
+      setSending(true);
+      const res = await api.post("/owner/broadcast-to-all", broadcastMsg);
+      if (res.data.success) {
+        alert(`🚀 System Alert Sent to ${res.data.sentCount} Users!`);
+        setBroadcastMsg({ title: "", body: "" });
+        setIsBroadcasting(false);
+      }
+    } catch (err) {
+      alert("Broadcast failed! Check server logs.");
+    } finally {
+      setSending(false);
+    }
+  };
+
   const todayFormatted = new Date(filterDate).toLocaleDateString('en-GB').split('/').map(n => parseInt(n)).join('/');
 
   const filteredList = owners.filter(o => {
@@ -54,7 +76,7 @@ export default function AdminDashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col lg:flex-row overflow-hidden relative">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col lg:flex-row overflow-hidden relative font-sans">
       
       {/* 📱 MOBILE NAVIGATION BAR */}
       <div className="lg:hidden bg-[#1E293B] p-4 flex justify-between items-center text-white sticky top-0 z-[60] shadow-xl">
@@ -82,45 +104,79 @@ export default function AdminDashboard() {
           </div>
           <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden p-2 text-slate-400 hover:text-white"><X /></button>
         </div>
+        
         <nav className="flex-1 p-6 space-y-3">
           {[{ id: 'analytics', label: 'Daily Insights', icon: BarChart3 }, { id: 'approved', label: 'Active Partners', icon: Store }, { id: 'pending', label: 'Verification Queue', icon: ShieldAlert }].map(tab => (
-            <button key={tab.id} onClick={() => { setActiveTab(tab.id); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 p-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-blue-600 shadow-xl' : 'hover:bg-slate-800 text-slate-400'}`}>
+            <button key={tab.id} onClick={() => { setActiveTab(tab.id); setIsSidebarOpen(false); }} className={`w-full flex items-center gap-3 p-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-blue-600 shadow-xl shadow-blue-900/40' : 'hover:bg-slate-800 text-slate-400'}`}>
               <tab.icon className="w-4 h-4"/> {tab.label}
             </button>
           ))}
+          
+          {/* 🔔 NEW BROADCAST TAB IN SIDEBAR */}
+          <button onClick={() => setIsBroadcasting(true)} className="w-full flex items-center gap-3 p-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all bg-amber-500/10 text-amber-500 border border-amber-500/20 hover:bg-amber-500 hover:text-white shadow-lg shadow-amber-500/10">
+            <Bell className="w-4 h-4"/> Push System Update
+          </button>
         </nav>
+
         <div className="p-6 border-t border-slate-800/50">
           <button onClick={() => navigate("/owner")} className="w-full flex items-center gap-3 p-4 rounded-2xl text-slate-400 hover:text-red-400 hover:bg-red-400/10 transition-all font-black text-[10px] uppercase tracking-widest"><LogOut className="w-4 h-4" /> Sign Out</button>
         </div>
       </aside>
 
+      {/* 🛡️ NOTIFICATION MODAL (BROADCAST) */}
+      <AnimatePresence>
+        {isBroadcasting && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+            <motion.div initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }} className="bg-white w-full max-w-sm p-10 rounded-[3rem] shadow-2xl relative border border-slate-100">
+                <button onClick={() => setIsBroadcasting(false)} className="absolute top-8 right-8 text-slate-300 hover:text-red-500 transition-colors"><X className="w-6 h-6"/></button>
+                <div className="w-16 h-16 bg-amber-50 rounded-2xl flex items-center justify-center mb-6"><Bell className="w-8 h-8 text-amber-500 animate-pulse" /></div>
+                <h2 className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">Global Push</h2>
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-3 mb-8">Notify all platform users instantly</p>
+                
+                <div className="space-y-4">
+                    <input type="text" placeholder="ALERT TITLE (e.g. Maintenance)" value={broadcastMsg.title} onChange={(e)=>setBroadcastMsg({...broadcastMsg, title:e.target.value})} className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl font-bold text-xs outline-none focus:border-blue-500 focus:bg-white transition-all shadow-sm" />
+                    <textarea placeholder="SYSTEM MESSAGE..." value={broadcastMsg.body} onChange={(e)=>setBroadcastMsg({...broadcastMsg, body:e.target.value})} className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl font-bold text-xs outline-none focus:border-blue-500 focus:bg-white h-32 resize-none transition-all shadow-sm"></textarea>
+                    <button onClick={sendAdminBroadcast} disabled={sending} className="w-full bg-slate-900 py-5 rounded-2xl font-black uppercase italic tracking-widest text-xs text-white shadow-xl hover:bg-blue-600 transition-all active:scale-95 disabled:bg-slate-300">
+                        {sending ? 'Transmitting...' : 'Execute Broadcast 🚀'}
+                    </button>
+                </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <main className="flex-1 overflow-y-auto h-screen relative bg-[#F8FAFC] scroll-smooth">
         <header className="sticky top-0 bg-white/80 backdrop-blur-xl z-40 border-b p-4 sm:p-6 lg:p-8 flex flex-col gap-4">
-           <div className="flex justify-between items-center gap-4">
-             <div className="min-w-0">
-               <h2 className="text-lg sm:text-2xl font-black italic uppercase text-slate-900 tracking-tighter flex items-center gap-2 truncate">
-                 {activeTab === 'analytics' ? 'Matrix' : 'Partners'}
-               </h2>
-               <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5 truncate">Date: <span className="text-blue-600">{todayFormatted}</span></p>
-             </div>
-             
-             <div className="relative group">
-                <input 
-                  type="date" 
-                  value={filterDate} 
-                  onChange={(e) => setFilterDate(e.target.value)} 
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
-                />
-                <div className="bg-slate-900 text-white p-2.5 sm:px-4 sm:py-2 rounded-xl text-[9px] font-black shadow-lg flex items-center gap-2 transition-all group-hover:bg-blue-600">
-                   <Calendar className="w-4 h-4 text-blue-400" />
-                   <span className="hidden sm:inline uppercase">Change Date</span>
+            <div className="flex justify-between items-center gap-4">
+              <div className="min-w-0">
+                <h2 className="text-lg sm:text-2xl font-black italic uppercase text-slate-900 tracking-tighter flex items-center gap-2 truncate">
+                  {activeTab === 'analytics' ? 'Matrix' : 'Partners'}
+                </h2>
+                <p className="text-[8px] sm:text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5 truncate">Date: <span className="text-blue-600">{todayFormatted}</span></p>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {/* 🔔 MOBILE BROADCAST BUTTON */}
+                <button onClick={() => setIsBroadcasting(true)} className="lg:hidden p-2.5 bg-amber-500 text-white rounded-xl shadow-lg shadow-amber-500/20 active:scale-90"><Bell className="w-4 h-4"/></button>
+                
+                <div className="relative group">
+                    <input 
+                      type="date" 
+                      value={filterDate} 
+                      onChange={(e) => setFilterDate(e.target.value)} 
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
+                    />
+                    <div className="bg-slate-900 text-white p-2.5 sm:px-4 sm:py-2 rounded-xl text-[9px] font-black shadow-lg flex items-center gap-2 transition-all group-hover:bg-blue-600">
+                       <Calendar className="w-4 h-4 text-blue-400" />
+                       <span className="hidden sm:inline uppercase">Change Date</span>
+                    </div>
                 </div>
-             </div>
-           </div>
-           <div className="relative w-full">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
-              <input type="text" placeholder="Search by name or college..." value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)} className="w-full bg-slate-100/50 border border-slate-200 p-3 pl-12 rounded-2xl text-[11px] font-bold outline-none focus:bg-white transition-all shadow-inner" />
-           </div>
+              </div>
+            </div>
+            <div className="relative w-full">
+               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
+               <input type="text" placeholder="Search by name or college..." value={searchTerm} onChange={(e)=>setSearchTerm(e.target.value)} className="w-full bg-slate-100/50 border border-slate-200 p-3 pl-12 rounded-2xl text-[11px] font-bold outline-none focus:bg-white transition-all shadow-inner" />
+            </div>
         </header>
 
         <div className="p-4 sm:p-8 lg:p-10 max-w-7xl mx-auto w-full">
@@ -145,22 +201,20 @@ export default function AdminDashboard() {
                           <tr key={res._id} className="hover:bg-blue-50/30 transition-all group">
                             <td className="p-4 sm:p-6">
                               <div className="flex items-center gap-3">
-                                <img src={res.hotelImage || "https://via.placeholder.com/60"} className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl object-cover border shadow-sm" />
+                                <img src={res.hotelImage || "https://via.placeholder.com/60"} className="w-10 h-10 sm:w-14 sm:h-14 rounded-xl object-cover border shadow-sm" alt="Hotel" />
                                 <div className="min-w-0"><span className="font-black text-[11px] sm:text-sm uppercase italic text-slate-800 leading-tight block truncate">{res.name}</span><span className="text-[8px] sm:text-[9px] font-bold text-slate-400 uppercase truncate block mt-0.5">{res.collegeName}</span></div>
                               </div>
                             </td>
                             <td className="p-4 sm:p-6 text-center">
                               <div className="inline-flex flex-col items-center justify-center p-2 bg-slate-50 rounded-xl min-w-[60px] sm:min-w-[80px]">
-                                <span className="text-lg sm:text-xl font-black text-blue-600">
-                                  {dayHits}
-                                </span>
+                                <span className="text-lg sm:text-xl font-black text-blue-600">{dayHits}</span>
                                 <span className="text-[7px] font-black text-slate-400 uppercase">Hits</span>
                               </div>
                             </td>
                             <td className="p-4 sm:p-6 text-center">
                                <div className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto ${dayHits > 0 ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-300'}`}><TrendingUp className="w-4 h-4"/></div>
                             </td>
-                            <td className="p-4 sm:p-6 text-right">
+                            <td className="p-4 sm:p-8 text-right">
                                <div className={`inline-block px-3 py-1 rounded-full text-[8px] font-black uppercase ${dayHits > 0 ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-slate-50 text-slate-400'}`}>{dayHits > 0 ? 'Active' : 'No Hits'}</div>
                             </td>
                           </tr>
@@ -178,18 +232,16 @@ export default function AdminDashboard() {
                 {filteredList.map((owner) => (
                   <motion.div layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} key={owner._id} className="bg-white p-5 sm:p-8 rounded-[1.5rem] sm:rounded-[2.5rem] border border-slate-100 shadow-sm relative group">
                     <div className="flex items-start gap-4 sm:gap-6">
-                      <div className="relative shrink-0"><img src={owner.hotelImage || "https://via.placeholder.com/100"} className="w-16 h-16 sm:w-24 sm:h-24 rounded-2xl sm:rounded-[2rem] object-cover border shadow-md" /><div className={`absolute -bottom-1 -right-1 p-1.5 rounded-lg shadow-lg border border-white ${owner.isStoreOpen ? 'bg-green-500' : 'bg-red-500'}`}><Store className="w-3 h-3 text-white"/></div></div>
+                      <div className="relative shrink-0"><img src={owner.hotelImage || "https://via.placeholder.com/100"} className="w-16 h-16 sm:w-24 sm:h-24 rounded-2xl sm:rounded-[2rem] object-cover border shadow-md" alt="Hotel"/><div className={`absolute -bottom-1 -right-1 p-1.5 rounded-lg shadow-lg border border-white ${owner.isStoreOpen ? 'bg-green-500' : 'bg-red-500'}`}><Store className="w-3 h-3 text-white"/></div></div>
                       <div className="flex-1 min-w-0">
                         <h3 className="text-sm sm:text-xl font-black text-slate-900 uppercase italic truncate">{owner.name}</h3>
                         <p className="text-[9px] sm:text-[11px] font-bold text-slate-400 uppercase truncate mt-1">{owner.collegeName}</p>
                         
-                        {/* ⭐ రేటింగ్ సెక్షన్ */}
                         <div className="mt-2 flex items-center gap-2">
                           <Star className="w-3 h-3 text-blue-600 fill-blue-600" />
                           <span className="text-[10px] font-black text-slate-700">{owner.averageRating?.toFixed(1) || "5.0"}</span>
                         </div>
 
-                        {/* ✅ రాజు, ఇక్కడ కొత్తగా UPI ID డిస్‌ప్లే ఫీచర్ యాడ్ చేశాను */}
                         <div className="mt-2 flex items-center gap-1.5 bg-slate-50 p-1.5 rounded-lg border border-slate-100 w-fit">
                           <CreditCard className="w-3 h-3 text-blue-500" />
                           <span className="text-[9px] font-black text-slate-600 tracking-tight">{owner.upiID || "UPI NOT SET"}</span>
@@ -198,8 +250,8 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                     <div className="mt-6 space-y-2 border-t pt-4">
-                       <div className="flex items-center justify-between text-[10px] sm:text-[11px]"><span className="text-slate-400 font-bold uppercase">Approval</span><span className={`font-black uppercase italic ${owner.isApproved ? 'text-green-500' : 'text-amber-500'}`}>{owner.isApproved ? 'Verified ✅' : 'Pending ⏳'}</span></div>
-                       <button onClick={() => updateApprovalStatus(owner._id, !owner.isApproved)} className={`w-full py-3.5 rounded-xl sm:rounded-2xl font-black text-[10px] uppercase italic transition-all shadow-lg active:scale-95 ${owner.isApproved ? 'bg-red-50 text-red-500' : 'bg-blue-600 text-white'}`}>{owner.isApproved ? 'Deactivate Account' : 'Verify & Approve'}</button>
+                        <div className="flex items-center justify-between text-[10px] sm:text-[11px]"><span className="text-slate-400 font-bold uppercase">Approval</span><span className={`font-black uppercase italic ${owner.isApproved ? 'text-green-500' : 'text-amber-500'}`}>{owner.isApproved ? 'Verified ✅' : 'Pending ⏳'}</span></div>
+                        <button onClick={() => updateApprovalStatus(owner._id, !owner.isApproved)} className={`w-full py-3.5 rounded-xl sm:rounded-2xl font-black text-[10px] uppercase italic transition-all shadow-lg active:scale-95 ${owner.isApproved ? 'bg-red-50 text-red-500' : 'bg-blue-600 text-white'}`}>{owner.isApproved ? 'Deactivate Account' : 'Verify & Approve'}</button>
                     </div>
                   </motion.div>
                 ))}

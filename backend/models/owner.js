@@ -51,6 +51,7 @@ const ownerSchema = new mongoose.Schema(
       },
       default: {},
     },
+    fcmTokens: { type: [String], default: [] },
   },
   { timestamps: true }
 );

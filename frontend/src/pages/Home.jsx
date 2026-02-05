@@ -4,6 +4,7 @@ import Footer from "../components/Footer";
 import api from "../api/api-base"; 
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { requestForToken } from "../firebase";
 import { 
   Search, 
   MapPin, 
@@ -30,8 +31,23 @@ export default function Home() {
   const [hoverStar, setHoverStar] = useState(0);
 
   const navigate = useNavigate();
-
   useEffect(() => {
+    // 1. నోటిఫికేషన్ సెటప్ ఫంక్షన్
+    const setupNotifications = async () => {
+  try {
+    const token = await requestForToken();
+    if (token) {
+      console.log("FCM Token Obtained! ✅");
+      // ఇక్కడ మార్పు: ఓనర్ ఐడి లేదా పేరు పంపక్కర్లేదు, 
+      // కానీ మన బ్యాకెండ్ రూట్ కి టోకెన్ వెళ్తుందో లేదో కన్సోల్ లో చూడు.
+      await api.post("/owner/save-fcm-token-general", { token });
+    }
+  } catch (err) {
+    console.error("Notification setup failed ❌", err);
+  }
+};
+
+    // 2. లొకేషన్ సెటప్ ఫంక్షన్ 
     const getLocation = () => {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -56,6 +72,8 @@ export default function Home() {
       }
     };
 
+
+    setupNotifications();
     getLocation();
     fetchOwners();
   }, []);

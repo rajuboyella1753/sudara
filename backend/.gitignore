@@ -9,6 +9,9 @@ jspm_packages/
 .env.test.local
 .env.production.local
 
+# Firebase Admin SDK Private Key
+serviceAccountKey.json
+
 # Logs
 logs
 *.log

@@ -1,8 +1,6 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  
-
   "description": "",
   "main": "server.js",
   "scripts": {
@@ -17,6 +15,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "firebase-admin": "^13.6.1",
     "mongoose": "^9.0.2"
   }
 }
