@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+// ✅ నీ లోగో ఇమేజ్‌ని ఇక్కడ ఇంపోర్ట్ చెయ్
+// import logoImg from "../../public/SUDAR.png"; 
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
@@ -12,9 +14,20 @@ export default function Navbar() {
     <nav className="bg-white border-b border-slate-100 sticky top-0 z-[100] shadow-sm">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
 
-        {/* ☄️ Logo - Sudara (Solid Black/Blue for Light Theme) */}
+        {/* ☄️ Logo - Image implementation */}
         <Link to="/" className="flex items-center group">
-          <h1 className="text-2xl font-black italic tracking-tighter text-slate-900 uppercase group-hover:scale-105 transition-transform">
+          {/* ✅ టెక్స్ట్ తీసేసి ఇమేజ్ పెట్టాను, డిజైన్ పాడవకుండా h-8 (height) సెట్ చేశాను */}
+          <img 
+            src="/SUDAR.png"  // ఇక్కడ నీ లోగో పాత్ ఇవ్వు (Public folder లో ఉంటే /logo.png)
+            alt="Sudara Logo"
+            className="h-8 md:h-10 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
+            // ఒకవేళ ఇమేజ్ లోడ్ అవ్వకపోతే పాత టెక్స్ట్ కనిపిస్తుంది (Fallback)
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.nextSibling.style.display = 'block';
+            }}
+          />
+          <h1 className="hidden text-2xl font-black italic tracking-tighter text-slate-900 uppercase">
             Sudara<span className="text-blue-600">.</span>
           </h1>
         </Link>
@@ -52,7 +65,7 @@ export default function Navbar() {
         </button>
       </div>
 
-      {/* 📱 Mobile Menu Overlay (Solid Background Fix) */}
+      {/* 📱 Mobile Menu Overlay */}
       {open && (
         <div className="md:hidden bg-white border-b border-slate-100 px-6 py-8 space-y-6 absolute w-full left-0 shadow-2xl animate-in slide-in-from-top duration-300">
           <Link onClick={() => setOpen(false)} to="/" className="block text-sm font-black uppercase tracking-[0.2em] text-slate-800 hover:text-blue-600">
