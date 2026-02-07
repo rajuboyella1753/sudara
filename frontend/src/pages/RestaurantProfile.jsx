@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import api from "../api/api-base"; 
 import Navbar from "../components/Navbar";
@@ -10,27 +10,21 @@ export default function RestaurantProfile() {
   const { id } = useParams();
   const [owner, setOwner] = useState(null);
   const [items, setItems] = useState([]);
-  const [filter, setFilter] = useState("All"); // Veg/Non-Veg Filter
-  
-  // ✅ కొత్త కేటగిరీ ఫిల్టర్ స్టేట్ యాడ్ చేశాను
+  const [filter, setFilter] = useState("All");
   const [activeSubCat, setActiveSubCat] = useState("All"); 
-  
   const [itemSearch, setItemSearch] = useState(""); 
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
   const [selectedImg, setSelectedImg] = useState(null); 
   const [showQRModal, setShowQRModal] = useState(false); 
-
   const [cart, setCart] = useState({}); 
   const [showReviews, setShowReviews] = useState(false); 
   const [newComment, setNewComment] = useState(""); 
   const [isSubmitting, setIsSubmitting] = useState(false); 
-
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [orderData, setOrderData] = useState({ name: "", phone: "", txId: "", arrivalTime: "" });
 
-  // ✅ బ్యాకెండ్ కేటగిరీల లిస్ట్
-  const subCategories = ["Biryanis", "Starters","Soups", "Noodles", "Gravys", "Rice", "Breads", "Sea Food", ];
+  const subCategories = ["Biryanis", "Starters","Soups", "Noodles", "Gravys", "Rice", "Breads", "Sea Food"];
 
   const trackFoodInterest = async (itemName) => {
     try {
@@ -43,17 +37,20 @@ export default function RestaurantProfile() {
     } catch (err) { console.log("Interest tracking failed"); }
   };
 
+  // ✅ Speed Fix: Parallel Fetching to reduce load time
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const oRes = await api.get(`/owner/${id}`);
+        const [oRes, iRes] = await Promise.all([
+          api.get(`/owner/${id}`),
+          api.get("/items/all")
+        ]);
+        
         setOwner(oRes.data);
-
-        const iRes = await api.get("/items/all");
         const filteredItems = iRes.data.filter(i => (i.ownerId?._id || i.ownerId)?.toString() === id?.toString());
-
         setItems(filteredItems);
+
         const favorites = JSON.parse(localStorage.getItem("favRestaurants") || "[]");
         setIsFavorite(favorites.includes(id));
       } catch (err) {
@@ -100,7 +97,14 @@ export default function RestaurantProfile() {
 
   const totalAmount = Object.values(cart).reduce((acc, curr) => acc + (curr.price * curr.qty), 0);
   const halfAmount = (totalAmount / 2).toFixed(2);
-
+// ✅ ఈ ఫంక్షన్‌ని ఇక్కడ యాడ్ చెయ్ రాజు
+const handleGetDirections = () => {
+  if (!owner?.latitude || !owner?.longitude) return alert("Location not set!");
+  // ఇక్కడ 1 తీసేసి saddr=My+Location వాడాను, ఇది నీ కరెంట్ ప్లేస్ నుండి రూట్ చూపిస్తుంది
+  const url = `https://www.google.com/maps/dir/?api=1&origin=My+Location&destination=${owner.latitude},${owner.longitude}&travelmode=walking`;
+  window.open(url, "_blank");
+};
+  
   const toggleFavorite = () => {
     let favorites = JSON.parse(localStorage.getItem("favRestaurants") || "[]");
     if (isFavorite) favorites = favorites.filter(favId => favId !== id);
@@ -110,18 +114,18 @@ export default function RestaurantProfile() {
   };
 
   const handleShareRestaurant = () => {
-    const shareText = `అరేయ్, ఈ హోటల్ చూడు సూపర్ ఉంది! 😍\n\n🏨 *${owner.name}*\n📍 ${owner.collegeName}\n\nమెనూ చూడటానికి ఇక్కడ క్లిక్ చేయి: ${window.location.href}`;
+    const shareText = `అరేయ్, ఈ హోటల్ చూడు సూపర్ ఉంది! 😍\n\n🏨 *${owner?.name}*\n📍 ${owner?.collegeName}\n\nమెనూ చూడటానికి ఇక్కడ క్లిక్ చేయి: ${window.location.href}`;
     if (navigator.share) {
-      navigator.share({ title: owner.name, text: shareText, url: window.location.href });
+      navigator.share({ title: owner?.name, text: shareText, url: window.location.href });
     } else {
       window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, "_blank");
     }
   };
 
   const handleDirectUPI = () => {
-    const upiID = owner.upiID; 
+    const upiID = owner?.upiID; 
     if(!upiID) return alert("Owner UPI ID not found! ❌");
-    const upiUrl = `upi://pay?pa=${upiID}&pn=${encodeURIComponent(owner.name)}&am=${halfAmount}&cu=INR&tn=PreOrder_${encodeURIComponent(owner.name)}`;
+    const upiUrl = `upi://pay?pa=${upiID}&pn=${encodeURIComponent(owner?.name)}&am=${halfAmount}&cu=INR&tn=PreOrder_${encodeURIComponent(owner?.name)}`;
     window.location.href = upiUrl;
   };
 
@@ -129,17 +133,19 @@ export default function RestaurantProfile() {
     if (!orderData.name || !orderData.phone || !orderData.txId) return alert("Please fill details! 📝");
     const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name}`).join(", ");
     const message = `*NEW PRE-ORDER - SUDARA HUB*\n\n*Name:* ${orderData.name}\n*Phone:* ${orderData.phone}\n*Items:* ${itemList}\n*Paid:* ₹${halfAmount}\n*Txn ID (Last 5):* ${orderData.txId}\n*Arrival Time:* ${orderData.arrivalTime}\n\n_Confirm order and start cooking!_`;
-    window.open(`https://wa.me/${owner.phone}?text=${encodeURIComponent(message)}`, "_blank");
+    window.open(`https://wa.me/${owner?.phone}?text=${encodeURIComponent(message)}`, "_blank");
     setShowOrderForm(false);
   };
 
-  // ✅ ఇక్కడ ఫిల్టర్ లాజిక్ అప్‌డేట్ చేశాను రాజు (Veg/Non-Veg + SubCategory)
-  const searchFiltered = items.filter(item => {
-    const matchesFilter = filter === "All" ? true : item.category === filter;
-    const matchesSubCat = activeSubCat === "All" ? true : item.subCategory === activeSubCat;
-    const matchesSearch = item.name.toLowerCase().includes(itemSearch.toLowerCase());
-    return matchesFilter && matchesSubCat && matchesSearch;
-  });
+  // ✅ Performance Fix: Using useMemo for filtering logic
+  const searchFiltered = useMemo(() => {
+    return items.filter(item => {
+      const matchesFilter = filter === "All" ? true : item.category === filter;
+      const matchesSubCat = activeSubCat === "All" ? true : item.subCategory === activeSubCat;
+      const matchesSearch = item.name.toLowerCase().includes(itemSearch.toLowerCase());
+      return matchesFilter && matchesSubCat && matchesSearch;
+    });
+  }, [items, filter, activeSubCat, itemSearch]);
 
   const availableItems = searchFiltered.filter(item => item.isAvailable);
   const soldOutItems = searchFiltered.filter(item => !item.isAvailable);
@@ -152,15 +158,23 @@ export default function RestaurantProfile() {
       
       {/* --- HEADER SECTION --- */}
       <div className="relative h-[300px] md:h-[450px] flex items-center justify-center overflow-hidden bg-slate-100">
-          {owner.hotelImage && <img src={owner.hotelImage} className="absolute inset-0 w-full h-full object-cover opacity-40 blur-[1px]" alt="" />}
+          {owner?.hotelImage && <img src={owner.hotelImage} loading="eager" className="absolute inset-0 w-full h-full object-cover opacity-40 blur-[1px]" alt="" />}
           <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-black/10"></div>
           <div className="relative z-10 text-center px-4">
-              <h1 className="text-3xl md:text-7xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">{owner.name}</h1>
-              <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[8px] md:text-xs mt-3">{owner.collegeName} • Exclusive Menu</p>
+              <h1 className="text-3xl md:text-7xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">{owner?.name}</h1>
+              <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[8px] md:text-xs mt-3">{owner?.collegeName} • Exclusive Menu</p>
           </div>
           <div className="absolute top-4 right-4 flex gap-2 z-20">
               <button onClick={handleShareRestaurant} className="bg-white p-2.5 rounded-full shadow-md text-slate-600 border"><Share2 className="w-4 h-4" /></button>
-              <button onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${owner.latitude},${owner.longitude}`)} className="bg-white p-2.5 rounded-full shadow-md text-blue-600 border"><Navigation className="w-4 h-4" /></button>
+              
+              {/* ✅ Directions Fix: Show route from user to restaurant */}
+              {/* <button 
+  onClick={handleGetDirections} 
+  className="bg-white p-2.5 rounded-full shadow-md text-blue-600 border"
+>
+  <Navigation className="w-4 h-4" />
+</button> */}
+              <button onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${owner.latitude},${owner.longitude}`)} className="bg-white p-2.5 rounded-full shadow-md text-blue-600 border"><Navigation className="w-4 h-4" /></button>
               <button onClick={toggleFavorite} className="bg-white p-2.5 rounded-full shadow-md border"><Heart className={`w-4 h-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-slate-300'}`} /></button>
           </div>
       </div>
@@ -169,47 +183,34 @@ export default function RestaurantProfile() {
         
         {/* --- LEFT CONTENT --- */}
         <div className="order-2 lg:order-1 lg:col-span-8 space-y-8">
-            {owner.interiorImages?.length > 0 && (
+            {owner?.interiorImages?.length > 0 && (
               <div className="space-y-4">
                 <div className="flex items-center gap-2 border-l-4 border-blue-600 pl-3"><h3 className="text-xs font-black uppercase text-slate-800 tracking-widest italic">Restaurant Ambience</h3></div>
                 <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
                   {owner.interiorImages.map((img, idx) => (
-                    <img key={idx} src={img} onClick={() => setSelectedImg(img)} className="w-72 h-48 object-cover rounded-[2rem] border shadow-sm shrink-0 cursor-zoom-in" alt="" />
+                    <img key={idx} src={img} loading="lazy" onClick={() => setSelectedImg(img)} className="w-72 h-48 object-cover rounded-[2rem] border shadow-sm shrink-0 cursor-zoom-in" alt="" />
                   ))}
                 </div>
               </div>
             )}
 
-            {/* ✅ Sticky Search & Filter Section */}
+            {/* Sticky Search & Filter Section */}
             <div className="sticky top-20 z-30 bg-white/95 py-2 border-b space-y-4 backdrop-blur-md">
                 <div className="relative">
                     <input type="text" placeholder="Search dish..." value={itemSearch} onChange={(e) => setItemSearch(e.target.value)} className="w-full bg-slate-50 border py-3 px-10 rounded-full text-xs font-bold outline-none" />
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
                 </div>
                 
-                {/* 1. Veg/Non-Veg Filter */}
                 <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
                   {["All", "Veg", "Non-Veg"].map((cat) => (
                     <button key={cat} onClick={() => setFilter(cat)} className={`px-5 py-1.5 rounded-full text-[9px] font-black uppercase border transition-all shrink-0 ${filter === cat ? "bg-slate-900 text-white" : "bg-white text-slate-400"}`}>{cat}</button>
                   ))}
                 </div>
 
-                {/* ✅ 2. కొత్తగా యాడ్ చేసిన Category Filter Bar (Biryanis, Starters, etc.) */}
                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                    <button 
-                      onClick={() => setActiveSubCat("All")} 
-                      className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase border shrink-0 transition-all ${activeSubCat === "All" ? "bg-blue-600 text-white border-blue-600 shadow-md" : "bg-slate-50 text-slate-400 border-slate-100"}`}
-                    >
-                      All Menu
-                    </button>
+                    <button onClick={() => setActiveSubCat("All")} className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase border shrink-0 transition-all ${activeSubCat === "All" ? "bg-blue-600 text-white border-blue-600 shadow-md" : "bg-slate-50 text-slate-400 border-slate-100"}`}>All Menu</button>
                     {subCategories.map(sub => (
-                      <button 
-                        key={sub} 
-                        onClick={() => setActiveSubCat(sub)} 
-                        className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase border shrink-0 transition-all ${activeSubCat === sub ? "bg-blue-600 text-white border-blue-600 shadow-md" : "bg-slate-50 text-slate-400 border-slate-100"}`}
-                      >
-                        {sub}
-                      </button>
+                      <button key={sub} onClick={() => setActiveSubCat(sub)} className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase border shrink-0 transition-all ${activeSubCat === sub ? "bg-blue-600 text-white border-blue-600 shadow-md" : "bg-slate-50 text-slate-400 border-slate-100"}`}>{sub}</button>
                     ))}
                 </div>
             </div>
@@ -221,7 +222,7 @@ export default function RestaurantProfile() {
                         <div key={item._id} className="bg-white p-3 rounded-3xl border border-slate-100 flex items-center justify-between gap-3 shadow-sm hover:shadow-md transition-all">
                             <div className="flex items-center gap-3 min-w-0 flex-1">
                                 <div className="relative shrink-0">
-                                    <img src={item.image || `https://ui-avatars.com/api/?name=${item.name}`} className="w-16 h-16 rounded-2xl object-cover border shadow-sm" alt="" />
+                                    <img src={item.image || `https://ui-avatars.com/api/?name=${item.name}`} loading="lazy" className="w-16 h-16 rounded-2xl object-cover border shadow-sm" alt="" />
                                     <div className={`absolute -top-1 -left-1 w-3 h-3 rounded-full border-2 border-white ${item.category === 'Veg' ? 'bg-green-500' : 'bg-red-500'}`}></div>
                                 </div>
                                 <div className="min-w-0 flex-1">
@@ -240,8 +241,8 @@ export default function RestaurantProfile() {
                 </div>
             </div>
 
-            {/* Reviews Section */}
-            <div className="mt-8 border-t pt-6">
+            {/* ✅ Campus Stories Section - Commented as requested */}
+            {/* <div className="mt-8 border-t pt-6">
                 <button onClick={() => setShowReviews(!showReviews)} className="flex items-center gap-2 text-[10px] font-black uppercase text-blue-600 mb-6">{showReviews ? "Close Reviews" : "Campus Stories"} <Plus className={`w-3 h-3 transition-all ${showReviews ? 'rotate-45 text-red-500' : ''}`} /></button>
                 <AnimatePresence>
                     {showReviews && (
@@ -250,7 +251,7 @@ export default function RestaurantProfile() {
                                 <textarea value={newComment} onChange={(e)=>setNewComment(e.target.value)} placeholder="How was it?" className="w-full bg-white p-3 rounded-xl text-xs outline-none h-20 mb-3" />
                                 <button onClick={handlePostReview} disabled={isSubmitting} className="w-full bg-slate-900 text-white py-3 rounded-lg font-black uppercase text-[9px]">{isSubmitting ? "..." : "Post Review"}</button>
                             </div>
-                            {owner.reviews?.map((rev, idx) => (
+                            {owner?.reviews?.map((rev, idx) => (
                                 <div key={idx} className="bg-white p-4 rounded-xl mb-3 border shadow-sm flex flex-col gap-1">
                                     <span className="text-[9px] font-black text-blue-600 uppercase">Student Peer • {new Date(rev.createdAt).toLocaleDateString()}</span>
                                     <p className="text-xs italic font-medium">"{rev.comment}"</p>
@@ -259,7 +260,8 @@ export default function RestaurantProfile() {
                         </motion.div>
                     )}
                 </AnimatePresence>
-            </div>
+            </div> 
+            */}
         </div>
 
         {/* --- RIGHT SIDEBAR --- */}
@@ -274,12 +276,22 @@ export default function RestaurantProfile() {
              </div>
              
              <div className="flex flex-col gap-3">
-               <button onClick={() => totalAmount > 0 ? setShowOrderForm(true) : alert("Select items!")} className={`w-full py-3 rounded-lg font-black uppercase text-[10px] tracking-widest ${owner.isStoreOpen && totalAmount > 0 ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-100 text-slate-300'}`}>Pre-Order Now</button>
-               <a href={`tel:${owner.phone}`} className="w-full py-3 rounded-lg font-black uppercase text-[10px] tracking-widest bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 hover:bg-blue-700 transition-all active:scale-95"><PhoneCall className="w-3.5 h-3.5" /> Call to Owner</a>
+               <button onClick={() => totalAmount > 0 ? setShowOrderForm(true) : alert("Select items!")} className={`w-full py-3 rounded-lg font-black uppercase text-[10px] tracking-widest ${owner?.isStoreOpen && totalAmount > 0 ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-100 text-slate-300'}`}>Pre-Order Now</button>
+               <a href={`tel:${owner?.phone}`} className="w-full py-3 rounded-lg font-black uppercase text-[10px] tracking-widest bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 hover:bg-blue-700 transition-all active:scale-95"><PhoneCall className="w-3.5 h-3.5" /> Call to Owner</a>
              </div>
            </div>
         </div>
       </main>
+
+      {/* ✅ RESTORED IMAGE SELECTION MODAL */}
+      <AnimatePresence>
+        {selectedImg && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[150] bg-black/90 backdrop-blur-lg flex items-center justify-center p-4" onClick={() => setSelectedImg(null)}>
+            <motion.img initial={{ scale: 0.8 }} animate={{ scale: 1 }} src={selectedImg} className="max-w-full max-h-full rounded-2xl shadow-2xl" />
+            <button className="absolute top-10 right-10 text-white bg-white/10 p-4 rounded-full backdrop-blur-md hover:bg-white/20 transition-all"><X /></button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ORDER MODAL */}
       <AnimatePresence>

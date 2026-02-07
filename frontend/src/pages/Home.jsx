@@ -185,9 +185,9 @@ export default function Home() {
                     <div className="px-2 flex flex-col flex-grow">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="text-2xl font-black uppercase italic leading-tight group-hover:text-blue-600 transition-colors">{res.name}</h3>
-                        <div className="bg-slate-50 px-2 py-1 rounded-lg border text-xs font-black flex items-center gap-1">
+                        {/* <div className="bg-slate-50 px-2 py-1 rounded-lg border text-xs font-black flex items-center gap-1">
                           <Star className="w-3 h-3 fill-blue-600 text-blue-600" /> {res.averageRating?.toFixed(1) || "5.0"}
-                        </div>
+                        </div> */}
                       </div>
 
                       <div className="flex items-center gap-3 text-slate-400 font-bold uppercase text-[9px] mb-4">
@@ -212,7 +212,7 @@ export default function Home() {
                         <button disabled={!res.isStoreOpen} className={`w-full py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest ${res.isStoreOpen ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-400'}`}>
                           {res.isStoreOpen ? 'Enter Kitchen' : 'Offline'}
                         </button>
-                        <button onClick={(e) => handleRateClick(res._id, e)} className="w-full py-2 text-[9px] font-black uppercase text-slate-400 hover:text-blue-600 transition-colors">Give Rating</button>
+                        {/* <button onClick={(e) => handleRateClick(res._id, e)} className="w-full py-2 text-[9px] font-black uppercase text-slate-400 hover:text-blue-600 transition-colors">Give Rating</button> */}
                       </div>
                     </div>
                   </div>
@@ -225,7 +225,7 @@ export default function Home() {
 
       <Footer />
       
-      <AnimatePresence>
+      {/* <AnimatePresence>
         {showRatingModal && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center px-6 bg-white/80 backdrop-blur-md">
             <motion.div initial={{ scale: 0.8, rotate: -5 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0.8, opacity: 0 }} className="bg-white border border-slate-200 p-12 rounded-[3.5rem] max-w-sm w-full text-center relative shadow-2xl">
@@ -242,7 +242,7 @@ export default function Home() {
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence> */}
     </div>
   );
 }
