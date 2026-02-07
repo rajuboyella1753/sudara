@@ -6,17 +6,26 @@ const router = express.Router();
 /* 1. ADD NEW ITEM */
 router.post("/add", async (req, res) => {
   try {
-    const { name, price, category, image, ownerId } = req.body;
+    // ✅ రాజు, ఇక్కడ 'subCategory' యాడ్ చేశాను చూడు
+    const { name, price, category, subCategory, image, ownerId } = req.body; 
 
-    console.log("Adding item for Owner:", ownerId);
+    console.log("Adding item for Owner:", ownerId, "Category:", subCategory);
 
-    if (image && image.length > 10 * 1024 * 1024) { // 10MB limit (మనం ఫ్రంటెండ్‌లో ఆప్టిమైజ్ చేస్తున్నాం కాబట్టి ఇది సేఫ్)
+    if (image && image.length > 10 * 1024 * 1024) {
        return res.status(400).json({ message: "Image is too large!" });
     }
 
-    const newItem = await Item.create({ name, price, category, image, ownerId });
+    // ✅ ఇక్కడ కూడా 'subCategory' ని పాస్ చేస్తున్నాను
+    const newItem = await Item.create({ 
+      name, 
+      price, 
+      category, 
+      subCategory, 
+      image, 
+      ownerId 
+    });
     
-    console.log("✅ Item saved successfully");
+    console.log("✅ Item saved successfully with category:", subCategory);
     res.status(201).json(newItem);
   } catch (err) {
     console.error("MongoDB Save Error:", err.message);
@@ -34,14 +43,16 @@ router.get("/all", async (req, res) => {
   }
 });
 
-/* 3. UPDATE FULL ITEM (Edit Feature కోసం) 🔥 */
+/* 3. UPDATE FULL ITEM 🔥 */
 router.put("/update/:id", async (req, res) => {
   try {
-    const { name, price, category, image } = req.body;
+    // ✅ ఇక్కడ కూడా 'subCategory' యాడ్ చేశాను
+    const { name, price, category, subCategory, image } = req.body; 
+    
     const updatedItem = await Item.findByIdAndUpdate(
       req.params.id,
-      { name, price, category, image },
-      { new: true } // ఇది అప్‌డేట్ అయిన కొత్త డేటాని రిటర్న్ చేస్తుంది
+      { name, price, category, subCategory, image }, // ✅ ఇక్కడ కూడా అప్‌డేట్ అవుతుంది
+      { new: true }
     );
     
     if (!updatedItem) return res.status(404).json({ message: "Item not found" });
