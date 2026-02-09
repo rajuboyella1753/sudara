@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-// ✅ నీ లోగో ఇమేజ్‌ని ఇక్కడ ఇంపోర్ట్ చెయ్
-// import logoImg from "../../public/SUDAR.png"; 
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
@@ -14,14 +12,12 @@ export default function Navbar() {
     <nav className="bg-white border-b border-slate-100 sticky top-0 z-[100] shadow-sm">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
 
-        {/* ☄️ Logo - Image implementation */}
+        {/* ☄️ Logo */}
         <Link to="/" className="flex items-center group">
-          {/* ✅ టెక్స్ట్ తీసేసి ఇమేజ్ పెట్టాను, డిజైన్ పాడవకుండా h-8 (height) సెట్ చేశాను */}
           <img 
-            src="/SUDAR.png"  // ఇక్కడ నీ లోగో పాత్ ఇవ్వు (Public folder లో ఉంటే /logo.png)
+            src="/SUDAR.png" 
             alt="Sudara Logo"
             className="h-8 md:h-10 w-auto object-contain group-hover:scale-105 transition-transform duration-300"
-            // ఒకవేళ ఇమేజ్ లోడ్ అవ్వకపోతే పాత టెక్స్ట్ కనిపిస్తుంది (Fallback)
             onError={(e) => {
               e.target.style.display = 'none';
               e.target.nextSibling.style.display = 'block';
@@ -35,6 +31,13 @@ export default function Navbar() {
         {/* 💻 Desktop Menu */}
         <div className="hidden md:flex items-center space-x-8">
           <Link to="/" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 transition-colors">Home</Link>
+          
+          {/* ✅ How It Works Link with Badge */}
+          <Link to="/how-it-works" className="relative text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 transition-colors">
+            How to use site
+            <span className="absolute -top-3 -right-4 bg-blue-600 text-white text-[6px] px-1 rounded-full animate-bounce">New</span>
+          </Link>
+
           <Link to="/about" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 transition-colors">About</Link>
           <Link to="/contact" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 transition-colors">Contact</Link>
 
@@ -71,6 +74,12 @@ export default function Navbar() {
           <Link onClick={() => setOpen(false)} to="/" className="block text-sm font-black uppercase tracking-[0.2em] text-slate-800 hover:text-blue-600">
             Home
           </Link>
+
+          {/* ✅ Mobile How It Works Link */}
+          <Link onClick={() => setOpen(false)} to="/how-it-works" className="flex items-center gap-2 text-sm font-black uppercase tracking-[0.2em] text-blue-600">
+            How to Use site <span className="bg-blue-600 text-white text-[8px] px-1.5 py-0.5 rounded-md">GUIDE</span>
+          </Link>
+
           <Link onClick={() => setOpen(false)} to="/about" className="block text-sm font-black uppercase tracking-[0.2em] text-slate-800 hover:text-blue-600">
             About
           </Link>

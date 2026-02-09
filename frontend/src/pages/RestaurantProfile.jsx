@@ -265,22 +265,42 @@ const handleGetDirections = () => {
         </div>
 
         {/* --- RIGHT SIDEBAR --- */}
-        <div className="order-1 lg:order-2 lg:col-span-4">
-           <div className="bg-white p-4 rounded-2xl lg:sticky lg:top-32 shadow-lg border border-slate-100">
-             <div className="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-100">
-               <span className="text-[9px] font-black uppercase text-blue-600 italic">Order Summary</span>
-               <div className="space-y-1.5 my-3 max-h-40 overflow-y-auto">
-                 {Object.values(cart).map((i) => (<div key={i._id} className="flex justify-between text-[10px] font-bold italic"><span>{i.qty} x {i.name}</span><span>₹{i.price * i.qty}</span></div>))}
-               </div>
-               <div className="border-t border-blue-100 pt-2 flex justify-between text-base font-black italic"><span>Pay (50%):</span><span className="text-blue-600">₹{halfAmount}</span></div>
-             </div>
-             
-             <div className="flex flex-col gap-3">
-               <button onClick={() => totalAmount > 0 ? setShowOrderForm(true) : alert("Select items!")} className={`w-full py-3 rounded-lg font-black uppercase text-[10px] tracking-widest ${owner?.isStoreOpen && totalAmount > 0 ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-100 text-slate-300'}`}>Pre-Order Now</button>
-               <a href={`tel:${owner?.phone}`} className="w-full py-3 rounded-lg font-black uppercase text-[10px] tracking-widest bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 hover:bg-blue-700 transition-all active:scale-95"><PhoneCall className="w-3.5 h-3.5" /> Call to Owner</a>
-             </div>
-           </div>
+        
+       <div className="order-1 lg:order-2 lg:col-span-4">
+  <div className="bg-white p-4 rounded-2xl lg:sticky lg:top-32 shadow-lg border border-slate-100">
+    <div className="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-100">
+      <span className="text-[9px] font-black uppercase text-blue-600 italic">Order Summary</span>
+      <div className="space-y-1.5 my-3 max-h-40 overflow-y-auto">
+        {Object.values(cart).map((i) => (
+          <div key={i._id} className="flex justify-between text-[10px] font-bold italic text-slate-600">
+            <span>{i.qty} x {i.name}</span>
+            <span>₹{i.price * i.qty}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="border-t border-blue-100 pt-3 space-y-1">
+        {/* ✅ Total Cost display అవుతుంది */}
+        <div className="flex justify-between text-[11px] font-black italic text-slate-500">
+          <span>Total Items Cost:</span>
+          <span>₹{totalAmount}</span>
         </div>
+        
+        {/* ✅ 50% Pay అమౌంట్ హైలెట్ చేశాను */}
+        <div className="flex justify-between text-base font-black italic text-blue-600">
+          <span>Pay Now (50%):</span>
+          <span>₹{halfAmount}</span>
+        </div>
+      </div>
+    </div>
+    
+    <div className="flex flex-col gap-3">
+      <button onClick={() => totalAmount > 0 ? setShowOrderForm(true) : alert("Select items!")} className={`w-full py-3 rounded-lg font-black uppercase text-[10px] tracking-widest ${owner?.isStoreOpen && totalAmount > 0 ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-100 text-slate-300'}`}>Pre-Order Now</button>
+      <a href={`tel:${owner?.phone}`} className="w-full py-3 rounded-lg font-black uppercase text-[10px] tracking-widest bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 hover:bg-blue-700 transition-all active:scale-95"><PhoneCall className="w-3.5 h-3.5" /> Call to Owner</a>
+    </div>
+  </div>
+</div>
+
       </main>
 
       {/* ✅ RESTORED IMAGE SELECTION MODAL */}
@@ -301,7 +321,11 @@ const handleGetDirections = () => {
               <button onClick={() => setShowOrderForm(false)} className="absolute top-4 right-4 text-slate-300"><X className="w-5 h-5" /></button>
               <h2 className="text-lg font-black italic uppercase mb-6">Checkout</h2>
               <div className="space-y-2.5 mb-6">
-                <button onClick={handleDirectUPI} className="w-full py-3 bg-blue-600 text-white rounded-lg font-black uppercase text-[10px] flex items-center justify-center gap-2 mb-2">Pay ₹{halfAmount} via UPI</button>
+                {/* <button onClick={handleDirectUPI} className="w-full py-3 bg-blue-600 text-white rounded-lg font-black uppercase text-[10px] flex items-center justify-center gap-2 mb-2">Pay ₹{halfAmount} via UPI</button> */}
+                <button onClick={handleDirectUPI} className="w-full py-3 bg-blue-600 text-white rounded-lg font-black uppercase text-[10px] flex flex-col items-center justify-center gap-0.5 mb-2 shadow-lg">
+              <span>Pay ₹{halfAmount} via UPI</span>
+              <span className="text-[7px] opacity-70 normal-case">(50% of Total ₹{totalAmount})</span>
+            </button>
                 <input type="text" placeholder="Name" value={orderData.name} onChange={(e)=>setOrderData({...orderData, name:e.target.value})} className="w-full bg-slate-50 border p-2.5 rounded-lg text-xs" />
                 <input type="number" placeholder="WhatsApp No" value={orderData.phone} onChange={(e)=>setOrderData({...orderData, phone:e.target.value})} className="w-full bg-slate-50 border p-2.5 rounded-lg text-xs" />
                 <input type="text" placeholder="Arrival Time" value={orderData.arrivalTime} onChange={(e)=>setOrderData({...orderData, arrivalTime:e.target.value})} className="w-full bg-slate-50 border p-2.5 rounded-lg text-xs" />

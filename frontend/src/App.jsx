@@ -9,12 +9,14 @@ import Contact from "./pages/Contact";
 import Terms from "./components/Terms";
 // import Maintenance from "./pages/Maintenance";
 import AdminDashboard from "./pages/Admin";
+import HowItWorks from "./pages/HowItWorks";
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Home />} />
         {/* <Route path="/" element={<Maintenance />} /> */}
+        <Route path="/how-it-works" element={<HowItWorks />} />
         <Route path="/owner" element={<OwnerLogin />} />
         <Route path="/owner/register" element={<OwnerRegister />} />
         <Route path="/owner/dashboard" element={<OwnerDashboard />} />
