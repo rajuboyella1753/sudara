@@ -338,28 +338,39 @@ const handleGetDirections = () => {
       </AnimatePresence>
 
       {/* ORDER MODAL */}
-      <AnimatePresence>
-        {showOrderForm && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[110] bg-black/20 backdrop-blur-sm flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} className="bg-white w-full max-w-sm p-6 rounded-3xl shadow-2xl relative">
-              <button onClick={() => setShowOrderForm(false)} className="absolute top-4 right-4 text-slate-300"><X className="w-5 h-5" /></button>
-              <h2 className="text-lg font-black italic uppercase mb-6">Checkout</h2>
-              <div className="space-y-2.5 mb-6">
-                {/* <button onClick={handleDirectUPI} className="w-full py-3 bg-blue-600 text-white rounded-lg font-black uppercase text-[10px] flex items-center justify-center gap-2 mb-2">Pay ₹{halfAmount} via UPI</button> */}
-                <button onClick={handleDirectUPI} className="w-full py-3 bg-blue-600 text-white rounded-lg font-black uppercase text-[10px] flex flex-col items-center justify-center gap-0.5 mb-2 shadow-lg">
-              <span>Pay ₹{halfAmount} via UPI</span>
-              <span className="text-[7px] opacity-70 normal-case">(50% of Total ₹{totalAmount})</span>
-            </button>
-                <input type="text" placeholder="Name" value={orderData.name} onChange={(e)=>setOrderData({...orderData, name:e.target.value})} className="w-full bg-slate-50 border p-2.5 rounded-lg text-xs" />
-                <input type="number" placeholder="WhatsApp No" value={orderData.phone} onChange={(e)=>setOrderData({...orderData, phone:e.target.value})} className="w-full bg-slate-50 border p-2.5 rounded-lg text-xs" />
-                <input type="text" placeholder="Arrival Time" value={orderData.arrivalTime} onChange={(e)=>setOrderData({...orderData, arrivalTime:e.target.value})} className="w-full bg-slate-50 border p-2.5 rounded-lg text-xs" />
-                <input type="number" placeholder="Txn ID (Last 5)" value={orderData.txId} onChange={(e)=>setOrderData({...orderData, txId:e.target.value})} className="w-full bg-slate-50 border p-2.5 rounded-lg text-xs" />
-              </div>
-              <button onClick={handleConfirmOrder} className="w-full py-3.5 bg-green-600 text-white rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2"><Send className="w-4 h-4" /> Send to owner</button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+{/* ORDER MODAL */}
+<AnimatePresence>
+  {showOrderForm && (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[110] bg-black/20 backdrop-blur-sm flex items-center justify-center p-4">
+      <motion.div initial={{ scale: 0.95 }} animate={{ scale: 1 }} className="bg-white w-full max-w-sm p-6 rounded-3xl shadow-2xl relative">
+        <button onClick={() => setShowOrderForm(false)} className="absolute top-4 right-4 text-slate-300"><X className="w-5 h-5" /></button>
+        <h2 className="text-lg font-black italic uppercase mb-6">Checkout</h2>
+
+        {/* ✅ Adding only this feature as requested */}
+        <div className="bg-blue-50 p-3 rounded-2xl border border-blue-100 mb-4 flex items-start gap-2">
+          <div className="shrink-0 w-1.5 h-1.5 rounded-full bg-blue-600 mt-1 animate-pulse"></div>
+          <p className="text-[10px] text-blue-700 font-bold leading-tight italic">
+            IMPORTANT: All payments go directly to the restaurant owner via UPI. 
+            Sudara Hub is a discovery platform and does not handle or process any transactions.
+          </p>
+        </div>
+
+        <div className="space-y-2.5 mb-6">
+          {/* <button onClick={handleDirectUPI} className="w-full py-3 bg-blue-600 text-white rounded-lg font-black uppercase text-[10px] flex items-center justify-center gap-2 mb-2">Pay ₹{halfAmount} via UPI</button> */}
+          <button onClick={handleDirectUPI} className="w-full py-3 bg-blue-600 text-white rounded-lg font-black uppercase text-[10px] flex flex-col items-center justify-center gap-0.5 mb-2 shadow-lg">
+            <span>Pay ₹{halfAmount} via UPI</span>
+            <span className="text-[7px] opacity-70 normal-case">(50% of Total ₹{totalAmount})</span>
+          </button>
+          <input type="text" placeholder="Name" value={orderData.name} onChange={(e)=>setOrderData({...orderData, name:e.target.value})} className="w-full bg-slate-50 border p-2.5 rounded-lg text-xs" />
+          <input type="number" placeholder="WhatsApp No" value={orderData.phone} onChange={(e)=>setOrderData({...orderData, phone:e.target.value})} className="w-full bg-slate-50 border p-2.5 rounded-lg text-xs" />
+          <input type="text" placeholder="Arrival Time" value={orderData.arrivalTime} onChange={(e)=>setOrderData({...orderData, arrivalTime:e.target.value})} className="w-full bg-slate-50 border p-2.5 rounded-lg text-xs" />
+          <input type="number" placeholder="Txn ID (Last 5)" value={orderData.txId} onChange={(e)=>setOrderData({...orderData, txId:e.target.value})} className="w-full bg-slate-50 border p-2.5 rounded-lg text-xs" />
+        </div>
+        <button onClick={handleConfirmOrder} className="w-full py-3.5 bg-green-600 text-white rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2"><Send className="w-4 h-4" /> Send to owner</button>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
 
       <Footer />
       
