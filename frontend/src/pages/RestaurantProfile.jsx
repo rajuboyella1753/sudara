@@ -24,8 +24,13 @@ export default function RestaurantProfile() {
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [orderData, setOrderData] = useState({ name: "", phone: "", txId: "", arrivalTime: "" });
 
-  const subCategories = ["Biryanis", "Starters","Soups", "Noodles", "Gravys", "Rice", "Breads", "Sea Food"];
-
+  // const subCategories = ["Biryanis", "Starters","Soups", "Noodles", "Gravys", "Rice", "Breads", "Sea Food"];
+  const availableSubCats = useMemo(() => {
+  const catsInMenu = items.map(item => item.subCategory);
+  return ["Biryanis", "Starters", "Soups", "Noodles", "Gravys", "Rice", "Breads", "Sea Food"].filter(cat => 
+    catsInMenu.includes(cat)
+  );
+}, [items]);
   const trackFoodInterest = async (itemName) => {
     try {
       const today = new Date().toLocaleDateString('en-GB'); 
@@ -207,12 +212,31 @@ const handleGetDirections = () => {
                   ))}
                 </div>
 
-                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                {/* <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
                     <button onClick={() => setActiveSubCat("All")} className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase border shrink-0 transition-all ${activeSubCat === "All" ? "bg-blue-600 text-white border-blue-600 shadow-md" : "bg-slate-50 text-slate-400 border-slate-100"}`}>All Menu</button>
                     {subCategories.map(sub => (
                       <button key={sub} onClick={() => setActiveSubCat(sub)} className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase border shrink-0 transition-all ${activeSubCat === sub ? "bg-blue-600 text-white border-blue-600 shadow-md" : "bg-slate-50 text-slate-400 border-slate-100"}`}>{sub}</button>
                     ))}
-                </div>
+                </div> */}
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+    <button 
+      onClick={() => setActiveSubCat("All")} 
+      className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase border shrink-0 transition-all ${activeSubCat === "All" ? "bg-blue-600 text-white border-blue-600 shadow-md" : "bg-slate-50 text-slate-400 border-slate-100"}`}
+    >
+      All Menu
+    </button>
+
+    {/* ✅ ఇక్కడ అందుబాటులో ఉన్న కేటగిరీలు మాత్రమే లూప్ అవుతాయి */}
+    {availableSubCats.map(sub => (
+      <button 
+        key={sub} 
+        onClick={() => setActiveSubCat(sub)} 
+        className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase border shrink-0 transition-all ${activeSubCat === sub ? "bg-blue-600 text-white border-blue-600 shadow-md" : "bg-slate-50 text-slate-400 border-slate-100"}`}
+      >
+        {sub}
+      </button>
+    ))}
+</div>
             </div>
 
             {/* Items Grid */}
@@ -295,8 +319,8 @@ const handleGetDirections = () => {
     </div>
     
     <div className="flex flex-col gap-3">
-      <button onClick={() => totalAmount > 0 ? setShowOrderForm(true) : alert("Select items!")} className={`w-full py-3 rounded-lg font-black uppercase text-[10px] tracking-widest ${owner?.isStoreOpen && totalAmount > 0 ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-100 text-slate-300'}`}>Pre-Order Now</button>
-      <a href={`tel:${owner?.phone}`} className="w-full py-3 rounded-lg font-black uppercase text-[10px] tracking-widest bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 hover:bg-blue-700 transition-all active:scale-95"><PhoneCall className="w-3.5 h-3.5" /> Call to Owner</a>
+      <button onClick={() => totalAmount > 0 ? setShowOrderForm(true) : alert("Select items!")} className={`w-full py-3 rounded-lg font-black uppercase text-[10px] tracking-widest ${owner?.isStoreOpen && totalAmount > 0 ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-100 text-slate-300'}`}>Pre-Book Now</button>
+      <a href={`tel:${owner?.phone}`} className="w-full py-3 rounded-lg font-black uppercase text-[10px] tracking-widest bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 hover:bg-blue-700 transition-all active:scale-95"><PhoneCall className="w-3.5 h-3.5" /> Call to Owner & Order</a>
     </div>
   </div>
 </div>
