@@ -62,17 +62,15 @@ export default function Home() {
     // getLocation(); // లొకేషన్ స్లో చేస్తోంది కాబట్టి ప్రస్తుతానికి పక్కన పెట్టాం
   }, []);
 
-  useEffect(() => {
-    let result = restaurants;
-    if (searchTerm.trim() !== "") {
-      const query = searchTerm.toLowerCase();
-      result = result.filter(r => 
-        r.name.toLowerCase().includes(query) || 
-        (r.items && r.items.some(item => item.name.toLowerCase().includes(query) && item.isAvailable))
-      );
-    }
-    setFilteredRestaurants(result);
-  }, [searchTerm, restaurants]);
+useEffect(() => {
+  let result = restaurants;
+  if (searchTerm.trim() !== "") {
+    const query = searchTerm.toLowerCase();
+    // కేవలం హోటల్ పేరు మీద మాత్రమే సెర్చ్ జరుగుతుంది (చాలా ఫాస్ట్ గా ఉంటుంది)
+    result = result.filter(r => r.name.toLowerCase().includes(query));
+  }
+  setFilteredRestaurants(result);
+}, [searchTerm, restaurants]);
 
   // Distance ని ప్రస్తుతానికి "---" గా ఉంచాను లేదా ఫంక్షన్ ని డిసేబుల్ చేశాను
   const getDistance = (lat1, lon1, lat2, lon2) => {
