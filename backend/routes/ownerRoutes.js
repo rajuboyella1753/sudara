@@ -46,26 +46,43 @@ router.post("/register", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+router.get("/admin-all-owners", async (req, res) => {
+  try {
+    // 🔥 ఇక్కడ ఫిల్టర్ తీసేశాం, కాబట్టి పెండింగ్ ఉన్న ఓనర్లు కూడా వస్తారు
+    const owners = await Owner.find({}) 
+      .select("name hotelImage collegeName isStoreOpen category averageRating isApproved phone upiID analytics")
+      .lean();
+    res.status(200).json(owners);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch owners for admin" });
+  }
+});
 
 /* ================= 4. LOGIN (Strict Verification) ================= */
 // backend/routes/ownerRoutes.js
 router.post("/login", async (req, res) => {
   try {
     const { email, password, collegeName } = req.body;
-    
-    // అడ్మిన్ చెక్ అలాగే ఉంచు...
+
+    // 🔥 అడ్మిన్ లాగిన్ చెక్ - అందరికంటే ముందు ఇది ఉండాలి
     if (email === "telugubiblequiz959@gmail.com" && password === "Raju1753@s") {
-      return res.json({ success: true, isAdmin: true, message: "Welcome Admin BSR!" });
+      return res.json({ 
+        success: true, 
+        isAdmin: true, 
+        message: "Welcome Admin BSR!" 
+      });
     }
 
-    // ✅ ఇక్కడ మార్చు: ఇమేజ్‌లు లేకుండా డేటాని వెతకాలి (స్పీడ్ కోసం)
-    const owner = await Owner.findOne({ email, password, collegeName })
-      .select("-hotelImage -interiorImages") 
-      .lean();
+    // మిగిలిన ఓనర్ల కోసం వెతకడం
+    const owner = await Owner.findOne({ email, password, collegeName }).lean();
 
     if (!owner) return res.status(401).json({ message: "Invalid credentials ❌" });
-    if (owner.isApproved === false) return res.status(403).json({ message: "Account pending... ⏳" });
-    
+
+    // అప్రూవ్ కాకపోతే ఆపేయాలి
+    if (owner.isApproved === false) {
+      return res.status(403).json({ message: "Account pending admin approval... ⏳" });
+    }
+
     res.json({ success: true, owner });
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -52,13 +52,15 @@ const handleSubmit = async (e) => {
     try {
       const res = await api.post("/owner/login", form);
       
+      // ✅ ఇక్కడ అడ్మిన్ అయితే డైరెక్ట్ కంట్రోల్ రూట్ కి పంపించు
       if (res.data.isAdmin) {
+        // అడ్మిన్ కి కావాలంటే ఒక ఫ్లాగ్ ని లోకల్ స్టోరేజ్ లో పెట్టుకోవచ్చు
+        localStorage.setItem("isAdmin", "true"); 
         navigate("/sudara-admin-control");
         return;
       }
 
       if (res.data.owner.isApproved) {
-        // ✅ డేటా సేవ్ చేసి డ్యాష్‌బోర్డ్ కి పంపించు
         localStorage.setItem("owner", JSON.stringify(res.data.owner));
         navigate("/owner/dashboard");
       } else {

@@ -136,13 +136,24 @@ const handleGetDirections = () => {
     window.location.href = upiUrl;
   };
 
-  const handleConfirmOrder = () => {
-    if (!orderData.name || !orderData.phone || !orderData.txId) return alert("Please fill details! 📝");
-    const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name}`).join(", ");
-    const message = `*NEW PRE-ORDER - SUDARA HUB*\n\n*Name:* ${orderData.name}\n*Phone:* ${orderData.phone}\n*Items:* ${itemList}\n*Paid:* ₹${halfAmount}\n*Txn ID (Last 5):* ${orderData.txId}\n*Arrival Time:* ${orderData.arrivalTime}\n\n_Confirm order and start cooking!_`;
-    window.open(`https://wa.me/${owner?.phone}?text=${encodeURIComponent(message)}`, "_blank");
-    setShowOrderForm(false);
-  };
+const handleConfirmOrder = async () => {
+  if (!orderData.name || !orderData.phone || !orderData.txId) return alert("Please fill details! 📝");
+  try {
+    const today = new Date().toLocaleDateString('en-GB').split('/').map(n => parseInt(n)).join('/');
+    await api.put(`/owner/track-analytics/${id}`, { 
+      action: "pre_order_click", // 🚀 కొత్త యాక్షన్ పేరు
+      date: today 
+    });
+  } catch (err) {
+    console.log("Analytics failed but proceeding to WhatsApp...");
+  }
+
+  // పాత వాట్సాప్ లాజిక్ అలాగే ఉంచు...
+  const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name}`).join(", ");
+  const message = `*NEW PRE-ORDER - SUDARA HUB*\n\n*Name:* ${orderData.name}\n*Phone:* ${orderData.phone}\n*Items:* ${itemList}\n*Paid:* ₹${halfAmount}\n*Txn ID (Last 5):* ${orderData.txId}\n*Arrival Time:* ${orderData.arrivalTime}\n\n_Confirm order and start cooking!_`;
+  window.open(`https://wa.me/${owner?.phone}?text=${encodeURIComponent(message)}`, "_blank");
+  setShowOrderForm(false);
+};
 
   // ✅ Performance Fix: Using useMemo for filtering logic
   const searchFiltered = useMemo(() => {
