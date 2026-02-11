@@ -54,7 +54,7 @@ export default function Maintenance() {
           >
             <Clock className="w-6 h-6 text-blue-600 mb-4" />
             <h4 className="text-sm font-bold text-slate-900 mb-1 italic uppercase tracking-tight">Estimated Time</h4>
-            <p className="text-xs text-slate-400 font-bold tracking-tight uppercase">Ready in 1 Day</p>
+            <p className="text-xs text-slate-400 font-bold tracking-tight uppercase">Ready in 1 hour</p>
           </motion.div>
           
           <motion.div 

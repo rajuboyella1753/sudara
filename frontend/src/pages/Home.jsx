@@ -24,14 +24,18 @@ export default function Home() {
   const navigate = useNavigate();
 
   // 1. Fetch Owners - ఇది ఇప్పుడు దేనికోసం ఆగకుండా డేటా తెస్తుంది
-  const fetchOwners = async () => {
+const fetchOwners = async () => {
     try {
       const res = await api.get("/owner/all-owners");
       const allData = Array.isArray(res.data) ? res.data : [];
-      const approvedOnly = allData.filter(r => r.isApproved === true);
-      const mbuOnly = approvedOnly.filter(r => r.collegeName === "MBU");
       
-      const uniqueColleges = [...new Set(approvedOnly.map(item => item.collegeName))].filter(Boolean);
+      // ✅ బ్యాకెండ్ లో ఆల్రెడీ isApproved ఫిల్టర్ ఉంది.
+      // కాలేజీ పేరు స్పెల్లింగ్ తేడాలున్నా వచ్చేలా trim() & toUpperCase() వాడాను.
+      const mbuOnly = allData.filter(r => 
+        r.collegeName && r.collegeName.toString().trim().toUpperCase() === "MBU"
+      );
+      
+      const uniqueColleges = [...new Set(allData.map(item => item.collegeName))].filter(Boolean);
       
       setRestaurants(mbuOnly); 
       setDbColleges(uniqueColleges);
@@ -39,7 +43,6 @@ export default function Home() {
     } catch (err) { 
       console.error("Fetch Error:", err); 
     } finally { 
-      // 🚀 ఇక్కడ మ్యాజిక్: డేటా రాగానే లోడింగ్ ఆగిపోతుంది, లొకేషన్ కోసం అస్సలు ఆగదు!
       setLoading(false); 
     }
   };

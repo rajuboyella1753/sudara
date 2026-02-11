@@ -17,10 +17,12 @@ router.get("/colleges", async (req, res) => {
 /* ================= 2. GET ALL OWNERS (Ultra Optimized) ================= */
 router.get("/all-owners", async (req, res) => {
   try {
-    // కేవలం అవసరమైన ఫీల్డ్స్ మాత్రమే లాగుతున్నాం (Items ని వదిలేస్తున్నాం)
+    // ✅ ఇక్కడ hotelImage ని యాడ్ చేశాను, ఇప్పుడు ఫ్రంటెండ్ కి ఫోటోలు వెళ్తాయి
     const owners = await Owner.find({ isApproved: true })
-      .select("name hotelImage collegeName isStoreOpen latitude longitude category averageRating")
+      .select("name hotelImage collegeName isStoreOpen latitude longitude category averageRating isApproved")
       .lean();
+    
+    console.log(`✅ Approved Owners Found: ${owners.length}`);
     res.status(200).json(owners);
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch owners" });
