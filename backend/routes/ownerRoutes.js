@@ -48,15 +48,24 @@ router.post("/register", async (req, res) => {
 });
 
 /* ================= 4. LOGIN (Strict Verification) ================= */
+// backend/routes/ownerRoutes.js
 router.post("/login", async (req, res) => {
   try {
     const { email, password, collegeName } = req.body;
+    
+    // అడ్మిన్ చెక్ అలాగే ఉంచు...
     if (email === "telugubiblequiz959@gmail.com" && password === "Raju1753@s") {
       return res.json({ success: true, isAdmin: true, message: "Welcome Admin BSR!" });
     }
-    const owner = await Owner.findOne({ email, password, collegeName });
+
+    // ✅ ఇక్కడ మార్చు: ఇమేజ్‌లు లేకుండా డేటాని వెతకాలి (స్పీడ్ కోసం)
+    const owner = await Owner.findOne({ email, password, collegeName })
+      .select("-hotelImage -interiorImages") 
+      .lean();
+
     if (!owner) return res.status(401).json({ message: "Invalid credentials ❌" });
-    if (owner.isApproved === false) return res.status(403).json({ message: "Account pending waiting for admin approval! ⏳" });
+    if (owner.isApproved === false) return res.status(403).json({ message: "Account pending... ⏳" });
+    
     res.json({ success: true, owner });
   } catch (err) {
     res.status(500).json({ message: err.message });

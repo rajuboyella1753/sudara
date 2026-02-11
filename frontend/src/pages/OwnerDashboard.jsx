@@ -53,11 +53,21 @@ export default function OwnerDashboard() {
     } catch (err) { console.error("Colleges fetch failed"); }
   };
 
-  const fetchData = async (id) => {
+const fetchData = async (id) => {
     try {
-      const oRes = await api.get(`/owner/${id}`);
+      setLoading(true);
+      
+      // ✅ మ్యాజిక్ 1: Parallel fetching! ఓనర్ ని, ఐటమ్స్ ని ఒకేసారి లాగుతున్నాం.
+      // ఐటమ్స్ కి మనం బ్యాకెండ్ లో రాసిన ఆ కొత్త రూట్ (/items/owner/${id}) వాడుతున్నాం.
+      const [oRes, iRes] = await Promise.all([
+        api.get(`/owner/${id}`),
+        api.get(`/items/owner/${id}`) 
+      ]);
+      
       const ownerData = oRes.data;
       setOwner(ownerData);
+      
+      // ప్రొఫైల్ సెట్టింగ్స్ కోసం డేటా సెట్ చేయడం
       setProfileForm({ 
         name: ownerData.name || "", phone: ownerData.phone || "",
         busyStatus: ownerData.busyStatus || "Low", collegeName: ownerData.collegeName || "",
@@ -65,10 +75,17 @@ export default function OwnerDashboard() {
         longitude: ownerData.longitude || null, interiorImages: ownerData.interiorImages || [],
         upiQR: ownerData.upiQR || "", upiID: ownerData.upiID || "" 
       });
-      const iRes = await api.get("/items/all");
-      setItems(iRes.data.filter(i => (i.ownerId?._id || i.ownerId) === id));
-    } catch (err) { console.error(err); }
-    finally { setLoading(false); }
+
+      // ✅ మ్యాజిక్ 2: ఇక ఫిల్టర్ అవసరం లేదు! 
+      // బ్యాకెండ్ నుండే కేవలం ఈ ఓనర్ ఐటమ్స్ మాత్రమే వస్తాయి.
+      setItems(iRes.data); 
+      
+    } catch (err) { 
+      console.error("Dashboard Fetch Error:", err); 
+      alert("Something went wrong while fetching data!");
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   const toggleShopStatus = async () => {

@@ -43,31 +43,30 @@ export default function RestaurantProfile() {
   };
 
   // ✅ Speed Fix: Parallel Fetching to reduce load time
-// ✅ సుమారుగా 63వ లైన్ నుండి ఇలా మార్చు
+// RestaurantProfile.jsx లో సుమారు 63వ లైన్
 useEffect(() => {
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      // ఇక్కడ api.get("/items/all") తీసేసి `/items/owner/${id}` అని మార్చాను
-      const [oRes, iRes] = await Promise.all([
-        api.get(`/owner/${id}`),
-        api.get(`/items/owner/${id}`) 
-      ]);
-      
-      setOwner(oRes.data);
-      // ఇక ఇక్కడ .filter() చేయాల్సిన అవసరం లేదు, డైరెక్ట్‌గా సెట్ చేస్తున్నాం
-      setItems(iRes.data);
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const [oRes, iRes] = await Promise.all([
+        api.get(`/owner/${id}`),
+        api.get(`/items/owner/${id}`) 
+      ]);
+      
+      setOwner(oRes.data);
+      setItems(iRes.data);
 
-      const favorites = JSON.parse(localStorage.getItem("favRestaurants") || "[]");
-      setIsFavorite(favorites.includes(id));
-    } catch (err) {
-      console.error("Error fetching profile:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+      const favorites = JSON.parse(localStorage.getItem("favRestaurants") || "[]");
+      setIsFavorite(favorites.includes(id));
+    } catch (err) {
+      console.error("Error fetching profile:", err);
+    } finally {
+      // 🚀 రాజు, ఇక్కడ సెకన్ల వ్యవధిలో లోడింగ్ ఆగిపోతుంది
+      setLoading(false);
+    }
+  };
 
-  if (id) fetchData();
+  if (id) fetchData();
 }, [id]);
 
   const handlePostReview = async () => {
@@ -166,7 +165,7 @@ const handleGetDirections = () => {
       
       {/* --- HEADER SECTION --- */}
       <div className="relative h-[300px] md:h-[450px] flex items-center justify-center overflow-hidden bg-slate-100">
-          {owner?.hotelImage && <img src={owner.hotelImage} loading="eager" className="absolute inset-0 w-full h-full object-cover opacity-40 blur-[1px]" alt="" />}
+          {owner?.hotelImage && <img src={owner.hotelImage} loading="eager" fetchPriority="high" className="absolute inset-0 w-full h-full object-cover opacity-40 blur-[1px]" alt="" />}
           <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-black/10"></div>
           <div className="relative z-10 text-center px-4">
               <h1 className="text-3xl md:text-7xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">{owner?.name}</h1>
@@ -182,7 +181,7 @@ const handleGetDirections = () => {
 >
   <Navigation className="w-4 h-4" />
 </button> */}
-              <button onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${owner.latitude},${owner.longitude}`)} className="bg-white p-2.5 rounded-full shadow-md text-blue-600 border"><Navigation className="w-4 h-4" /></button>
+              {/* <button onClick={() => window.open(`https://www.google.com/maps/dir/?api=1&destination=${owner.latitude},${owner.longitude}`)} className="bg-white p-2.5 rounded-full shadow-md text-blue-600 border"><Navigation className="w-4 h-4" /></button> */}
               <button onClick={toggleFavorite} className="bg-white p-2.5 rounded-full shadow-md border"><Heart className={`w-4 h-4 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-slate-300'}`} /></button>
           </div>
       </div>

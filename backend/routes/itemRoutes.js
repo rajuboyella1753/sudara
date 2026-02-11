@@ -92,16 +92,19 @@ router.delete("/delete/:id", async (req, res) => {
     res.status(500).json({ error: "Delete failed", details: err.message });
   }
 });
-/* 6. GET ITEMS BY OWNER ID (Speed Optimization కోసం) */
+/* 6. GET ITEMS BY OWNER ID (Corrected for Ultra Speed) */
 router.get("/owner/:ownerId", async (req, res) => {
-  try {
-    const { ownerId } = req.params;
-    // .lean() వాడితే డేటాబేస్ నుండి రిజల్ట్ చాలా ఫాస్ట్ గా వస్తుంది
-    const items = await Item.find({ ownerId }).lean();
-    res.json(items);
-  } catch (err) {
-    console.error("Fetch by Owner Error:", err.message);
-    res.status(500).json({ error: "Database Error", details: err.message });
-  }
+  try {
+    const { ownerId } = req.params;
+    
+    // ✅ రాజు, ఇక్కడ .lean() వాడటం వల్ల మంగోస్ బరువు తగ్గుతుంది
+    const items = await Item.find({ ownerId })
+      .select("name price category subCategory image isAvailable") 
+      .lean();
+      
+    res.json(items);
+  } catch (err) {
+    res.status(500).json({ error: "Database Error" });
+  }
 });
 export default router;

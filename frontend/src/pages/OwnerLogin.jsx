@@ -52,23 +52,22 @@ const handleSubmit = async (e) => {
     try {
       const res = await api.post("/owner/login", form);
       
-      // ✅ రాజు, ఒకవేళ నువ్వు అడ్మిన్ లాగిన్ అయితే సీక్రెట్ పేజీకి పంపిస్తుంది
       if (res.data.isAdmin) {
         navigate("/sudara-admin-control");
         return;
       }
 
       if (res.data.owner.isApproved) {
+        // ✅ డేటా సేవ్ చేసి డ్యాష్‌బోర్డ్ కి పంపించు
         localStorage.setItem("owner", JSON.stringify(res.data.owner));
         navigate("/owner/dashboard");
       } else {
         setVerificationMessage("Account pending admin approval! ⏳");
       }
     } catch (error) {
-      const msg = error.response?.data?.message || "Login failed ❌";
-      setVerificationMessage(msg);
+      setVerificationMessage(error.response?.data?.message || "Login failed ❌");
     }
-  };
+};
 
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-blue-500/30 overflow-hidden font-sans">
