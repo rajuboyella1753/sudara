@@ -43,29 +43,32 @@ export default function RestaurantProfile() {
   };
 
   // ✅ Speed Fix: Parallel Fetching to reduce load time
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [oRes, iRes] = await Promise.all([
-          api.get(`/owner/${id}`),
-          api.get("/items/all")
-        ]);
-        
-        setOwner(oRes.data);
-        const filteredItems = iRes.data.filter(i => (i.ownerId?._id || i.ownerId)?.toString() === id?.toString());
-        setItems(filteredItems);
+// ✅ సుమారుగా 63వ లైన్ నుండి ఇలా మార్చు
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      // ఇక్కడ api.get("/items/all") తీసేసి `/items/owner/${id}` అని మార్చాను
+      const [oRes, iRes] = await Promise.all([
+        api.get(`/owner/${id}`),
+        api.get(`/items/owner/${id}`) 
+      ]);
+      
+      setOwner(oRes.data);
+      // ఇక ఇక్కడ .filter() చేయాల్సిన అవసరం లేదు, డైరెక్ట్‌గా సెట్ చేస్తున్నాం
+      setItems(iRes.data);
 
-        const favorites = JSON.parse(localStorage.getItem("favRestaurants") || "[]");
-        setIsFavorite(favorites.includes(id));
-      } catch (err) {
-        console.error("Error fetching profile:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (id) fetchData();
-  }, [id]);
+      const favorites = JSON.parse(localStorage.getItem("favRestaurants") || "[]");
+      setIsFavorite(favorites.includes(id));
+    } catch (err) {
+      console.error("Error fetching profile:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (id) fetchData();
+}, [id]);
 
   const handlePostReview = async () => {
     if (!newComment.trim()) return;

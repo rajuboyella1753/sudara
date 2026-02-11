@@ -49,16 +49,16 @@ export default function Home() {
     }
   };
 
-  const setupNotifications = async () => {
-    try {
-      const token = await requestForToken();
-      if (token) {
-        await api.post("/owner/save-fcm-token-general", { token });
-      }
-    } catch (err) {
-      console.error("Notification failed ❌", err);
-    }
-  };
+  // const setupNotifications = async () => {
+  //   try {
+  //     const token = await requestForToken();
+  //     if (token) {
+  //       await api.post("/owner/save-fcm-token-general", { token });
+  //     }
+  //   } catch (err) {
+  //     console.error("Notification failed ❌", err);
+  //   }
+  // };
 
   const getLocation = () => {
     if (navigator.geolocation) {
@@ -76,7 +76,7 @@ export default function Home() {
     setLoading(true);
     fetchOwners();
     getLocation();
-    setupNotifications();
+    // setupNotifications();
   }, []);
   
   const handleRateClick = (id, e) => {
