@@ -14,22 +14,34 @@ router.get("/colleges", async (req, res) => {
   }
 });
 
-/* ================= 2. GET ALL OWNERS ================= */
+/* ================= 2. GET ALL OWNERS (Ultra Optimized) ================= */
 router.get("/all-owners", async (req, res) => {
   try {
-    const owners = await Owner.find().lean(); 
-    const ownersWithItems = await Promise.all(
-      owners.map(async (owner) => {
-        const items = await Item.find({ ownerId: owner._id });
-        return { ...owner, items };
-      })
-    );
+    // 🔥 మ్యాజిక్ ఇక్కడ ఉంది: .aggregate వాడితే డేటాబేస్ లెవల్లోనే అన్నీ కలిసి వస్తాయి.
+    // ఇది 140 రిక్వెస్ట్ లని 1 రిక్వెస్ట్ గా మారుస్తుంది.
+    const ownersWithItems = await Owner.aggregate([
+      {
+        $lookup: {
+          from: "items", // నీ Item కలెక్షన్ పేరు (చివర 's' ఉందో లేదో చూసుకో)
+          localField: "_id",
+          foreignField: "ownerId",
+          as: "items"
+        }
+      },
+      {
+        $project: {
+          password: 0, // పాస్‌వర్డ్ పంపాల్సిన అవసరం లేదు, సెక్యూరిటీ!
+          fcmTokens: 0
+        }
+      }
+    ]);
+
     res.status(200).json(ownersWithItems);
   } catch (err) {
+    console.error("Fetch Owners Error:", err);
     res.status(500).json({ message: "Failed to fetch owners" });
   }
 });
-
 /* ================= 3. REGISTER (Fixed Safety) ================= */
 router.post("/register", async (req, res) => {
   try {

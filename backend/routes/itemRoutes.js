@@ -92,5 +92,16 @@ router.delete("/delete/:id", async (req, res) => {
     res.status(500).json({ error: "Delete failed", details: err.message });
   }
 });
-
+/* 6. GET ITEMS BY OWNER ID (Speed Optimization కోసం) */
+router.get("/owner/:ownerId", async (req, res) => {
+  try {
+    const { ownerId } = req.params;
+    // .lean() వాడితే డేటాబేస్ నుండి రిజల్ట్ చాలా ఫాస్ట్ గా వస్తుంది
+    const items = await Item.find({ ownerId }).lean();
+    res.json(items);
+  } catch (err) {
+    console.error("Fetch by Owner Error:", err.message);
+    res.status(500).json({ error: "Database Error", details: err.message });
+  }
+});
 export default router;

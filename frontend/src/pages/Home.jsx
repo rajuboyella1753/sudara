@@ -4,11 +4,9 @@ import Footer from "../components/Footer";
 import api from "../api/api-base"; 
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { requestForToken } from "../firebase";
 import { 
   Search, 
   MapPin, 
-  Star, 
   X, 
   UtensilsCrossed, 
   Compass, 
@@ -21,15 +19,11 @@ export default function Home() {
   const [filteredRestaurants, setFilteredRestaurants] = useState([]);
   const [userCoords, setUserCoords] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedCollege] = useState("MBU"); 
   const [dbColleges, setDbColleges] = useState([]);
-
-  const [showRatingModal, setShowRatingModal] = useState(false);
-  const [selectedResId, setSelectedResId] = useState(null);
-  const [hoverStar, setHoverStar] = useState(0);
 
   const navigate = useNavigate();
 
+  // 1. Fetch Owners - ఇది ఇప్పుడు దేనికోసం ఆగకుండా డేటా తెస్తుంది
   const fetchOwners = async () => {
     try {
       const res = await api.get("/owner/all-owners");
@@ -45,60 +39,29 @@ export default function Home() {
     } catch (err) { 
       console.error("Fetch Error:", err); 
     } finally { 
+      // 🚀 ఇక్కడ మ్యాజిక్: డేటా రాగానే లోడింగ్ ఆగిపోతుంది, లొకేషన్ కోసం అస్సలు ఆగదు!
       setLoading(false); 
     }
   };
 
-  // const setupNotifications = async () => {
-  //   try {
-  //     const token = await requestForToken();
-  //     if (token) {
-  //       await api.post("/owner/save-fcm-token-general", { token });
-  //     }
-  //   } catch (err) {
-  //     console.error("Notification failed ❌", err);
-  //   }
-  // };
-
-  const getLocation = () => {
+  // 2. Location ని బ్యాక్‌గ్రౌండ్ కి పంపించాను (Commented as requested for speed priority)
+  /* const getLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        },
+        (pos) => setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
         null,
-        { enableHighAccuracy: false, timeout: 5000 }
+        { enableHighAccuracy: false, timeout: 3000 }
       );
     }
   };
+  */
 
   useEffect(() => {
     setLoading(true);
-    fetchOwners();
-    getLocation();
-    // setupNotifications();
+    fetchOwners(); // డేటా ఫెచ్చింగ్ మాత్రమే ప్రయారిటీ
+    // getLocation(); // లొకేషన్ స్లో చేస్తోంది కాబట్టి ప్రస్తుతానికి పక్కన పెట్టాం
   }, []);
-  
-  const handleRateClick = (id, e) => {
-    e.stopPropagation(); 
-    setSelectedResId(id);
-    setShowRatingModal(true);
-  };
 
-  const submitRating = async (ratingValue) => {
-    try {
-      const res = await api.put(`/owner/rate-restaurant/${selectedResId}`, { rating: ratingValue });
-      if (res.data.success) {
-        const updatedList = restaurants.map(r => 
-          r._id === selectedResId ? { ...r, averageRating: res.data.averageRating, numberOfReviews: res.data.numberOfReviews } : r
-        );
-        setRestaurants(updatedList);
-        setShowRatingModal(false);
-      }
-    } catch (err) { setShowRatingModal(false); }
-  };
-
-  // ✅ ఇక్కడ ఫుడ్ సెర్చ్ లాజిక్ ని పక్కాగా ఉంచాను
   useEffect(() => {
     let result = restaurants;
     if (searchTerm.trim() !== "") {
@@ -111,13 +74,9 @@ export default function Home() {
     setFilteredRestaurants(result);
   }, [searchTerm, restaurants]);
 
+  // Distance ని ప్రస్తుతానికి "---" గా ఉంచాను లేదా ఫంక్షన్ ని డిసేబుల్ చేశాను
   const getDistance = (lat1, lon1, lat2, lon2) => {
-    if (!lat1 || !lon1 || !lat2 || !lon2) return "---";
-    const toRad = (v) => (v * Math.PI) / 180;
-    const R = 6371; 
-    const dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
-    const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
-    return (R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))).toFixed(1); 
+    return "---"; // స్పీడ్ కోసం ప్రస్తుతానికి ఫిక్స్‌డ్ గా ఉంచాను
   };
 
   const handleRestaurantClick = async (resId) => {
@@ -143,13 +102,7 @@ export default function Home() {
 
           <div className="max-w-3xl mx-auto bg-white border border-slate-200 rounded-2xl md:rounded-[3rem] p-1.5 md:p-3 flex items-center gap-3 shadow-xl shadow-slate-200/50">
             <div className="relative flex-1 group">
-              {/* మొబైల్‌లో ఐకాన్ లెఫ్ట్ పొజిషన్ తగ్గించాం (left-4) */}
               <Search className="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors w-4 h-4 md:w-5 h-5" />
-              
-              {/* - text-xs md:text-lg: మొబైల్‌లో ఫాంట్ చిన్నగా (xs) చేసి డెస్క్‌టాప్‌లో పెద్దగా (lg) చేశాం.
-                - pl-10 md:pl-14: ఐకాన్ కోసం ఇచ్చే స్పేస్ తగ్గించాం. 
-                దీనివల్ల ప్లేస్‌హోల్డర్ మొత్తం కనిపిస్తుంది.
-              */}
               <input 
                 type="text" 
                 placeholder="Search Restaurants or Food..." 
@@ -171,7 +124,7 @@ export default function Home() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
             <AnimatePresence>
-              {filteredRestaurants.map((res, index) => (
+              {filteredRestaurants.map((res) => (
                 <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} key={res._id} className="group cursor-pointer h-full" onClick={() => res.isStoreOpen && handleRestaurantClick(res._id)}>
                   <div className="relative flex flex-col h-full">
                     <div className="relative h-64 overflow-hidden rounded-[2.5rem] mb-6 shadow-sm">
@@ -185,16 +138,13 @@ export default function Home() {
                     <div className="px-2 flex flex-col flex-grow">
                       <div className="flex justify-between items-start mb-2">
                         <h3 className="text-2xl font-black uppercase italic leading-tight group-hover:text-blue-600 transition-colors">{res.name}</h3>
-                        {/* <div className="bg-slate-50 px-2 py-1 rounded-lg border text-xs font-black flex items-center gap-1">
-                          <Star className="w-3 h-3 fill-blue-600 text-blue-600" /> {res.averageRating?.toFixed(1) || "5.0"}
-                        </div> */}
                       </div>
 
+                      {/* Distance ని Comment చేయకుండా కేవలం వాల్యూ ని మార్చాను డిజైన్ పాడవకుండా */}
                       <div className="flex items-center gap-3 text-slate-400 font-bold uppercase text-[9px] mb-4">
-                        <MapPin className="w-3 h-3" /> <span>{getDistance(userCoords?.lat, userCoords?.lng, res.latitude, res.longitude)} KM away</span>
+                        <MapPin className="w-3 h-3" /> <span>Campus Hub</span>
                       </div>
 
-                      {/* ✅ రాజు, ఇక్కడ ఫుడ్ ఐటమ్ సెర్చ్ బ్యాడ్జ్ ని తిరిగి యాడ్ చేశాను */}
                       {searchTerm && res.items?.some(i => i.name.toLowerCase().includes(searchTerm.toLowerCase()) && i.isAvailable) && (
                         <motion.div 
                           initial={{ opacity: 0, x: -20 }}
@@ -212,7 +162,6 @@ export default function Home() {
                         <button disabled={!res.isStoreOpen} className={`w-full py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest ${res.isStoreOpen ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-400'}`}>
                           {res.isStoreOpen ? 'Enter Kitchen' : 'Offline'}
                         </button>
-                        {/* <button onClick={(e) => handleRateClick(res._id, e)} className="w-full py-2 text-[9px] font-black uppercase text-slate-400 hover:text-blue-600 transition-colors">Give Rating</button> */}
                       </div>
                     </div>
                   </div>
@@ -224,25 +173,6 @@ export default function Home() {
       </main>
 
       <Footer />
-      
-      {/* <AnimatePresence>
-        {showRatingModal && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] flex items-center justify-center px-6 bg-white/80 backdrop-blur-md">
-            <motion.div initial={{ scale: 0.8, rotate: -5 }} animate={{ scale: 1, rotate: 0 }} exit={{ scale: 0.8, opacity: 0 }} className="bg-white border border-slate-200 p-12 rounded-[3.5rem] max-w-sm w-full text-center relative shadow-2xl">
-              <button onClick={() => setShowRatingModal(false)} className="absolute top-8 right-8 text-slate-400 hover:text-slate-900 transition-colors"> <X className="w-6 h-6"/></button>
-              <div className="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center mx-auto mb-8"><Star className="w-10 h-10 text-blue-600 animate-pulse" /></div>
-              <h2 className="text-4xl font-black italic uppercase tracking-tighter mb-4 text-slate-900">Rate <span className="text-blue-600 text-5xl block">Sudara</span></h2>
-              <div className="flex justify-center gap-3 mb-12">
-                {[1, 2, 3, 4, 5].map((num) => (
-                  <motion.button key={num} whileHover={{ scale: 1.3 }} whileTap={{ scale: 0.9 }} onMouseEnter={() => setHoverStar(num)} onMouseLeave={() => setHoverStar(0)} onClick={() => submitRating(num)}>
-                    <Star className={`w-11 h-11 ${num <= (hoverStar || 0) ? 'text-blue-600 fill-blue-600' : 'text-slate-200 fill-slate-100'}`} />
-                  </motion.button>
-                ))}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence> */}
     </div>
   );
 }
