@@ -23,7 +23,7 @@ export default function RestaurantProfile() {
   const [isSubmitting, setIsSubmitting] = useState(false); 
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [orderData, setOrderData] = useState({ name: "", phone: "", txId: "", arrivalTime: "" });
-
+  const [showPayWarning, setShowPayWarning] = useState(false); // 🚀 కొత్తగా ఇది యాడ్ చెయ్
   // const subCategories = ["Biryanis", "Starters","Soups", "Noodles", "Gravys", "Rice", "Breads", "Sea Food"];
   const availableSubCats = useMemo(() => {
   const catsInMenu = items.map(item => item.subCategory);
@@ -41,8 +41,17 @@ export default function RestaurantProfile() {
       });
     } catch (err) { console.log("Interest tracking failed"); }
   };
-
-  // ✅ Speed Fix: Parallel Fetching to reduce load time
+  const trackCallInterest = async () => {
+  try {
+    const today = new Date().toLocaleDateString('en-GB').split('/').map(n => parseInt(n)).join('/');
+    await api.put(`/owner/track-analytics/${id}`, { 
+      action: "call_click",
+      date: today 
+    });
+  } catch (err) {
+    console.log("Call tracking failed");
+  }
+};
 // RestaurantProfile.jsx లో సుమారు 63వ లైన్
 useEffect(() => {
   const fetchData = async () => {
@@ -129,28 +138,38 @@ const handleGetDirections = () => {
     }
   };
 
-  const handleDirectUPI = () => {
-    const upiID = owner?.upiID; 
-    if(!upiID) return alert("Owner UPI ID not found! ❌");
-    const upiUrl = `upi://pay?pa=${upiID}&pn=${encodeURIComponent(owner?.name)}&am=${halfAmount}&cu=INR&tn=PreOrder_${encodeURIComponent(owner?.name)}`;
-    window.location.href = upiUrl;
-  };
+ const handleDirectUPI = () => {
+  const upiID = owner?.upiID; 
+  if(!upiID) return alert("Owner UPI ID not found! ❌");
+  const upiUrl = `upi://pay?pa=${upiID}&pn=${encodeURIComponent(owner?.name)}&cu=INR&tn=PreOrder_${encodeURIComponent(owner?.name)}`;
+  window.location.href = upiUrl;
+};
 
 const handleConfirmOrder = async () => {
   if (!orderData.name || !orderData.phone || !orderData.txId) return alert("Please fill details! 📝");
+  
+  // 🚀 తేడా ఇక్కడ ఉంది: యూజర్ కి ఇన్స్ట్రక్షన్ ఇస్తున్నాం
+  const userReady = window.confirm(
+    "ORDER READY! ✅\n\nNext Step: We will open WhatsApp. After sending the message, please CALL THE OWNER immediately to confirm if your food/table is ready.\n\nProceed to WhatsApp?"
+  );
+
+  if (!userReady) return;
+
   try {
     const today = new Date().toLocaleDateString('en-GB').split('/').map(n => parseInt(n)).join('/');
     await api.put(`/owner/track-analytics/${id}`, { 
-      action: "pre_order_click", // 🚀 కొత్త యాక్షన్ పేరు
+      action: "pre_order_click", 
       date: today 
     });
   } catch (err) {
-    console.log("Analytics failed but proceeding to WhatsApp...");
+    console.log("Analytics error");
   }
 
-  // పాత వాట్సాప్ లాజిక్ అలాగే ఉంచు...
   const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name}`).join(", ");
-  const message = `*NEW PRE-ORDER - SUDARA HUB*\n\n*Name:* ${orderData.name}\n*Phone:* ${orderData.phone}\n*Items:* ${itemList}\n*Paid:* ₹${halfAmount}\n*Txn ID (Last 5):* ${orderData.txId}\n*Arrival Time:* ${orderData.arrivalTime}\n\n_Confirm order and start cooking!_`;
+  
+  // 🚀 తేడా ఇక్కడ ఉంది: ఓనర్ కి ముందే కాల్ వస్తుందని హింట్ ఇస్తున్నాం
+  const message = `*NEW PRE-ORDER - SUDARA HUB*\n\n*Name:* ${orderData.name}\n*Phone:* ${orderData.phone}\n*Items:* ${itemList}\n\n*Total Bill:* ₹${totalAmount}\n*Advance Paid (50%):* ₹${halfAmount}\n*Remaining to Pay:* ₹${halfAmount}\n*Txn ID:* ${orderData.txId}\n*Arrival Time:* ${orderData.arrivalTime}\n\n_Note: I am calling you now for instant confirmation!_`;
+  
   window.open(`https://wa.me/${owner?.phone}?text=${encodeURIComponent(message)}`, "_blank");
   setShowOrderForm(false);
 };
@@ -303,7 +322,7 @@ const handleConfirmOrder = async () => {
 
         {/* --- RIGHT SIDEBAR --- */}
         
-       <div className="order-1 lg:order-2 lg:col-span-4">
+<div className="order-1 lg:order-2 lg:col-span-4">
   <div className="bg-white p-4 rounded-2xl lg:sticky lg:top-32 shadow-lg border border-slate-100">
     <div className="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-100">
       <span className="text-[9px] font-black uppercase text-blue-600 italic">Order Summary</span>
@@ -316,24 +335,36 @@ const handleConfirmOrder = async () => {
         ))}
       </div>
 
-      <div className="border-t border-blue-100 pt-3 space-y-1">
-        {/* ✅ Total Cost display అవుతుంది */}
-        <div className="flex justify-between text-[11px] font-black italic text-slate-500">
-          <span>Total Items Cost:</span>
-          <span>₹{totalAmount}</span>
-        </div>
-        
-        {/* ✅ 50% Pay అమౌంట్ హైలెట్ చేశాను */}
-        <div className="flex justify-between text-base font-black italic text-blue-600">
-          <span>Pay Now (50%):</span>
-          <span>₹{halfAmount}</span>
-        </div>
-      </div>
+    {/* సుమారు లైన్ 255 దగ్గర vethuku */}
+          <div className="border-t border-blue-100 pt-3 space-y-1">
+            <div className="flex justify-between text-[11px] font-black italic text-slate-500">
+              <span>Total Bill Amount:</span>
+              <span>₹{totalAmount}</span>
+            </div>
+            
+            {/* ఇక్కడ Advance అని క్లియర్ గా పెట్టాను */}
+            <div className="flex justify-between text-base font-black italic text-blue-600">
+              <span>Pay Advance (50%):</span>
+              <span>₹{halfAmount}</span>
+            </div>
+
+            {/* కింద ఈ లైన్ కొత్తగా యాడ్ చెయ్ */}
+            <p className="text-[8px] font-bold text-slate-400 uppercase text-right italic">
+              *Pay remaining ₹{halfAmount} at restaurant
+            </p>
+          </div>
+
     </div>
     
     <div className="flex flex-col gap-3">
       <button onClick={() => totalAmount > 0 ? setShowOrderForm(true) : alert("Select items!")} className={`w-full py-3 rounded-lg font-black uppercase text-[10px] tracking-widest ${owner?.isStoreOpen && totalAmount > 0 ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-100 text-slate-300'}`}>Pre-Book Now</button>
-      <a href={`tel:${owner?.phone}`} className="w-full py-3 rounded-lg font-black uppercase text-[10px] tracking-widest bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 hover:bg-blue-700 transition-all active:scale-95"><PhoneCall className="w-3.5 h-3.5" /> Call to Owner & Order</a>
+      <a 
+        href={`tel:${owner?.phone}`} 
+        onClick={trackCallInterest} // 🎯 ఇక్కడ ఫంక్షన్ పిలుస్తున్నాం
+        className="w-full py-3 rounded-lg font-black uppercase text-[10px] tracking-widest bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 hover:bg-blue-700 transition-all active:scale-95"
+      >
+        <PhoneCall className="w-3.5 h-3.5" /> Call to Owner for Order
+      </a>
     </div>
   </div>
 </div>
@@ -360,26 +391,169 @@ const handleConfirmOrder = async () => {
         <h2 className="text-lg font-black italic uppercase mb-6">Checkout</h2>
 
         {/* ✅ Adding only this feature as requested */}
-        <div className="bg-blue-50 p-3 rounded-2xl border border-blue-100 mb-4 flex items-start gap-2">
-          <div className="shrink-0 w-1.5 h-1.5 rounded-full bg-blue-600 mt-1 animate-pulse"></div>
-          <p className="text-[10px] text-blue-700 font-bold leading-tight italic">
-            IMPORTANT: All payments go directly to the restaurant owner via UPI. 
-            Sudara Hub is a discovery platform and does not handle or process any transactions.
-          </p>
+        <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100 mb-6 space-y-2">
+          <div className="flex items-start gap-2">
+            <div className="shrink-0 w-1.5 h-1.5 rounded-full bg-blue-600 mt-1 animate-pulse"></div>
+            <p className="text-[10px] text-blue-700 font-bold leading-tight uppercase">
+              Pay <span className="text-blue-900 underline">₹{halfAmount}</span> now as an advance to confirm your booking food.
+            </p>
+          </div>
+          <div className="flex items-start gap-2">
+            <div className="shrink-0 w-1.5 h-1.5 rounded-full bg-green-600 mt-1"></div>
+            <p className="text-[10px] text-green-700 font-bold leading-tight uppercase">
+              Pay remaining <span className="text-green-900">₹{halfAmount}</span> at the restaurant.
+            </p>
+          </div>
         </div>
 
-        <div className="space-y-2.5 mb-6">
-          {/* <button onClick={handleDirectUPI} className="w-full py-3 bg-blue-600 text-white rounded-lg font-black uppercase text-[10px] flex items-center justify-center gap-2 mb-2">Pay ₹{halfAmount} via UPI</button> */}
-          <button onClick={handleDirectUPI} className="w-full py-3 bg-blue-600 text-white rounded-lg font-black uppercase text-[10px] flex flex-col items-center justify-center gap-0.5 mb-2 shadow-lg">
-            <span>Pay ₹{halfAmount} via UPI</span>
-            <span className="text-[7px] opacity-70 normal-case">(50% of Total ₹{totalAmount})</span>
-          </button>
-          <input type="text" placeholder="Name" value={orderData.name} onChange={(e)=>setOrderData({...orderData, name:e.target.value})} className="w-full bg-slate-50 border p-2.5 rounded-lg text-xs" />
-          <input type="number" placeholder="WhatsApp No" value={orderData.phone} onChange={(e)=>setOrderData({...orderData, phone:e.target.value})} className="w-full bg-slate-50 border p-2.5 rounded-lg text-xs" />
-          <input type="text" placeholder="Arrival Time" value={orderData.arrivalTime} onChange={(e)=>setOrderData({...orderData, arrivalTime:e.target.value})} className="w-full bg-slate-50 border p-2.5 rounded-lg text-xs" />
-          <input type="number" placeholder="Txn ID (Last 5)" value={orderData.txId} onChange={(e)=>setOrderData({...orderData, txId:e.target.value})} className="w-full bg-slate-50 border p-2.5 rounded-lg text-xs" />
+        <div className="space-y-4 mb-6">
+  {/* 🚀 Modern Payment Button */}
+  <button 
+    onClick={() => setShowPayWarning(true)} 
+    className="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest flex flex-col items-center justify-center gap-0.5 shadow-xl shadow-blue-100 hover:shadow-blue-200 active:scale-95 transition-all border-b-4 border-blue-800"
+  >
+    <span className="flex items-center gap-2">
+      <CreditCard className="w-4 h-4" /> Pay Advance ₹{halfAmount}
+    </span>
+    <span className="text-[7px] opacity-70 normal-case tracking-normal">Secured via UPI Transfer</span>
+  </button>
+
+  {/* Form Fields with Floating-like Style */}
+  <div className="grid grid-cols-1 gap-3">
+    {/* Name Input */}
+    <div className="relative">
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+        <Clock className="w-4 h-4" /> {/* You can use User icon if imported */}
+      </div>
+      <input 
+        type="text" 
+        placeholder="Full Name" 
+        value={orderData.name} 
+        onChange={(e)=>setOrderData({...orderData, name:e.target.value})} 
+        className="w-full bg-slate-50 border border-slate-200 py-3.5 pl-11 pr-4 rounded-2xl text-[11px] font-bold outline-none focus:border-blue-500 focus:bg-white transition-all" 
+      />
+    </div>
+
+    {/* WhatsApp No */}
+    <div className="relative">
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+        <MessageSquare className="w-4 h-4" />
+      </div>
+      <input 
+        type="number" 
+        placeholder="WhatsApp Number" 
+        value={orderData.phone} 
+        onChange={(e)=>setOrderData({...orderData, phone:e.target.value})} 
+        className="w-full bg-slate-50 border border-slate-200 py-3.5 pl-11 pr-4 rounded-2xl text-[11px] font-bold outline-none focus:border-blue-500 focus:bg-white transition-all" 
+      />
+    </div>
+
+    <div className="grid grid-cols-2 gap-3">
+      {/* Arrival Time */}
+      <div className="relative">
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+          <Clock className="w-4 h-4" />
         </div>
+        <input 
+          type="text" 
+          placeholder="Arrival Time" 
+          value={orderData.arrivalTime} 
+          onChange={(e)=>setOrderData({...orderData, arrivalTime:e.target.value})} 
+          className="w-full bg-slate-50 border border-slate-200 py-3.5 pl-11 pr-4 rounded-2xl text-[10px] font-bold outline-none focus:border-blue-500 focus:bg-white transition-all" 
+        />
+      </div>
+
+      {/* Txn ID */}
+      <div className="relative">
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+          <Star className="w-4 h-4" />
+        </div>
+        <input 
+          type="number" 
+          placeholder="Last 5 digits" 
+          value={orderData.txId} 
+          onChange={(e)=>setOrderData({...orderData, txId:e.target.value})} 
+          className="w-full bg-slate-50 border border-slate-200 py-3.5 pl-11 pr-4 rounded-2xl text-[10px] font-bold outline-none focus:border-blue-500 focus:bg-white transition-all" 
+        />
+      </div>
+    </div>
+  </div>
+</div>
+
         <button onClick={handleConfirmOrder} className="w-full py-3.5 bg-green-600 text-white rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2"><Send className="w-4 h-4" /> Send to owner</button>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
+{/* 🚀 Modern Student-Focused Security Modal */}
+<AnimatePresence>
+  {showPayWarning && (
+    <motion.div 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      exit={{ opacity: 0 }} 
+      className="fixed inset-0 z-[250] bg-slate-900/90 backdrop-blur-xl flex items-center justify-center p-6"
+    >
+      <motion.div 
+        initial={{ scale: 0.9, y: 20 }} 
+        animate={{ scale: 1, y: 0 }} 
+        exit={{ scale: 0.9, y: 20 }} 
+        className="bg-white w-full max-w-sm rounded-[2.5rem] overflow-hidden shadow-2xl border border-slate-100 relative"
+      >
+        {/* Top Accent Bar */}
+        <div className="h-2 w-full bg-gradient-to-r from-orange-400 via-red-500 to-orange-400"></div>
+
+        <div className="p-8 text-center">
+          {/* Animated Icon Container */}
+          <div className="w-20 h-20 bg-orange-50 rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-3 border border-orange-100 relative">
+            <PhoneCall className="w-10 h-10 text-orange-600 animate-pulse" />
+            <div className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow-lg uppercase tracking-tighter">Required</div>
+          </div>
+          
+          <h3 className="text-2xl font-black uppercase italic tracking-tighter text-slate-900 leading-none mb-3">
+            Wait! Did you check? 🛑
+          </h3>
+          
+          <p className="text-[11px] font-bold text-slate-500 leading-relaxed uppercase mb-8">
+            To avoid payment issues, please <span className="text-slate-900 underline">Call the Owner</span> first to confirm if the restaurant is <span className="text-green-600">Open</span> and your food is <span className="text-green-600">Available</span>.
+          </p>
+
+          <div className="space-y-3">
+            {/* Primary Action: Call */}
+            <a 
+              href={`tel:${owner?.phone}`} 
+              className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest flex items-center justify-center gap-3 shadow-xl shadow-blue-200 transition-all active:scale-95"
+            >
+              <PhoneCall className="w-4 h-4" /> Call Owner Now
+            </a>
+            
+            {/* Secondary Action: Already Called */}
+            <button 
+              onClick={() => {
+                setShowPayWarning(false);
+                handleDirectUPI(); 
+              }} 
+              className="w-full py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-black uppercase text-[11px] tracking-widest flex items-center justify-center gap-2 transition-all active:scale-95"
+            >
+              Yes, I've Confirmed
+            </button>
+            
+            {/* Cancel Link */}
+            <button 
+              onClick={() => setShowPayWarning(false)} 
+              className="text-[10px] font-black uppercase text-slate-400 hover:text-red-500 transition-colors pt-2 tracking-widest"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+
+        {/* Pro Tip Footer */}
+        <div className="bg-slate-50 p-4 border-t border-slate-100">
+          <p className="text-[9px] font-bold text-slate-400 uppercase text-center italic">
+            * Sudara Hub is not responsible for payments made to closed stores.
+          </p>
+        </div>
       </motion.div>
     </motion.div>
   )}

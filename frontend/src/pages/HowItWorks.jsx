@@ -88,7 +88,7 @@ export default function HowItWorks() {
           <div className="text-center space-y-4">
             <div className="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto text-2xl font-black shadow-lg shadow-blue-200">2</div>
             <h3 className="font-black uppercase italic">Pre-Book</h3>
-            <p className="text-slate-500 text-sm">Pay a 50% advance to confirm your slot and skip the waiting line at Restaurant.</p>
+            <p className="text-slate-500 text-sm">Pay a 50% advance to confirm your slot and skip the waiting line at Restaurant and pay remaining amount at Restaurant.</p>
           </div>
           <div className="text-center space-y-4">
             <div className="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto text-2xl font-black shadow-lg shadow-blue-200">3</div>

@@ -221,62 +221,112 @@ export default function AdminDashboard() {
         <div className="p-6 lg:p-10 max-w-7xl mx-auto w-full pb-20">
           
           {/* ANALYTICS VIEW - WITH ORDERS SENT COLUMN */}
-          {activeTab === "analytics" && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-[2rem] border border-slate-200 shadow-xl shadow-slate-200/40 overflow-hidden">
-                <div className="overflow-x-auto scrollbar-hide">
-                  <table className="w-full text-left border-collapse min-w-[700px]">
-                    <thead>
-                      <tr className="bg-slate-50 text-[9px] font-black uppercase text-slate-400 tracking-[0.2em] border-b border-slate-100">
-                        <th className="p-8">Entity</th>
-                        <th className="p-8 text-center">Daily Hits</th>
-                        <th className="p-8 text-center text-blue-600">Orders Sent 📦</th>
-                        <th className="p-8 text-center">Engagement</th>
-                        <th className="p-8 text-right">Node Status</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50">
-                      {filteredList.map((res) => {
-                        const analyticsObj = res.analytics instanceof Map ? Object.fromEntries(res.analytics) : res.analytics;
-                        const dayHits = analyticsObj?.[selectedDateFormatted]?.kitchen_entry || 0;
-                        const orderSent = analyticsObj?.[selectedDateFormatted]?.pre_order_click || 0;
+         {/* ANALYTICS VIEW - Responsive Implementation */}
+{activeTab === "analytics" && (
+  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+    
+    {/* 🖥️ DESKTOP TABLE VIEW (Visible on Large Screens) */}
+    <div className="hidden lg:block bg-white rounded-[2rem] border border-slate-200 shadow-xl overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse min-w-[900px]">
+          <thead>
+            <tr className="bg-slate-50 text-[9px] font-black uppercase text-slate-400 tracking-[0.2em] border-b border-slate-100">
+              <th className="p-8">Entity</th>
+              <th className="p-8 text-center">Daily Hits</th>
+              <th className="p-8 text-center text-blue-600">Orders Sent 📦</th>
+              <th className="p-8 text-center text-green-600">Calls Made 📞</th>
+              <th className="p-8 text-center">Engagement</th>
+              <th className="p-8 text-right">Node Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-50">
+            {filteredList.map((res) => {
+              const analyticsObj = res.analytics instanceof Map ? Object.fromEntries(res.analytics) : res.analytics;
+              const dayHits = analyticsObj?.[selectedDateFormatted]?.kitchen_entry || 0;
+              const orderSent = analyticsObj?.[selectedDateFormatted]?.pre_order_click || 0;
+              const callsMade = analyticsObj?.[selectedDateFormatted]?.call_click || 0;
 
-                        return (
-                          <tr key={res._id} className="hover:bg-blue-50/20 transition-all group">
-                            <td className="p-6 lg:p-8">
-                              <div className="flex items-center gap-4">
-                                <img src={res.hotelImage || "https://via.placeholder.com/60"} className="w-14 h-14 rounded-2xl object-cover border-2 border-white shadow-md group-hover:scale-105 transition-transform" alt="" />
-                                <div className="min-w-0 leading-tight">
-                                    <span className="font-black text-sm uppercase italic text-slate-800 block truncate">{res.name}</span>
-                                    <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest block mt-1.5 opacity-60">{res.collegeName}</span>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="p-8 text-center">
-                              <div className="inline-flex flex-col items-center justify-center w-16 h-16 bg-slate-50 rounded-2xl border border-slate-100 shadow-inner group-hover:border-blue-100">
-                                <span className="text-xl font-black text-slate-900 leading-none">{dayHits}</span>
-                                <span className="text-[7px] font-black text-slate-400 uppercase tracking-tighter mt-1">Hits</span>
-                              </div>
-                            </td>
-                            <td className="p-8 text-center">
-                              <div className="inline-flex flex-col items-center justify-center w-16 h-16 bg-blue-50 rounded-2xl border border-blue-100 shadow-sm group-hover:bg-blue-100 transition-colors">
-                                <span className="text-xl font-black text-blue-600 leading-none">{orderSent}</span>
-                                <span className="text-[7px] font-black text-blue-400 uppercase tracking-tighter mt-1">Orders</span>
-                              </div>
-                            </td>
-                            <td className="p-8 text-center">
-                               <div className={`w-10 h-10 rounded-2xl flex items-center justify-center mx-auto ${dayHits > 0 ? 'bg-green-100 text-green-600' : 'bg-slate-100 text-slate-300'}`}><TrendingUp className="w-5 h-5"/></div>
-                            </td>
-                            <td className="p-8 text-right">
-                               <div className={`inline-block px-4 py-1.5 rounded-full text-[9px] font-black uppercase italic tracking-widest ${dayHits > 0 ? 'bg-green-500 text-white shadow-lg shadow-green-100' : 'bg-slate-100 text-slate-400'}`}>{dayHits > 0 ? 'Active Node' : 'Idle Node'}</div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </motion.div>
-          )}
+              return (
+                <tr key={res._id} className="hover:bg-blue-50/20 transition-all group">
+                  <td className="p-8">
+                    <div className="flex items-center gap-4">
+                      <img src={res.hotelImage || "https://via.placeholder.com/60"} className="w-14 h-14 rounded-2xl object-cover border-2 border-white shadow-md" alt="" />
+                      <div className="min-w-0">
+                          <span className="font-black text-sm uppercase italic text-slate-800 block truncate">{res.name}</span>
+                          <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest block mt-1.5 opacity-60">{res.collegeName}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="p-8 text-center">
+                    <span className="text-xl font-black text-slate-900">{dayHits}</span>
+                  </td>
+                  <td className="p-8 text-center">
+                    <span className="text-xl font-black text-blue-600">{orderSent}</span>
+                  </td>
+                  <td className="p-8 text-center">
+                    <span className="text-xl font-black text-green-600">{callsMade}</span>
+                  </td>
+                  <td className="p-8 text-center">
+                      <TrendingUp className={`w-5 h-5 mx-auto ${dayHits > 0 ? 'text-green-500' : 'text-slate-200'}`} />
+                  </td>
+                  <td className="p-8 text-right">
+                      <div className={`inline-block px-4 py-1.5 rounded-full text-[9px] font-black uppercase italic tracking-widest ${dayHits > 0 ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                        {dayHits > 0 ? 'Active' : 'Idle'}
+                      </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {/* 📱 MOBILE CARD VIEW (Visible on Small Screens) */}
+    <div className="lg:hidden space-y-4">
+      {filteredList.map((res) => {
+        const analyticsObj = res.analytics instanceof Map ? Object.fromEntries(res.analytics) : res.analytics;
+        const dayHits = analyticsObj?.[selectedDateFormatted]?.kitchen_entry || 0;
+        const orderSent = analyticsObj?.[selectedDateFormatted]?.pre_order_click || 0;
+        const callsMade = analyticsObj?.[selectedDateFormatted]?.call_click || 0;
+
+        return (
+          <div key={res._id} className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm relative overflow-hidden">
+            {/* Status Badge */}
+            <div className={`absolute top-0 right-0 px-4 py-1 rounded-bl-2xl text-[8px] font-black uppercase tracking-tighter ${dayHits > 0 ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
+              {dayHits > 0 ? 'Active' : 'Idle'}
+            </div>
+
+            <div className="flex items-center gap-4 mb-5">
+              <img src={res.hotelImage || "https://via.placeholder.com/60"} className="w-12 h-12 rounded-xl object-cover" alt="" />
+              <div className="min-w-0">
+                <h4 className="font-black text-xs uppercase italic text-slate-800 truncate">{res.name}</h4>
+                <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest">{res.collegeName}</p>
+              </div>
+            </div>
+
+            {/* Matrix Grid */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-center">
+                <p className="text-[7px] font-black text-slate-400 uppercase mb-1">Hits</p>
+                <p className="text-sm font-black text-slate-900">{dayHits}</p>
+              </div>
+              <div className="bg-blue-50 p-3 rounded-2xl border border-blue-100 text-center">
+                <p className="text-[7px] font-black text-blue-400 uppercase mb-1">Orders</p>
+                <p className="text-sm font-black text-blue-600">{orderSent}</p>
+              </div>
+              <div className="bg-green-50 p-3 rounded-2xl border border-green-100 text-center">
+                <p className="text-[7px] font-black text-green-400 uppercase mb-1">Calls</p>
+                <p className="text-sm font-black text-green-600">{callsMade}</p>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+
+  </motion.div>
+)}
 
           {/* PARTNERS CARDS VIEW - ALL FEATURES RESTORED */}
           {(activeTab === "pending" || activeTab === "approved") && (
@@ -306,6 +356,7 @@ export default function AdminDashboard() {
                              <span className="text-[9px] font-bold text-slate-600 italic leading-none">{owner.phone}</span>
                           </div>
                         </div>
+
                       </div>
                     </div>
 
