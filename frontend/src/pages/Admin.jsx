@@ -220,31 +220,30 @@ export default function AdminDashboard() {
 
         <div className="p-6 lg:p-10 max-w-7xl mx-auto w-full pb-20">
           
-          {/* ANALYTICS VIEW - WITH ORDERS SENT COLUMN */}
-         {/* ANALYTICS VIEW - Responsive Implementation */}
+{/* ANALYTICS VIEW - Responsive Implementation with Orders & Calls */}
 {activeTab === "analytics" && (
   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
     
-    {/* 🖥️ DESKTOP TABLE VIEW (Visible on Large Screens) */}
+    {/* 🖥️ DESKTOP TABLE VIEW */}
     <div className="hidden lg:block bg-white rounded-[2rem] border border-slate-200 shadow-xl overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse min-w-[900px]">
           <thead>
             <tr className="bg-slate-50 text-[9px] font-black uppercase text-slate-400 tracking-[0.2em] border-b border-slate-100">
-              <th className="p-8">Entity</th>
-              <th className="p-8 text-center">Daily Hits</th>
-              <th className="p-8 text-center text-blue-600">Orders Sent 📦</th>
-              <th className="p-8 text-center text-green-600">Calls Made 📞</th>
-              <th className="p-8 text-center">Engagement</th>
-              <th className="p-8 text-right">Node Status</th>
+              <th className="p-8">Entity (Restaurant Name)</th>
+              <th className="p-8 text-center">Menu Hits</th>
+              <th className="p-8 text-center text-blue-600">Pre-Orders ✅</th>
+              <th className="p-8 text-center text-green-600">Owner Calls 📞</th>
+              <th className="p-8 text-right">Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
             {filteredList.map((res) => {
+              // 📊 ఇక్కడ అనలిటిక్స్ డేటా ని రీడ్ చేస్తున్నాం
               const analyticsObj = res.analytics instanceof Map ? Object.fromEntries(res.analytics) : res.analytics;
               const dayHits = analyticsObj?.[selectedDateFormatted]?.kitchen_entry || 0;
-              const orderSent = analyticsObj?.[selectedDateFormatted]?.pre_order_click || 0;
-              const callsMade = analyticsObj?.[selectedDateFormatted]?.call_click || 0;
+              const orderSent = analyticsObj?.[selectedDateFormatted]?.pre_order_click || 0; // 📦 Orders Count
+              const callsMade = analyticsObj?.[selectedDateFormatted]?.call_click || 0;     // 📞 Calls Count
 
               return (
                 <tr key={res._id} className="hover:bg-blue-50/20 transition-all group">
@@ -257,21 +256,12 @@ export default function AdminDashboard() {
                       </div>
                     </div>
                   </td>
-                  <td className="p-8 text-center">
-                    <span className="text-xl font-black text-slate-900">{dayHits}</span>
-                  </td>
-                  <td className="p-8 text-center">
-                    <span className="text-xl font-black text-blue-600">{orderSent}</span>
-                  </td>
-                  <td className="p-8 text-center">
-                    <span className="text-xl font-black text-green-600">{callsMade}</span>
-                  </td>
-                  <td className="p-8 text-center">
-                      <TrendingUp className={`w-5 h-5 mx-auto ${dayHits > 0 ? 'text-green-500' : 'text-slate-200'}`} />
-                  </td>
+                  <td className="p-8 text-center font-black text-slate-900 text-lg">{dayHits}</td>
+                  <td className="p-8 text-center font-black text-blue-600 text-2xl">{orderSent}</td>
+                  <td className="p-8 text-center font-black text-green-600 text-2xl">{callsMade}</td>
                   <td className="p-8 text-right">
-                      <div className={`inline-block px-4 py-1.5 rounded-full text-[9px] font-black uppercase italic tracking-widest ${dayHits > 0 ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                        {dayHits > 0 ? 'Active' : 'Idle'}
+                      <div className={`inline-block px-4 py-1.5 rounded-full text-[9px] font-black uppercase italic tracking-widest ${(dayHits > 0 || orderSent > 0) ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                        {(dayHits > 0 || orderSent > 0) ? 'Active Node' : 'Idle'}
                       </div>
                   </td>
                 </tr>
@@ -282,7 +272,7 @@ export default function AdminDashboard() {
       </div>
     </div>
 
-    {/* 📱 MOBILE CARD VIEW (Visible on Small Screens) */}
+    {/* 📱 MOBILE CARD VIEW */}
     <div className="lg:hidden space-y-4">
       {filteredList.map((res) => {
         const analyticsObj = res.analytics instanceof Map ? Object.fromEntries(res.analytics) : res.analytics;
@@ -292,11 +282,6 @@ export default function AdminDashboard() {
 
         return (
           <div key={res._id} className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm relative overflow-hidden">
-            {/* Status Badge */}
-            <div className={`absolute top-0 right-0 px-4 py-1 rounded-bl-2xl text-[8px] font-black uppercase tracking-tighter ${dayHits > 0 ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
-              {dayHits > 0 ? 'Active' : 'Idle'}
-            </div>
-
             <div className="flex items-center gap-4 mb-5">
               <img src={res.hotelImage || "https://via.placeholder.com/60"} className="w-12 h-12 rounded-xl object-cover" alt="" />
               <div className="min-w-0">
@@ -304,27 +289,25 @@ export default function AdminDashboard() {
                 <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest">{res.collegeName}</p>
               </div>
             </div>
-
-            {/* Matrix Grid */}
+            {/* Counts Display Grid */}
             <div className="grid grid-cols-3 gap-2">
               <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-center">
                 <p className="text-[7px] font-black text-slate-400 uppercase mb-1">Hits</p>
                 <p className="text-sm font-black text-slate-900">{dayHits}</p>
               </div>
-              <div className="bg-blue-50 p-3 rounded-2xl border border-blue-100 text-center">
-                <p className="text-[7px] font-black text-blue-400 uppercase mb-1">Orders</p>
-                <p className="text-sm font-black text-blue-600">{orderSent}</p>
+              <div className="bg-blue-50 p-3 rounded-2xl border border-blue-100 text-center text-blue-600">
+                <p className="text-[7px] font-black uppercase mb-1">Orders</p>
+                <p className="text-sm font-black">{orderSent}</p>
               </div>
-              <div className="bg-green-50 p-3 rounded-2xl border border-green-100 text-center">
-                <p className="text-[7px] font-black text-green-400 uppercase mb-1">Calls</p>
-                <p className="text-sm font-black text-green-600">{callsMade}</p>
+              <div className="bg-green-50 p-3 rounded-2xl border border-green-100 text-center text-green-600">
+                <p className="text-[7px] font-black uppercase mb-1">Calls</p>
+                <p className="text-sm font-black">{callsMade}</p>
               </div>
             </div>
           </div>
         );
       })}
     </div>
-
   </motion.div>
 )}
 

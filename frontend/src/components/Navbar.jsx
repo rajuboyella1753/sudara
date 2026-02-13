@@ -1,72 +1,132 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
 
-  // సేఫ్ కండిషన్
+  // స్క్రోల్ చేసినప్పుడు Navbar స్టైల్ మార్చడానికి
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const hideOwnerBtn = location?.pathname?.startsWith("/owner");
 
-  return (
-    <nav className="bg-white border-b border-slate-100 sticky top-0 z-[100] shadow-sm w-full">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+  const navLinks = [
+    { name: "Home", path: "/" },
+    { name: "How it works", path: "/how-it-works", badge: "New" },
+    { name: "About", path: "/about" },
+    { name: "Contact", path: "/contact" },
+  ];
 
-        {/* Logo Section */}
-        <Link to="/" className="flex items-center group">
+  return (
+    <nav className={`fixed top-0 left-0 w-full z-[100] transition-all duration-500 ${
+      scrolled ? "bg-white/80 backdrop-blur-lg shadow-lg py-3" : "bg-white py-5"
+    }`}>
+      <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
+        
+        {/* 🏢 Logo Section */}
+        <Link to="/" className="relative group flex items-center">
           <img 
             src="/SUDAR.png" 
             alt="Sudara Logo"
-            className="h-8 md:h-10 w-auto object-contain transition-transform duration-300"
-            onError={(e) => {
-              e.target.style.display = 'none';
-            }}
+            className="h-7 md:h-9 w-auto object-contain transition-transform duration-500 group-hover:scale-105"
+            onError={(e) => (e.target.style.display = 'none')}
           />
+          <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 transition-all duration-300 group-hover:w-full"></div>
         </Link>
 
-        {/* Desktop & Tablet Menu (Large screens) */}
-        <div className="hidden lg:flex items-center space-x-8">
-          <Link to="/" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 transition-colors">Home</Link>
-          <Link to="/how-it-works" className="relative text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 transition-colors">
-            How to use site
-            <span className="absolute -top-3 -right-4 bg-blue-600 text-white text-[6px] px-1 rounded-full">New</span>
-          </Link>
-          <Link to="/about" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 transition-colors">About</Link>
-          <Link to="/contact" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 transition-colors">Contact</Link>
+        {/* 💻 Desktop Menu */}
+        <div className="hidden lg:flex items-center space-x-10">
+          {navLinks.map((link) => (
+            <Link 
+              key={link.name}
+              to={link.path} 
+              className={`relative text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 hover:text-blue-600 ${
+                location.pathname === link.path ? "text-blue-600" : "text-slate-400"
+              }`}
+            >
+              {link.name}
+              {link.badge && (
+                <span className="absolute -top-3 -right-5 bg-blue-600 text-white text-[6px] px-1.5 py-0.5 rounded-full animate-pulse font-black">
+                  {link.badge}
+                </span>
+              )}
+            </Link>
+          ))}
 
           {!hideOwnerBtn && (
-            <Link to="/owner" className="bg-slate-900 text-white px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all">
-              Owner Login
+            <Link to="/owner" className="relative group overflow-hidden bg-slate-900 text-white px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all hover:shadow-xl hover:shadow-blue-500/20 active:scale-95">
+              <span className="relative z-10">Owner Portal</span>
+              <div className="absolute inset-0 bg-blue-600 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
             </Link>
           )}
         </div>
 
-        {/* Mobile & Tablet Button (Smaller screens) */}
-        <button className="lg:hidden p-2 focus:outline-none" onClick={() => setOpen(!open)}>
-          {open ? <span className="text-2xl text-blue-600 font-bold">✕</span> : (
-            <div className="space-y-1.5">
-              <div className="w-6 h-0.5 bg-slate-900"></div>
-              <div className="w-4 h-0.5 bg-blue-600 ml-auto"></div>
-              <div className="w-6 h-0.5 bg-slate-900"></div>
-            </div>
-          )}
+        {/* 📱 Mobile Toggle Button */}
+        <button 
+          className="lg:hidden relative w-10 h-10 flex flex-col justify-center items-center focus:outline-none bg-slate-50 rounded-xl"
+          onClick={() => setOpen(!open)}
+        >
+          <div className={`w-5 h-0.5 bg-slate-900 transition-all duration-300 ${open ? "rotate-45 translate-y-1" : ""}`}></div>
+          <div className={`w-5 h-0.5 bg-blue-600 my-1 transition-all duration-300 ${open ? "opacity-0" : ""}`}></div>
+          <div className={`w-5 h-0.5 bg-slate-900 transition-all duration-300 ${open ? "-rotate-45 -translate-y-1" : ""}`}></div>
         </button>
       </div>
 
-      {/* Mobile/Tablet Overlay */}
-      {open && (
-        <div className="lg:hidden bg-white border-b border-slate-100 px-6 py-8 space-y-6 absolute w-full left-0 shadow-2xl">
-          <Link onClick={() => setOpen(false)} to="/" className="block text-sm font-black uppercase tracking-[0.2em] text-slate-800">Home</Link>
-          <Link onClick={() => setOpen(false)} to="/how-it-works" className="block text-sm font-black uppercase tracking-[0.2em] text-blue-600">How to Use site</Link>
-          <Link onClick={() => setOpen(false)} to="/about" className="block text-sm font-black uppercase tracking-[0.2em] text-slate-800">About</Link>
-          <Link onClick={() => setOpen(false)} to="/contact" className="block text-sm font-black uppercase tracking-[0.2em] text-slate-800">Contact</Link>
-          {!hideOwnerBtn && (
-            <Link onClick={() => setOpen(false)} to="/owner" className="block bg-blue-600 text-white text-center py-4 rounded-2xl text-xs font-black uppercase tracking-widest">
-              Owner Login
-            </Link>
-          )}
-        </div>
-      )}
+      {/* 📱 Mobile Overlay Menu */}
+      <AnimatePresence>
+        {open && (
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="lg:hidden bg-white border-t border-slate-50 overflow-hidden shadow-2xl"
+          >
+            <div className="px-8 py-10 space-y-8">
+              {navLinks.map((link, idx) => (
+                <motion.div
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: idx * 0.1 }}
+                  key={link.name}
+                >
+                  <Link 
+                    onClick={() => setOpen(false)} 
+                    to={link.path} 
+                    className={`text-lg font-black uppercase tracking-[0.1em] flex justify-between items-center ${
+                      location.pathname === link.path ? "text-blue-600" : "text-slate-800"
+                    }`}
+                  >
+                    {link.name}
+                    <div className={`w-1.5 h-1.5 rounded-full bg-blue-600 ${location.pathname === link.path ? "opacity-100" : "opacity-0"}`}></div>
+                  </Link>
+                </motion.div>
+              ))}
+              
+              {!hideOwnerBtn && (
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <Link 
+                    onClick={() => setOpen(false)} 
+                    to="/owner" 
+                    className="block bg-slate-900 text-white text-center py-5 rounded-[1.5rem] text-xs font-black uppercase tracking-[0.2em] shadow-xl shadow-slate-200"
+                  >
+                    Owner Login
+                  </Link>
+                </motion.div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </nav>
   );
 }
