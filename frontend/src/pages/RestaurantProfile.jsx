@@ -101,14 +101,14 @@ const handleConfirmOrder = async () => {
   // 1. Validation check
   if (!orderData.name || !orderData.phone || !orderData.txId) return alert("Please fill details! 📝");
 
-  // 2. User Permission & Info
+  // 2. User Confirmation
   const userReady = window.confirm(
-    "ORDER READY! ✅\n\nNext Step: We will open WhatsApp. After sending the message, please CALL THE OWNER immediately to confirm if your food/table is ready.\n\nProceed to WhatsApp?"
+    "ORDER READY! ✅\n\nNext Step: We will open WhatsApp. After sending the message, please CALL THE OWNER immediately to confirm.\n\nProceed to WhatsApp?"
   );
   if (!userReady) return;
 
   try {
-    // 3. 🎯 Date Format Fix for MongoDB (e.g., 13/2/2026)
+    // 3. Analytics Tracking (Date Format: 17/2/2026)
     const today = new Date().toLocaleDateString('en-GB').split('/').map(n => parseInt(n)).join('/');
     
     await api.put(`/owner/track-analytics/${id}`, { 
@@ -116,15 +116,21 @@ const handleConfirmOrder = async () => {
       date: today 
     });
   } catch (err) {
-    console.log("Analytics error");
+    console.log("Analytics error:", err);
   }
 
   // 4. Message Preparation
   const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name}`).join(", ");
-  const message = `*NEW PRE-ORDER - SUDARA HUB*\n\n*Name:* ${orderData.name}\n*Phone:* ${orderData.phone}\n*Items:* ${itemList}\n\n*Total Bill:* ₹${totalAmount}\n*Advance Paid (50%):* ₹${halfAmount}\n*Remaining to Pay:* ₹${halfAmount}\n*Txn ID:* ${orderData.txId}\n*Arrival Time:* ${orderData.arrivalTime}\n\n_Note: I am calling you now for instant confirmation!_`;
+  const message = `*NEW PRE-ORDER - SUDARA HUB*\n\n*Name:* ${orderData.name}\n*Phone:* ${orderData.phone}\n*Items:* ${itemList}\n\n*Total Bill:* ₹${totalAmount}\n*Advance Paid (50%):* ₹${halfAmount}\n*Remaining:* ₹${halfAmount}\n*Txn ID:* ${orderData.txId}\n*Arrival:* ${orderData.arrivalTime}\n\n_Note: I am calling you now for confirmation!_`;
   
-  // 5. WhatsApp Integration
-  window.open(`https://wa.me/${owner?.phone}?text=${encodeURIComponent(message)}`, "_blank");
+  // 5. WhatsApp URL Fix (రాజు, ఇక్కడ ఫోన్ నంబర్ క్లీన్ చేస్తున్నాం)
+  const cleanPhone = owner?.phone?.replace(/[^0-9]/g, ''); // నంబర్ లో కేవలం అంకెలు మాత్రమే ఉంచుతుంది
+  const waNumber = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+  
+  // పక్కాగా పనిచేసే API లింక్ ఇది
+  const waURL = `https://api.whatsapp.com/send?phone=${waNumber}&text=${encodeURIComponent(message)}`;
+  
+  window.open(waURL, "_blank");
   setShowOrderForm(false);
 };
 
@@ -163,6 +169,33 @@ const handleConfirmOrder = async () => {
         
         {/* Left Content: Responsive Column Span */}
         <div className="order-2 lg:order-1 lg:col-span-8 space-y-6 md:space-y-8">
+          {/* 🚀 1. ఇక్కడ పెట్టు రాజు: TODAY'S SPECIAL BANNER */}
+      {(() => {
+        if (!owner?.todaySpecial || !owner?.specialTimestamp) return null;
+        const now = new Date();
+        const msgDate = new Date(owner.specialTimestamp);
+        const diffInHours = (now - msgDate) / (1000 * 60 * 60);
+
+        if (diffInHours < 24) {
+          return (
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
+              className="mb-8 p-5 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 rounded-[2.5rem] shadow-xl shadow-orange-100 flex items-center gap-4 relative overflow-hidden border-2 border-white/20"
+            >
+              <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-white shrink-0 shadow-inner">
+                <Star className="w-7 h-7 fill-white animate-pulse" />
+              </div>
+              <div className="min-w-0 z-10">
+                <p className="text-[10px] font-black uppercase text-white/90 tracking-[0.2em] leading-none mb-2 italic">Live Special Alert</p>
+                <h3 className="text-xl font-black text-white italic leading-tight uppercase tracking-tighter">{owner.todaySpecial}</h3>
+              </div>
+              <UtensilsCrossed className="absolute -right-6 -bottom-6 w-32 h-32 text-white/10 -rotate-12" />
+            </motion.div>
+          );
+        }
+        return null;
+      })()}
+          {/* special offers end  */}
             {owner?.interiorImages?.length > 0 && (
               <div className="space-y-4">
                 <div className="flex items-center gap-2 border-l-4 border-blue-600 pl-3"><h3 className="text-[10px] sm:text-xs font-black uppercase text-slate-800 tracking-widest italic">Ambience</h3></div>
@@ -257,42 +290,94 @@ const handleConfirmOrder = async () => {
         </div>
 
         {/* Right Sidebar: Mobile-First Order */}
-        <div className="order-1 lg:order-2 lg:col-span-4">
-          <div className="bg-white p-4 rounded-2xl lg:sticky lg:top-32 shadow-lg border border-slate-100">
-            <div className="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-100">
-              <span className="text-[8px] sm:text-[9px] font-black uppercase text-blue-600 italic">Order Summary</span>
-              <div className="space-y-1.5 my-3 max-h-40 overflow-y-auto scrollbar-custom">
-                {Object.values(cart).map((i) => (
-                  <div key={i._id} className="flex justify-between text-[10px] font-bold italic text-slate-600">
-                    <span>{i.qty} x {i.name}</span>
-                    <span>₹{i.price * i.qty}</span>
-                  </div>
-                ))}
-              </div>
+         <div className="order-1 lg:order-2 lg:col-span-4">
+  <div className="bg-white p-4 rounded-2xl lg:sticky lg:top-32 shadow-lg border border-slate-100">
+    <div className="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-100">
+      <span className="text-[8px] sm:text-[9px] font-black uppercase text-blue-600 italic">Order Summary</span>
+      <div className="space-y-1.5 my-3 max-h-40 overflow-y-auto scrollbar-custom">
+        {Object.values(cart).map((i) => (
+          <div key={i._id} className="flex justify-between text-[10px] font-bold italic text-slate-600">
+            <span>{i.qty} x {i.name}</span>
+            <span>₹{i.price * i.qty}</span>
+          </div>
+        ))}
+      </div>
 
-              <div className="border-t border-blue-100 pt-3 space-y-1">
-                <div className="flex justify-between text-[10px] sm:text-[11px] font-black italic text-slate-500">
-                  <span>Total Bill:</span>
-                  <span>₹{totalAmount}</span>
-                </div>
-                <div className="flex justify-between text-sm sm:text-base font-black italic text-blue-600">
-                  <span>Pay Advance (50%):</span>
-                  <span>₹{halfAmount}</span>
-                </div>
-                <p className="text-[7px] sm:text-[8px] font-bold text-slate-400 uppercase text-right italic mt-1">
-                  *Pay remaining ₹{halfAmount} at restaurant
+      <div className="border-t border-blue-100 pt-3 space-y-1">
+        <div className="flex justify-between text-[10px] sm:text-[11px] font-black italic text-slate-500">
+          <span>Total Bill:</span>
+          <span>₹{totalAmount}</span>
+        </div>
+        <div className="flex justify-between text-sm sm:text-base font-black italic text-blue-600">
+          <span>Pay Advance (50%):</span>
+          <span>₹{halfAmount}</span>
+        </div>
+        <p className="text-[7px] sm:text-[8px] font-bold text-slate-400 uppercase text-right italic mt-1">
+          *Pay remaining ₹{halfAmount} at restaurant
+        </p>
+      </div>
+    </div>
+    
+    {/* 🚀 రాజు, ఇక్కడ బటన్లు మరియు కౌంట్ లాజిక్ అప్‌డేట్ చేశాను */}
+    <div className="flex flex-col gap-2.5 sm:gap-3">
+      {(() => {
+        // 🏨 1. Amaravathi Hotel Logic
+        if (owner?.name === "Amaravathi Hotel") {
+          return (
+            <>
+              <div className="p-3 bg-orange-50 border border-orange-100 rounded-xl text-center">
+                <p className="text-[10px] font-black text-orange-600 uppercase italic leading-tight">
+                  Only Parcels Available! 🥡
+                </p>
+                <p className="text-[8px] font-bold text-orange-400 uppercase mt-1">
+                  * ₹10 extra for parcel cost
                 </p>
               </div>
-            </div>
-            
-            <div className="flex flex-col gap-2.5 sm:gap-3">
-              <button onClick={() => totalAmount > 0 ? setShowPayWarning(true) : alert("Select items!")} className={`w-full py-3 rounded-lg font-black uppercase text-[9px] sm:text-[10px] tracking-widest transition-all ${owner?.isStoreOpen && totalAmount > 0 ? 'bg-slate-900 text-white shadow-lg' : 'bg-slate-100 text-slate-300'}`}>Pre-Book Now</button>
-              <a href={`tel:${owner?.phone}`} onClick={trackCallInterest} className="w-full py-3 rounded-lg font-black uppercase text-[9px] sm:text-[10px] tracking-widest bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95">
-                <PhoneCall className="w-3 h-3 sm:w-3.5 h-3.5" /> Call to Owner
+              {/* 📞 కాల్ నొక్కితే 'call_click' కౌంట్ అవుతుంది */}
+              <a href={`tel:${owner?.phone}`} onClick={trackCallInterest} className="w-full py-3.5 rounded-xl font-black uppercase text-[10px] tracking-widest bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95">
+                <PhoneCall className="w-4 h-4" /> Call & Order Now
               </a>
-            </div>
-          </div>
-        </div>
+            </>
+          );
+        }
+
+        // 🏨 2. Ruchi Hotel Logic
+        if (owner?.name === "Ruchi Hotel") {
+          return (
+            <>
+              <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl text-center">
+                <p className="text-[10px] font-black text-blue-600 uppercase italic leading-tight">
+                  Pre-book & Orders must be confirmed <br/> by calling owner! 📞
+                </p>
+              </div>
+              {/* 📞 కాల్ నొక్కితే 'call_click' కౌంట్ అవుతుంది */}
+              <a href={`tel:${owner?.phone}`} onClick={trackCallInterest} className="w-full py-3.5 rounded-xl font-black uppercase text-[10px] tracking-widest bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95">
+                <PhoneCall className="w-4 h-4" /> Call to Pre-Book
+              </a>
+            </>
+          );
+        }
+
+        // 🏨 3. Normal Flow for Other Hotels
+        return (
+          <>
+            {/* ✅ ఇది నొక్కి ఫామ్ కన్ఫర్మ్ చేస్తే 'pre_order_click' కౌంట్ అవుతుంది */}
+            <button 
+              onClick={() => totalAmount > 0 ? setShowPayWarning(true) : alert("Select items!")} 
+              className={`w-full py-3.5 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${owner?.isStoreOpen && totalAmount > 0 ? 'bg-slate-900 text-white shadow-lg active:scale-95' : 'bg-slate-100 text-slate-300'}`}
+            >
+              Pre-Book Now
+            </button>
+            {/* 📞 కాల్ నొక్కితే 'call_click' కౌంట్ అవుతుంది */}
+            <a href={`tel:${owner?.phone}`} onClick={trackCallInterest} className="w-full py-3.5 rounded-xl font-black uppercase text-[10px] tracking-widest bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95">
+              <PhoneCall className="w-4 h-4" /> Call to Owner
+            </a>
+          </>
+        );
+      })()}
+    </div>
+  </div>
+</div>
       </main>
 
       {/* Responsive Modals */}
@@ -437,7 +522,7 @@ const handleConfirmOrder = async () => {
               <div className="p-6 sm:p-8 text-center">
                 <div className="mb-4 sm:mb-6">
                   <h3 className="text-lg sm:text-xl font-black uppercase italic text-slate-900 mb-1">Step 1: Confirm First 📞</h3>
-                  <p className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase">Call <span className="text-blue-600 underline">{owner?.name}</span> to check food availability.</p>
+                  <p className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase">Call <span className="text-blue-600 underline">{owner?.name}</span> to check food availability and please dont pay before confirmation.</p>
                   <a href={`tel:${owner?.phone}`} onClick={trackCallInterest} className="mt-3 sm:mt-4 w-full py-3 bg-blue-600 text-white rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-lg active:scale-95">
                     <PhoneCall className="w-3.5 h-3.5" /> Call Owner
                   </a>

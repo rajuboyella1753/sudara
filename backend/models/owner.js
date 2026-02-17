@@ -23,11 +23,12 @@ const ownerSchema = new mongoose.Schema(
 
     // ✨ NEW STARTUP FEATURES
     interiorImages: { type: [String], default: [] },
-    
-    // ✅ రాజు, ఇక్కడ రెండు ఫీల్డ్స్ ఉన్నాయి:
-    upiQR: { type: String, default: "" }, // ఇది పాత ఇమేజ్ కోసం
-    upiID: { type: String, default: "" }, // 🚀 ఇక్కడ ఓనర్ UPI ID (e.g. name@okaxis) స్టోర్ అవుతుంది
-    
+    upiQR: { type: String, default: "" }, 
+    upiID: { type: String, default: "" }, 
+
+    // 🚀 కొత్త ఫీచర్: ఆ రోజు స్పెషల్ ఐటమ్ మెసేజ్
+    todaySpecial: { type: String, default: "" }, 
+    specialTimestamp: { type: Date, default: Date.now },
     isApproved: { type: Boolean, default: false },
 
     // 🔥 RANKING & USER COUNT
@@ -47,6 +48,8 @@ const ownerSchema = new mongoose.Schema(
       type: Map,
       of: {
         kitchen_entry: { type: Number, default: 0 },
+        pre_order_click: { type: Number, default: 0 },
+        call_click: { type: Number, default: 0 },
         food_clicks: { type: Map, of: Number } 
       },
       default: {},

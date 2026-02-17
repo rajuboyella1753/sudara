@@ -222,47 +222,51 @@ export default function AdminDashboard() {
           
 {/* ANALYTICS VIEW - Responsive Implementation with Orders & Calls */}
 {activeTab === "analytics" && (
-  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
     
-    {/* 🖥️ DESKTOP TABLE VIEW */}
-    <div className="hidden lg:block bg-white rounded-[2rem] border border-slate-200 shadow-xl overflow-hidden">
+    {/* 🖥️ Desktop: Ultra-Clean Matrix Table */}
+    <div className="hidden lg:block bg-white rounded-[2.5rem] border border-slate-200/60 shadow-[0_20px_50px_rgba(0,0,0,0.02)] overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse min-w-[900px]">
+        <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-50 text-[9px] font-black uppercase text-slate-400 tracking-[0.2em] border-b border-slate-100">
-              <th className="p-8">Entity (Restaurant Name)</th>
+            <tr className="bg-slate-50/50 text-[10px] font-black uppercase text-slate-400 tracking-[0.25em] border-b border-slate-100">
+              <th className="p-8">Node Identity</th>
               <th className="p-8 text-center">Menu Hits</th>
               <th className="p-8 text-center text-blue-600">Pre-Orders ✅</th>
-              <th className="p-8 text-center text-green-600">Owner Calls 📞</th>
-              <th className="p-8 text-right">Status</th>
+              <th className="p-8 text-center text-emerald-600">Calls 📞</th>
+              <th className="p-8 text-right">Matrix Status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
             {filteredList.map((res) => {
-              // 📊 ఇక్కడ అనలిటిక్స్ డేటా ని రీడ్ చేస్తున్నాం
-              const analyticsObj = res.analytics instanceof Map ? Object.fromEntries(res.analytics) : res.analytics;
-              const dayHits = analyticsObj?.[selectedDateFormatted]?.kitchen_entry || 0;
-              const orderSent = analyticsObj?.[selectedDateFormatted]?.pre_order_click || 0; // 📦 Orders Count
-              const callsMade = analyticsObj?.[selectedDateFormatted]?.call_click || 0;     // 📞 Calls Count
+              const analyticsObj = res.analytics instanceof Map ? Object.fromEntries(res.analytics) : (res.analytics || {});
+              const dayData = analyticsObj[selectedDateFormatted] || {};
+              const dayHits = dayData.kitchen_entry || 0;
+              const orderSent = dayData.pre_order_click || 0;
+              const callsMade = dayData.call_click || 0;
 
               return (
-                <tr key={res._id} className="hover:bg-blue-50/20 transition-all group">
+                <tr key={res._id} className="hover:bg-blue-50/30 transition-all duration-300 group">
                   <td className="p-8">
-                    <div className="flex items-center gap-4">
-                      <img src={res.hotelImage || "https://via.placeholder.com/60"} className="w-14 h-14 rounded-2xl object-cover border-2 border-white shadow-md" alt="" />
+                    <div className="flex items-center gap-5">
+                      <div className="relative">
+                        <img src={res.hotelImage || "https://via.placeholder.com/60"} className="w-14 h-14 rounded-2xl object-cover border-2 border-white shadow-sm group-hover:scale-105 transition-transform" alt="" />
+                        <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${res.isStoreOpen ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                      </div>
                       <div className="min-w-0">
-                          <span className="font-black text-sm uppercase italic text-slate-800 block truncate">{res.name}</span>
-                          <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest block mt-1.5 opacity-60">{res.collegeName}</span>
+                        <span className="font-black text-sm uppercase italic text-slate-800 block truncate group-hover:text-blue-600 transition-colors">{res.name}</span>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mt-1">{res.collegeName}</span>
                       </div>
                     </div>
                   </td>
-                  <td className="p-8 text-center font-black text-slate-900 text-lg">{dayHits}</td>
-                  <td className="p-8 text-center font-black text-blue-600 text-2xl">{orderSent}</td>
-                  <td className="p-8 text-center font-black text-green-600 text-2xl">{callsMade}</td>
+                  <td className="p-8 text-center font-black text-slate-700 text-lg">{dayHits}</td>
+                  <td className="p-8 text-center font-black text-blue-600 text-2xl drop-shadow-sm">{orderSent}</td>
+                  <td className="p-8 text-center font-black text-emerald-600 text-2xl drop-shadow-sm">{callsMade}</td>
                   <td className="p-8 text-right">
-                      <div className={`inline-block px-4 py-1.5 rounded-full text-[9px] font-black uppercase italic tracking-widest ${(dayHits > 0 || orderSent > 0) ? 'bg-green-500 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                        {(dayHits > 0 || orderSent > 0) ? 'Active Node' : 'Idle'}
-                      </div>
+                    <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase italic tracking-widest transition-all ${dayHits > 0 ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-50 text-slate-400 border border-slate-100'}`}>
+                      <div className={`w-1.5 h-1.5 rounded-full ${dayHits > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`}></div>
+                      {dayHits > 0 ? 'Live Node' : 'Idle'}
+                    </div>
                   </td>
                 </tr>
               );
@@ -272,36 +276,40 @@ export default function AdminDashboard() {
       </div>
     </div>
 
-    {/* 📱 MOBILE CARD VIEW */}
-    <div className="lg:hidden space-y-4">
+    {/* 📱 Mobile: Modern Grid Cards */}
+    <div className="lg:hidden space-y-4 px-1">
       {filteredList.map((res) => {
-        const analyticsObj = res.analytics instanceof Map ? Object.fromEntries(res.analytics) : res.analytics;
-        const dayHits = analyticsObj?.[selectedDateFormatted]?.kitchen_entry || 0;
-        const orderSent = analyticsObj?.[selectedDateFormatted]?.pre_order_click || 0;
-        const callsMade = analyticsObj?.[selectedDateFormatted]?.call_click || 0;
+        const analyticsObj = res.analytics instanceof Map ? Object.fromEntries(res.analytics) : (res.analytics || {});
+        const dayData = analyticsObj[selectedDateFormatted] || {};
+        const dayHits = dayData.kitchen_entry || 0;
+        const orderSent = dayData.pre_order_click || 0;
+        const callsMade = dayData.call_click || 0;
 
         return (
-          <div key={res._id} className="bg-white p-5 rounded-[2rem] border border-slate-200 shadow-sm relative overflow-hidden">
-            <div className="flex items-center gap-4 mb-5">
-              <img src={res.hotelImage || "https://via.placeholder.com/60"} className="w-12 h-12 rounded-xl object-cover" alt="" />
+          <div key={res._id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm relative overflow-hidden active:scale-[0.98] transition-all">
+            <div className="flex items-center gap-4 mb-6">
+              <img src={res.hotelImage || "https://via.placeholder.com/60"} className="w-16 h-16 rounded-2xl object-cover border-2 border-slate-50" alt="" />
               <div className="min-w-0">
-                <h4 className="font-black text-xs uppercase italic text-slate-800 truncate">{res.name}</h4>
-                <p className="text-[8px] font-black text-blue-500 uppercase tracking-widest">{res.collegeName}</p>
+                <h4 className="font-black text-sm uppercase italic text-slate-800 truncate leading-none mb-1.5">{res.name}</h4>
+                <div className="flex items-center gap-2">
+                  <span className="text-[8px] font-black text-blue-500 uppercase bg-blue-50 px-2 py-0.5 rounded-md">{res.collegeName}</span>
+                  <div className={`w-1.5 h-1.5 rounded-full ${dayHits > 0 ? 'bg-emerald-500 animate-pulse' : 'bg-slate-200'}`}></div>
+                </div>
               </div>
             </div>
-            {/* Counts Display Grid */}
-            <div className="grid grid-cols-3 gap-2">
-              <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-center">
-                <p className="text-[7px] font-black text-slate-400 uppercase mb-1">Hits</p>
-                <p className="text-sm font-black text-slate-900">{dayHits}</p>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-slate-50/80 p-3 rounded-2xl border border-slate-100 text-center">
+                <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Hits</p>
+                <p className="text-base font-black text-slate-800 leading-none">{dayHits}</p>
               </div>
-              <div className="bg-blue-50 p-3 rounded-2xl border border-blue-100 text-center text-blue-600">
-                <p className="text-[7px] font-black uppercase mb-1">Orders</p>
-                <p className="text-sm font-black">{orderSent}</p>
+              <div className="bg-blue-50/50 p-3 rounded-2xl border border-blue-100 text-center">
+                <p className="text-[8px] font-black text-blue-400 uppercase mb-1">Orders</p>
+                <p className="text-base font-black text-blue-600 leading-none">{orderSent}</p>
               </div>
-              <div className="bg-green-50 p-3 rounded-2xl border border-green-100 text-center text-green-600">
-                <p className="text-[7px] font-black uppercase mb-1">Calls</p>
-                <p className="text-sm font-black">{callsMade}</p>
+              <div className="bg-emerald-50/50 p-3 rounded-2xl border border-emerald-100 text-center">
+                <p className="text-[8px] font-black text-emerald-400 uppercase mb-1">Calls</p>
+                <p className="text-base font-black text-emerald-600 leading-none">{callsMade}</p>
               </div>
             </div>
           </div>

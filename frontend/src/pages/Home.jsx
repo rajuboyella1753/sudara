@@ -94,27 +94,56 @@ useEffect(() => {
       <Navbar />
       
       <section className="relative pt-24 pb-12 md:pt-36 md:pb-20 overflow-hidden bg-slate-50">
-        <motion.div initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 0 }} className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-blue-500/5 blur-[140px] -z-10 rounded-full" />
-        <div className="max-w-7xl mx-auto px-6 text-center">
-          <h1 className="text-5xl md:text-9xl font-black italic tracking-tighter mb-4 uppercase leading-none text-slate-900">
-            SUDARA <span className="text-blue-600">HUB</span>
-          </h1>
-          <p className="text-slate-500 font-bold uppercase tracking-[0.4em] text-[8px] md:text-sm mb-8 md:mb-12 text-blue-600">Exclusive for Campus</p>
+  <motion.div initial={{ opacity: 0, y: -50 }} animate={{ opacity: 1, y: 0 }} className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-blue-500/5 blur-[140px] -z-10 rounded-full" />
+  <div className="max-w-7xl mx-auto px-6 text-center">
+    <h1 className="text-5xl md:text-9xl font-black italic tracking-tighter mb-4 uppercase leading-none text-slate-900">
+      SUDARA <span className="text-blue-600">HUB</span>
+    </h1>
+    <p className="text-slate-500 font-bold uppercase tracking-[0.4em] text-[8px] md:text-sm mb-8 md:mb-12 text-blue-600">Exclusive for Campus</p>
 
-          <div className="max-w-3xl mx-auto bg-white border border-slate-200 rounded-2xl md:rounded-[3rem] p-1.5 md:p-3 flex items-center gap-3 shadow-xl shadow-slate-200/50">
-            <div className="relative flex-1 group">
-              <Search className="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors w-4 h-4 md:w-5 h-5" />
-              <input 
-                type="text" 
-                placeholder="Search Restaurants or Food..." 
-                value={searchTerm} 
-                onChange={(e) => setSearchTerm(e.target.value)} 
-                className="w-full bg-transparent py-3 md:py-5 pl-10 md:pl-14 pr-4 rounded-xl md:rounded-3xl text-xs md:text-lg outline-none font-bold italic placeholder:text-slate-300 text-slate-800" 
-              />
-            </div>
-          </div>
+    {/* 🔍 New Professional Search & Dropdown Row */}
+    <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-3 md:gap-4">
+      
+      {/* 1. Search Bar */}
+      <div className="relative flex-1 w-full group">
+        <div className="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors">
+          <Search className="w-4 h-4 md:w-5 h-5" />
         </div>
-      </section>
+        <input 
+          type="text" 
+          placeholder="Search for restaurant or hotel..." 
+          value={searchTerm} 
+          onChange={(e) => setSearchTerm(e.target.value)} 
+          className="w-full bg-white border border-slate-200 py-3.5 md:py-5 pl-12 md:pl-16 pr-4 rounded-2xl md:rounded-[2.5rem] text-xs md:text-base outline-none font-bold italic shadow-xl shadow-slate-200/40 focus:border-blue-300 transition-all placeholder:text-slate-300 text-slate-800" 
+        />
+      </div>
+
+      {/* 🏢 Restaurant Dropdown */}
+      <div className="relative w-full md:w-72 group">
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 z-10 pointer-events-none">
+          <UtensilsCrossed className="w-4 h-4 md:w-5 h-5" />
+        </div>
+        <select 
+          onChange={(e) => {
+            if(e.target.value) handleRestaurantClick(e.target.value);
+          }}
+          className="w-full bg-white border border-slate-200 py-3.5 md:py-5 pl-12 md:pl-14 pr-10 rounded-2xl md:rounded-[2.5rem] text-[10px] md:text-sm font-black uppercase tracking-widest outline-none shadow-xl shadow-slate-200/40 appearance-none cursor-pointer hover:bg-slate-50 transition-all focus:border-blue-300 text-slate-700"
+        >
+          <option value="">Quick Select ({restaurants.length})</option>
+          {restaurants.map((res) => (
+            <option key={res._id} value={res._id} className="font-bold text-slate-800">
+              {res.name} {res.isStoreOpen ? "• Active" : "• Offline"}
+            </option>
+          ))}
+        </select>
+        <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-blue-600 transition-colors">
+          <ArrowUpRight className="w-4 h-4 rotate-90" />
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
 
       <main className="max-w-7xl mx-auto px-6 py-12 min-h-[400px]">
         {loading ? (
