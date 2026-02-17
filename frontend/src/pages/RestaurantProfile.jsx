@@ -261,7 +261,13 @@ const handleConfirmOrder = async () => {
                     ))}
                 </div>
             </div>
-
+{/* ⚠️ IMAGES DISCLAIMER MESSAGE */}
+<div className="bg-slate-50 border-l-4 border-amber-500 p-4 rounded-2xl mb-6 flex items-start gap-3">
+  <Camera className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+  <p className="text-[9px] sm:text-[10px] font-bold text-slate-500 leading-relaxed uppercase italic">
+    <span className="text-amber-600 font-black">Note:</span> These images are for representation only (sourced from Google). Please do not select food based solely on the image appearance. Check dish names and descriptions.
+  </p>
+</div>
             {/* Items Grid: Responsive Column Count */}
             <div className="max-h-screen lg:max-h-[800px] overflow-y-auto pr-1 scrollbar-custom">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pb-10">
@@ -289,87 +295,76 @@ const handleConfirmOrder = async () => {
             </div>
         </div>
 
-        {/* Right Sidebar: Mobile-First Order */}
-         <div className="order-1 lg:order-2 lg:col-span-4">
+      {/* Right Sidebar: Mobile-First Order */}
+<div className="order-1 lg:order-2 lg:col-span-4">
   <div className="bg-white p-4 rounded-2xl lg:sticky lg:top-32 shadow-lg border border-slate-100">
-    <div className="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-100">
-      <span className="text-[8px] sm:text-[9px] font-black uppercase text-blue-600 italic">Order Summary</span>
-      <div className="space-y-1.5 my-3 max-h-40 overflow-y-auto scrollbar-custom">
-        {Object.values(cart).map((i) => (
-          <div key={i._id} className="flex justify-between text-[10px] font-bold italic text-slate-600">
-            <span>{i.qty} x {i.name}</span>
-            <span>₹{i.price * i.qty}</span>
-          </div>
-        ))}
-      </div>
-
-      <div className="border-t border-blue-100 pt-3 space-y-1">
-        <div className="flex justify-between text-[10px] sm:text-[11px] font-black italic text-slate-500">
-          <span>Total Bill:</span>
-          <span>₹{totalAmount}</span>
-        </div>
-        <div className="flex justify-between text-sm sm:text-base font-black italic text-blue-600">
-          <span>Pay Advance (50%):</span>
-          <span>₹{halfAmount}</span>
-        </div>
-        <p className="text-[7px] sm:text-[8px] font-bold text-slate-400 uppercase text-right italic mt-1">
-          *Pay remaining ₹{halfAmount} at restaurant
-        </p>
-      </div>
-    </div>
     
-    {/* 🚀 రాజు, ఇక్కడ బటన్లు మరియు కౌంట్ లాజిక్ అప్‌డేట్ చేశాను */}
+    {/* 🚀 1. Summary Hide Condition: ఆ రెండు హోటల్స్ కి ఇది కనిపించదు */}
+    {owner?.name !== "Amaravathi Hotel" && owner?.name !== "Ruchi Hotel" && (
+      <div className="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-100">
+        <span className="text-[9px] font-black uppercase text-blue-600 italic tracking-widest">Order Summary</span>
+        <div className="space-y-1.5 my-3 max-h-40 overflow-y-auto scrollbar-hide">
+          {Object.values(cart).map((i) => (
+            <div key={i._id} className="flex justify-between text-[10px] font-bold italic text-slate-600">
+              <span>{i.qty} x {i.name}</span>
+              <span>₹{i.price * i.qty}</span>
+            </div>
+          ))}
+        </div>
+        <div className="border-t border-blue-100 pt-3 space-y-1">
+          <div className="flex justify-between text-sm font-black italic text-blue-600">
+            <span>Pay Advance (50%):</span>
+            <span>₹{halfAmount}</span>
+          </div>
+        </div>
+      </div>
+    )}
+
+    {/* 🚀 2. Buttons & Count Logic: ఇక్కడ కౌంట్స్ అన్నీ పక్కాగా వస్తాయి */}
     <div className="flex flex-col gap-2.5 sm:gap-3">
       {(() => {
-        // 🏨 1. Amaravathi Hotel Logic
+        // 🏨 Amaravathi Hotel Logic
         if (owner?.name === "Amaravathi Hotel") {
           return (
             <>
               <div className="p-3 bg-orange-50 border border-orange-100 rounded-xl text-center">
                 <p className="text-[10px] font-black text-orange-600 uppercase italic leading-tight">
-                  Only Parcels Available! 🥡
+                  Only Parcels Available! <br/> No pre-Booking & delivery services 🥡
                 </p>
-                <p className="text-[8px] font-bold text-orange-400 uppercase mt-1">
-                  * ₹10 extra for parcel cost
-                </p>
+                <p className="text-[8px] font-bold text-orange-400 mt-1 uppercase">* ₹10 Extra parcel cost</p>
               </div>
-              {/* 📞 కాల్ నొక్కితే 'call_click' కౌంట్ అవుతుంది */}
-              <a href={`tel:${owner?.phone}`} onClick={trackCallInterest} className="w-full py-3.5 rounded-xl font-black uppercase text-[10px] tracking-widest bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95">
+              {/* 📞 Call Count: trackCallInterest పక్కాగా పనిచేస్తుంది */}
+              <a href={`tel:${owner?.phone}`} onClick={trackCallInterest} className="w-full py-3.5 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 active:scale-95 shadow-lg tracking-widest bg-blue-600 text-white border-blue-600">
                 <PhoneCall className="w-4 h-4" /> Call & Order Now
               </a>
             </>
           );
         }
-
-        // 🏨 2. Ruchi Hotel Logic
+        
+        // 🏨 Ruchi Hotel Logic
         if (owner?.name === "Ruchi Hotel") {
           return (
             <>
               <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl text-center">
-                <p className="text-[10px] font-black text-blue-600 uppercase italic leading-tight">
-                  Pre-book & Orders must be confirmed <br/> by calling owner! 📞
+                <p className="text-[9px] font-black text-blue-600 uppercase italic">
+                  Pre-book & Orders must be <br/> confirmed by calling owner! 📞
                 </p>
               </div>
-              {/* 📞 కాల్ నొక్కితే 'call_click' కౌంట్ అవుతుంది */}
-              <a href={`tel:${owner?.phone}`} onClick={trackCallInterest} className="w-full py-3.5 rounded-xl font-black uppercase text-[10px] tracking-widest bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95">
+              <a href={`tel:${owner?.phone}`} onClick={trackCallInterest} className="w-full py-3.5 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 active:scale-95 shadow-lg tracking-widest bg-blue-600 text-white border-blue-600">
                 <PhoneCall className="w-4 h-4" /> Call to Pre-Book
               </a>
             </>
           );
         }
 
-        // 🏨 3. Normal Flow for Other Hotels
+        // 🏨 Normal Flow for Other Hotels (viti count kuda vasthundi)
         return (
           <>
-            {/* ✅ ఇది నొక్కి ఫామ్ కన్ఫర్మ్ చేస్తే 'pre_order_click' కౌంట్ అవుతుంది */}
-            <button 
-              onClick={() => totalAmount > 0 ? setShowPayWarning(true) : alert("Select items!")} 
-              className={`w-full py-3.5 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${owner?.isStoreOpen && totalAmount > 0 ? 'bg-slate-900 text-white shadow-lg active:scale-95' : 'bg-slate-100 text-slate-300'}`}
-            >
+            {/* ✅ Pre-Book Count: handleConfirmOrder ద్వారా వస్తుంది */}
+            <button onClick={() => totalAmount > 0 ? setShowPayWarning(true) : alert("Select items!")} className={`w-full py-3.5 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${owner?.isStoreOpen && totalAmount > 0 ? 'bg-slate-900 text-white shadow-lg active:scale-95' : 'bg-slate-100 text-slate-300'}`}>
               Pre-Book Now
             </button>
-            {/* 📞 కాల్ నొక్కితే 'call_click' కౌంట్ అవుతుంది */}
-            <a href={`tel:${owner?.phone}`} onClick={trackCallInterest} className="w-full py-3.5 rounded-xl font-black uppercase text-[10px] tracking-widest bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95">
+            <a href={`tel:${owner?.phone}`} onClick={trackCallInterest} className="w-full py-3.5 rounded-xl font-black uppercase text-[10px] bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 active:scale-95 border-blue-600">
               <PhoneCall className="w-4 h-4" /> Call to Owner
             </a>
           </>
@@ -476,7 +471,7 @@ const handleConfirmOrder = async () => {
             <div className="grid grid-cols-2 gap-3">
               <input 
                 type="text" 
-                placeholder="Arrival Time" 
+                placeholder="Arrival Time you take to reach" 
                 value={orderData.arrivalTime} 
                 onChange={(e)=>setOrderData({...orderData, arrivalTime:e.target.value})} 
                 className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-[10px] font-bold outline-none focus:border-blue-500 transition-all shadow-sm" 
