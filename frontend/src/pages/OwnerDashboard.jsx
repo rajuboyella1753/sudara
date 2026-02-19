@@ -44,7 +44,7 @@ export default function OwnerDashboard() {
     name: "", price: "", discountPrice: "", image: "", category: "Veg", subCategory: "Biryanis" 
   });
 
-  const subCategories = ["Biryanis", "Starters", "Breads", "Sea Food", "Soups", "Noodles", "Gravys", "Rice"];
+  const subCategories = ["Biryanis", "Starters", "Breads", "Sea Food", "Soups", "Noodles", "Gravys", "Rice", "Tiffins"];
 
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("owner"));

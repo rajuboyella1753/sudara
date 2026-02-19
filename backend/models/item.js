@@ -7,7 +7,7 @@ const itemSchema = new mongoose.Schema({
   subCategory: { 
     type: String, 
     required: true,
-    enum: ["Biryanis", "Starters", "Breads", "Sea Food", "Soups", "Noodles", "Gravys", "Rice"]
+    enum: ["Biryanis", "Starters", "Breads", "Sea Food", "Soups", "Noodles", "Gravys", "Rice", "Tiffins"]
   },
   image: { type: String, required: true },
   isAvailable: { type: Boolean, default: true }, 

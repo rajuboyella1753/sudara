@@ -23,7 +23,7 @@ export default function RestaurantProfile() {
 
   const availableSubCats = useMemo(() => {
     const catsInMenu = items.map(item => item.subCategory);
-    return ["Biryanis", "Starters", "Soups", "Noodles", "Gravys", "Rice", "Breads", "Sea Food"].filter(cat => 
+    return ["Biryanis", "Starters", "Soups", "Noodles", "Gravys", "Rice", "Breads", "Sea Food", "Tiffins"].filter(cat => 
       catsInMenu.includes(cat)
     );
   }, [items]);
@@ -351,7 +351,7 @@ const handleConfirmOrder = async () => {
                 </p>
               </div>
               <a href={`tel:${owner?.phone}`} onClick={trackCallInterest} className="w-full py-3.5 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 active:scale-95 shadow-lg tracking-widest bg-blue-600 text-white border-blue-600">
-                <PhoneCall className="w-4 h-4" /> Call to Pre-Book
+                <PhoneCall className="w-4 h-4" /> Call to Pre-Book/Order
               </a>
             </>
           );
