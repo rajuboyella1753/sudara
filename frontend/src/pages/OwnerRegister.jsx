@@ -20,26 +20,34 @@ export default function OwnerRegister() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    const finalCollege = form.collegeName === "Others" ? form.customCollege : form.collegeName;
-    
-    const payload = {
-      ...form,
-      collegeName: finalCollege
-    };
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    try {
-      const res = await api.post("/owner/register", payload);
-      alert("Registered successfully ✅");
-      window.location.href = "/owner";
-      
-    } catch (error) {
-      const errorMsg = error.response?.data?.message || "Registration failed. Try again!";
-      alert(errorMsg);
-    }
+  // 1. ఇక్కడ వెరిఫికేషన్ చెక్ పెట్టు
+  if (form.collegeName === "Others" && !form.customCollege.trim()) {
+    alert("Please enter your college name!");
+    return; // ఇక్కడితో ఫంక్షన్ ఆగిపోతుంది, కింద ఉన్న కోడ్ రన్ అవ్వదు
+  }
+
+  // 2. డేటా ప్రిపరేషన్
+  const finalCollege = form.collegeName === "Others" ? form.customCollege : form.collegeName;
+  
+  const payload = {
+    ...form,
+    collegeName: finalCollege
   };
+
+  // 3. ఆ తర్వాతే API కి డేటా పంపాలి
+  try {
+    const res = await api.post("/owner/register", payload);
+    alert("Registered successfully ✅");
+    window.location.href = "/owner";
+    
+  } catch (error) {
+    const errorMsg = error.response?.data?.message || "Registration failed. Try again!";
+    alert(errorMsg);
+  }
+};
 
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-blue-500/30">

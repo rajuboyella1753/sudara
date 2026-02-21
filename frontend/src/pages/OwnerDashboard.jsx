@@ -115,18 +115,22 @@ export default function OwnerDashboard() {
     } catch (err) { alert("Failed to update status"); }
   };
 
-  const handleGetLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const { latitude, longitude } = pos.coords;
-          setProfileForm(prev => ({ ...prev, latitude, longitude }));
-          alert(`Location Captured! ✅ Now click 'Save Profile'.`);
-        },
-        (err) => alert("Please enable location access.")
-      );
-    }
-  };
+const handleGetLocation = () => {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setProfileForm(prev => ({ ...prev, latitude, longitude }));
+        alert(`Location Captured! ✅ \nLat: ${latitude.toFixed(4)}, Lng: ${longitude.toFixed(4)}`);
+      },
+      (err) => {
+        console.error(err);
+        alert("Location access denied! ❌ Please enable GPS in browser settings.");
+      },
+      { enableHighAccuracy: true }
+    );
+  }
+};
 
   const optimizeImage = (file, callback) => {
     const reader = new FileReader();
@@ -251,7 +255,7 @@ export default function OwnerDashboard() {
         <section className="space-y-10">
           <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 text-slate-900">
             <div>
-              <h2 className="text-6xl md:text-8xl font-black italic uppercase tracking-[0.02em] leading-[0.8] mb-4 text-slate-900">Master<br/><span className="text-blue-600">Kitchen</span></h2>
+              <h2 className="text-6xl md:text-8xl font-black italic uppercase tracking-[0.02em] leading-[0.8] mb-4 text-slate-900">Owner<br/><span className="text-blue-600">Kitchen</span></h2>
               <div className="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-slate-200 shadow-sm">
                 <div className={`w-2 h-2 rounded-full ${owner?.isStoreOpen ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></div>
                 <span className="text-[9px] font-black uppercase text-slate-500 tracking-widest">{owner?.isStoreOpen ? 'Accepting Orders' : 'Offline'}</span>

@@ -53,6 +53,46 @@ const trackCallInterest = async () => {
     console.log("Call tracking failed");
   }
 };
+const openGoogleMaps = () => {
+  if (!owner?.latitude || !owner?.longitude || owner.latitude === 0) {
+    return alert("Restaurant location not set by owner! 📍");
+  }
+
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const userLat = position.coords.latitude;
+        const userLng = position.coords.longitude;
+        const restLat = owner.latitude;
+        const restLng = owner.longitude;
+
+        // ✅ మొబైల్ లో ఉన్నావా లేదా అని చెక్ చేస్తున్నాం
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+        if (isMobile) {
+          // 🚀 మొబైల్ అయితే నేరుగా యాప్ లో 'Navigation' స్టార్ట్ అవుతుంది
+          // saddr = Start (User GPS), daddr = Destination (Owner Lat/Lng)
+          window.location.href = `https://maps.google.com/maps?saddr=${userLat},${userLng}&daddr=${restLat},${restLng}&directionsmode=walking`;
+        } else {
+          // 💻 ల్యాప్‌టాప్ అయితే బ్రౌజర్ లో కొత్త ట్యాబ్ ఓపెన్ అవుతుంది
+          const mapsURL = `https://www.google.com/maps/dir/?api=1&origin=${userLat},${userLng}&destination=${restLat},${restLng}&travelmode=walking`;
+          window.open(mapsURL, "_blank");
+        }
+      },
+      (error) => {
+        // GPS పర్మిషన్ ఇవ్వకపోతే డీఫాల్ట్ గా రెస్టారెంట్ లొకేషన్ చూపిస్తాం
+        window.open(`https://www.google.com/maps/search/?api=1&query=${owner.latitude},${owner.longitude}`, "_blank");
+      },
+      { 
+        enableHighAccuracy: true, // 🎯 49m vs 46m అక్యురసీ కోసం ఇది ప్రాణం!
+        timeout: 10000, 
+        maximumAge: 0 
+      }
+    );
+  } else {
+    alert("Nee browser geolocation support cheyyadam ledu bro! 📍");
+  }
+};
 
   useEffect(() => {
     const fetchData = async () => {
@@ -151,19 +191,64 @@ const handleConfirmOrder = async () => {
     <div className="min-h-screen bg-white text-slate-900 overflow-x-hidden selection:bg-blue-500/30">
       <Navbar />
       
-      {/* Header Section: Responsive Height */}
-      <div className="relative h-[250px] sm:h-[300px] md:h-[450px] flex items-center justify-center overflow-hidden bg-slate-100">
-          {owner?.hotelImage && <img src={owner.hotelImage} loading="eager" fetchPriority="high" className="absolute inset-0 w-full h-full object-cover opacity-40 blur-[1px]" alt="" />}
-          <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-black/10"></div>
-          <div className="relative z-10 text-center px-4">
-              <h1 className="text-2xl sm:text-3xl md:text-7xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">{owner?.name}</h1>
-              <p className="text-slate-500 font-bold uppercase tracking-[0.2em] text-[8px] sm:text-[10px] md:text-xs mt-3">{owner?.collegeName} • Exclusive Menu</p>
-          </div>
-          <div className="absolute top-4 right-4 flex gap-2 z-20">
-              <button onClick={() => {}} className="bg-white p-2 sm:p-2.5 rounded-full shadow-md text-slate-600 border"><Share2 className="w-3.5 h-3.5 sm:w-4 h-4" /></button>
-              <button onClick={() => {}} className="bg-white p-2 sm:p-2.5 rounded-full shadow-md border"><Heart className={`w-3.5 h-3.5 sm:w-4 h-4 text-slate-300`} /></button>
-          </div>
-      </div>
+{/* 🏛️ Header Section: Ultra Clean & Responsive */}
+<div className="relative h-[350px] sm:h-[450px] md:h-[600px] flex items-center justify-center overflow-hidden bg-slate-900 w-full">
+    {/* Background Image with Overlay */}
+    {owner?.hotelImage && (
+      <img 
+        src={owner.hotelImage} 
+        loading="eager" 
+        className="absolute inset-0 w-full h-full object-cover opacity-50 md:opacity-40 blur-[0.1px]" 
+        alt={owner?.name} 
+      />
+    )}
+    
+    {/* Enhanced Professional Overlays for Text Contrast */}
+    <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-[#FDFDFD]"></div>
+    <div className="absolute inset-0 bg-black/20"></div>
+
+    {/* Center Content: Mobile-First Optimized */}
+    <div className="relative z-10 text-center px-4 w-full max-w-4xl flex flex-col items-center pt-8">
+        <motion.h1 
+          initial={{ opacity: 0, y: 15 }} 
+          animate={{ opacity: 1, y: 0 }}
+          className="text-4xl sm:text-6xl md:text-8xl lg:text-9xl font-black italic uppercase tracking-tighter text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] leading-tight md:leading-[0.9] text-center"
+        >
+          {owner?.name}
+        </motion.h1>
+        
+        <motion.p 
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }} 
+          transition={{ delay: 0.2 }}
+          className="text-white/95 font-black uppercase tracking-widest text-[8px] sm:text-[10px] md:text-xs mt-4 bg-blue-600/40 backdrop-blur-lg px-4 py-1.5 rounded-full border border-white/20 inline-block shadow-xl"
+        >
+          {owner?.collegeName} • Exclusive Menu
+        </motion.p>
+
+        {/* 📍 Route Button - Fixed Padding for Mobile */}
+        <div className="mt-8 md:mt-12">
+          <motion.button 
+            whileTap={{ scale: 0.95 }}
+            onClick={openGoogleMaps}
+            className="flex items-center gap-2 sm:gap-3 bg-white px-6 py-3 md:px-10 md:py-5 rounded-full shadow-2xl hover:bg-blue-600 hover:text-white transition-all duration-300 group border border-white/30"
+          >
+            <Navigation className="w-3.5 h-3.5 md:w-5 md:h-5 text-blue-600 group-hover:text-white animate-pulse" />
+            <span className="text-[9px] md:text-xs font-black uppercase tracking-widest italic">Get Campus Route</span>
+          </motion.button>
+        </div>
+    </div>
+
+    {/* Top Right Action Buttons - Safe Area Adjusted */}
+    <div className="absolute top-4 right-4 md:top-8 md:right-8 flex gap-2 sm:gap-3 z-20">
+        <button className="bg-white/90 backdrop-blur-md p-2.5 md:p-4 rounded-xl md:rounded-2xl shadow-xl text-slate-900 border border-white/40 active:scale-90">
+          <Share2 className="w-4 h-4 md:w-5 md:h-5" />
+        </button>
+        <button className="bg-white/90 backdrop-blur-md p-2.5 md:p-4 rounded-xl md:rounded-2xl shadow-xl border border-white/40 active:scale-90 group">
+          <Heart className="w-4 h-4 md:w-5 md:h-5 text-slate-300 group-hover:text-red-500 transition-colors" />
+        </button>
+    </div>
+</div>
 
       <main className="max-w-7xl mx-auto px-4 py-6 md:py-8 grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
         

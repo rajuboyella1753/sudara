@@ -58,13 +58,12 @@ router.get("/admin-all-owners", async (req, res) => {
   }
 });
 
-/* ================= 4. LOGIN (Strict Verification) ================= */
-// backend/routes/ownerRoutes.js
+/* ================= 4. LOGIN (Strict Verification with Hint) ================= */
 router.post("/login", async (req, res) => {
   try {
     const { email, password, collegeName } = req.body;
 
-    // 🔥 అడ్మిన్ లాగిన్ చెక్ - అందరికంటే ముందు ఇది ఉండాలి
+    // 1. అడ్మిన్ లాగిన్ చెక్
     if (email === "telugubiblequiz959@gmail.com" && password === "Raju1753@s") {
       return res.json({ 
         success: true, 
@@ -73,16 +72,27 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // మిగిలిన ఓనర్ల కోసం వెతకడం
-    const owner = await Owner.findOne({ email, password, collegeName }).lean();
+    // 2. మొదట ఈమెయిల్ మరియు పాస్‌వర్డ్ తో ఓనర్ ని వెతకాలి (కాలేజీ పేరు కాకుండా)
+    const owner = await Owner.findOne({ email, password }).lean();
 
-    if (!owner) return res.status(401).json({ message: "Invalid credentials ❌" });
+    if (!owner) {
+      return res.status(401).json({ message: "Invalid Email or Password ❌" });
+    }
 
-    // అప్రూవ్ కాకపోతే ఆపేయాలి
+    // 3. ఇక్కడ నీకు కావాల్సిన హింట్ లాజిక్: కాలేజీ మ్యాచ్ అవ్వకపోతే..
+    if (owner.collegeName !== collegeName) {
+      return res.status(401).json({ 
+        message: "Wrong College Selected! ⚠️",
+        registeredCollege: owner.collegeName // ఇక్కడ మనం హింట్ పంపిస్తున్నాం రాజు
+      });
+    }
+
+    // 4. అప్రూవ్ కాకపోతే ఆపేయాలి
     if (owner.isApproved === false) {
       return res.status(403).json({ message: "Account pending admin approval... ⏳" });
     }
 
+    // అన్నీ కరెక్ట్ అయితే సక్సెస్
     res.json({ success: true, owner });
   } catch (err) {
     res.status(500).json({ message: err.message });

@@ -52,9 +52,7 @@ const handleSubmit = async (e) => {
     try {
       const res = await api.post("/owner/login", form);
       
-      // ✅ ఇక్కడ అడ్మిన్ అయితే డైరెక్ట్ కంట్రోల్ రూట్ కి పంపించు
       if (res.data.isAdmin) {
-        // అడ్మిన్ కి కావాలంటే ఒక ఫ్లాగ్ ని లోకల్ స్టోరేజ్ లో పెట్టుకోవచ్చు
         localStorage.setItem("isAdmin", "true"); 
         navigate("/sudara-admin-control");
         return;
@@ -67,7 +65,13 @@ const handleSubmit = async (e) => {
         setVerificationMessage("Account pending admin approval! ⏳");
       }
     } catch (error) {
-      setVerificationMessage(error.response?.data?.message || "Login failed ❌");
+      // ✅ ఇక్కడ మార్పు చెయ్ రాజు: బ్యాకెండ్ నుండి వచ్చే 'registeredCollege' హింట్ ని వాడుకో
+      const errorData = error.response?.data;
+      if (errorData?.registeredCollege) {
+        setVerificationMessage(`Wrong College! Your account is registered with: ${errorData.registeredCollege} ⚠️`);
+      } else {
+        setVerificationMessage(errorData?.message || "Login failed ❌");
+      }
     }
 };
 
