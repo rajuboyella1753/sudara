@@ -530,7 +530,7 @@ const handleConfirmOrder = async () => {
               <span className="text-[9px] font-black uppercase italic tracking-widest">Verification Steps</span>
             </div>
             <p className="text-[8px] font-bold text-orange-700 leading-tight uppercase text-center italic">
-              1. Fill Below Details ➜ 2. Send to Owner ➜ 3. After arrival tell Txn ID last 5 digits at restarent
+              1. Fill Below Details ➜ 2. Send to Owner ➜ 3. After arrival tell Txn ID last 5 digits at restaurant counter for order verification! 📞
             </p>
           </div>
           <div className="w-full h-px bg-slate-100 relative">

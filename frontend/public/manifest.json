@@ -1,23 +1,41 @@
 {
+  "id": "/",
   "short_name": "Sudara",
   "name": "Sudara Hub - College Food Finder",
+  "description": "Find the best food near your college campus with live availability.",
   "icons": [
     {
-      "src": "SUDAR11.png",
-      "type": "image/png",
+      "src": "/SUDAResize1.png",
       "sizes": "192x192",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
-      "src": "SUDARA12.png",
-      "type": "image/png",
+      "src": "/SUDAResize2.png",
       "sizes": "512x512",
-      "purpose": "any maskable"
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/Screenshot-mobile.png",
+      "sizes": "543x729",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Sudara Hub Mobile View"
+    },
+    {
+      "src": "/screenshot-desktop.png",
+      "sizes": "1919x918",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Sudara Hub Desktop View"
     }
   ],
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "theme_color": "#f97316",
-  "background_color": "#020617"
+  "theme_color": "#2563eb",
+  "background_color": "#ffffff"
 }

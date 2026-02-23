@@ -43,7 +43,9 @@ export default function OwnerDashboard() {
   const [form, setForm] = useState({ 
     name: "", price: "", discountPrice: "", image: "", category: "Veg", subCategory: "Biryanis" 
   });
-
+  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+    const [viewMode, setViewMode] = useState("daily"); // 🚀 'daily' లేదా 'range' మోడ్ కోసం
   const subCategories = ["Biryanis", "Starters", "Breads", "Sea Food", "Soups", "Noodles", "Gravys", "Rice", "Tiffins"];
 
   useEffect(() => {
@@ -59,7 +61,31 @@ export default function OwnerDashboard() {
       setDbColleges(res.data || []);
     } catch (err) { console.error("Colleges fetch failed"); }
   };
+const getOwnerRangeStats = () => {
+  if (!owner?.analytics) return { hits: 0, orders: 0, calls: 0 };
+  
+  const analyticsObj = owner.analytics instanceof Map ? Object.fromEntries(owner.analytics) : owner.analytics;
+  let stats = { hits: 0, orders: 0, calls: 0 };
 
+  let start = new Date(startDate);
+  let end = new Date(endDate);
+  start.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+
+  let current = new Date(start);
+  while (current <= end) {
+    // నీ DB ఫార్మాట్ '4/2/2026' కి తగ్గట్టుగా
+    const dKey = `${current.getDate()}/${current.getMonth() + 1}/${current.getFullYear()}`; 
+    const dayData = analyticsObj[dKey] || {};
+    
+    stats.hits += Number(dayData.kitchen_entry || 0);
+    stats.orders += Number(dayData.pre_order_click || 0);
+    stats.calls += Number(dayData.call_click || 0);
+
+    current.setDate(current.getDate() + 1);
+  }
+  return stats;
+};
   const fetchData = async (id) => {
     try {
       setLoading(true);
@@ -343,36 +369,78 @@ const handleGetLocation = () => {
         )}
 
         {isShowingMatrix && (
-          <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 text-slate-900">
-            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0, y: 20 }} className="bg-white w-full max-w-4xl p-6 sm:p-10 rounded-[3rem] shadow-2xl relative max-h-[90vh] overflow-y-auto border border-white/20">
-              <button onClick={() => setIsShowingMatrix(false)} className="absolute top-8 right-8 p-3 bg-slate-50 text-slate-400 rounded-full hover:bg-red-50 transition-all active:scale-90 shadow-sm"><X className="w-5 h-5" /></button>
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10 border-l-4 border-blue-600 pl-6">
-                <div><h3 className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">Matrix Intel</h3><p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-3 italic">Live Engagement Intelligence</p></div>
-                <div className="flex items-center bg-slate-50 border border-slate-200 p-2.5 rounded-2xl shadow-inner"><Calendar className="w-4 h-4 text-blue-600 ml-2" /><input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="bg-transparent border-none text-[12px] font-black outline-none px-4 cursor-pointer text-slate-700" /></div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                {(() => {
-                  const analyticsObj = owner?.analytics instanceof Map ? Object.fromEntries(owner.analytics) : (owner?.analytics || {});
-                  const formattedToday = new Date(filterDate).toLocaleDateString('en-GB').split('/').map(n => parseInt(n)).join('/');
-                  const dayData = analyticsObj[formattedToday] || {};
-                  const stats = [
-                    { label: "Menu Hits", value: dayData.kitchen_entry || 0, icon: Search, color: "text-slate-400", bg: "bg-slate-50" },
-                    { label: "Pre-Orders", value: dayData.pre_order_click || 0, icon: UtensilsCrossed, color: "text-blue-600", bg: "bg-blue-50", border: "border-b-4 border-b-blue-600" },
-                    { label: "Calls Made", value: dayData.call_click || 0, icon: PhoneCall, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-b-4 border-b-emerald-600" }
-                  ];
-                  return stats.map((s, i) => (
-                    <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className={`bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-xl transition-all ${s.border}`}>
-                      <div className="flex items-center gap-4 mb-4"><div className={`w-12 h-12 ${s.bg} rounded-2xl flex items-center justify-center ${s.color} group-hover:scale-110 transition-transform`}><s.icon className="w-6 h-6" /></div><span className={`text-[11px] font-black uppercase tracking-widest ${s.color}`}>{s.label}</span></div>
-                      <p className="text-6xl font-black italic text-slate-900 leading-none">{s.value}</p>
-                      <div className="absolute top-0 right-0 w-24 h-24 bg-slate-50 rounded-bl-[4rem] -z-10 opacity-30 group-hover:opacity-100 transition-all"></div>
-                    </motion.div>
-                  ));
-                })()}
-              </div>
-              <div className="mt-10 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 text-center"><p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">* Analytics reflect private data for your hub only.</p></div>
-            </motion.div>
+  <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 text-slate-900">
+    <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0, y: 20 }} className="bg-white w-full max-w-4xl p-6 sm:p-10 rounded-[3rem] shadow-2xl relative max-h-[90vh] overflow-y-auto border border-white/20">
+      <button onClick={() => setIsShowingMatrix(false)} className="absolute top-8 right-8 p-3 bg-slate-50 text-slate-400 rounded-full hover:bg-red-50 transition-all active:scale-90 shadow-sm"><X className="w-5 h-5" /></button>
+      
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10 border-l-4 border-blue-600 pl-6">
+        <div>
+          <h3 className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">Hub Matrix</h3>
+          {/* 🚀 View Mode Switcher */}
+          <div className="flex bg-slate-100 p-1 rounded-xl w-fit mt-4">
+            <button onClick={() => setViewMode("daily")} className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === "daily" ? "bg-white text-blue-600 shadow-sm" : "text-slate-400"}`}>Today</button>
+            <button onClick={() => setViewMode("range")} className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${viewMode === "range" ? "bg-white text-blue-600 shadow-sm" : "text-slate-400"}`}>Range Report</button>
           </div>
-        )}
+        </div>
+
+        {/* 📅 కండిషనల్ డేట్ పిక్కర్స్ */}
+        <div className="w-full md:w-auto">
+          {viewMode === "daily" ? (
+            <div className="flex items-center bg-slate-50 border border-slate-200 p-2.5 rounded-2xl shadow-inner">
+              <Calendar className="w-4 h-4 text-blue-600 ml-2" />
+              <input type="date" value={filterDate} onChange={(e) => setFilterDate(e.target.value)} className="bg-transparent border-none text-[12px] font-black outline-none px-4 cursor-pointer text-slate-700" />
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 bg-white border border-slate-200 p-1.5 rounded-2xl shadow-sm overflow-hidden">
+              <div className="flex items-center gap-1 px-2 border-r">
+                <span className="text-[8px] font-black text-slate-400">FROM</span>
+                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="bg-transparent text-[10px] font-black outline-none border-none cursor-pointer" />
+              </div>
+              <div className="flex items-center gap-1 px-2">
+                <span className="text-[8px] font-black text-slate-400">TO</span>
+                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="bg-transparent text-[10px] font-black outline-none border-none cursor-pointer" />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        {(() => {
+          let statsData;
+          if (viewMode === "daily") {
+            const analyticsObj = owner?.analytics instanceof Map ? Object.fromEntries(owner.analytics) : (owner?.analytics || {});
+            const d = new Date(filterDate);
+            const dKey = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+            const dayEntry = analyticsObj[dKey] || {};
+            statsData = { hits: dayEntry.kitchen_entry || 0, orders: dayEntry.pre_order_click || 0, calls: dayEntry.call_click || 0 };
+          } else {
+            statsData = getOwnerRangeStats();
+          }
+
+          const cards = [
+            { label: viewMode === "daily" ? "Menu Hits Today" : "Total Restaurant Opened", value: statsData.hits, icon: Search, color: "text-slate-400", bg: "bg-slate-50" },
+            { label: viewMode === "daily" ? "Pre-Orders Today" : "Total Pre-Books", value: statsData.orders, icon: UtensilsCrossed, color: "text-blue-600", bg: "bg-blue-50", border: "border-b-4 border-b-blue-600" },
+            { label: viewMode === "daily" ? "Calls Today" : "Total Calls Made & ordered", value: statsData.calls, icon: PhoneCall, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-b-4 border-b-emerald-600" }
+          ];
+
+          return cards.map((s, i) => (
+            <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} className={`bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm relative overflow-hidden group hover:shadow-xl transition-all ${s.border}`}>
+              <div className="flex items-center gap-4 mb-4"><div className={`w-12 h-12 ${s.bg} rounded-2xl flex items-center justify-center ${s.color} group-hover:scale-110 transition-transform`}><s.icon className="w-6 h-6" /></div><span className={`text-[11px] font-black uppercase tracking-widest ${s.color}`}>{s.label}</span></div>
+              <p className="text-6xl font-black italic text-slate-900 leading-none">{s.value}</p>
+            </motion.div>
+          ));
+        })()}
+      </div>
+
+      <div className="mt-10 p-6 bg-slate-50 rounded-[2rem] border border-slate-100 text-center">
+        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
+          * Viewing report for: <span className="text-blue-600">{owner?.name}</span>
+        </p>
+      </div>
+    </motion.div>
+  </div>
+)}
 
         {/* HUB SETTINGS MODAL */}
         {isEditingProfile && (

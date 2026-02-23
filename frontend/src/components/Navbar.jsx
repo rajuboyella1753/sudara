@@ -1,18 +1,56 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { Smartphone } from "lucide-react";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
 
-  // స్క్రోల్ చేసినప్పుడు Navbar స్టైల్ మార్చడానికి
-  useEffect(() => {
+  // 🚀 PWA States - వీటిని యాడ్ చేశాను రాజు
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstallBtn, setShowInstallBtn] = useState(false);
+
+useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+
+    // 📲 PWA Debugging Logic
+    console.log("🛠️ PWA Debug: Initializing listener...");
+
+    const handleBeforeInstallPrompt = (e) => {
+      console.log("✅ PWA Debug: 'beforeinstallprompt' event fired!");
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallBtn(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+    // ఇక్కడ [] మాత్రమే ఉంచు రాజు, అప్పుడు ఎర్రర్ రాదు
+  }, []); 
+
+  // బటన్ స్టేట్ చెక్ చేయడానికి విడిగా ఒక useEffect
+  useEffect(() => {
+    if (!showInstallBtn) {
+      console.log("ℹ️ PWA Debug: Install button is currently hidden.");
+    } else {
+      console.log("🚀 PWA Debug: Install button is now VISIBLE!");
+    }
+  }, [showInstallBtn]);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') setShowInstallBtn(false);
+    setDeferredPrompt(null);
+  };
 
   const hideOwnerBtn = location?.pathname?.startsWith("/owner");
 
@@ -59,6 +97,16 @@ export default function Navbar() {
             </Link>
           ))}
 
+          {/* 📲 Install App Button (Desktop) - ఇక్కడ యాడ్ చేశాను */}
+          {showInstallBtn && (
+            <button 
+              onClick={handleInstallClick} 
+              className="flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-xl font-black text-[9px] uppercase italic border border-blue-100 hover:bg-blue-100 transition-all"
+            >
+              <Smartphone className="w-3 h-3" /> Get App
+            </button>
+          )}
+
           {!hideOwnerBtn && (
             <Link to="/owner" className="relative group overflow-hidden bg-slate-900 text-white px-8 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all hover:shadow-xl hover:shadow-blue-500/20 active:scale-95">
               <span className="relative z-10">Owner Portal</span>
@@ -68,14 +116,25 @@ export default function Navbar() {
         </div>
 
         {/* 📱 Mobile Toggle Button */}
-        <button 
-          className="lg:hidden relative w-10 h-10 flex flex-col justify-center items-center focus:outline-none bg-slate-50 rounded-xl"
-          onClick={() => setOpen(!open)}
-        >
-          <div className={`w-5 h-0.5 bg-slate-900 transition-all duration-300 ${open ? "rotate-45 translate-y-1" : ""}`}></div>
-          <div className={`w-5 h-0.5 bg-blue-600 my-1 transition-all duration-300 ${open ? "opacity-0" : ""}`}></div>
-          <div className={`w-5 h-0.5 bg-slate-900 transition-all duration-300 ${open ? "-rotate-45 -translate-y-1" : ""}`}></div>
-        </button>
+        <div className="flex items-center gap-3 lg:hidden">
+           {/* 📲 Mobile Install Button */}
+           {showInstallBtn && (
+            <button 
+              onClick={handleInstallClick} 
+              className="bg-blue-600 text-white p-2 rounded-xl shadow-lg shadow-blue-200"
+            >
+              <Smartphone className="w-5 h-5" />
+            </button>
+          )}
+          <button 
+            className="relative w-10 h-10 flex flex-col justify-center items-center focus:outline-none bg-slate-50 rounded-xl"
+            onClick={() => setOpen(!open)}
+          >
+            <div className={`w-5 h-0.5 bg-slate-900 transition-all duration-300 ${open ? "rotate-45 translate-y-1" : ""}`}></div>
+            <div className={`w-5 h-0.5 bg-blue-600 my-1 transition-all duration-300 ${open ? "opacity-0" : ""}`}></div>
+            <div className={`w-5 h-0.5 bg-slate-900 transition-all duration-300 ${open ? "-rotate-45 -translate-y-1" : ""}`}></div>
+          </button>
+        </div>
       </div>
 
       {/* 📱 Mobile Overlay Menu */}

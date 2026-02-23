@@ -55,11 +55,20 @@ const getLocation = () => {
     );
   }
 };
-
+const requestNotificationPermission = async () => {
+  if ("Notification" in window) {
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") {
+      // ఇక్కడ నీ FCM టోకెన్ ని సర్వర్ కి పంపే లాజిక్ ఉండాలి
+      console.log("Notification permission granted! 🎉");
+    }
+  }
+};
   useEffect(() => {
     setLoading(true);
     fetchOwners(); // డేటా ఫెచ్చింగ్ మాత్రమే ప్రయారిటీ
     getLocation(); // లొకేషన్ స్లో చేస్తోంది కాబట్టి ప్రస్తుతానికి పక్కన పెట్టాం
+    requestNotificationPermission();
   }, []);
 
 useEffect(() => {
@@ -126,7 +135,40 @@ const getDistanceRaw = (lat1, lon1, lat2, lon2) => {
 return (
     <div className="min-h-screen bg-[#FDFDFD] text-slate-900 font-sans selection:bg-blue-100 overflow-x-hidden">
       <Navbar />
-      
+{/* 🚀 ADMIN GLOBAL BROADCAST BANNER */}
+<AnimatePresence>
+  {(() => {
+    const adminMsg = restaurants.find(r => r.collegeName === "General")?.todaySpecial;
+    if (!adminMsg) return null;
+
+    return (
+      <motion.div 
+        initial={{ height: 0, opacity: 0 }}
+        animate={{ height: "auto", opacity: 1 }}
+        exit={{ height: 0, opacity: 0 }}
+        className="bg-slate-900 text-white overflow-hidden sticky top-0 z-[100] border-b border-white/10"
+      >
+        <div className="max-w-7xl mx-auto px-6 py-3.5 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className="bg-blue-600 p-1.5 rounded-lg shrink-0 animate-pulse">
+              <Bell className="w-3.5 h-3.5 text-white" />
+            </div>
+            <p className="text-[10px] md:text-xs font-black uppercase italic tracking-wider truncate">
+              <span className="text-blue-400">System Alert:</span> {adminMsg}
+            </p>
+          </div>
+          
+          <button 
+            onClick={() => { /* Close logic if needed */ }}
+            className="p-1 hover:bg-white/10 rounded-full transition-colors shrink-0"
+          >
+            <ArrowUpRight className="w-4 h-4 text-slate-500" />
+          </button>
+        </div>
+      </motion.div>
+    );
+  })()}
+</AnimatePresence>
       {/* 🏛️ Minimalist Hero Header */}
       <section className="relative pt-24 pb-12 md:pt-40 md:pb-20 bg-white border-b border-slate-100">
         <div className="max-w-7xl mx-auto px-6">
