@@ -24,9 +24,31 @@ export default function AdminDashboard() {
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [broadcastMsg, setBroadcastMsg] = useState({ title: "", body: "" });
   const [sending, setSending] = useState(false);
+  const [selectedCollege, setSelectedCollege] = useState("All");
+  const [availableColleges, setAvailableColleges] = useState([]);
   // ✅ వ్యూ మోడ్ కోసం కొత్త స్టేట్ (daily లేదా range)
 const [viewMode, setViewMode] = useState("daily");
-  useEffect(() => { fetchOwners(); }, []);
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get("/owner/admin-all-owners");
+        const ownersData = Array.isArray(res.data) ? res.data : [];
+        setOwners(ownersData);
+
+        // 🎓 కాలేజీల లిస్ట్ తయారు చేయడం (అడ్మిన్ 'General' ని తీసేసి)
+        const colleges = [...new Set(ownersData.map(o => o.collegeName))]
+          .filter(c => c && c !== "General");
+        setAvailableColleges(colleges);
+        
+      } catch (err) {
+        console.error("Fetch Error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInitialData();
+  }, []);
 
   const fetchOwners = async () => {
     try {
@@ -98,17 +120,23 @@ const sendAdminBroadcast = async () => {
   // ✅ రాజు, డేట్ సెలెక్షన్ ఇక్కడ ఫిక్స్ చేశాను
   const selectedDateFormatted = new Date(filterDate).toLocaleDateString('en-GB').split('/').map(n => parseInt(n)).join('/');
 
-  const filteredList = owners.filter(o => {
-    const isNotGeneral = o.collegeName !== "General";
-    let matchesTab = true;
-    if (activeTab === "pending") matchesTab = !o.isApproved;
-    else if (activeTab === "approved") matchesTab = o.isApproved;
-    else if (activeTab === "analytics") matchesTab = o.isApproved === true;
+ const filteredList = owners.filter(o => {
+    const isNotGeneral = o.collegeName !== "General";
+    
+    // 1. టాబ్ ఫిల్టర్
+    let matchesTab = true;
+    if (activeTab === "pending") matchesTab = !o.isApproved;
+    else if (activeTab === "approved") matchesTab = o.isApproved;
+    else if (activeTab === "analytics") matchesTab = o.isApproved === true;
 
-    const matchesSearch = (o.name || "").toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          (o.collegeName || "").toLowerCase().includes(searchTerm.toLowerCase());
-    return isNotGeneral && matchesTab && matchesSearch;
-  });
+    // 2. 🎓 కాలేజీ ఫిల్టర్ (Selected College లేదా All)
+    const matchesCollege = selectedCollege === "All" || o.collegeName === selectedCollege;
+
+    // 3. సెర్చ్ ఫిల్టర్
+    const matchesSearch = (o.name || "").toLowerCase().includes(searchTerm.toLowerCase());
+
+    return isNotGeneral && matchesTab && matchesCollege && matchesSearch;
+  });
 
   if (loading) return (
     <div className="h-screen flex flex-col items-center justify-center bg-white text-blue-600 font-black px-6">
@@ -251,6 +279,30 @@ const sendAdminBroadcast = async () => {
         </div>
       )}
     </div>
+    {/* 🎓 COLLEGE FILTER DROPDOWN - ఇదే కొత్త ఫీచర్ */}
+<div className="flex flex-col gap-2 w-full md:w-auto mt-4">
+  <label className="text-[9px] font-black uppercase text-slate-400 tracking-widest ml-1">Filter by Region</label>
+  <div className="relative group">
+    <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-blue-500 z-10" />
+    <select 
+  value={selectedCollege} 
+  onChange={(e) => setSelectedCollege(e.target.value)}
+  className="pl-10 pr-10 py-3 bg-white border border-slate-200 rounded-2xl text-[11px] font-black uppercase tracking-widest outline-none focus:border-blue-500 shadow-sm appearance-none cursor-pointer w-full md:min-w-[220px]"
+>
+  <option value="All">All Regions / Colleges</option>
+  {availableColleges && availableColleges.length > 0 ? (
+    availableColleges.map((college, index) => (
+      <option key={index} value={college}>
+        {college}
+      </option>
+    ))
+  ) : (
+    <option disabled>No Regions Found</option>
+  )}
+</select>
+    <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-300 rotate-90 pointer-events-none" />
+  </div>
+</div>
   </div>
 </div>
 
@@ -264,55 +316,6 @@ const sendAdminBroadcast = async () => {
   </header>
 
         <div className="p-6 lg:p-10 max-w-7xl mx-auto w-full pb-20">
-
-{/* 📢 ADMIN BROADCAST CONTROL CENTER */}
-{/* <section className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-sm mb-10">
-  <div className="flex items-center gap-3 mb-6">
-    <div className="w-10 h-10 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 shadow-inner">
-      <Bell className="w-5 h-5" />
-    </div>
-    <div>
-      <h3 className="text-lg font-black uppercase italic tracking-tighter text-slate-800 leading-none">Global Announcement</h3>
-      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Updates will be visible to all users</p>
-    </div>
-  </div>
-
-  <div className="flex flex-col gap-4">
-    <textarea 
-      placeholder="Type your global announcement here..."
-      value={broadcastMsg.body}
-      onChange={(e) => setBroadcastMsg({ ...broadcastMsg, body: e.target.value })}
-      className="w-full bg-slate-50 border border-slate-100 p-5 rounded-3xl font-bold text-xs outline-none focus:border-blue-400 transition-all h-28 resize-none shadow-inner"
-    />
-    
-    <div className="flex gap-3">
-      <button 
-        onClick={sendAdminBroadcast}
-        disabled={sending}
-        className="flex-1 bg-slate-900 text-white py-4 rounded-2xl font-black uppercase italic text-[10px] tracking-[0.2em] shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
-      >
-        <Send className="w-4 h-4" /> {sending ? "TRANSMITTING..." : "Publish Update 🚀"}
-      </button>
-
-      {/* 🗑️ DELETE BUTTON */}
-      {/* <button 
-        onClick={async () => {
-          if(window.confirm("Delete current announcement?")) {
-            const adminUser = owners.find(o => o.collegeName === "General");
-            if(!adminUser) return alert("Admin account not found!");
-            await api.put(`/owner/update-profile/${adminUser._id}`, { todaySpecial: "" });
-            alert("Announcement Deleted! 🗑️");
-            setBroadcastMsg({ ...broadcastMsg, body: "" });
-            fetchOwners(); // రిఫ్రెష్
-          }
-        }}
-        className="px-6 bg-red-50 text-red-500 rounded-2xl border border-red-100 hover:bg-red-100 transition-all active:scale-90"
-      >
-        <X className="w-5 h-5" />
-      </button>
-    </div>
-  </div>
-</section>  */}
 {/* ANALYTICS VIEW - Responsive Implementation with Orders & Calls */}
 {activeTab === "analytics" && (
   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">

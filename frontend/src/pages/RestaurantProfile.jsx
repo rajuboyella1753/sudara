@@ -210,12 +210,13 @@ const handleConfirmOrder = async () => {
     {/* Center Content: Mobile-First Optimized */}
     <div className="relative z-10 text-center px-4 w-full max-w-4xl flex flex-col items-center pt-8">
         <motion.h1 
-          initial={{ opacity: 0, y: 15 }} 
-          animate={{ opacity: 1, y: 0 }}
-          className="text-4xl sm:text-6xl md:text-8xl lg:text-9xl font-black italic uppercase tracking-tighter text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] leading-tight md:leading-[0.9] text-center"
-        >
-          {owner?.name}
-        </motion.h1>
+  initial={{ opacity: 0, y: 15 }} 
+  animate={{ opacity: 1, y: 0 }}
+  // 🔥 రాజు, ఇక్కడ కేవలం డెస్క్‌టాప్ సైజ్ (md/lg) మాత్రమే తగ్గించాను
+  className="text-4xl sm:text-5xl md:text-5xl lg:text-6xl font-black italic uppercase tracking-tighter text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] leading-tight text-center"
+>
+  {owner?.name}
+</motion.h1>
         
         <motion.p 
           initial={{ opacity: 0 }} 

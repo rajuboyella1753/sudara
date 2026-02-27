@@ -33,9 +33,9 @@
       "label": "Sudara Hub Desktop View"
     }
   ],
-  "start_url": "/",
+ "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "theme_color": "#000000",
-  "background_color": "#000000"
+  "theme_color": "#2563EB", 
+  "background_color": "#FFFFFF"
 }

@@ -232,7 +232,6 @@ router.post("/broadcast-to-all", async (req, res) => {
         title: title || "Sudara Hub Update",
         body: body || "Check out new updates!"
       },
-      // ఇక్కడ ఓనర్ ఇన్ఫో యాడ్ చేయొచ్చు
       data: {
         ownerName: adminUser.name || "Sudara Owner",
         click_action: "FLUTTER_NOTIFICATION_CLICK"
@@ -244,11 +243,37 @@ router.post("/broadcast-to-all", async (req, res) => {
     
     console.log(`✅ Sent: ${response.successCount}, ❌ Failed: ${response.failureCount}`);
 
+    // 🔥 రాజు, ఇక్కడ మనం క్లీనప్ లాజిక్ ని ఇంకా పవర్‌ఫుల్‌గా మార్చాం
+    if (response.failureCount > 0) {
+      const failedTokens = [];
+      response.responses.forEach((resp, idx) => {
+        if (!resp.success) {
+          // ❌ ఏ ఎర్రర్ వల్ల టోకెన్ ఫెయిల్ అయిందో ఇక్కడ మనకు తెలుస్తుంది
+          failedTokens.push(uniqueTokens[idx]);
+          
+          // రాజు, ఈ కింది లైన్ నీకు టెర్మినల్ లో క్లియర్ గా చూపిస్తుంది
+          console.log(`❌ Token at index ${idx} failed. Error Code: ${resp.error.code}`); 
+          
+          // అన్‌ఇన్‌స్టాల్ చేస్తే 'messaging/registration-token-not-registered' అని వస్తుంది
+        }
+      });
+
+      // పాత టోకెన్లని అడ్మిన్ రికార్డు నుండి రిమూవ్ చేయడం
+      if (failedTokens.length > 0) {
+        await Owner.findOneAndUpdate(
+          { email: "telugubiblequiz959@gmail.com" },
+          { $pull: { fcmTokens: { $in: failedTokens } } }
+        );
+        console.log(`✅ Successfully cleaned ${failedTokens.length} stale tokens from DB.`);
+      }
+    }
+
     res.status(200).json({ 
       success: true, 
       sentCount: response.successCount, 
       failedCount: response.failureCount 
     });
+
   } catch (err) {
     console.error("❌ Broadcast Error:", err);
     res.status(500).json({ success: false, error: err.message });
