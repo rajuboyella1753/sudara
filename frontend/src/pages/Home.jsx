@@ -64,12 +64,28 @@ const requestNotificationPermission = async () => {
     }
   }
 };
-  useEffect(() => {
-    setLoading(true);
-    fetchOwners(); // డేటా ఫెచ్చింగ్ మాత్రమే ప్రయారిటీ
-    getLocation(); // లొకేషన్ స్లో చేస్తోంది కాబట్టి ప్రస్తుతానికి పక్కన పెట్టాం
-    requestNotificationPermission();
-  }, []);
+ useEffect(() => {
+  // 🔄 రాజు, ఇక్కడ వెర్షన్ చెక్ లాజిక్
+  const APP_VERSION = "1.2"; // నువ్వు అప్‌డేట్ చేసిన ప్రతిసారి ఈ నంబర్ మార్చు (1.3, 1.4..)
+  const lastVersion = localStorage.getItem("app_version");
+
+  if (lastVersion !== APP_VERSION) {
+    // పాత క్యాచీ మొత్తాన్ని క్లియర్ చేస్తుంది
+    if ('caches' in window) {
+      caches.keys().then((names) => {
+        names.forEach(name => caches.delete(name));
+      });
+    }
+    localStorage.clear();
+    localStorage.setItem("app_version", APP_VERSION);
+    window.location.reload(true); // హార్డ్ రిఫ్రెష్ ఫోర్స్ చేస్తుంది
+  }
+
+  setLoading(true);
+  fetchOwners();
+  getLocation();
+  requestNotificationPermission();
+}, []);
 
 useEffect(() => {
   let result = restaurants;
