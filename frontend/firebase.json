@@ -6,6 +6,21 @@
       "**/.*",
       "**/node_modules/**"
     ],
+    "headers": [
+      {
+        "source": "/**",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      },
+      {
+        "source": "/service-worker.js",
+        "headers": [ { "key": "Service-Worker-Allowed", "value": "/" } ]
+      }
+    ],
     "rewrites": [
       {
         "source": "**",

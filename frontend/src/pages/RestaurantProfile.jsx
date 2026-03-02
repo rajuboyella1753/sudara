@@ -173,7 +173,26 @@ const handleConfirmOrder = async () => {
   window.open(waURL, "_blank");
   setShowOrderForm(false);
 };
+// 📢 WhatsApp Share Function
+const handleShare = () => {
+  const shareText = `Check out *${owner?.name}* at ${owner?.collegeName} on Sudara Hub! 🍔✨\n\nLink: ${window.location.href}`;
+  const waURL = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText)}`;
+  window.open(waURL, "_blank");
+};
 
+// ❤️ Like/Favorite Function
+const toggleFavorite = () => {
+  const favorites = JSON.parse(localStorage.getItem("favRestaurants") || "[]");
+  if (isFavorite) {
+    const updated = favorites.filter(favId => favId !== id);
+    localStorage.setItem("favRestaurants", JSON.stringify(updated));
+    setIsFavorite(false);
+  } else {
+    favorites.push(id);
+    localStorage.setItem("favRestaurants", JSON.stringify(favorites));
+    setIsFavorite(true);
+  }
+};
   const searchFiltered = useMemo(() => {
     return items.filter(item => {
       const matchesFilter = filter === "All" ? true : item.category === filter;
@@ -208,7 +227,7 @@ const handleConfirmOrder = async () => {
     <div className="absolute inset-0 bg-black/20"></div>
 
     {/* Center Content: Mobile-First Optimized */}
-    <div className="relative z-10 text-center px-4 w-full max-w-4xl flex flex-col items-center pt-8">
+    <div className="relative z-10 text-center px-4 w-full max-w-4xl flex flex-col items-center pt-20">
         <motion.h1 
   initial={{ opacity: 0, y: 15 }} 
   animate={{ opacity: 1, y: 0 }}
@@ -227,28 +246,40 @@ const handleConfirmOrder = async () => {
           {owner?.collegeName} • Exclusive Menu
         </motion.p>
 
-        {/* 📍 Route Button - Fixed Padding for Mobile */}
-        <div className="mt-8 md:mt-12">
-          <motion.button 
-            whileTap={{ scale: 0.95 }}
-            onClick={openGoogleMaps}
-            className="flex items-center gap-2 sm:gap-3 bg-white px-6 py-3 md:px-10 md:py-5 rounded-full shadow-2xl hover:bg-blue-600 hover:text-white transition-all duration-300 group border border-white/30"
-          >
-            <Navigation className="w-3.5 h-3.5 md:w-5 md:h-5 text-blue-600 group-hover:text-white animate-pulse" />
-            <span className="text-[9px] md:text-xs font-black uppercase tracking-widest italic">Get Campus Route</span>
-          </motion.button>
-        </div>
-    </div>
+       {/* 📍 Route & Action Buttons - Side by Side Alignment */}
+<div className="mt-8 md:mt-12 flex items-center justify-center gap-3 sm:gap-4">
+  {/* 1. Get Campus Route Button */}
+  <motion.button 
+    whileTap={{ scale: 0.95 }}
+    onClick={openGoogleMaps}
+    className="flex items-center gap-2 sm:gap-3 bg-white px-6 py-3 md:px-10 md:py-5 rounded-full shadow-2xl hover:bg-blue-600 hover:text-white transition-all duration-300 group border border-white/30 shrink-0"
+  >
+    <Navigation className="w-3.5 h-3.5 md:w-5 md:h-5 text-blue-600 group-hover:text-white animate-pulse" />
+    <span className="text-[9px] md:text-xs font-black uppercase tracking-widest italic">Get Campus Route</span>
+  </motion.button>
 
-    {/* Top Right Action Buttons - Safe Area Adjusted */}
-    <div className="absolute top-4 right-4 md:top-8 md:right-8 flex gap-2 sm:gap-3 z-20">
-        <button className="bg-white/90 backdrop-blur-md p-2.5 md:p-4 rounded-xl md:rounded-2xl shadow-xl text-slate-900 border border-white/40 active:scale-90">
-          <Share2 className="w-4 h-4 md:w-5 md:h-5" />
-        </button>
-        <button className="bg-white/90 backdrop-blur-md p-2.5 md:p-4 rounded-xl md:rounded-2xl shadow-xl border border-white/40 active:scale-90 group">
-          <Heart className="w-4 h-4 md:w-5 md:h-5 text-slate-300 group-hover:text-red-500 transition-colors" />
-        </button>
+  {/* 📢 Share Button */}
+  <motion.button 
+    whileTap={{ scale: 0.9 }}
+    onClick={handleShare}
+    className="bg-white p-3.5 md:p-5 rounded-full shadow-2xl text-slate-900 border border-white/30 hover:bg-blue-600 hover:text-white transition-all shrink-0"
+  >
+    <Share2 className="w-4 h-4 md:w-5 md:h-5" />
+  </motion.button>
+
+  {/* ❤️ Like Button */}
+  <motion.button 
+    whileTap={{ scale: 0.9 }}
+    onClick={toggleFavorite}
+    className="bg-white p-3.5 md:p-5 rounded-full shadow-2xl border border-white/30 group hover:bg-white transition-all shrink-0"
+  >
+    <Heart className={`w-4 h-4 md:w-5 md:h-5 ${isFavorite ? 'text-red-500 fill-red-500' : 'text-slate-400 group-hover:text-red-500'}`} />
+  </motion.button>
+</div>
+
     </div>
+    {/* Top Right Action Buttons - Z-Index పెంచాను రాజు! */}
+
 </div>
 
       <main className="max-w-7xl mx-auto px-4 py-6 md:py-8 grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
@@ -386,76 +417,92 @@ const handleConfirmOrder = async () => {
   <div className="bg-white p-4 rounded-2xl lg:sticky lg:top-32 shadow-lg border border-slate-100">
     
     {/* 🚀 1. Summary Hide Condition: ఆ రెండు హోటల్స్ కి ఇది కనిపించదు */}
-    {owner?.name !== "Amaravathi Hotel" && owner?.name !== "Ruchi Hotel" && (
-      <div className="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-100">
-        <span className="text-[9px] font-black uppercase text-blue-600 italic tracking-widest">Order Summary</span>
-        <div className="space-y-1.5 my-3 max-h-40 overflow-y-auto scrollbar-hide">
-          {Object.values(cart).map((i) => (
-            <div key={i._id} className="flex justify-between text-[10px] font-bold italic text-slate-600">
-              <span>{i.qty} x {i.name}</span>
-              <span>₹{i.price * i.qty}</span>
-            </div>
-          ))}
+  {/* 🚀 1. Summary Hide Condition: ఆ మూడు హోటల్స్ కి ఇది కనిపించదు */}
+{owner?.name !== "Amaravathi Hotel" && owner?.name !== "Ruchi Hotel" && owner?.name !== "RR ROYAL RESTAURANT " && (
+  <div className="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-100">
+    <span className="text-[9px] font-black uppercase text-blue-600 italic tracking-widest">Order Summary</span>
+    <div className="space-y-1.5 my-3 max-h-40 overflow-y-auto scrollbar-hide">
+      {Object.values(cart).map((i) => (
+        <div key={i._id} className="flex justify-between text-[10px] font-bold italic text-slate-600">
+          <span>{i.qty} x {i.name}</span>
+          <span>₹{i.price * i.qty}</span>
         </div>
-        <div className="border-t border-blue-100 pt-3 space-y-1">
-          <div className="flex justify-between text-sm font-black italic text-blue-600">
-            <span>Pay Advance (50%):</span>
-            <span>₹{halfAmount}</span>
-          </div>
-        </div>
+      ))}
+    </div>
+    <div className="border-t border-blue-100 pt-3 space-y-1">
+      <div className="flex justify-between text-sm font-black italic text-blue-600">
+        <span>Pay Advance (50%):</span>
+        <span>₹{halfAmount}</span>
       </div>
-    )}
+    </div>
+  </div>
+)}
 
     {/* 🚀 2. Buttons & Count Logic: ఇక్కడ కౌంట్స్ అన్నీ పక్కాగా వస్తాయి */}
     <div className="flex flex-col gap-2.5 sm:gap-3">
       {(() => {
-        // 🏨 Amaravathi Hotel Logic
-        if (owner?.name === "Amaravathi Hotel") {
-          return (
-            <>
-              <div className="p-3 bg-orange-50 border border-orange-100 rounded-xl text-center">
-                <p className="text-[10px] font-black text-orange-600 uppercase italic leading-tight">
-                  Only Parcels Available! <br/> No pre-Booking & delivery services 🥡
-                </p>
-                <p className="text-[8px] font-bold text-orange-400 mt-1 uppercase">* ₹10 Extra parcel cost</p>
-              </div>
-              {/* 📞 Call Count: trackCallInterest పక్కాగా పనిచేస్తుంది */}
-              <a href={`tel:${owner?.phone}`} onClick={trackCallInterest} className="w-full py-3.5 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 active:scale-95 shadow-lg tracking-widest bg-blue-600 text-white border-blue-600">
-                <PhoneCall className="w-4 h-4" /> Call & Order Now
-              </a>
-            </>
-          );
-        }
-        
-        // 🏨 Ruchi Hotel Logic
-        if (owner?.name === "Ruchi Hotel") {
-          return (
-            <>
-              <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl text-center">
-                <p className="text-[9px] font-black text-blue-600 uppercase italic">
-                  Pre-book & Orders must be <br/> confirmed by calling owner! 📞
-                </p>
-              </div>
-              <a href={`tel:${owner?.phone}`} onClick={trackCallInterest} className="w-full py-3.5 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 active:scale-95 shadow-lg tracking-widest bg-blue-600 text-white border-blue-600">
-                <PhoneCall className="w-4 h-4" /> Call to Pre-Book/Order
-              </a>
-            </>
-          );
-        }
+    // 🏨 Amaravathi Hotel Logic
+    if (owner?.name === "Amaravathi Hotel") {
+      return (
+        <>
+          <div className="p-3 bg-orange-50 border border-orange-100 rounded-xl text-center">
+            <p className="text-[10px] font-black text-orange-600 uppercase italic leading-tight">
+              Only Parcels Available! <br/> No pre-Booking & delivery services 🥡
+            </p>
+            <p className="text-[8px] font-bold text-orange-400 mt-1 uppercase">* ₹10 Extra parcel cost</p>
+          </div>
+          <a href={`tel:${owner?.phone}`} onClick={trackCallInterest} className="w-full py-3.5 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 active:scale-95 shadow-lg tracking-widest bg-blue-600 text-white border-blue-600">
+            <PhoneCall className="w-4 h-4" /> Call & Order Now
+          </a>
+        </>
+      );
+    }
+    
+    // 🏨 Ruchi Hotel Logic
+    if (owner?.name === "Ruchi Hotel") {
+      return (
+        <>
+          <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl text-center">
+            <p className="text-[9px] font-black text-blue-600 uppercase italic">
+              Pre-book & Orders must be <br/> confirmed by calling owner! 📞
+            </p>
+          </div>
+          <a href={`tel:${owner?.phone}`} onClick={trackCallInterest} className="w-full py-3.5 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 active:scale-95 shadow-lg tracking-widest bg-blue-600 text-white border-blue-600">
+            <PhoneCall className="w-4 h-4" /> Call to Pre-Book/Order
+          </a>
+        </>
+      );
+    }
 
-        // 🏨 Normal Flow for Other Hotels (viti count kuda vasthundi)
-        return (
-          <>
-            {/* ✅ Pre-Book Count: handleConfirmOrder ద్వారా వస్తుంది */}
-            <button onClick={() => totalAmount > 0 ? setShowPayWarning(true) : alert("Select items!")} className={`w-full py-3.5 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${owner?.isStoreOpen && totalAmount > 0 ? 'bg-slate-900 text-white shadow-lg active:scale-95' : 'bg-slate-100 text-slate-300'}`}>
-              Pre-Book Now
-            </button>
-            <a href={`tel:${owner?.phone}`} onClick={trackCallInterest} className="w-full py-3.5 rounded-xl font-black uppercase text-[10px] bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 active:scale-95 border-blue-600">
-              <PhoneCall className="w-4 h-4" /> Call to Owner
-            </a>
-          </>
-        );
-      })()}
+    // 🏨 RR ROYAL RESTAURANT Logic (Added this new condition)
+    if (owner?.name === "RR ROYAL RESTAURANT ") {
+      return (
+        <>
+          <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl text-center">
+            <p className="text-[9px] font-black text-blue-600 uppercase italic">
+              Pre-book & Orders must be <br/> confirmed by calling owner! 📞 & dont pay to this number bcoz owner using another number.
+            </p>
+          </div>
+          <a href={`tel:${owner?.phone}`} onClick={trackCallInterest} className="w-full py-3.5 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 active:scale-95 shadow-lg tracking-widest bg-blue-600 text-white border-blue-600">
+            <PhoneCall className="w-4 h-4" /> Call to Pre-Book/Order
+          </a>
+        </>
+      );
+    }
+
+    // 🏨 Normal Flow for Other Hotels
+    return (
+      <>
+        <button onClick={() => totalAmount > 0 ? setShowPayWarning(true) : alert("Select items!")} className={`w-full py-3.5 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${owner?.isStoreOpen && totalAmount > 0 ? 'bg-slate-900 text-white shadow-lg active:scale-95' : 'bg-slate-100 text-slate-300'}`}>
+          Pre-Book Now
+        </button>
+        <a href={`tel:${owner?.phone}`} onClick={trackCallInterest} className="w-full py-3.5 rounded-xl font-black uppercase text-[10px] bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 active:scale-95 border-blue-600">
+          <PhoneCall className="w-4 h-4" /> Call to Owner
+        </a>
+      </>
+    );
+})()}
+
     </div>
   </div>
 </div>

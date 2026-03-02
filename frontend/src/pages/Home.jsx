@@ -194,7 +194,7 @@ return (
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-blue-600 transition-colors" />
               <input 
                 type="text" 
-                placeholder="Search restaurant or dish..." 
+                placeholder="Search restaurant Name..." 
                 value={searchTerm} 
                 onChange={(e) => setSearchTerm(e.target.value)} 
                 className="w-full bg-slate-50 border border-slate-200 py-4 md:py-5 pl-14 pr-6 rounded-2xl text-sm font-bold outline-none focus:bg-white focus:border-blue-400 focus:shadow-lg focus:shadow-blue-500/5 transition-all placeholder:text-slate-300" 

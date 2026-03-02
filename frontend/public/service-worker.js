@@ -2,8 +2,8 @@ const CACHE_NAME = "sudara-hub-v1";
 const urlsToCache = [
   "/",
   "/index.html",
-  "/SUDAR.png",
-  "/SUDAR11.png"
+  "/SUDAResize1.png", // ✅ మేనిఫెస్ట్ లో ఉన్న పేరు
+  "/SUDAResize2.png"
 ];
 
 // 🛠️ Install Service Worker

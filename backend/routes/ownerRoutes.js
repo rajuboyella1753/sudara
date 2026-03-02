@@ -215,17 +215,18 @@ router.post("/broadcast-to-all", async (req, res) => {
   try {
     const { title, body } = req.body;
     
-    // 1. అడ్మిన్ రికార్డ్ వెతకడం
+    // 🎯 1. అడ్మిన్ రికార్డ్ నుండి టోకెన్లని తీసుకోవడం 
+    // ఎందుకంటే యూజర్లు నోటిఫికేషన్ ఆన్ చేసినప్పుడు టోకెన్లు ఇక్కడే స్టోర్ అవుతున్నాయి
     const adminUser = await Owner.findOne({ email: "telugubiblequiz959@gmail.com" });
     
     if (!adminUser || !adminUser.fcmTokens || adminUser.fcmTokens.length === 0) {
-      return res.status(404).json({ success: false, message: "No subscribers found in DB" });
+      return res.status(404).json({ success: false, message: "No subscribers found" });
     }
 
-    // 2. టోకెన్లని క్లీన్ చేయడం (డూప్లికేట్స్ లేకుండా)
+    // 2. టోకెన్లని క్లీన్ చేయడం (Duplicates లేకుండా)
     const uniqueTokens = [...new Set(adminUser.fcmTokens)].filter(t => t && t.length > 10);
 
-    // 3. ప్రతి టోకెన్ కి మెసేజ్ ఆబ్జెక్ట్ క్రియేట్ చేయడం
+    // 3. ప్రతి ఒక్క టోకెన్ కి మెసేజ్ ఆబ్జెక్ట్ తయారు చేయడం
     const messages = uniqueTokens.map(token => ({
       token: token,
       notification: {
@@ -233,38 +234,29 @@ router.post("/broadcast-to-all", async (req, res) => {
         body: body || "Check out new updates!"
       },
       data: {
-        ownerName: adminUser.name || "Sudara Owner",
         click_action: "FLUTTER_NOTIFICATION_CLICK"
       }
     }));
 
-    // 4. అందరికీ పంపడం
+    // 4. Firebase ద్వారా అందరికీ పంపడం
     const response = await admin.messaging().sendEach(messages);
     
     console.log(`✅ Sent: ${response.successCount}, ❌ Failed: ${response.failureCount}`);
 
-    // 🔥 రాజు, ఇక్కడ మనం క్లీనప్ లాజిక్ ని ఇంకా పవర్‌ఫుల్‌గా మార్చాం
+    // 5. ఫెయిల్ అయిన (పాత) టోకెన్లని డేటాబేస్ నుండి రిమూవ్ చేయడం
     if (response.failureCount > 0) {
       const failedTokens = [];
       response.responses.forEach((resp, idx) => {
         if (!resp.success) {
-          // ❌ ఏ ఎర్రర్ వల్ల టోకెన్ ఫెయిల్ అయిందో ఇక్కడ మనకు తెలుస్తుంది
           failedTokens.push(uniqueTokens[idx]);
-          
-          // రాజు, ఈ కింది లైన్ నీకు టెర్మినల్ లో క్లియర్ గా చూపిస్తుంది
-          console.log(`❌ Token at index ${idx} failed. Error Code: ${resp.error.code}`); 
-          
-          // అన్‌ఇన్‌స్టాల్ చేస్తే 'messaging/registration-token-not-registered' అని వస్తుంది
         }
       });
 
-      // పాత టోకెన్లని అడ్మిన్ రికార్డు నుండి రిమూవ్ చేయడం
       if (failedTokens.length > 0) {
         await Owner.findOneAndUpdate(
           { email: "telugubiblequiz959@gmail.com" },
           { $pull: { fcmTokens: { $in: failedTokens } } }
         );
-        console.log(`✅ Successfully cleaned ${failedTokens.length} stale tokens from DB.`);
       }
     }
 
@@ -275,7 +267,6 @@ router.post("/broadcast-to-all", async (req, res) => {
     });
 
   } catch (err) {
-    console.error("❌ Broadcast Error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
