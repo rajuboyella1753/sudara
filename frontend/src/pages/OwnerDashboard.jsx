@@ -8,7 +8,8 @@ import {
   Settings, LogOut, Image as ImageIcon, MapPin, 
   Menu, Power, Calendar, PhoneCall, BarChart3, Star, Send
 } from "lucide-react"; 
-
+import { QRCodeCanvas } from "qrcode.react"; // 🚀 QR కోడ్ కోసం
+import { QrCode, Download, MessageSquare } from "lucide-react"; //  icons
 export default function OwnerDashboard() {
   const navigate = useNavigate();
   const [owner, setOwner] = useState(null);
@@ -32,7 +33,8 @@ export default function OwnerDashboard() {
     latitude: null, longitude: null,
     interiorImages: [], upiQR: "",
     upiID: "",
-    todaySpecial: "" 
+    todaySpecial: "",
+    tableCount: 0
   });
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -109,7 +111,65 @@ const getOwnerRangeStats = () => {
       console.error("Dashboard Fetch Error:", err); 
     } finally { setLoading(false); }
   };
+const downloadQRCode = () => {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  const qrCanvas = document.getElementById("qr-gen");
 
+  canvas.width = 1200;
+  canvas.height = 1600;
+
+  // Background
+  ctx.fillStyle = "#0F172A";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // --- మ్యాజిక్ ఇక్కడే ఉంది: Long Name Handling ---
+  const name = owner?.name.toUpperCase() || "RESTAURANT";
+  ctx.fillStyle = "#3B82F6";
+  ctx.textAlign = "center";
+  
+  if (name.length > 20) {
+    ctx.font = "bold italic 65px Arial"; // పేరు పెద్దగా ఉంటే ఫాంట్ సైజ్ తగ్గించాం
+    const words = name.split(' ');
+    let line1 = words.slice(0, Math.ceil(words.length / 2)).join(' ');
+    let line2 = words.slice(Math.ceil(words.length / 2)).join(' ');
+    ctx.fillText(line1, canvas.width / 2, 160);
+    ctx.fillText(line2, canvas.width / 2, 240);
+  } else {
+    ctx.font = "bold italic 85px Arial";
+    ctx.fillText(name, canvas.width / 2, 200);
+  }
+
+  ctx.fillStyle = "#FFFFFF";
+  ctx.font = "50px Arial";
+  ctx.fillText("SMART DINING PROTOCOL", canvas.width / 2, 320);
+
+  // White Box for QR
+  ctx.fillStyle = "#FFFFFF";
+  // RoundRect support లేని బ్రౌజర్‌ల కోసం బేసిక్ రెక్టాంగిల్ వాడదాం లేదా ఇలా:
+  ctx.beginPath();
+  ctx.roundRect(150, 420, 900, 900, 50);
+  ctx.fill();
+
+  ctx.drawImage(qrCanvas, 200, 470, 800, 800);
+
+  // Footer text
+  ctx.fillStyle = "#3B82F6";
+  ctx.font = "black italic 70px Arial";
+  ctx.fillText("SCAN • ORDER • ENJOY", canvas.width / 2, 1450);
+
+  ctx.fillStyle = "#94A3B8";
+  ctx.font = "40px Arial";
+  ctx.fillText("Instant WhatsApp Ordering via Sudara Hub", canvas.width / 2, 1530);
+
+  const pngUrl = canvas.toDataURL("image/png");
+  let downloadLink = document.createElement("a");
+  downloadLink.href = pngUrl;
+  downloadLink.download = `${owner?.name}_Smart_Menu.png`;
+  document.body.appendChild(downloadLink);
+  downloadLink.click();
+  document.body.removeChild(downloadLink);
+};
   // 🚀 మెసేజ్ అప్‌డేట్ చేసే ఫంక్షన్ రాజు!
  const handleUpdateSpecial = async () => {
   if (!todayMsg.trim()) return alert("Please enter a message!"); // ఖాళీగా ఉంటే పంపకూడదు రాజు
@@ -276,7 +336,54 @@ const handleGetLocation = () => {
           </div>
           <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest mt-3 ml-2">* This message will be shown as a banner on your shop profile.</p>
         </section>
+{/* 📱 PREMIUM SMART QR SECTION - UI Responsive Fix */}
+<section className="bg-slate-900 p-5 md:p-10 rounded-[2rem] md:rounded-[3.5rem] border border-slate-800 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6 md:gap-10 relative overflow-hidden">
+  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 blur-3xl rounded-full"></div>
+  
+  <div className="flex flex-col gap-3 md:gap-5 z-10 text-center md:text-left">
+    <div className="flex items-center justify-center md:justify-start gap-3">
+      <div className="w-8 h-8 md:w-10 md:h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+        <QrCode className="w-4 h-4 md:w-5 md:h-5" />
+      </div>
+      <span className="text-[9px] md:text-[10px] font-black uppercase tracking-[0.2em] text-blue-400 italic">Smart System</span>
+    </div>
+    
+    <div className="max-w-xs md:max-w-md mx-auto md:mx-0">
+      <h3 className="text-xl md:text-3xl font-black uppercase italic text-white tracking-tighter leading-tight">
+        {owner?.name} <span className="text-blue-500">Menu QR</span>
+      </h3>
+      <p className="text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-2 leading-relaxed">
+        "Scan this and order" - Let your customers <br className="hidden md:block"/> order instantly via WhatsApp.
+      </p>
+    </div>
 
+    <button 
+      onClick={downloadQRCode}
+      className="mt-2 flex items-center justify-center gap-3 bg-white text-slate-900 px-6 py-3.5 md:px-8 md:py-4 rounded-xl md:rounded-2xl font-black uppercase italic text-[10px] tracking-widest hover:bg-blue-500 hover:text-white transition-all shadow-xl active:scale-95 group"
+    >
+      <Download className="w-4 h-4 group-hover:-translate-y-1 transition-transform" /> 
+      Get Poster
+    </button>
+  </div>
+
+  <div className="relative group shrink-0">
+    <div className="p-4 bg-white rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl rotate-2 group-hover:rotate-0 transition-transform duration-500">
+      <QRCodeCanvas
+        id="qr-gen"
+        value={`https://sudara.in/restaurant/${owner?._id}`}
+        size={140} // మొబైల్ కోసం కొంచెం తగ్గించాం
+        level={"H"}
+        includeMargin={false}
+      />
+      <div className="mt-3 text-center">
+        <p className="text-[8px] font-black uppercase text-slate-900 italic tracking-tighter">Scan to Order</p>
+      </div>
+    </div>
+    <div className="absolute -bottom-3 -right-3 bg-blue-600 text-white p-2 rounded-xl shadow-xl -rotate-12">
+      <Star className="w-3 h-3 fill-white" />
+    </div>
+  </div>
+</section>
         {/* --- MENU MANAGEMENT SECTION --- */}
         <section className="space-y-10">
           <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 text-slate-900">
@@ -465,6 +572,25 @@ const handleGetLocation = () => {
                     <button key={lv} type="button" onClick={()=>setProfileForm({...profileForm, busyStatus:lv})} className={`py-4 rounded-2xl text-[10px] font-black uppercase border transition-all ${profileForm.busyStatus === lv ? 'bg-slate-900 text-white border-slate-900 shadow-xl' : 'bg-white text-slate-400 border-slate-200 hover:border-blue-200'}`}>{lv}</button>
                   ))}
                 </div>
+                {/* 🪑 TABLE CONFIGURATION */}
+<div className="space-y-1.5">
+  <label className="text-[10px] font-black uppercase opacity-40 ml-1 italic flex items-center gap-2">
+    <UtensilsCrossed className="w-3 h-3"/> Total Tables in Restaurant
+  </label>
+  <select 
+    value={profileForm.tableCount} 
+    onChange={e => setProfileForm({...profileForm, tableCount: parseInt(e.target.value)})} 
+    className="w-full bg-slate-50 p-4 rounded-2xl font-bold border border-slate-200 text-xs outline-none focus:border-blue-500 transition-all shadow-inner cursor-pointer"
+  >
+    <option value="0">No Tables (Takeaway Only)</option>
+    {[...Array(50)].map((_, i) => (
+      <option key={i+1} value={i+1}>{i+1} Tables</option>
+    ))}
+  </select>
+  <p className="text-[8px] font-bold text-slate-300 uppercase tracking-widest mt-1 ml-2">
+    * This helps customers select their table number while ordering.
+  </p>
+</div>
                 <button className="w-full bg-blue-600 py-5 text-white rounded-2xl font-black uppercase italic shadow-xl shadow-blue-100 active:scale-95 transition-all mt-4">Commit Changes</button>
               </form>
             </motion.div>

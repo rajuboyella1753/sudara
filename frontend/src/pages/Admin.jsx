@@ -63,10 +63,10 @@ const [viewMode, setViewMode] = useState("daily");
   };
 // ✅ రాజు, నీ DB కి తగ్గట్టుగా (No Zero Padding) డేటా లాగే ఫంక్షన్ ఇది!
 const getRangeStats = (analytics) => {
-  if (!analytics) return { hits: 0, orders: 0, calls: 0 };
+  if (!analytics) return { hits: 0, orders: 0, postOrders: 0, calls: 0 }; // 🚀 postOrders యాడ్ చేశాం
   
   const analyticsObj = analytics instanceof Map ? Object.fromEntries(analytics) : analytics;
-  let stats = { hits: 0, orders: 0, calls: 0 };
+  let stats = { hits: 0, orders: 0, postOrders: 0, calls: 0 };
 
   let start = new Date(startDate);
   let end = new Date(endDate);
@@ -75,12 +75,12 @@ const getRangeStats = (analytics) => {
 
   let current = new Date(start);
   while (current <= end) {
-    // 🎯 నీ DB ఫార్మాట్: "4/2/2026" (No zero padding)
     const dKey = `${current.getDate()}/${current.getMonth() + 1}/${current.getFullYear()}`; 
-
     const dayData = analyticsObj[dKey] || {};
+    
     stats.hits += Number(dayData.kitchen_entry || 0);
     stats.orders += Number(dayData.pre_order_click || 0);
+    stats.postOrders += Number(dayData.post_order_click || 0); // 👈 కొత్త ఫీల్డ్
     stats.calls += Number(dayData.call_click || 0);
 
     current.setDate(current.getDate() + 1);
@@ -323,13 +323,15 @@ const sendAdminBroadcast = async () => {
     {/* 🖥️ Desktop: Ultra-Clean Matrix Table */}
     <div className="hidden lg:block bg-white rounded-[2.5rem] border border-slate-200/60 shadow-[0_20px_50px_rgba(0,0,0,0.02)] overflow-hidden">
       <div className="overflow-x-auto">
+{/* 🖥️ Desktop: Matrix Table */}
 <table className="w-full text-left border-collapse">
   <thead>
     <tr className="bg-slate-50/50 text-[10px] font-black uppercase text-slate-400 tracking-[0.25em] border-b border-slate-100">
       <th className="p-8">Partner Node</th>
-      <th className="p-8 text-center">{viewMode === "daily" ? "Today's Hits" : "Range Total Hits"}</th>
-      <th className="p-8 text-center">{viewMode === "daily" ? "Pre-Orders" : "Range Orders"}</th>
-      <th className="p-8 text-center">{viewMode === "daily" ? "Calls Made" : "Range Calls"}</th>
+      <th className="p-8 text-center">Hits</th>
+      <th className="p-8 text-center">Pre-Book</th>
+      <th className="p-8 text-center">Post-Book</th>
+      <th className="p-8 text-center">Calls</th>
       <th className="p-8 text-right">Status</th>
     </tr>
   </thead>
@@ -337,8 +339,7 @@ const sendAdminBroadcast = async () => {
     {filteredList.map((res) => {
       const analyticsObj = res.analytics instanceof Map ? Object.fromEntries(res.analytics) : (res.analytics || {});
       
-      // ✅ వ్యూ మోడ్ ని బట్టి డేటా సెలెక్షన్
-      let displayHits, displayOrders, displayCalls;
+      let displayHits, displayOrders, displayPostOrders, displayCalls;
 
       if (viewMode === "daily") {
         const d = new Date(filterDate);
@@ -346,11 +347,13 @@ const sendAdminBroadcast = async () => {
         const dayData = analyticsObj[dayKey] || {};
         displayHits = dayData.kitchen_entry || 0;
         displayOrders = dayData.pre_order_click || 0;
+        displayPostOrders = dayData.post_order_click || 0;
         displayCalls = dayData.call_click || 0;
       } else {
         const stats = getRangeStats(res.analytics);
         displayHits = stats.hits;
         displayOrders = stats.orders;
+        displayPostOrders = stats.postOrders;
         displayCalls = stats.calls;
       }
 
@@ -365,9 +368,10 @@ const sendAdminBroadcast = async () => {
               </div>
             </div>
           </td>
-          <td className={`p-8 text-center font-black text-lg ${displayHits > 0 ? "text-slate-900" : "text-slate-300"}`}>{displayHits}</td>
-          <td className={`p-8 text-center font-black text-2xl ${displayOrders > 0 ? "text-blue-600" : "text-slate-200"}`}>{displayOrders}</td>
-          <td className={`p-8 text-center font-black text-2xl ${displayCalls > 0 ? "text-emerald-600" : "text-slate-200"}`}>{displayCalls}</td>
+          <td className="p-8 text-center font-black text-lg text-slate-900">{displayHits}</td>
+          <td className="p-8 text-center font-black text-2xl text-blue-600">{displayOrders}</td>
+          <td className="p-8 text-center font-black text-2xl text-emerald-600">{displayPostOrders}</td>
+          <td className="p-8 text-center font-black text-2xl text-orange-600">{displayCalls}</td>
           <td className="p-8 text-right">
              <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase italic ${displayHits > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-400'}`}>
                 {displayHits > 0 ? 'Live Node' : 'Idle'}
@@ -384,13 +388,13 @@ const sendAdminBroadcast = async () => {
     </div>
 
     {/* 📱 Mobile: Modern Grid Cards */}
-    {/* 📱 Mobile: Modern Grid Cards (Fix for Daily/Range Mode) */}
+{/* 📱 Mobile: Modern Grid Cards */}
 <div className="lg:hidden space-y-4 px-1">
   {filteredList.map((res) => {
     const analyticsObj = res.analytics instanceof Map ? Object.fromEntries(res.analytics) : (res.analytics || {});
     
-    // ✅ మొబైల్ కోసం డేటా సెలెక్షన్ లాజిక్
-    let mHits, mOrders, mCalls;
+    // ✅ మొబైల్ కోసం డేటా సెలెక్షన్ లాజిక్ - ఇక్కడ mPostOrders డిక్లేర్ చేశాం
+    let mHits, mOrders, mPostOrders, mCalls;
 
     if (viewMode === "daily") {
       const d = new Date(filterDate);
@@ -398,11 +402,13 @@ const sendAdminBroadcast = async () => {
       const dayData = analyticsObj[dayKey] || {};
       mHits = dayData.kitchen_entry || 0;
       mOrders = dayData.pre_order_click || 0;
+      mPostOrders = dayData.post_order_click || 0;
       mCalls = dayData.call_click || 0;
     } else {
       const stats = getRangeStats(res.analytics);
       mHits = stats.hits;
       mOrders = stats.orders;
+      mPostOrders = stats.postOrders;
       mCalls = stats.calls;
     }
 
@@ -419,19 +425,23 @@ const sendAdminBroadcast = async () => {
           </div>
         </div>
 
-        {/* 📊 మొబైల్ స్టేట్స్ గ్రిడ్ - ఇక్కడ మారుతుంది */}
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-slate-50/80 p-3 rounded-2xl border border-slate-100 text-center">
-            <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Hits</p>
-            <p className="text-base font-black text-slate-800 leading-none">{mHits}</p>
+        {/* 📊 మొబైల్ స్టేట్స్ గ్రిడ్ - 4 పక్కా కాలమ్స్ */}
+        <div className="grid grid-cols-4 gap-2">
+          <div className="bg-slate-50/80 p-2.5 rounded-2xl border border-slate-100 text-center">
+            <p className="text-[7px] font-black text-slate-400 uppercase mb-1">Hits</p>
+            <p className="text-xs font-black text-slate-800 leading-none">{mHits}</p>
           </div>
-          <div className="bg-blue-50/50 p-3 rounded-2xl border border-blue-100 text-center">
-            <p className="text-[8px] font-black text-blue-400 uppercase mb-1">Orders</p>
-            <p className="text-base font-black text-blue-600 leading-none">{mOrders}</p>
+          <div className="bg-blue-50/50 p-2.5 rounded-2xl border border-blue-100 text-center">
+            <p className="text-[7px] font-black text-blue-400 uppercase mb-1">Pre</p>
+            <p className="text-xs font-black text-blue-600 leading-none">{mOrders}</p>
           </div>
-          <div className="bg-emerald-50/50 p-3 rounded-2xl border border-emerald-100 text-center">
-            <p className="text-[8px] font-black text-emerald-400 uppercase mb-1">Calls</p>
-            <p className="text-base font-black text-emerald-600 leading-none">{mCalls}</p>
+          <div className="bg-emerald-50/50 p-2.5 rounded-2xl border border-emerald-100 text-center">
+            <p className="text-[7px] font-black text-emerald-400 uppercase mb-1">Post</p>
+            <p className="text-xs font-black text-emerald-600 leading-none">{mPostOrders}</p> 
+          </div>
+          <div className="bg-orange-50/50 p-2.5 rounded-2xl border border-orange-100 text-center">
+            <p className="text-[7px] font-black text-orange-400 uppercase mb-1">Calls</p>
+            <p className="text-xs font-black text-orange-600 leading-none">{mCalls}</p>
           </div>
         </div>
       </div>

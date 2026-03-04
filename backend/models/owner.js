@@ -29,6 +29,7 @@ const ownerSchema = new mongoose.Schema(
     // 🚀 కొత్త ఫీచర్: ఆ రోజు స్పెషల్ ఐటమ్ మెసేజ్
     todaySpecial: { type: String, default: "" }, 
     specialTimestamp: { type: Date, default: Date.now },
+    tableCount: { type: Number, default: 0 },
     isApproved: { type: Boolean, default: false },
 
     // 🔥 RANKING & USER COUNT
@@ -49,6 +50,7 @@ const ownerSchema = new mongoose.Schema(
       of: {
         kitchen_entry: { type: Number, default: 0 },
         pre_order_click: { type: Number, default: 0 },
+        post_order_click: { type: Number, default: 0 },
         call_click: { type: Number, default: 0 },
         food_clicks: { type: Map, of: Number } 
       },

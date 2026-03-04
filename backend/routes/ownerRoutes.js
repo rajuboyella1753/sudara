@@ -174,7 +174,7 @@ router.post("/review/:id", async (req, res) => {
 /* ================= 9. ANALYTICS TRACKING (Date Wise) ================= */
 router.put("/track-analytics/:id", async (req, res) => {
   const { id } = req.params;
-  const { action, date } = req.body;
+  const { action, date } = req.body; // action లో 'pre_order_click' లేదా 'post_order_click' వస్తాయి
   try {
     const updateField = `analytics.${date}.${action}`;
     
@@ -183,6 +183,7 @@ router.put("/track-analytics/:id", async (req, res) => {
     });
     res.status(200).json({ success: true });
   } catch (err) {
+    console.error("Tracking Error:", err);
     res.status(500).json({ message: "Error tracking data" });
   }
 });
