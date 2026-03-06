@@ -87,7 +87,52 @@ const getRangeStats = (analytics) => {
   }
   return stats;
 };
+const getSubscriptionStatus = (createdAt, ownerId) => {
+  let joinDate;
+  
+  // 🕒 1. డేట్ ని క్రియేట్ చేయడం
+  if (createdAt) {
+    joinDate = new Date(createdAt);
+  } else if (ownerId && typeof ownerId === 'string' && ownerId.length === 24) {
+    // MongoDB ID నుండి టైమ్ స్టాంప్ తీయడం
+    joinDate = new Date(parseInt(ownerId.substring(0, 8), 16) * 1000);
+  }
 
+  // 🕒 2. ఒకవేళ పైన రెండు ఫెయిల్ అయితే డిఫాల్ట్ గా నేటి డేట్ ఇవ్వకుండా ఎర్రర్ ఆపడం
+  if (!joinDate || isNaN(joinDate.getTime())) {
+    return { status: "Unknown", message: "Syncing...", isExpired: false };
+  }
+
+  const today = new Date();
+  
+  // 🕒 3. కేవలం డేట్స్ మాత్రమే కంపేర్ చేయడానికి సమయాన్ని 00:00 చేయడం
+  const start = new Date(joinDate);
+  start.setHours(0, 0, 0, 0);
+  
+  const now = new Date(today);
+  now.setHours(0, 0, 0, 0);
+  
+  // మిల్లీసెకన్ల తేడాని రోజుల్లోకి మార్చడం
+  const diffTime = now.getTime() - start.getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  
+  // 🚩 4. కచ్చితంగా 30 రోజుల ఫ్రీ ట్రయల్ లాజిక్
+  if (diffDays <= 30) {
+    const daysLeft = 30 - diffDays;
+    return { 
+      status: "Trialing", 
+      message: daysLeft <= 0 ? "Last day of Trial" : `${daysLeft} days left in Free Trial`, 
+      isExpired: false 
+    };
+  } else {
+    // 31వ రోజు నుండి మాత్రమే ఎక్స్‌పైర్ అవ్వాలి
+    return { 
+      status: "Payment Due", 
+      message: "Subscription Expired! (₹499)", 
+      isExpired: true 
+    };
+  }
+};
   const updateApprovalStatus = async (id, status) => {
     try {
       await api.put(`/owner/approve-owner/${id}`, { isApproved: status });
@@ -451,63 +496,133 @@ const sendAdminBroadcast = async () => {
   </motion.div>
 )}
 
-          {/* PARTNERS CARDS VIEW - ALL FEATURES RESTORED */}
-          {(activeTab === "pending" || activeTab === "approved") && (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8 pb-10">
-              <AnimatePresence mode="popLayout">
-                {filteredList.map((owner) => (
-                  <motion.div layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ type: "spring", damping: 25 }} key={owner._id} className="bg-white p-6 lg:p-8 rounded-[2.5rem] border border-slate-200 shadow-sm hover:shadow-2xl hover:shadow-blue-500/5 transition-all duration-500 group relative flex flex-col h-full">
-                    
-                    <div className="flex items-start gap-5 mb-8">
-                      <div className="relative shrink-0">
-                          <img src={owner.hotelImage || "https://via.placeholder.com/100"} className="w-20 h-20 rounded-[1.5rem] object-cover border-4 border-slate-50 shadow-inner group-hover:rotate-3 transition-transform" alt="Hotel"/>
-                          <div className={`absolute -bottom-1 -right-1 p-2 rounded-xl shadow-lg border-2 border-white ${owner.isStoreOpen ? 'bg-green-500' : 'bg-red-500'} animate-bounce-slow`}>
-                              <Store className="w-3 h-3 text-white"/>
-                          </div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-xl font-black text-slate-900 uppercase italic truncate tracking-tighter leading-none mb-2">{owner.name}</h3>
-                        <p className="text-[9px] font-black text-blue-500 uppercase tracking-[0.2em]">{owner.collegeName}</p>
-                        
-                        <div className="mt-4 flex items-center gap-3">
-                          <div className="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-100">
-                             <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-                             <span className="text-[10px] font-black text-amber-700">{owner.averageRating?.toFixed(1) || "5.0"}</span>
-                          </div>
-                          <div className="flex items-center gap-1.5 opacity-40 group-hover:opacity-100 transition-opacity">
-                             <Phone className="w-3 h-3 text-slate-400" />
-                             <span className="text-[9px] font-bold text-slate-600 italic leading-none">{owner.phone}</span>
-                          </div>
-                        </div>
+   {/* PARTNERS CARDS VIEW - RESTORED & FIXED BY RAJU'S BADI */}
+{(activeTab === "pending" || activeTab === "approved") && (
+  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8 pb-10">
+    <AnimatePresence mode="popLayout">
+      {filteredList.map((owner) => {     
+        // console.log("Owner Data:", owner);  
+        const sub = getSubscriptionStatus(owner.createdAt, owner._id);
+        return (
+          <motion.div 
+            layout 
+            initial={{ opacity: 0, scale: 0.95 }} 
+            animate={{ opacity: 1, scale: 1 }} 
+            exit={{ opacity: 0, scale: 0.95 }} 
+            key={owner._id} 
+            className="bg-white p-6 lg:p-8 rounded-[2.5rem] border border-slate-200 shadow-sm hover:shadow-2xl transition-all duration-500 group relative flex flex-col h-full overflow-hidden"
+          >
+            {/* 🚩 30 రోజులు దాటితే వచ్చే అలర్ట్ బ్యానర్ */}
+            {activeTab === "approved" && sub.isExpired && (
+              <div className="absolute top-0 left-0 w-full bg-red-500 text-white text-[8px] font-black uppercase tracking-[0.2em] py-1.5 text-center animate-pulse z-10">
+                Attention: Monthly Due Pending (₹499)
+              </div>
+            )}
 
-                      </div>
-                    </div>
+            <div className="flex items-start gap-5 mb-8 mt-2">
+              <div className="relative shrink-0">
+                <img src={owner.hotelImage || "https://via.placeholder.com/100"} className="w-20 h-20 rounded-[1.5rem] object-cover border-4 border-slate-50 shadow-inner" alt="Hotel"/>
+                <div className={`absolute -bottom-1 -right-1 p-2 rounded-xl shadow-lg border-2 border-white ${owner.isStoreOpen ? 'bg-green-500' : 'bg-red-500'} animate-bounce-slow`}>
+                  <Store className="w-3 h-3 text-white"/>
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-xl font-black text-slate-900 uppercase italic whitespace-normal tracking-tighter leading-tight mb-1">{owner.name}</h3>
+                <p className="text-[9px] font-black text-blue-500 uppercase tracking-[0.2em] mb-3">{owner.collegeName}</p>
+                
+                {/* 📅 జాయినింగ్ డేట్ డిస్‌ప్లే - ఫిక్స్డ్ లాజిక్ */}
+<div className="flex items-center gap-2">
+   <Calendar className="w-3.5 h-3.5 text-slate-400" />
+   <span className="text-[10px] font-black text-slate-400 uppercase italic">
+     Joined: {
+       owner?.createdAt 
+       ? new Date(owner.createdAt).toLocaleDateString('en-GB') 
+       : owner?._id && owner._id.length === 24
+         ? new Date(parseInt(owner._id.substring(0, 8), 16) * 1000).toLocaleDateString('en-GB') 
+         : "New Entry"
+     }
+   </span>
+</div>
+              </div>
+            </div>
 
-                    <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100 group-hover:bg-blue-50 group-hover:border-blue-100 transition-all mt-auto mb-6">
-                        <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm"><CreditCard className="w-4 h-4" /></div>
-                        <div className="flex flex-col min-w-0">
-                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Digital Protocol</span>
-                            <span className="text-[11px] font-black text-slate-700 truncate tracking-tight uppercase leading-none">{owner.upiID || "NOT CONFIGURED"}</span>
-                        </div>
-                    </div>
+            {/* 💰 సబ్‌స్క్రిప్షన్ బాక్స్ - కేవలం Approved పార్ట్‌నర్లకు మాత్రమే */}
+            {activeTab === "approved" && (
+              <div className={`mb-6 p-4 rounded-3xl border transition-colors ${sub.isExpired ? 'bg-red-50 border-red-100' : 'bg-green-50 border-green-100'}`}>
+                <div className="flex justify-between items-center">
+                  <div className="flex flex-col">
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Billing Protocol</span>
+                    <span className={`text-[11px] font-black uppercase italic ${sub.isExpired ? 'text-red-600' : 'text-green-600'}`}>
+                      {sub.message}
+                    </span>
+                  </div>
+                  {sub.isExpired && (
+                    <button onClick={() => window.open(`https://wa.me/${owner.phone}?text=Hi ${owner.name}, Your Sudara Hub monthly subscription is due.`)} className="bg-red-600 text-white p-2.5 rounded-2xl shadow-lg shadow-red-200 active:scale-90 transition-all">
+                      <Send className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
 
-                    <div className="pt-6 border-t border-slate-100 space-y-4">
-                        <div className="flex items-center justify-between px-1">
-                            <span className="text-slate-400 font-black uppercase text-[9px] tracking-widest italic leading-none">Security Node</span>
-                            <span className={`text-[10px] font-black uppercase italic leading-none ${owner.isApproved ? 'text-green-500' : 'text-amber-500'}`}>
-                                {owner.isApproved ? 'Secured Access ✅' : 'Pending Review ⏳'}
-                            </span>
-                        </div>
-                        <button onClick={() => updateApprovalStatus(owner._id, !owner.isApproved)} className={`w-full py-4 rounded-[1.5rem] font-black text-[10px] uppercase italic tracking-[0.2em] transition-all shadow-xl shadow-slate-200/50 active:scale-95 ${owner.isApproved ? 'bg-white border border-red-100 text-red-500 hover:bg-red-50' : 'bg-slate-900 text-white hover:bg-blue-600 shadow-blue-100'}`}>
-                            {owner.isApproved ? 'Revoke Permissions' : 'Grant Verified Access'}
-                        </button>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-          )}
+            {/* 📱 ఓనర్ రిజిస్టర్డ్ మొబైల్ నంబర్ డిస్‌ప్లే */}
+<div className="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100 mt-auto mb-6">
+    <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center text-blue-600 shadow-sm">
+        <Phone className="w-4 h-4" /> 
+    </div>
+    <div className="flex flex-col min-w-0">
+        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Registered Contact</span>
+        <span className="text-[11px] font-black text-slate-700 tracking-tight uppercase leading-none">
+            {owner.phone || "No Number Linked"}
+        </span>
+    </div>
+</div>
+
+            <div className="pt-6 border-t border-slate-100">
+                <button onClick={() => updateApprovalStatus(owner._id, !owner.isApproved)} className={`w-full py-4 rounded-[1.5rem] font-black text-[10px] uppercase italic tracking-[0.2em] transition-all shadow-xl active:scale-95 ${owner.isApproved ? 'bg-white border border-red-100 text-red-500 hover:bg-red-50' : 'bg-slate-900 text-white hover:bg-blue-600'}`}>
+                    {owner.isApproved ? 'Revoke Permissions' : 'Grant Verified Access'}
+                </button>
+            </div>
+          </motion.div>
+        );
+      })}
+    </AnimatePresence>
+  </div>
+)}
         </div>
+{/* 🌊 SUDARA INTEL FOOTER */}
+<footer className="mt-auto p-10 border-t border-slate-200 bg-white">
+  <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+    <div className="flex flex-col items-center md:items-start gap-2">
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 bg-slate-900 rounded-xl flex items-center justify-center text-white shadow-lg">
+          <ShieldCheck className="w-5 h-5"/>
+        </div>
+        <span className="font-black italic tracking-tighter text-lg text-slate-900">
+          SUDARA <span className="text-blue-600">INTEL</span>
+        </span>
+      </div>
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.3em] mt-2">
+        © 2026 Powered by Matrix Hub Protocol
+      </p>
+    </div>
+    
+    <div className="flex items-center gap-8">
+      <div className="text-center md:text-right">
+        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">System Health</p>
+        <div className="flex items-center gap-2 justify-center md:justify-end">
+          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+          <span className="text-[10px] font-black text-slate-700 uppercase">All Systems Nominal</span>
+        </div>
+      </div>
+      <div className="h-10 w-[1px] bg-slate-100 hidden md:block"></div>
+      <div className="text-center md:text-right">
+        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Developer Intel</p>
+        <span className="text-[10px] font-black text-blue-600 uppercase italic">Raju Boyella ⚔️</span>
+      </div>
+    </div>
+  </div>
+</footer>
       </main>
 
       <style>{`
