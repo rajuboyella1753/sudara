@@ -19,7 +19,7 @@ router.get("/all-owners", async (req, res) => {
   try {
     // ✅ ఇక్కడ hotelImage ని యాడ్ చేశాను, ఇప్పుడు ఫ్రంటెండ్ కి ఫోటోలు వెళ్తాయి
     const owners = await Owner.find({ isApproved: true })
-      .select("name hotelImage collegeName isStoreOpen latitude longitude category averageRating isApproved")
+      .select("name hotelImage collegeName isStoreOpen latitude longitude category averageRating isApproved foodType state district")
       .lean();
     
     console.log(`✅ Approved Owners Found: ${owners.length}`);
@@ -31,14 +31,17 @@ router.get("/all-owners", async (req, res) => {
 /* ================= 3. REGISTER (Fixed Safety) ================= */
 router.post("/register", async (req, res) => {
   try {
-    const { name, email, password, category, phone, district, collegeName } = req.body;
+    const { name, email, password, phone, whatsappNumber, upiNumber, state, district, collegeName } = req.body;
     const existing = await Owner.findOne({ email });
     if (existing) return res.status(400).json({ message: "Owner already exists" });
 
     const owner = await Owner.create({ 
-      name, email, password, category, phone, 
+      name, email, password, phone, 
+      whatsappNumber: whatsappNumber || phone, // If empty, use phone
+      upiNumber: upiNumber || phone,
+      state: state || "Andhra Pradesh",
       district: district || "Tirupati", 
-      collegeName: collegeName || "General",
+      collegeName: collegeName || "General", // Using this for Landmark
       isApproved: false 
     });
     res.status(201).json({ success: true, owner });
@@ -48,22 +51,30 @@ router.post("/register", async (req, res) => {
 });
 router.get("/admin-all-owners", async (req, res) => {
   try {
-    // 🔥 ఇక్కడ ఫిల్టర్ తీసేశాం, కాబట్టి పెండింగ్ ఉన్న ఓనర్లు కూడా వస్తారు
-    const owners = await Owner.find({}) 
-      .select("name hotelImage collegeName isStoreOpen category averageRating isApproved phone upiID analytics")
-      .lean();
+  const owners = await Owner.find({}) 
+  .select("name hotelImage collegeName isStoreOpen category averageRating isApproved phone upiID analytics state district createdAt")
+  .lean();
     res.status(200).json(owners);
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch owners for admin" });
   }
 });
-
-/* ================= 4. LOGIN (Strict Verification with Hint) ================= */
+/* ================= GET UNIQUE DISTRICTS ================= */
+router.get("/districts", async (req, res) => {
+  try {
+    const districts = await Owner.distinct("district");
+    res.status(200).json(districts);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching districts" });
+  }
+});
+/* ================= 4. LOGIN (Updated for District) ================= */
 router.post("/login", async (req, res) => {
   try {
-    const { email, password, collegeName } = req.body;
+    // 1. collegeName బదులు district ని తీసుకో రాజు
+    const { email, password, district } = req.body;
 
-    // 1. అడ్మిన్ లాగిన్ చెక్
+    // 🎯 Admin Login Check
     if (email === "telugubiblequiz959@gmail.com" && password === "Raju1753@s") {
       return res.json({ 
         success: true, 
@@ -72,27 +83,26 @@ router.post("/login", async (req, res) => {
       });
     }
 
-    // 2. మొదట ఈమెయిల్ మరియు పాస్‌వర్డ్ తో ఓనర్ ని వెతకాలి (కాలేజీ పేరు కాకుండా)
+    // 🎯 Email & Password తో ఓనర్ ని వెతకాలి
     const owner = await Owner.findOne({ email, password }).lean();
 
     if (!owner) {
       return res.status(401).json({ message: "Invalid Email or Password ❌" });
     }
 
-    // 3. ఇక్కడ నీకు కావాల్సిన హింట్ లాజిక్: కాలేజీ మ్యాచ్ అవ్వకపోతే..
-    if (owner.collegeName !== collegeName) {
+    // 🎯 🆕 ఇక్కడ కాలేజీ బదులు DISTRICT చెక్ చేయాలి
+    if (owner.district !== district) {
       return res.status(401).json({ 
-        message: "Wrong College Selected! ⚠️",
-        registeredCollege: owner.collegeName // ఇక్కడ మనం హింట్ పంపిస్తున్నాం రాజు
+        message: "Wrong District Selected! ⚠️",
+        registeredDistrict: owner.district // హింట్ కోసం డిస్ట్రిక్ట్ ని పంపిస్తున్నాం
       });
     }
 
-    // 4. అప్రూవ్ కాకపోతే ఆపేయాలి
+    // 🎯 Approval Check
     if (owner.isApproved === false) {
       return res.status(403).json({ message: "Account pending admin approval... ⏳" });
     }
 
-    // అన్నీ కరెక్ట్ అయితే సక్సెస్
     res.json({ success: true, owner });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -109,7 +119,18 @@ router.put("/approve-owner/:id", async (req, res) => {
     res.status(500).json({ message: "Approval update failed" });
   }
 });
-
+/* ================= DELETE OWNER & THEIR ITEMS ================= */
+// Ee code nee backend router file lo undali
+router.delete("/delete-owner/:id", async (req, res) => {
+  try {
+    const ownerId = req.params.id;
+    await Item.deleteMany({ ownerId: ownerId }); // Food items delete avthunnayi
+    const deletedOwner = await Owner.findByIdAndDelete(ownerId); // Owner profile delete avthundi
+    res.json({ success: true, message: "Deleted!" });
+  } catch (err) {
+    res.status(500).json({ message: "Delete failed" });
+  }
+});
 /* ================= 6. GET SINGLE OWNER ================= */
 router.get("/:id", async (req, res) => {
   try {

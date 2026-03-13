@@ -3,41 +3,40 @@ import Navbar from "../components/Navbar";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api-base"; 
 import { motion, AnimatePresence } from "framer-motion"; 
-import { ShieldCheck, Mail, Lock, Building2, LayoutGrid, ChevronDown, AlertCircle } from "lucide-react"; 
+import { ShieldCheck, Mail, Lock, Building2, LayoutGrid, ChevronDown, AlertCircle, MapPin } from "lucide-react"; 
 
 export default function OwnerLogin() {
   const navigate = useNavigate();
-  const [dbColleges, setDbColleges] = useState([]); 
+  const [dbDistricts, setDbDistricts] = useState([]); 
   const [verificationMessage, setVerificationMessage] = useState(""); 
   const [form, setForm] = useState({
-    email: "", password: "", category: "food", collegeName: "", 
+    email: "", 
+    password: "", 
+    category: "food", 
+    state: "Andhra Pradesh",
+    district: "" 
   });
 
   useEffect(() => {
-    const fetchColleges = async () => {
+    // 1. Database nundi districts fetch chesi dropdown populate cheyyadam
+    const fetchDistricts = async () => {
       try {
-        const res = await api.get("/owner/colleges");
+        const res = await api.get("/owner/districts");
         if (res.data && res.data.length > 0) {
-          setDbColleges(res.data);
-          setForm(prev => ({ ...prev, collegeName: res.data[0] }));
+          setDbDistricts(res.data);
+          // Default selection set cheyyadam
+          setForm(prev => ({ ...prev, district: res.data[0] }));
         }
       } catch (err) {
-        console.error("Colleges load failed ❌");
+        console.error("Districts load failed ❌");
       }
     };
-    fetchColleges();
+    fetchDistricts();
 
-    // ✅ రాజు, ఇక్కడ పాత లాజిక్ తీసేసి వెరిఫికేషన్ చెక్ పెట్టాలి
+    // Already login ayyi unte redirect
     const storedOwner = JSON.parse(localStorage.getItem("owner"));
-    if (storedOwner) {
-      // ఒకవేళ ఆల్రెడీ లాగిన్ అయ్యి ఉండి, అప్రూవ్ అయ్యి ఉంటేనే పంపించు
-      if (storedOwner.isApproved) {
+    if (storedOwner && storedOwner.isApproved) {
         navigate("/owner/dashboard");
-      } else {
-        // ఒకవేళ అప్రూవ్ కాకపోతే లోకల్ స్టోరేజ్ క్లియర్ చేసి ఇక్కడే ఉంచు
-        localStorage.removeItem("owner");
-        setVerificationMessage("Your account is still under review.");
-      }
     }
   }, [navigate]);
 
@@ -46,11 +45,20 @@ export default function OwnerLogin() {
     setVerificationMessage(""); 
   };
 
-const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setVerificationMessage(""); 
     try {
-      const res = await api.post("/owner/login", form);
+      // 🚀 PAYLOAD: Updated Backend logic ki taggattu district pampali
+      const payload = {
+        email: form.email,
+        password: form.password,
+        district: form.district, 
+        category: form.category,
+        state: form.state
+      };
+
+      const res = await api.post("/owner/login", payload);
       
       if (res.data.isAdmin) {
         localStorage.setItem("isAdmin", "true"); 
@@ -65,15 +73,15 @@ const handleSubmit = async (e) => {
         setVerificationMessage("Account pending admin approval! ⏳");
       }
     } catch (error) {
-      // ✅ ఇక్కడ మార్పు చెయ్ రాజు: బ్యాకెండ్ నుండి వచ్చే 'registeredCollege' హింట్ ని వాడుకో
       const errorData = error.response?.data;
-      if (errorData?.registeredCollege) {
-        setVerificationMessage(`Wrong College! Your account is registered with: ${errorData.registeredCollege} ⚠️`);
+      // ✅ Hint Logic: Oka vela owner thappu district select chesthe ikkada hint vasthundhi
+      if (errorData?.registeredDistrict) {
+        setVerificationMessage(`Wrong District! Your account is registered with: ${errorData.registeredDistrict} ⚠️`);
       } else {
         setVerificationMessage(errorData?.message || "Login failed ❌");
       }
     }
-};
+  };
 
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-blue-500/30 overflow-hidden font-sans">
@@ -96,7 +104,6 @@ const handleSubmit = async (e) => {
             <h2 className="text-4xl font-black italic uppercase text-slate-900 tracking-tighter">
               Owner <span className="text-blue-600">Access</span>
             </h2>
-            <p className="text-slate-400 text-[9px] font-black uppercase mt-3 tracking-[0.3em]">Guardian Protocol v2.0</p>
           </div>
 
           <AnimatePresence>
@@ -117,30 +124,20 @@ const handleSubmit = async (e) => {
 
           <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
             <div className="relative group">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors w-5 h-5" />
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 w-5 h-5" />
               <input 
-                type="email" 
-                name="email" 
-                placeholder="Business Email" 
-                value={form.email} 
-                onChange={handleChange} 
-                autoComplete="email"
-                required 
-                className="w-full bg-slate-50 border border-slate-100 pl-12 pr-4 py-4 rounded-2xl focus:border-blue-400 focus:bg-white outline-none font-bold transition-all placeholder:text-slate-300 text-sm text-slate-800 shadow-sm" 
+                type="email" name="email" placeholder="Business Email" 
+                value={form.email} onChange={handleChange} required 
+                className="w-full bg-slate-50 border border-slate-100 pl-12 pr-4 py-4 rounded-2xl focus:border-blue-400 focus:bg-white outline-none font-bold text-sm text-slate-800 shadow-sm" 
               />
             </div>
 
             <div className="relative group">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors w-5 h-5" />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 w-5 h-5" />
               <input 
-                type="password" 
-                name="password" 
-                placeholder="Access Token" 
-                value={form.password} 
-                onChange={handleChange} 
-                autoComplete="current-password"
-                required 
-                className="w-full bg-slate-50 border border-slate-100 pl-12 pr-4 py-4 rounded-2xl focus:border-blue-400 focus:bg-white outline-none font-bold transition-all placeholder:text-slate-300 text-sm text-slate-800 shadow-sm" 
+                type="password" name="password" placeholder="Access Token" 
+                value={form.password} onChange={handleChange} required 
+                className="w-full bg-slate-50 border border-slate-100 pl-12 pr-4 py-4 rounded-2xl focus:border-blue-400 focus:bg-white outline-none font-bold text-sm text-slate-800 shadow-sm" 
               />
             </div>
 
@@ -148,28 +145,40 @@ const handleSubmit = async (e) => {
               <div className="relative group">
                 <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 w-4 h-4 pointer-events-none" />
                 <select 
-                  name="collegeName" 
-                  value={form.collegeName} 
+                  name="state" 
+                  value={form.state} 
                   onChange={handleChange} 
-                  className="w-full bg-slate-50 border border-slate-100 pl-10 pr-8 py-4 rounded-2xl focus:border-blue-400 focus:bg-white outline-none font-bold appearance-none cursor-pointer text-[9px] uppercase tracking-widest text-slate-600 shadow-sm"
+                  className="w-full bg-slate-50 border border-slate-100 pl-10 pr-8 py-4 rounded-2xl focus:border-blue-400 outline-none font-bold appearance-none cursor-pointer text-[9px] uppercase tracking-widest text-slate-600 shadow-sm"
                 >
-                  {dbColleges.map((c) => <option key={c} value={c}>{c}</option>)}
+                  <option value="Andhra Pradesh">Andhra Pradesh</option>
+                  <option value="Telangana">Telangana</option>
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 w-3 h-3 pointer-events-none" />
               </div>
 
               <div className="relative group">
-                <LayoutGrid className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 w-4 h-4 pointer-events-none" />
+                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 w-4 h-4 pointer-events-none" />
                 <select 
-                  name="category" 
-                  value={form.category} 
+                  name="district" 
+                  value={form.district} 
                   onChange={handleChange} 
-                  className="w-full bg-slate-50 border border-slate-100 pl-10 pr-8 py-4 rounded-2xl focus:border-blue-400 focus:bg-white outline-none font-bold appearance-none cursor-pointer text-[9px] uppercase tracking-widest text-slate-600 shadow-sm"
+                  className="w-full bg-slate-50 border border-slate-100 pl-10 pr-8 py-4 rounded-2xl focus:border-blue-400 outline-none font-bold appearance-none cursor-pointer text-[9px] uppercase tracking-widest text-slate-600 shadow-sm"
                 >
-                  <option value="food">Food</option>
+                  {dbDistricts.map((d) => <option key={d} value={d}>{d}</option>)}
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 w-3 h-3 pointer-events-none" />
               </div>
+            </div>
+
+            <div className="relative group">
+              <LayoutGrid className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-600 w-4 h-4 pointer-events-none" />
+              <select 
+                name="category" value={form.category} onChange={handleChange} 
+                className="w-full bg-slate-50 border border-slate-100 pl-10 pr-8 py-4 rounded-2xl focus:border-blue-400 outline-none font-bold appearance-none cursor-pointer text-[9px] uppercase tracking-widest text-slate-600 shadow-sm"
+              >
+                <option value="food">Food Business</option>
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 w-3 h-3 pointer-events-none" />
             </div>
 
             <button 

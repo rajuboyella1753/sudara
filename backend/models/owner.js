@@ -7,15 +7,23 @@ const ownerSchema = new mongoose.Schema(
     password: String,
     category: String,
     profileImage: { type: String, default: "" },
-    phone: String,
+    phone: String, // Calling Number
+    whatsappNumber: { type: String, default: "" }, // 🆕 WhatsApp
+    upiNumber: { type: String, default: "" }, // 🆕 PhonePe/GPay Number
+    state: { type: String, default: "Andhra Pradesh" }, // 🆕 State
     district: { type: String, default: "Tirupati" },
-    collegeName: { type: String, default: "General" },
+    collegeName: { type: String, default: "General" }, // Landmark / Area
     hotelImage: { type: String, default: "" },
     isStoreOpen: { type: Boolean, default: true },
     busyStatus: { 
         type: String, 
         enum: ['Low', 'Medium', 'High', 'Free', 'Normal', 'Busy'], 
         default: 'Low' 
+    },
+    foodType: { 
+    type: String, 
+    enum: ['Veg', 'Non-Veg', 'Both'], 
+    default: 'Both' 
     },
     latitude: { type: Number, default: 0 },
     longitude: { type: Number, default: 0 },

@@ -2,52 +2,51 @@ import React from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom"; // ✅ ఇంపోర్ట్ ఇక్కడే ఉండాలి
+import { useNavigate } from "react-router-dom";
 import { 
-  CheckCircle, 
   MapPin, 
-  Clock, 
   Search, 
   Camera, 
   Navigation, 
   Zap, 
   CreditCard, 
-  Smartphone, 
   ShieldCheck,
-  UserCheck,
-  Banknote
+  Banknote,
+  ChevronRight,
+  Globe,
+  Store
 } from "lucide-react";
 
 const features = [
   {
-    title: "Only Verified Restaurants",
-    desc: "Every restaurant on our platform is personally verified. We never compromise on food quality!",
-    icon: <ShieldCheck className="w-6 h-6 text-green-500" />,
+    title: "Personally Verified",
+    desc: "Every Hub on our platform is personally audited. Quality food is our non-negotiable protocol.",
+    icon: <ShieldCheck className="w-6 h-6 text-emerald-500" />,
   },
   {
-    title: "Nearby & Real-time Info",
-    desc: "Find restaurants closest to you and see their live open/closed status instantly.",
-    icon: <MapPin className="w-6 h-6 text-red-500" />,
+    title: "Regional Protocol",
+    desc: "Filter restaurants by State and District to find the perfect Hub in your current location.",
+    icon: <Globe className="w-6 h-6 text-blue-500" />,
   },
   {
-    title: "Live Menu & Availability",
-    desc: "Check what's cooking! Know if a dish is available or sold out before you even leave your room.",
-    icon: <Search className="w-6 h-6 text-blue-500" />,
+    title: "Live Inventory",
+    desc: "Check real-time dish availability. No more 'Sold Out' surprises after reaching the Hub.",
+    icon: <Search className="w-6 h-6 text-indigo-500" />,
   },
   {
-    title: "Interior & Ambience View",
-    desc: "Take a virtual tour. View high-quality photos of the restaurant's interior to pick your perfect spot.",
+    title: "Ambience Preview",
+    desc: "Take a virtual tour of the interior and seating before you decide to walk in.",
     icon: <Camera className="w-6 h-6 text-purple-500" />,
   },
   {
-    title: "Rush Status & Directions",
-    desc: "Check if the place is crowded and get precise walking directions via Google Maps.",
+    title: "Rush & Routing",
+    desc: "See live crowd status and get precise walking directions via integrated GPS.",
     icon: <Navigation className="w-6 h-6 text-orange-500" />,
   },
   {
-    title: "Pay 50% to Pre-Book",
-    desc: "Secure your meal by paying a small 50% advance. Your food will be hot and ready when you arrive!",
-    icon: <CreditCard className="w-6 h-6 text-teal-500" />,
+    title: "Advance Booking",
+    desc: "Secure your meal by paying a 50% advance. Your order starts cooking before you arrive.",
+    icon: <CreditCard className="w-6 h-6 text-pink-500" />,
   }
 ];
 
@@ -55,108 +54,113 @@ export default function HowItWorks() {
   const navigate = useNavigate(); 
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 font-sans">
+    <div className="min-h-screen bg-[#FDFDFD] text-slate-900 font-sans selection:bg-blue-100 overflow-x-hidden flex flex-col">
       <Navbar />
 
-      {/* --- HERO SECTION --- */}
-      <section className="pt-24 pb-12 bg-slate-50 overflow-hidden relative">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-blue-500/5 blur-[120px] -z-10 rounded-full" />
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }} 
-            animate={{ opacity: 1, y: 0 }}
-            className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter mb-4"
-          >
-            How <span className="text-blue-600">Sudara</span> Works?
-          </motion.h1>
-          <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] md:text-xs">
-            Your Comprehensive Guide to Smarter Campus Dining
-          </p>
-        </div>
-      </section>
-
-      {/* --- MAIN CONTENT --- */}
-      <main className="max-w-6xl mx-auto px-6 py-16">
-        
-        {/* Step-by-Step Flow */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-24">
-          <div className="text-center space-y-4">
-            <div className="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto text-2xl font-black shadow-lg shadow-blue-200">1</div>
-            <h3 className="font-black uppercase italic">Discover</h3>
-            <p className="text-slate-500 text-sm">Browse verified restaurants near you and explore their live menus.</p>
-          </div>
-          <div className="text-center space-y-4">
-            <div className="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto text-2xl font-black shadow-lg shadow-blue-200">2</div>
-            <h3 className="font-black uppercase italic">Pre-Book</h3>
-            <p className="text-slate-500 text-sm">Pay a 50% advance to confirm your slot and skip the waiting line at Restaurant and pay remaining amount at Restaurant.</p>
-          </div>
-          <div className="text-center space-y-4">
-            <div className="w-16 h-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto text-2xl font-black shadow-lg shadow-blue-200">3</div>
-            <h3 className="font-black uppercase italic">Eat Fresh</h3>
-            <p className="text-slate-500 text-sm">Walk into the restaurant and enjoy your meal without the queue!</p>
-          </div>
-        </div>
-
-        {/* --- DIRECT PAYMENT CLARITY SECTION --- */}
-        <section className="mb-24 p-8 md:p-12 bg-blue-600 rounded-[3rem] text-white flex flex-col md:flex-row items-center gap-8 shadow-2xl">
-          <div className="p-4 bg-white/20 rounded-full">
-            <Banknote className="w-12 h-12 md:w-16 md:h-16 text-white" />
-          </div>
-          <div className="text-center md:text-left">
-            <h2 className="text-2xl md:text-4xl font-black uppercase italic mb-2">100% Direct Payments</h2>
-            <p className="text-blue-100 font-medium text-sm md:text-base leading-relaxed">
-              Transparency is our priority. <strong>Your payments go directly to the restaurant owner's bank account.</strong> Sudara Hub acts as a discovery platform and does not hold your money or charge any hidden commissions from your food bill. No middlemen, no delays!
-            </p>
+      <div className="flex-1">
+        {/* --- 🚀 DYNAMIC HERO SECTION --- */}
+        <section className="relative pt-28 pb-12 md:pt-48 md:pb-24 bg-white overflow-hidden border-b border-slate-100">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[500px] bg-blue-600/5 blur-[120px] -z-10 rounded-full" />
+          
+          <div className="max-w-7xl mx-auto px-6 text-center">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+              <h1 className="text-4xl sm:text-6xl md:text-[8rem] font-black italic uppercase tracking-tighter leading-[0.9] md:leading-[0.85] mb-6 md:mb-8">
+                Operating <br/> <span className="text-blue-600">Procedures.</span>
+              </h1>
+              <p className="text-slate-400 font-bold uppercase tracking-[0.2em] md:tracking-[0.3em] text-[8px] md:text-xs mb-8 md:mb-12">
+                The Integrated Guide to Smarter Hub Discovery
+              </p>
+            </motion.div>
           </div>
         </section>
 
-        {/* --- FEATURES GRID --- */}
-        <div className="bg-slate-900 rounded-[3rem] p-8 md:p-16 text-white relative overflow-hidden">
-          <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-12">
-            <div>
-              <h2 className="text-3xl md:text-5xl font-black italic uppercase tracking-tighter leading-none mb-6">
-                Why Use <br/><span className="text-blue-500">Sudara Hub?</span>
-              </h2>
-              <p className="text-slate-400 font-medium mb-8">
-                We aren't just a directory; we are a smart tool built to save your time and ensure you get the best campus food experience.
-              </p>
-              <motion.button 
-              whileTap={{ scale: 0.95 }}
-              onClick={() => navigate("/")} // ✅ ఇది ఇప్పుడు కరెక్ట్ గా వర్క్ అవుతుంది
-              className="bg-blue-600 text-white px-8 py-4 rounded-2xl font-black uppercase italic text-xs tracking-widest shadow-xl shadow-blue-900/40"
-            >
-              Start Exploring
-            </motion.button>
-            </div>
-
-            <div className="grid grid-cols-1 gap-6">
-              {features.map((f, i) => (
-                <div key={i} className="flex items-start gap-4 bg-white/5 p-5 rounded-3xl border border-white/10 hover:bg-white/10 transition-all group">
-                  <div className="shrink-0 p-3 bg-white/10 rounded-2xl group-hover:scale-110 transition-transform">
-                    {f.icon}
-                  </div>
-                  <div>
-                    <h4 className="font-black uppercase italic text-sm mb-1">{f.title}</h4>
-                    <p className="text-slate-400 text-xs leading-relaxed">{f.desc}</p>
-                  </div>
+        {/* --- 🛠️ THE 3-STEP ARCHITECTURE (Responsive Grid) --- */}
+        <section className="max-w-7xl mx-auto px-6 py-16 md:py-32">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-12">
+            {[
+              { step: "01", title: "Discover", desc: "Browse verified Hubs across States & Districts with live menus.", icon: Globe },
+              { step: "02", title: "Protocol", desc: "Pay 50% advance to initiate the cooking process and skip the wait.", icon: Zap },
+              { step: "03", title: "Dining", desc: "Arrive at the Hub, enjoy your fresh meal, and pay the rest.", icon: Store }
+            ].map((s, idx) => (
+              <div key={idx} className="relative p-6 md:p-8 bg-white border border-slate-100 rounded-[2rem] md:rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all group">
+                <div className="text-4xl md:text-6xl font-black italic text-slate-100 absolute top-4 md:top-6 right-6 md:right-8 group-hover:text-blue-50 transition-colors pointer-events-none">{s.step}</div>
+                <div className="w-12 h-12 md:w-14 md:h-14 bg-blue-600 text-white rounded-xl md:rounded-2xl flex items-center justify-center mb-4 md:mb-6 shadow-lg shadow-blue-200 group-hover:rotate-6 transition-transform">
+                  <s.icon className="w-6 h-6 md:w-7 md:h-7" />
                 </div>
-              ))}
+                <h3 className="text-lg md:text-xl font-black uppercase italic mb-2 md:mb-3 text-slate-900 tracking-tighter">{s.title}</h3>
+                <p className="text-slate-500 text-xs md:text-sm leading-relaxed italic">{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* --- 💎 DIRECT SETTLEMENT PROTOCOL (Responsive Banner) --- */}
+        <section className="max-w-7xl mx-auto px-6 mb-20 md:mb-32">
+          <div className="bg-blue-600 rounded-[2.5rem] md:rounded-[3.5rem] p-8 md:p-20 text-white flex flex-col lg:flex-row items-center gap-8 md:gap-12 relative overflow-hidden shadow-2xl shadow-blue-200">
+            <div className="absolute top-0 right-0 p-40 bg-white/10 blur-[80px] rounded-full"></div>
+            
+            <div className="shrink-0 w-20 h-20 md:w-32 md:h-32 bg-white/20 backdrop-blur-md rounded-[2rem] md:rounded-[2.5rem] flex items-center justify-center border border-white/20">
+              <Banknote className="w-10 h-10 md:w-16 md:h-16" />
+            </div>
+            
+            <div className="text-center lg:text-left relative z-10">
+              <h2 className="text-2xl md:text-5xl font-black uppercase italic tracking-tighter mb-4 leading-tight">100% Direct Settlement</h2>
+              <p className="text-blue-50 text-sm md:text-lg leading-relaxed italic opacity-90 max-w-3xl">
+                Transparency is our core protocol. <strong>Payments go directly to the Hub owner's account.</strong> Sudara Hub operates as a zero-commission ecosystem, ensuring you pay the original price and owners keep 100% of their earnings.
+              </p>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* --- 50% PAYMENT POLICY SECTION --- */}
-        <section className="mt-24 text-center max-w-3xl mx-auto space-y-6">
-           <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-full font-black uppercase text-[10px] tracking-widest">
-             <Zap className="w-3 h-3 fill-blue-600" /> Booking Policy
+        {/* --- 🍱 ADVANCED FEATURE GRID (Responsive Flex/Grid) --- */}
+        <section className="bg-slate-900 py-16 md:py-32 overflow-hidden">
+          <div className="max-w-7xl mx-auto px-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+              <div className="text-center lg:text-left">
+                <h3 className="text-blue-500 font-black uppercase text-[10px] tracking-[0.4em] mb-4 italic text-center lg:text-left">Core Matrix</h3>
+                <h2 className="text-3xl md:text-7xl font-black italic uppercase tracking-tighter leading-[0.9] text-white mb-6 md:mb-8">
+                  Engineered <br className="hidden md:block"/> For Your <br className="hidden md:block"/> <span className="text-blue-500">Hunger.</span>
+                </h2>
+                <p className="text-slate-400 text-sm md:text-lg mb-8 md:mb-10 italic">
+                  We aren't just a food directory; we are a digital protocol built to optimize campus dining efficiency.
+                </p>
+                <motion.button 
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => navigate("/")}
+                  className="inline-flex items-center gap-3 bg-blue-600 text-white px-8 py-4 md:px-10 md:py-5 rounded-xl md:rounded-2xl font-black uppercase italic text-[10px] md:text-xs tracking-[0.1em] md:tracking-[0.2em] shadow-2xl hover:bg-blue-500 transition-colors mx-auto lg:mx-0"
+                >
+                  Enter Discovery <ChevronRight className="w-4 h-4" />
+                </motion.button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                {features.map((f, i) => (
+                  <div key={i} className="p-6 md:p-8 bg-white/5 border border-white/10 rounded-[1.5rem] md:rounded-[2.5rem] hover:bg-white/10 transition-all group">
+                    <div className="shrink-0 mb-4 md:mb-6 group-hover:scale-110 transition-transform">
+                      {f.icon}
+                    </div>
+                    <h4 className="font-black uppercase italic text-sm text-white mb-2 tracking-tight">{f.title}</h4>
+                    <p className="text-slate-500 text-[10px] md:text-[11px] leading-relaxed font-medium uppercase tracking-wider">{f.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* --- 🎯 THE 50% POLICY (Text Center Content) --- */}
+        <section className="py-20 md:py-40 text-center max-w-4xl mx-auto px-6">
+           <div className="inline-flex items-center gap-2 px-5 py-2 bg-blue-50 text-blue-600 rounded-full font-black uppercase text-[9px] md:text-[10px] tracking-widest mb-6 md:mb-8 border border-blue-100">
+             <Zap className="w-3 h-3 fill-blue-600" /> Advance Booking Protocol
            </div>
-           <h2 className="text-3xl md:text-4xl font-black italic uppercase tracking-tighter">Skip the Wait with <br/><span className="text-blue-600">50% Advance Booking</span></h2>
-           <p className="text-slate-500 text-sm leading-relaxed">
-             To prevent food wastage and ensure restaurant owners can prioritize your order, we utilize a 50% advance payment model. This confirms your slot so the chef can start cooking before you arrive. Simply pay the remaining 50% at the restaurant after your meal!
+           <h2 className="text-3xl md:text-6xl font-black italic uppercase tracking-tighter leading-tight mb-6 md:mb-8">
+             Zero Wait. <br className="md:hidden"/> <span className="text-blue-600">50% Advance.</span>
+           </h2>
+           <p className="text-slate-500 text-sm md:text-lg leading-relaxed italic max-w-2xl mx-auto px-2">
+             To eliminate food wastage and guarantee Hub priority, we utilize a 50% advance payment model. This confirms your slot so the chef can start prep before you arrive. Simply settle the remaining 50% at the Hub!
            </p>
         </section>
-
-      </main>
+      </div>
 
       <Footer />
     </div>
