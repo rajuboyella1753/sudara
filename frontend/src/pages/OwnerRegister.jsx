@@ -2,6 +2,18 @@ import { useState } from "react";
 import Navbar from "../components/Navbar";
 import api from "../api/api-base"; 
 import { motion } from "framer-motion";
+import { 
+  Building2, 
+  Mail, 
+  Phone, 
+  MapPin, 
+  Lock, 
+  ArrowRight, 
+  Globe, 
+  Smartphone, 
+  CreditCard,
+  Info
+} from "lucide-react";
 
 export default function OwnerRegister() {
   const [form, setForm] = useState({
@@ -10,11 +22,11 @@ export default function OwnerRegister() {
     password: "",
     category: "food",
     phone: "", // Calling Number
-    whatsappNumber: "", // 🆕 Added
-    upiNumber: "",      // 🆕 Added
-    state: "Andhra Pradesh", // 🆕 Added
-    district: "Tirupati",    // 🆕 Added
-    collegeName: "MBU",      // Landmark / Area
+    whatsappNumber: "", 
+    upiNumber: "",      
+    state: "Andhra Pradesh", 
+    district: "Tirupati",    
+    collegeName: "MBU",      
     customCollege: ""   
   });
 
@@ -26,133 +38,180 @@ export default function OwnerRegister() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (form.collegeName === "Others" && !form.customCollege.trim()) {
       alert("Please enter your Area/Landmark name!");
       return;
     }
-
     const finalCollege = form.collegeName === "Others" ? form.customCollege : form.collegeName;
-    
     const payload = {
       ...form,
       collegeName: finalCollege,
-      // If WhatsApp or UPI numbers are empty, fallback to primary phone
       whatsappNumber: form.whatsappNumber || form.phone,
       upiNumber: form.upiNumber || form.phone
     };
 
     try {
-      const res = await api.post("/owner/register", payload);
+      await api.post("/owner/register", payload);
       alert("Registered successfully ✅");
       window.location.href = "/owner";
-      
     } catch (error) {
-      const errorMsg = error.response?.data?.message || "Registration failed. Try again!";
-      alert(errorMsg);
+      alert(error.response?.data?.message || "Registration failed.");
     }
   };
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-blue-500/30">
+    <div className="min-h-screen bg-[#FDFDFD] text-slate-900 font-sans selection:bg-orange-100 overflow-x-hidden relative">
       <Navbar />
 
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-blue-500/5 blur-[120px] rounded-full"></div>
+      <div className="fixed inset-0 pointer-events-none -z-10">
+        <div className="absolute top-1/4 -left-20 w-[400px] h-[400px] bg-indigo-500/5 blur-[120px] rounded-full"></div>
+        <div className="absolute bottom-1/4 -right-20 w-[400px] h-[400px] bg-orange-500/5 blur-[120px] rounded-full"></div>
       </div>
 
-      <div className="flex items-center justify-center px-4 py-10 md:py-20 relative z-10">
+      <div className="flex items-center justify-center px-4 pt-32 pb-20 relative z-10">
+        {/* Changed max-w-lg to max-w-xl for more space */}
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-md bg-white rounded-[2.5rem] shadow-[0_30px_70px_-15px_rgba(0,0,0,0.1)] border border-slate-100 p-8 relative overflow-hidden"
+          className="w-full max-w-xl bg-white rounded-[3rem] shadow-[0_40px_100px_-20px_rgba(30,58,138,0.15)] border border-slate-100 p-6 md:p-12 relative overflow-hidden"
         >
-          <div className="text-center mb-8 relative z-10">
-            <h2 className="text-4xl font-black italic uppercase tracking-tighter text-slate-900">
-              Join the <span className="text-blue-600">Hub</span>
+          <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-600 to-orange-500"></div>
+
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-slate-900">
+              DEPLOY <span className="text-indigo-600">HUB</span>
             </h2>
-            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-2">
-              Create your business account
+            <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.3em] mt-4">
+              Enter In-Detailed Business Intelligence
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
-            {/* Shop Details */}
-            <div>
-              <label className="block text-[9px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Shop / Owner Name</label>
-              <input type="text" name="name" required placeholder="Business Name" value={form.name} onChange={handleChange} className="w-full bg-slate-50 border border-slate-100 px-4 py-3 rounded-xl focus:border-blue-500 focus:bg-white focus:outline-none font-bold text-sm transition-all text-slate-800" />
-            </div>
-
-            <div>
-              <label className="block text-[9px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Email Address</label>
-              <input type="email" name="email" required placeholder="owner@hub.com" value={form.email} onChange={handleChange} className="w-full bg-slate-50 border border-slate-100 px-4 py-3 rounded-xl focus:border-blue-500 focus:bg-white focus:outline-none font-bold text-sm transition-all text-slate-800" />
-            </div>
-
-            {/* 🆕 Section: Location Info */}
-            <div className="p-4 bg-slate-50/50 rounded-2xl border border-slate-100 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[8px] font-black uppercase text-slate-400 mb-1">State</label>
-                  <select name="state" value={form.state} onChange={handleChange} className="w-full bg-white border border-slate-200 px-3 py-2 rounded-lg font-bold text-xs">
-                    <option value="Andhra Pradesh">Andhra Pradesh</option>
-                    <option value="Telangana">Telangana</option>
-                  </select>
+          <form onSubmit={handleSubmit} className="space-y-8">
+            
+            {/* 🏢 Basic Identity Section */}
+            <div className="space-y-5">
+              <div className="flex items-center gap-2 mb-2 text-indigo-600">
+                <Building2 className="w-4 h-4" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Business Identity</span>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="relative">
+                  <label className="text-[9px] font-black uppercase text-slate-400 mb-1.5 ml-1 block">Restaurant Name</label>
+                  <input type="text" name="name" required placeholder="e.g. Sudara Kitchen" value={form.name} onChange={handleChange} className="w-full bg-slate-50 border-2 border-slate-50 px-4 py-3.5 rounded-2xl focus:border-indigo-100 focus:bg-white focus:outline-none font-bold text-sm transition-all shadow-sm" />
                 </div>
-                <div>
-                  <label className="block text-[8px] font-black uppercase text-slate-400 mb-1">District</label>
-                  <input type="text" name="district" value={form.district} onChange={handleChange} className="w-full bg-white border border-slate-200 px-3 py-2 rounded-lg font-bold text-xs" />
+                <div className="relative">
+                  <label className="text-[9px] font-black uppercase text-slate-400 mb-1.5 ml-1 block">Official Email</label>
+                  <input type="email" name="email" required placeholder="owner@sudara.in" value={form.email} onChange={handleChange} className="w-full bg-slate-50 border-2 border-slate-50 px-4 py-3.5 rounded-2xl focus:border-indigo-100 focus:bg-white focus:outline-none font-bold text-sm transition-all shadow-sm" />
+                </div>
+              </div>
+            </div>
+
+            {/* 🗺️ Regional Matrix Section (State & District) */}
+            <div className="p-6 bg-indigo-50/40 rounded-[2.5rem] border border-indigo-100 space-y-6 shadow-inner">
+              <div className="flex items-center gap-2 text-indigo-900">
+                <Globe className="w-4 h-4" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Regional Location Data</span>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black uppercase text-indigo-600 ml-1">Select State</label>
+                  <div className="relative">
+                    <select name="state" value={form.state} onChange={handleChange} className="w-full bg-white border-2 border-indigo-50 px-4 py-3.5 rounded-2xl font-bold text-sm outline-none focus:border-indigo-400 appearance-none cursor-pointer shadow-sm">
+                      <option value="Andhra Pradesh">Andhra Pradesh</option>
+                      <option value="Telangana">Telangana</option>
+                    </select>
+                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-300 pointer-events-none" />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black uppercase text-indigo-600 ml-1">Current District</label>
+                  <div className="relative">
+                    <input type="text" name="district" required placeholder="e.g. Tirupati" value={form.district} onChange={handleChange} className="w-full bg-white border-2 border-indigo-50 px-4 py-3.5 rounded-2xl font-bold text-sm shadow-sm outline-none focus:border-indigo-400" />
+                    <MapPin className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-200" />
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[8px] font-black uppercase text-slate-400 mb-1">Area / Landmark</label>
-                <select name="collegeName" value={form.collegeName} onChange={handleChange} className="w-full bg-white border border-slate-200 px-3 py-2 rounded-lg font-bold text-xs">
+              <div className="space-y-2">
+                <label className="text-[9px] font-black uppercase text-indigo-600 ml-1">Primary Area / Landmark</label>
+                <select name="collegeName" value={form.collegeName} onChange={handleChange} className="w-full bg-white border-2 border-indigo-50 px-4 py-3.5 rounded-2xl font-bold text-sm shadow-sm outline-none focus:border-indigo-500 cursor-pointer">
                   {collegesList.map((c) => (<option key={c} value={c}>{c}</option>))}
                 </select>
               </div>
 
               {form.collegeName === "Others" && (
-                <input type="text" name="customCollege" required placeholder="Type Landmark (e.g. Tirupati Town)" value={form.customCollege} onChange={handleChange} className="w-full bg-white border-2 border-orange-500/20 px-3 py-2 rounded-lg font-bold text-xs focus:border-orange-500" />
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="pt-2">
+                  <label className="text-[9px] font-black uppercase text-orange-600 ml-1 mb-1 block">Specify Area Name</label>
+                  <input type="text" name="customCollege" required placeholder="Type Landmark Name..." value={form.customCollege} onChange={handleChange} className="w-full bg-white border-2 border-orange-200 px-4 py-3.5 rounded-2xl font-bold text-sm focus:border-orange-500 outline-none shadow-md transition-all" />
+                </motion.div>
               )}
             </div>
 
-            {/* 🆕 Section: Multiple Numbers */}
-            <div className="p-4 bg-blue-50/30 rounded-2xl border border-blue-100/50 space-y-3">
-              <div className="grid grid-cols-1 gap-3">
-                <div>
-                  <label className="block text-[8px] font-black uppercase text-slate-400 mb-1">Calling Number *</label>
-                  <input type="tel" name="phone" required placeholder="Primary Number" value={form.phone} onChange={handleChange} className="w-full bg-white border border-slate-200 px-4 py-2.5 rounded-xl font-bold text-sm" />
+            {/* 📱 Network Communication (Numbers Section) */}
+            <div className="p-6 bg-orange-50/40 rounded-[2.5rem] border border-orange-100 space-y-6">
+              <div className="flex items-center gap-2 text-orange-900">
+                <Smartphone className="w-4 h-4" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Connectivity Channels</span>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[9px] font-black uppercase text-orange-600 ml-1 block">Primary Calling Number (For Customers)</label>
+                <div className="relative group">
+                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-300 transition-colors" />
+                  <input type="tel" name="phone" required placeholder="e.g. 9876543210" value={form.phone} onChange={handleChange} className="w-full bg-white border-2 border-orange-50 px-12 py-3.5 rounded-2xl font-bold text-sm shadow-sm outline-none focus:border-orange-400" />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[8px] font-black uppercase text-green-600 mb-1">WhatsApp</label>
-                    <input type="tel" name="whatsappNumber" placeholder="Whatsapp number" value={form.whatsappNumber} onChange={handleChange} className="w-full bg-white border border-slate-200 px-3 py-2 rounded-lg font-bold text-xs" />
-                  </div>
-                  <div>
-                    <label className="block text-[8px] font-black uppercase text-blue-600 mb-1">UPI Number</label>
-                    <input type="tel" name="upiNumber" placeholder="phonepay number" value={form.upiNumber} onChange={handleChange} className="w-full bg-white border border-slate-200 px-3 py-2 rounded-lg font-bold text-xs" />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black uppercase text-emerald-600 ml-1 flex items-center gap-1">WhatsApp Line <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse"></div></label>
+                  <input type="tel" name="whatsappNumber" placeholder="WhatsApp Number" value={form.whatsappNumber} onChange={handleChange} className="w-full bg-white border-2 border-orange-50 px-4 py-3.5 rounded-2xl font-bold text-sm shadow-sm outline-none focus:border-emerald-400" />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[9px] font-black uppercase text-indigo-600 ml-1">UPI Number (For Payments)</label>
+                  <div className="relative">
+                    <input type="tel" name="upiNumber" placeholder="UPI Registered Phone" value={form.upiNumber} onChange={handleChange} className="w-full bg-white border-2 border-orange-50 px-4 py-3.5 rounded-2xl font-bold text-sm shadow-sm outline-none focus:border-indigo-400" />
+                    <CreditCard className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-200" />
                   </div>
                 </div>
               </div>
+              <p className="text-[8px] font-bold text-slate-400 uppercase italic px-2 tracking-tighter">* If WhatsApp or UPI numbers are left empty, primary number will be used.</p>
             </div>
 
-            <div>
-              <label className="block text-[9px] font-black uppercase text-slate-400 mb-1 ml-1 tracking-widest">Password</label>
-              <input type="password" name="password" required placeholder="••••••••" value={form.password} onChange={handleChange} className="w-full bg-slate-50 border border-slate-100 px-4 py-3 rounded-xl focus:border-blue-500 font-bold text-sm" />
+            {/* Access Matrix Section */}
+            <div className="space-y-5">
+              <div className="flex items-center gap-2 mb-2 text-indigo-600">
+                <Lock className="w-4 h-4" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Access Protocol</span>
+              </div>
+              <div className="relative">
+                <label className="text-[9px] font-black uppercase text-slate-400 mb-1.5 ml-1 block">Secure Access Key (Password)</label>
+                <input type="password" name="password" required placeholder="Create Password" value={form.password} onChange={handleChange} className="w-full bg-slate-50 border-2 border-slate-50 px-4 py-3.5 rounded-2xl focus:border-indigo-100 focus:bg-white focus:outline-none font-bold text-sm transition-all" />
+              </div>
             </div>
 
-            <button type="submit" className="w-full bg-slate-900 hover:bg-blue-600 text-white py-4 rounded-xl font-black uppercase tracking-widest text-[10px] italic transition-all shadow-xl active:scale-95">
-              Start Business Now
+            <button type="submit" className="w-full bg-indigo-600 hover:bg-orange-600 text-white py-5 rounded-[2rem] font-black uppercase tracking-[0.2em] text-xs italic transition-all duration-500 shadow-xl shadow-indigo-100 active:scale-95 flex items-center justify-center gap-3">
+              REGISTER <ArrowRight className="w-4 h-4" />
             </button>
           </form>
 
-          <div className="mt-8 text-center relative z-10 border-t border-slate-50 pt-6">
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-              Already a partner? <a href="/owner" className="text-blue-600 hover:text-blue-500 ml-1 font-black">Login here</a>
+          <div className="mt-12 text-center border-t border-slate-100 pt-8">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+              ALREADY REGISTERED? <a href="/owner" className="text-indigo-600 hover:text-orange-500 ml-1 transition-colors underline underline-offset-8 decoration-orange-300">LOGIN HERE</a>
             </p>
           </div>
         </motion.div>
       </div>
     </div>
   );
+}
+
+// Separate Icon for Select
+function ChevronDown(props) {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+  )
 }

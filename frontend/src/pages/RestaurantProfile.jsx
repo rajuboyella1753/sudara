@@ -287,7 +287,7 @@ const cleanWANumber = waTarget.length === 10 ? `91${waTarget}` : waTarget;
     className="flex items-center gap-2 sm:gap-3 bg-white px-6 py-3 md:px-10 md:py-5 rounded-full shadow-2xl hover:bg-blue-600 hover:text-white transition-all duration-300 group border border-white/30 shrink-0"
   >
     <Navigation className="w-3.5 h-3.5 md:w-5 md:h-5 text-blue-600 group-hover:text-white animate-pulse" />
-    <span className="text-[9px] md:text-xs font-black uppercase tracking-widest italic">Get Campus Route</span>
+    <span className="text-[9px] md:text-xs font-black uppercase tracking-widest italic">Get Restaurant Route</span>
   </motion.button>
 
   {/* 📢 Share Button */}
