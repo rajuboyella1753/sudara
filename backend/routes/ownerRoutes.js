@@ -131,6 +131,26 @@ router.delete("/delete-owner/:id", async (req, res) => {
     res.status(500).json({ message: "Delete failed" });
   }
 });
+/* ================= 🚀 DIRECT PASSWORD RESET (NO OTP) ================= */
+router.put("/direct-reset-password", async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    // 1. Email register అయి ఉందో లేదో చెక్ చేయి
+    const owner = await Owner.findOne({ email });
+    if (!owner) {
+      return res.status(404).json({ message: "This email is not registered in our Hub! ❌" });
+    }
+
+    // 2. నేరుగా పాస్‌వర్డ్ అప్డేట్ చేసేయ్
+    owner.password = newPassword;
+    await owner.save();
+
+    res.json({ success: true, message: "Password updated successfully! Access Restored ✅" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error during reset." });
+  }
+});
 /* ================= 6. GET SINGLE OWNER ================= */
 router.get("/:id", async (req, res) => {
   try {
