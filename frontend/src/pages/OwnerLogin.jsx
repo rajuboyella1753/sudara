@@ -254,7 +254,7 @@ export default function OwnerLogin() {
                   <KeyRound className="text-orange-600 w-8 h-8" />
                 </div>
                 <h3 className="text-2xl font-black italic uppercase text-slate-900">Access Override</h3>
-                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Reset your Matrix Access Key</p>
+                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Reset your Password</p>
               </div>
 
               <form onSubmit={handleDirectReset} className="space-y-4">
@@ -274,7 +274,7 @@ export default function OwnerLogin() {
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-orange-600 w-4 h-4 transition-colors" />
                   <input 
                     type="password" 
-                    placeholder="NEW ACCESS TOKEN" 
+                    placeholder="NEW PASSWORD" 
                     required 
                     className="w-full bg-slate-50 border border-slate-100 p-4 pl-12 rounded-xl font-bold text-xs outline-none focus:border-orange-600 focus:bg-white transition-all shadow-inner" 
                     value={resetData.newPassword} 

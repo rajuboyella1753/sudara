@@ -251,41 +251,45 @@ router.post("/save-fcm-token-general", async (req, res) => {
   }
 });
 
-// backend/routes/ownerRoutes.js లో ఈ రూట్ మార్చు రాజు
-
 router.post("/broadcast-to-all", async (req, res) => {
   try {
     const { title, body } = req.body;
     
-    // 🎯 1. అడ్మిన్ రికార్డ్ నుండి టోకెన్లని తీసుకోవడం 
-    // ఎందుకంటే యూజర్లు నోటిఫికేషన్ ఆన్ చేసినప్పుడు టోకెన్లు ఇక్కడే స్టోర్ అవుతున్నాయి
+    // 🎯 1. Admin record nundi tokens tise logic (Same as yours)
     const adminUser = await Owner.findOne({ email: "telugubiblequiz959@gmail.com" });
     
     if (!adminUser || !adminUser.fcmTokens || adminUser.fcmTokens.length === 0) {
       return res.status(404).json({ success: false, message: "No subscribers found" });
     }
 
-    // 2. టోకెన్లని క్లీన్ చేయడం (Duplicates లేకుండా)
+    // 2. Tokens cleaning (Same as yours)
     const uniqueTokens = [...new Set(adminUser.fcmTokens)].filter(t => t && t.length > 10);
 
-    // 3. ప్రతి ఒక్క టోకెన్ కి మెసేజ్ ఆబ్జెక్ట్ తయారు చేయడం
+    // 🚀 3. RAJU FIX: Web compatible message objects
     const messages = uniqueTokens.map(token => ({
       token: token,
       notification: {
         title: title || "Sudara Hub Update",
         body: body || "Check out new updates!"
       },
+      // 🛡️ Web specific redirect fix
+      webpush: {
+        fcm_options: {
+          link: "https://sudara.in" 
+        }
+      },
+      // 📱 Optional: Data payload for mobile apps
       data: {
-        click_action: "FLUTTER_NOTIFICATION_CLICK"
+        url: "https://sudara.in"
       }
     }));
 
-    // 4. Firebase ద్వారా అందరికీ పంపడం
+    // 4. Firebase send (Same as yours)
     const response = await admin.messaging().sendEach(messages);
     
     console.log(`✅ Sent: ${response.successCount}, ❌ Failed: ${response.failureCount}`);
 
-    // 5. ఫెయిల్ అయిన (పాత) టోకెన్లని డేటాబేస్ నుండి రిమూవ్ చేయడం
+    // 5. Failed tokens cleaning (Same as yours)
     if (response.failureCount > 0) {
       const failedTokens = [];
       response.responses.forEach((resp, idx) => {
@@ -309,6 +313,7 @@ router.post("/broadcast-to-all", async (req, res) => {
     });
 
   } catch (err) {
+    console.error("Broadcast Error:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
