@@ -162,14 +162,22 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-/* ================= 7. UPDATES & STATUS (UPI ID Added) ================= */
+/* ================= 7. UPDATES & STATUS (Updated with Stability) ================= */
 router.put("/update-profile/:id", async (req, res) => {
   try {
-    // ✅ రాజు, ఇక్కడ 'req.body' పంపడం వల్ల, ఫ్రంటెండ్ నుండి వచ్చే 'upiID' ఆటోమేటిక్‌గా సేవ్ అవుతుంది.
-    const updatedOwner = await Owner.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json(updatedOwner); 
+    // 🚀 RAJU STABILITY FIX: req.body mothanni $set lo pettu
+    const updatedOwner = await Owner.findByIdAndUpdate(
+      req.params.id, 
+      { $set: req.body }, 
+      { new: true, runValidators: true } 
+    );
+
+    if (!updatedOwner) return res.status(404).json({ message: "Owner not found" });
+    
+    res.status(200).json(updatedOwner); 
   } catch (err) {
-    res.status(500).json({ message: "Update failed" });
+    console.error("Update failed:", err);
+    res.status(500).json({ message: "Server error during update" });
   }
 });
 

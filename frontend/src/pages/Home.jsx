@@ -285,47 +285,83 @@ const fetchOwners = async () => {
              <p className="mt-4 text-[10px] font-black uppercase text-slate-400 tracking-[0.3em]">Syncing Matrix...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-            <AnimatePresence>
-              {filteredRestaurants.map((res) => (
-                <motion.div layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} key={res._id} className="group" onClick={() => res.isStoreOpen && handleRestaurantClick(res._id)}>
-                  <div className="flex flex-col h-full bg-white rounded-[2.5rem] border border-slate-100/80 overflow-hidden hover:shadow-[0_30px_70px_-20px_rgba(30,58,138,0.15)] transition-all duration-500 cursor-pointer group-hover:-translate-y-2">
-                    <div className="relative aspect-[16/11] overflow-hidden bg-slate-50">
-                      <img src={res.hotelImage || "https://images.unsplash.com/photo-1517248135467-4c7ed9d42339?w=500"} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt={res.name} />
-                      
-                      <div className="absolute top-5 right-5 flex items-center gap-2 bg-white/95 backdrop-blur px-4 py-2 rounded-2xl shadow-lg border border-white">
-                        <div className={`w-2 h-2 rounded-full ${res.isStoreOpen ? 'bg-emerald-500 animate-pulse' : 'bg-orange-500'}`} />
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-800">{res.isStoreOpen ? 'Live' : 'Off'}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="p-8 flex flex-col flex-grow">
-                      <div className="mb-6">
-                        <h3 className="text-2xl font-black uppercase italic tracking-tighter text-slate-900 group-hover:text-blue-600 transition-colors leading-none mb-3">{res.name}</h3>
-                        <div className="flex items-center gap-2">
-                           <span className="text-[10px] font-black text-orange-600 uppercase bg-orange-50 px-3 py-1 rounded-xl border border-orange-100/50">{res.district}</span>
-                           <span className="text-[10px] font-black text-blue-600 uppercase bg-blue-50 px-3 py-1 rounded-xl border border-blue-100/50">{res.collegeName}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between mt-auto">
-                        <div className="flex items-center gap-2.5 text-slate-500 bg-slate-50 p-2.5 rounded-2xl border border-slate-100">
-                          <MapPin className="w-4 h-4 text-orange-500" /> 
-                          <span className="text-[11px] font-black uppercase tracking-widest">
-                            {userCoords && res.latitude ? getDistance(userCoords.lat, userCoords.lng, res.latitude, res.longitude) : "Locate"}
-                          </span>
-                        </div>
-                      </div>
-
-                      <button disabled={!res.isStoreOpen} className={`mt-8 w-full py-5 rounded-[1.8rem] font-black uppercase text-[10px] tracking-[0.25em] transition-all shadow-xl ${res.isStoreOpen ? 'bg-slate-900 text-white hover:bg-blue-600 shadow-blue-900/10' : 'bg-slate-100 text-slate-300'}`}>
-                        {res.isStoreOpen ? 'Enter Restaurant' : 'Offline'}
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+  <AnimatePresence>
+    {filteredRestaurants.map((res) => (
+      <motion.div 
+        layout 
+        initial={{ opacity: 0, y: 20 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        key={res._id} 
+        className="group h-full"
+        onClick={() => res.isStoreOpen && handleRestaurantClick(res._id)}
+      >
+        <div className="flex flex-col h-full bg-white rounded-[2rem] border border-slate-100 overflow-hidden hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] transition-all duration-500 cursor-pointer">
+          
+          {/* 🖼️ Image Section - Clean (Distance Removed from here) */}
+          <div className="relative aspect-[16/9] overflow-hidden">
+            <img 
+              src={res.hotelImage || "https://images.unsplash.com/photo-1517248135467-4c7ed9d42339?w=500"} 
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+              alt={res.name} 
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60" />
           </div>
+          
+          {/* 📝 Content Section */}
+          <div className="p-6 flex flex-col flex-grow">
+            
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-black uppercase italic tracking-tighter text-slate-900 group-hover:text-blue-600 transition-colors leading-none truncate pr-2">
+                {res.name}
+              </h3>
+              {/* LIVE/CLOSED Indicator */}
+              <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-black text-[9px] uppercase tracking-tighter ${res.isStoreOpen ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-red-50 border-red-100 text-red-500'}`}>
+                <div className={`w-1.5 h-1.5 rounded-full ${res.isStoreOpen ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
+                {res.isStoreOpen ? 'LIVE' : 'CLOSED'}
+              </div>
+            </div>
+
+            {/* 📍 Location & Distance Badges - Shifted Distance here */}
+            <div className="flex flex-wrap items-center gap-2 mb-6">
+              {/* Distance Badge */}
+              <div className="flex items-center gap-1 bg-blue-50 text-blue-600 px-2.5 py-1 rounded-md border border-blue-100 shadow-sm">
+                <MapPin className="w-3 h-3 text-orange-500" />
+                <span className="text-[10px] font-black uppercase tracking-wider">
+                  {userCoords && res.latitude ? getDistance(userCoords.lat, userCoords.lng, res.latitude, res.longitude) : "Locate"}
+                </span>
+              </div>
+              
+              <span className="text-[9px] font-black text-slate-400 uppercase bg-slate-50 px-2.5 py-1 rounded-md border border-slate-100 italic">
+                {res.district}
+              </span>
+              <span className="text-[9px] font-black text-blue-500 uppercase bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100 italic">
+                {res.collegeName}
+              </span>
+            </div>
+
+            {/* 🚀 Action Button */}
+            <div className="mt-auto">
+              <button 
+                disabled={!res.isStoreOpen} 
+                className={`w-full group/btn relative py-4 rounded-xl font-black uppercase text-[11px] tracking-[0.2em] transition-all duration-300 overflow-hidden flex items-center justify-center gap-3 ${
+                  res.isStoreOpen 
+                    ? 'bg-slate-900 text-white hover:bg-blue-600 shadow-[0_10px_20px_-5px_rgba(15,23,42,0.3)] hover:shadow-blue-600/30 active:scale-95' 
+                    : 'bg-slate-100 text-slate-300 cursor-not-allowed'
+                }`}
+              >
+                <div className="absolute inset-0 bg-white/10 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
+                <span className="relative z-10">{res.isStoreOpen ? 'Enter Restaurant' : 'CURRENTLY CLOSED'}</span>
+                {res.isStoreOpen && <ArrowUpRight className="relative z-10 w-4 h-4 transition-transform group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1" />}
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </motion.div>
+    ))}
+  </AnimatePresence>
+</div>
         )}
       </main>
 

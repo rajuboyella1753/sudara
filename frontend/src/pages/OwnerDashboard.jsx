@@ -472,41 +472,31 @@ const downloadQRCode = () => {
         </button>
       </div>
 
-      {/* --- FORM BODY --- */}
-      <form 
-        onSubmit={async (e) => { 
-  e.preventDefault(); 
-  setSending(true);
-  try {
-    // 🚀 RAJU FIX 1: Header lo no-store pettu, SW cache ni ignore chesthundhi
-    const res = await api.put(`/owner/update-profile/${owner._id}`, profileForm, {
-      headers: { 
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache'
+{/* --- FORM BODY --- */}
+<form 
+  onSubmit={async (e) => { 
+    e.preventDefault(); 
+    setSending(true);
+    try {
+      const res = await api.put(`/owner/update-profile/${owner._id}`, profileForm); 
+      
+      if (res.data) {
+        localStorage.setItem("owner", JSON.stringify(res.data));
+        setOwner(res.data); 
+        setProfileForm({ ...res.data }); 
+        setIsEditingProfile(false); 
+        alert("Matrix Updated! ✅"); 
       }
-    }); 
-    
-    if (res.data) {
-      // 🚀 RAJU FIX 2: Browser memory sync
-      localStorage.setItem("owner", JSON.stringify(res.data));
-      setOwner(res.data); 
-      setProfileForm({ ...res.data }); 
-      setIsEditingProfile(false); 
-      alert("Matrix Updated! ✅"); 
+    } catch (err) {
+      console.error("Update failed:", err);
+      // Detailed error log check chey dashboard lo
+      alert(err.response?.data?.message || "Network Error! ❌");
+    } finally { 
+      setSending(false); 
     }
-  } catch (err) {
-    // 🛡️ RAJU FIX 3: SW crash aithe bypass chesi sync chey
-    if (err.message.includes('Cache') || err.name === 'TypeError') {
-       console.warn("SW Cache Bypass Triggered");
-       // Details DB lo save ayyayi kabatti, UI refresh chesthe saripothundi
-       window.location.reload();
-    } else {
-       alert("Network Error! ❌");
-    }
-  } finally { setSending(false); }
-}}
-        className="flex-1 overflow-y-auto p-6 md:p-10 space-y-10 scrollbar-hide"
-      >
+  }}
+  className="flex-1 overflow-y-auto p-6 md:p-10 space-y-10 scrollbar-hide"
+>
         
         {/* 📸 SECTION 1: VISUAL IDENTITY */}
         <div className="space-y-6">

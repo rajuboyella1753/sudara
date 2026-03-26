@@ -57,6 +57,19 @@ const trackCallInterest = async () => {
     console.log("Call tracking failed");
   }
 };
+const handleDirectPay = () => {
+  const upiId = owner?.upiID || owner?.phone;
+  if (!upiId) return alert("Owner details not found!");
+
+  // కాపీ చేయడం
+  navigator.clipboard.writeText(upiId);
+  
+  // యూజర్ కి ఇన్స్ట్రక్షన్ ఇవ్వడం
+  alert(`UPI ID Copied: ${upiId}\n\nSteps:\n1. Open PhonePe/GPay\n2. Go to 'Pay to UPI ID'\n3. Paste this ID and pay ₹${halfAmount}`);
+
+  // ఐఫోన్ లేదా ఆండ్రాయిడ్ అయితే యాప్ ఓపెన్ చేయడానికి ట్రై చేస్తుంది (కానీ లింక్ పని చేయకపోవచ్చు)
+  // కాబట్టి బెస్ట్ ఏంటంటే కాపీ చేసి యూజర్ ని మాన్యువల్ గా వెళ్ళమనడం.
+};
 const handleCallAction = () => {
   trackCallInterest();
   setShowCallPopup(true); 
@@ -240,7 +253,10 @@ const cleanWANumber = waTarget.length === 10 ? `91${waTarget}` : waTarget;
 
   return (
     <div className="min-h-screen bg-white text-slate-900 overflow-x-hidden selection:bg-blue-500/30">
-      <Navbar />
+    {/* 📱 Solid White Navbar - No Transparency */}
+<div className="sticky top-0 z-[100] bg-white border-b border-slate-100 shadow-sm w-full">
+  <Navbar />
+</div>
       
 {/* 🏛️ Header Section: Ultra Clean & Responsive */}
 <div className="relative h-[350px] sm:h-[450px] md:h-[600px] flex items-center justify-center overflow-hidden bg-slate-900 w-full">
@@ -644,71 +660,137 @@ const cleanWANumber = waTarget.length === 10 ? `91${waTarget}` : waTarget;
   )}
 </AnimatePresence>
 
-      {/* Payment Warning Modal: Responsive Layout */}
+{/* Payment Warning Modal: Ultra Responsive Layout */}
       <AnimatePresence>
         {showPayWarning && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[250] bg-slate-900/95 backdrop-blur-xl flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.9, y: 30 }} animate={{ scale: 1, y: 0 }} className="bg-white w-full max-w-sm rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl relative">
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            className="fixed inset-0 z-[250] bg-slate-900/95 backdrop-blur-xl flex items-center justify-center p-4 sm:p-6"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 30 }} 
+              animate={{ scale: 1, y: 0 }} 
+              className="bg-white w-full max-w-sm md:max-w-md rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl relative"
+            >
+              {/* Top Header Bar */}
               <div className="bg-slate-50 px-6 sm:px-8 py-4 border-b border-slate-100 flex justify-between items-center">
-                <span className="text-[9px] sm:text-[10px] font-black uppercase text-blue-600 italic">Secure Payment</span>
-                <div className="flex gap-1">
-                  {[1, 2, 3].map((i) => <div key={i} className={`w-3 sm:w-4 h-1 rounded-full ${i <= 2 ? 'bg-blue-600' : 'bg-slate-200'}`}></div>)}
+                <span className="text-[9px] sm:text-[11px] font-black uppercase text-blue-600 italic">Secure Payment</span>
+                <div className="flex gap-1.5">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className={`w-3 sm:w-5 h-1 rounded-full ${i <= 2 ? 'bg-blue-600' : 'bg-slate-200'}`}></div>
+                  ))}
                 </div>
               </div>
-              <div className="p-6 sm:p-8 text-center">
-                <div className="mb-4 sm:mb-6">
-                  <h3 className="text-lg sm:text-xl font-black uppercase italic text-slate-900 mb-1">Step 1: Confirm First 📞</h3>
-                  <p className="text-[9px] sm:text-[10px] font-bold text-slate-500 uppercase">Call <span className="text-blue-600 underline">{owner?.name}</span> to check food availability and please dont pay before confirmation.</p>
-                  {/* 📞 Payment Modal Call Button - Trigger Popup */}
-<button 
-  onClick={handleCallAction} 
-  className="mt-3 sm:mt-4 w-full py-3 bg-blue-600 text-white rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all"
->
-  <PhoneCall className="w-3.5 h-3.5" /> Call Owner
-</button>
-                </div>
-                <div className="w-full h-px bg-slate-100 my-4 sm:my-6 relative"><span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-[7px] font-black text-slate-300 uppercase italic">And Then</span></div>
-                <div className="mb-4 sm:mb-6 text-center">
-                  {/* <h3 className="text-lg sm:text-xl font-black uppercase italic text-slate-900 mb-3">Step 2: Pay Advance 💸</h3> */}
-                 <div className="mb-4 sm:mb-6 text-center">
-  <h3 className="text-lg sm:text-xl font-black uppercase italic text-slate-900 mb-3">Step 2: Pay Advance 💸</h3>
-  <div className="bg-slate-900 rounded-2xl sm:rounded-[2rem] p-4 sm:p-5 text-white shadow-xl relative overflow-hidden">
-      <p className="text-[7px] sm:text-[8px] font-black uppercase tracking-[0.2em] text-blue-400 mb-2">Advance: ₹{halfAmount}</p>
-      
-      {/* 🚀 RAJU FIX: UPI Number Fallback logic (PhonePe/GPay) */}
-      <h2 className="text-2xl sm:text-3xl font-black tracking-tighter mb-4">{payTarget}</h2>
-      
-      <button 
-        onClick={() => { 
-          navigator.clipboard.writeText(payTarget); 
-          alert(`Copied Number for Payment! ✅`); 
-        }} 
-        className="w-full py-2.5 bg-white/10 border border-white/10 text-white rounded-xl font-black uppercase text-[9px] flex items-center justify-center gap-2 active:scale-95"
-      >
-        <Copy className="w-3 h-3" /> Copy {owner?.upiNumber ? 'UPI Number' : 'Phone Number'}
-      </button>
-  </div>
-</div>
-                </div>
-                <div className="bg-orange-50 border border-orange-100 p-3 sm:p-4 rounded-xl sm:rounded-2xl mb-6 sm:mb-8">
-                  <div className="flex items-center gap-2 mb-1 justify-center text-orange-600">
-                    <ShieldCheck className="w-3.5 h-3.5 sm:w-4 h-4" />
-                    <span className="text-[9px] sm:text-[10px] font-black uppercase italic">Step 3: Copy ID</span>
-                  </div>
-                  <p className="text-[8px] sm:text-[9px] font-bold text-orange-700 leading-tight uppercase italic">Paste the <span className="underline">Last 5 Digits</span> of Txn ID in form.</p>
-                </div>
-                <div className="space-y-2.5 sm:space-y-3">
+
+              {/* Modal Body Scrollable for smaller devices */}
+              <div className="p-6 sm:p-8 text-center max-h-[80vh] overflow-y-auto scrollbar-hide">
+                
+                {/* Step 1 Section */}
+                <div className="mb-6 sm:mb-8">
+                  <h3 className="text-lg sm:text-2xl font-black uppercase italic text-slate-900 mb-2">Step 1: Confirm First 📞</h3>
+                  <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase leading-relaxed px-2">
+                    Call <span className="text-blue-600 underline">{owner?.name}</span> to check food availability and please dont pay before confirmation.
+                  </p>
+                  
                   <button 
-                onClick={() => {
-                  setShowPayWarning(false); // వార్నింగ్ క్లోజ్ అవుతుంది
-                  setShowOrderForm(true);   // చెక్ అవుట్ ఫామ్ ఓపెన్ అవుతుంది
-                }} 
-                className="w-full py-3.5 bg-slate-900 text-white rounded-xl font-black uppercase text-[10px] shadow-xl active:scale-95"
-              >
-                I Paid, Continue
-              </button>
-                  <button onClick={() => setShowPayWarning(false)} className="text-[9px] font-black uppercase text-slate-400 hover:text-red-500 tracking-widest">Cancel Payment</button>
+                    onClick={handleCallAction} 
+                    className="mt-4 w-full py-3.5 sm:py-4 bg-blue-600 text-white rounded-xl font-black uppercase text-[10px] sm:text-xs flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all"
+                  >
+                    <PhoneCall className="w-4 h-4" /> Call Owner
+                  </button>
                 </div>
+
+                <div className="w-full h-px bg-slate-100 my-6 relative">
+                  <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-3 text-[8px] sm:text-[10px] font-black text-slate-300 uppercase italic">And Then</span>
+                </div>
+
+                {/* Step 2 Section (The Box) */}
+                <div className="mb-6 sm:mb-8 text-center">
+                  <div className="bg-slate-900 rounded-[2rem] p-5 sm:p-7 text-white shadow-2xl border-t-4 border-blue-500">
+                    <p className="text-[10px] sm:text-[11px] font-black uppercase text-blue-400 mb-4 text-center tracking-widest">Secure Transfer Protocol</p>
+                    
+                    <div className="bg-white/5 p-4 rounded-2xl border border-white/10 mb-5">
+                      <span className="text-[8px] sm:text-[9px] text-white/40 block mb-2 uppercase tracking-widest font-black text-left">1. Copy Payment Number</span>
+                      <h2 className="text-lg sm:text-2xl font-black tracking-tight flex items-center justify-between gap-2">
+                        <span className="truncate">{payTarget}</span>
+                        <button 
+                          onClick={() => {
+                            const cleanNumber = payTarget.replace(/\D/g, ''); 
+                            const finalNumber = cleanNumber.length > 10 ? cleanNumber.slice(-10) : cleanNumber;
+                            navigator.clipboard.writeText(finalNumber);
+                            alert(`Number Copied: ${finalNumber} ✅\nNow click 'Open Payment App'`);
+                          }}
+                          className="p-2.5 sm:p-3 bg-blue-600 rounded-xl active:scale-90 shadow-lg flex items-center gap-2 shrink-0"
+                        >
+                          <Copy className="w-4 h-4" />
+                          <span className="text-[9px] sm:text-[10px] uppercase font-black">Copy</span>
+                        </button>
+                      </h2>
+                    </div>
+
+                    {/* OPEN PAYMENT APP BUTTON */}
+                    <div className="mb-5">
+                       <span className="text-[8px] sm:text-[9px] text-white/40 block mb-2 uppercase tracking-widest font-black text-center italic">2. Launch & Paste</span>
+                       <button 
+                         onClick={() => {
+                           window.location.href = "phonepe://pay"; 
+                           setTimeout(() => {
+                             window.location.href = "upi://pay";
+                           }, 500);
+                         }}
+                         className="w-full py-4 bg-white text-slate-900 rounded-2xl font-black uppercase text-[10px] sm:text-xs flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all"
+                       >
+                         <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" /> Open Payment App
+                       </button>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center text-[11px] sm:text-xs border-b border-white/5 pb-2">
+                        <span className="text-white/50 italic font-bold">Advance Amount:</span>
+                        <span className="font-black text-blue-400 text-xl sm:text-2xl italic">₹{halfAmount}</span>
+                      </div>
+                      
+                      <div className="bg-blue-500/10 p-3 rounded-xl border border-blue-500/20">
+                        <p className="text-[8px] sm:text-[10px] text-blue-200 font-bold leading-tight italic text-center uppercase">
+                          Steps: Copy Number ➔ Click Open App ➔ Paste in 'To Mobile Number' ➔ Pay ₹{halfAmount}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Step 3 Footer Info */}
+                <div className="bg-orange-50 border border-orange-100 p-4 rounded-2xl mb-6">
+                  <div className="flex items-center gap-2 mb-1.5 justify-center text-orange-600">
+                    <ShieldCheck className="w-4 h-4" />
+                    <span className="text-[10px] sm:text-xs font-black uppercase italic">Step 3: Copy ID</span>
+                  </div>
+                  <p className="text-[9px] sm:text-[11px] font-bold text-orange-700 leading-tight uppercase italic px-2">
+                    Paste <span className="underline decoration-2">Last 5 Digits</span> of Txn ID in form.
+                  </p>
+                </div>
+
+                {/* Final Actions */}
+                <div className="space-y-3 sm:space-y-4">
+                  <button 
+                    onClick={() => {
+                      setShowPayWarning(false);
+                      setShowOrderForm(true);
+                    }} 
+                    className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[11px] sm:text-xs tracking-widest shadow-2xl active:scale-95 transition-all"
+                  >
+                    I Paid, Continue
+                  </button>
+                  <button 
+                    onClick={() => setShowPayWarning(false)} 
+                    className="text-[10px] sm:text-xs font-black uppercase text-slate-400 hover:text-red-500 transition-colors tracking-widest"
+                  >
+                    Cancel Payment
+                  </button>
+                </div>
+
               </div>
             </motion.div>
           </motion.div>

@@ -16,13 +16,18 @@ self.addEventListener("install", (event) => {
   );
 });
 
-// 🚀 2. Fetch Resources - "Network-First" స్ట్రాటజీ
-// మొబైల్స్ లో వైట్ స్క్రీన్ రాకుండా ఉండటానికి ఇదే పక్కా మెడిసిన్!
+// service-worker.js fetch block
 self.addEventListener("fetch", (event) => {
+  const url = event.request.url;
+
+  // 🚀 RAJU CRITICAL FIX: API calls (Update/Post) ni asalu cache cheyaku
+  if (url.includes("/api/owner/update") || event.request.method !== "GET") {
+    return; // Server ki direct ga pampu
+  }
+
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
-        // నెట్ ఉంటే కొత్త ఫైల్ ని క్యాచీలో అప్‌డేట్ చేస్తుంది
         if (networkResponse && networkResponse.status === 200) {
           const responseToCache = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
@@ -32,12 +37,10 @@ self.addEventListener("fetch", (event) => {
         return networkResponse;
       })
       .catch(() => {
-        // నెట్ లేకపోతే మాత్రమే సేవ్ చేసిన పాత ఫైల్స్ ఇస్తుంది
         return caches.match(event.request);
       })
   );
 });
-
 // 🧹 3. Activate - పాత క్యాచీని (v1) పూర్తిగా క్లీన్ చేస్తుంది
 self.addEventListener("activate", (event) => {
   event.waitUntil(

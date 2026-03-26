@@ -121,7 +121,7 @@ const getSubscriptionStatus = (createdAt, ownerId) => {
   } else {
     return { 
       status: "Payment Due", 
-      message: "Subscription Expired! (₹699)", 
+      message: "Subscription Expired! (₹499)", 
       isExpired: true 
     };
   }
@@ -507,7 +507,7 @@ const filteredList = owners.filter(owner => {
                       
                       {/* 🚩 TOP BADGE: SUBSCRIPTION ALERT */}
                       {activeTab === "approved" && sub.isExpired && (
-                        <div className="absolute top-0 left-0 w-full bg-red-500 text-white text-[7px] font-black uppercase py-1 text-center z-10 animate-pulse">Monthly Due Pending (₹699)</div>
+                        <div className="absolute top-0 left-0 w-full bg-red-500 text-white text-[7px] font-black uppercase py-1 text-center z-10 animate-pulse">Monthly Due Pending (₹499)</div>
                       )}
 
                       {/* 🏨 RESTAURANT NAME & IMAGE */}
@@ -560,7 +560,7 @@ const filteredList = owners.filter(owner => {
                              {sub.isExpired && (
                                 <button 
                                   onClick={() => {
-                                    const message = `*URGENT: SUDARA HUB SUBSCRIPTION EXPIRED* 🚩%0A%0AHi *${owner.name}*,%0A%0AYour monthly subscription for Sudara Hub has expired. To keep your restaurant *LIVE* and visible to customers, please renew your plan immediately.%0A%0A💰 *Renewal Amount:* ₹699 / Month%0A👤 *Pay To:* **Boyella Raju**%0A%0A📍 *Payment Methods:*%0A• PhonePe: *7569896128*%0A• UPI ID: *boyellaraju@ybl*%0A%0A✅ *IMPORTANT STEP:*%0AAfter payment, please send the screenshot and a message saying *"SUBSCRIPTION RECHARGED"* to our official number: *7569896128* (Boyella Raju) to resume your services instantly.%0A%0A_Note: Failure to renew will result in your restaurant being hidden from the hub._`;
+                                    const message = `*URGENT: SUDARA HUB SUBSCRIPTION EXPIRED* 🚩%0A%0AHi *${owner.name}*,%0A%0AYour monthly subscription for Sudara Hub has expired. To keep your restaurant *LIVE* and visible to customers, please renew your plan immediately.%0A%0A💰 *Renewal Amount:* ₹499 / Month%0A👤 *Pay To:* **Boyella Raju**%0A%0A📍 *Payment Methods:*%0A• PhonePe: *7569896128*%0A• UPI ID: *boyellaraju@ybl*%0A%0A✅ *IMPORTANT STEP:*%0AAfter payment, please send the screenshot and a message saying *"SUBSCRIPTION RECHARGED"* to our official number: *7569896128* (Boyella Raju) to resume your services instantly.%0A%0A_Note: Failure to renew will result in your restaurant being hidden from the hub._`;
                                     window.open(`https://wa.me/${owner.phone}?text=${message}`);
                                   }} 
                                   className="bg-red-600 text-white p-2 rounded-xl shadow-lg active:scale-90 transition-all hover:bg-red-700"
