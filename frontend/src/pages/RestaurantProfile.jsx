@@ -157,34 +157,46 @@ const openGoogleMaps = () => {
   const halfAmount = (totalAmount / 2).toFixed(2);
 
 const handleConfirmOrder = async () => {
-
-  if (!orderData.name || !orderData.phone || !orderData.txId) return alert("Please fill details! 📝");
-
-  const userReady = window.confirm(
-    "ORDER READY! ✅\n\nNext Step: We will open WhatsApp. After sending the message, please CALL THE OWNER immediately to confirm.\n\nProceed to WhatsApp?"
-  );
-  if (!userReady) return;
-
-  try {
-
-    const today = new Date().toLocaleDateString('en-GB').split('/').map(n => parseInt(n)).join('/');
-    
-    await api.put(`/owner/track-analytics/${id}`, { 
-      action: "pre_order_click", 
-      date: today 
-    });
-  } catch (err) {
-    console.log("Analytics error:", err);
+  // 🚀 ఫోన్ నంబర్ (phone) చెకింగ్ తీసేశాను, కేవలం name, txId, arrivalTime మాత్రమే చూస్తుంది
+  if (!orderData.name || !orderData.txId || !orderData.arrivalTime) {
+    return alert("Please fill details! 📝 (Name, Arrival Time, and Txn ID are required)");
   }
 
-  const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name}`).join(", ");
-  const message = `*NEW PRE-ORDER - SUDARA HUB*\n\n*Name:* ${orderData.name}\n*Phone:* ${orderData.phone}\n*Items:* ${itemList}\n\n*Total Bill:* ₹${totalAmount}\n*Advance Paid (50%):* ₹${halfAmount}\n*Remaining:* ₹${halfAmount}\n*Txn ID:* ${orderData.txId}\n*Arrival:* ${orderData.arrivalTime}\n\n_Note: I am calling you now for confirmation!_`;
-  
-  const cleanWANumber = waTarget.length === 10 ? `91${waTarget}` : waTarget;
-  const waURL = `https://api.whatsapp.com/send?phone=${cleanWANumber}&text=${encodeURIComponent(message)}`;
-  
-  window.open(waURL, "_blank");
-  setShowOrderForm(false);
+  try {
+    setLoading(true); 
+
+    // 🚀 ఆర్డర్ డేటా ప్రిపరేషన్
+    const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name}`);
+    const payload = {
+      restaurantId: id,
+      customerName: orderData.name,
+      // 🚀 ఒకవేళ ఫోన్ నంబర్ లేకపోతే "Pre-booked" అని వెళ్తుంది
+      customerPhone: orderData.phone || "Pre-booked Customer", 
+      items: itemList,
+      totalAmount: totalAmount,
+      advancePaid: halfAmount,
+      txnId: orderData.txId,
+      arrivalTime: orderData.arrivalTime,
+      orderType: "Pre-book",
+      status: "Pending"
+    };
+
+    // 🚀 నేరుగా API కి పంపిస్తున్నాం
+    await api.post("/orders/add", payload);
+    
+    alert("ORDER SYNCED! ✅ ఓనర్ డాష్‌బోర్డ్‌కి నీ ఆర్డర్ వెళ్ళిపోయింది.");
+    setCart({}); 
+    setShowOrderForm(false);
+    
+    // క్లీనప్: ఫామ్ డేటా రీసెట్
+    setOrderData({ name: "", phone: "", txId: "", arrivalTime: "" });
+
+  } catch (err) {
+    console.error(err);
+    alert("Order Sync Failed! ❌");
+  } finally {
+    setLoading(false);
+  }
 };
 // 📢 WhatsApp Share Function
 const handleShare = () => {
@@ -212,31 +224,31 @@ useEffect(() => {
   if (table) setSelectedTable(table);
 }, []);
 
-const handleInstantOrder = async () => { // 🚀 ఇక్కడ 'async' యాడ్ చెయ్ రాజు
+const handleInstantOrder = async () => {
   if (!customerName.trim() || !selectedTable) return alert("Please fill all details! 📝");
+
   try {
-    const today = new Date().toLocaleDateString('en-GB').split('/').map(n => parseInt(n)).join('/');
-    await api.put(`/owner/track-analytics/${id}`, { 
-      action: "post_order_click", 
-      date: today 
-    });
+    const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name}`);
+    
+    const payload = {
+      restaurantId: id,
+      customerName: customerName,
+      tableNo: selectedTable,
+      items: itemList,
+      totalAmount: totalAmount,
+      orderType: "Post-book",
+      status: "Pending"
+    };
+
+    // 🚀 బ్యాకెండ్‌కి డేటా పంపిస్తున్నాం
+    await api.post("/orders/add", payload);
+
+    alert("ORDER PLACED! 🍲 Sir/Madem your order has been sent to owner they will Bring it.");
+    setCart({});
+    setShowInstantModal(false);
   } catch (err) {
-    console.log("Analytics update failed, but proceeding to order...");
+    alert("Order Failed! ❌");
   }
-
-  // 2. WhatsApp మెసేజ్ ప్రిపరేషన్
-  const itemList = Object.values(cart)
-    .map(i => `• ${i.qty} x ${i.name} (₹${i.price * i.qty})`)
-    .join("%0A");
-  
-  const message = `*NEW INSTANT ORDER - SUDARA HUB*%0A%0A*Name:* ${customerName}%0A*Table No:* ${selectedTable}%0A%0A*Items:*%0A${itemList}%0A%0A---------------------------%0A*Total Bill:* ₹${totalAmount}%0A---------------------------%0A%0A_Order via Smart QR Dining_`;
-
-const cleanWANumber = waTarget.length === 10 ? `91${waTarget}` : waTarget;
-  const waURL = `https://api.whatsapp.com/send?phone=${cleanWANumber}&text=${message}`;
-  
-  // 3. వాట్సాప్ ఓపెన్ చేసి మోడల్ క్లోజ్ చేయడం
-  window.open(waURL, "_blank");
-  setShowInstantModal(false);
 };
   const searchFiltered = useMemo(() => {
     return items.filter(item => {
@@ -594,62 +606,49 @@ const cleanWANumber = waTarget.length === 10 ? `91${waTarget}` : waTarget;
           </div>
         </div>
 
-        {/* 🚀 Step 1: Secure Warning & Payment Button */}
-        <div className="space-y-4 mb-6">
-          <div className="bg-orange-50 border border-orange-100 p-3 rounded-2xl">
-            <div className="flex items-center gap-2 mb-1 justify-center text-orange-600">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span className="text-[9px] font-black uppercase italic tracking-widest">Verification Steps</span>
-            </div>
-            <p className="text-[8px] font-bold text-orange-700 leading-tight uppercase text-center italic">
-              1. Fill Below Details ➜ 2. Send to Owner ➜ 3. After arrival tell Txn ID last 5 digits at restaurant counter for order verification! 📞
-            </p>
-          </div>
-          <div className="w-full h-px bg-slate-100 relative">
-            <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-4 text-[8px] font-black text-slate-300 uppercase italic">Then Fill Details</span>
-          </div>
-
-          {/* 📝 Step 2: Details Form */}
-          <div className="grid grid-cols-1 gap-3">
-            <input 
-              type="text" 
-              placeholder="Full Name" 
-              value={orderData.name} 
-              onChange={(e)=>setOrderData({...orderData, name:e.target.value})} 
-              className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-[11px] font-bold outline-none focus:border-blue-500 transition-all shadow-sm" 
-            />
-            <input 
-              type="number" 
-              placeholder="WhatsApp Number" 
-              value={orderData.phone} 
-              onChange={(e)=>setOrderData({...orderData, phone:e.target.value})} 
-              className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-[11px] font-bold outline-none focus:border-blue-500 transition-all shadow-sm" 
-            />
-            <div className="grid grid-cols-2 gap-3">
-              <input 
-                type="text" 
-                placeholder="Arrival Time you take to reach" 
-                value={orderData.arrivalTime} 
-                onChange={(e)=>setOrderData({...orderData, arrivalTime:e.target.value})} 
-                className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-[10px] font-bold outline-none focus:border-blue-500 transition-all shadow-sm" 
-              />
-              <input 
-                type="number" 
-                placeholder="Txn ID (Last 5)" 
-                value={orderData.txId} 
-                onChange={(e)=>setOrderData({...orderData, txId:e.target.value})} 
-                className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-[10px] font-bold outline-none focus:border-blue-500 transition-all shadow-sm" 
-              />
-            </div>
-          </div>
-        </div>
+        {/* 📝 Step 2: Details Form - Clean Version */}
+<div className="grid grid-cols-1 gap-3">
+  {/* పేరు */}
+  <input 
+    type="text" 
+    placeholder="Full Name" 
+    value={orderData.name} 
+    onChange={(e)=>setOrderData({...orderData, name:e.target.value})} 
+    className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-[11px] font-bold outline-none focus:border-blue-500 transition-all shadow-sm" 
+  />
+  
+  <div className="grid grid-cols-2 gap-3">
+    {/* అరైవల్ టైమ్ */}
+    <input 
+      type="text" 
+      placeholder="Arrival Time (e.g. 20 mins)" 
+      value={orderData.arrivalTime} 
+      onChange={(e)=>setOrderData({...orderData, arrivalTime:e.target.value})} 
+      className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-[10px] font-bold outline-none focus:border-blue-500 transition-all shadow-sm" 
+    />
+    
+    {/* ట్రాన్సాక్షన్ ఐడి - 5 అంకెలు మాత్రమే */}
+    <input 
+      type="number" 
+      maxLength="5"
+      placeholder="Txn ID (Last 5)" 
+      value={orderData.txId} 
+      onChange={(e) => {
+        if (e.target.value.length <= 5) {
+          setOrderData({...orderData, txId: e.target.value})
+        }
+      }} 
+      className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-[10px] font-bold outline-none focus:border-blue-500 transition-all shadow-sm" 
+    />
+  </div>
+</div>
 
         {/* ✅ Step 3: Final Send Action */}
         <button 
           onClick={handleConfirmOrder} 
           className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black uppercase text-[10px] sm:text-[11px] tracking-widest flex items-center justify-center gap-3 shadow-lg transition-all active:scale-95"
         >
-          <Send className="w-4 h-4" /> Send to Owner via WhatsApp
+          <Send className="w-4 h-4" /> Send to Owner
         </button>
 
         <p className="mt-4 text-[7px] font-bold text-slate-400 uppercase text-center italic leading-relaxed px-4">

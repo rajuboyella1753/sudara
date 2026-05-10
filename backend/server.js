@@ -9,6 +9,7 @@ const require = createRequire(import.meta.url);
 const serviceAccount = require("./serviceAccountKey.json"); 
 import ownerRoutes from "./routes/ownerRoutes.js";
 import itemRoutes from "./routes/itemRoutes.js";
+import orderRoutes from './routes/orderRoutes.js';
 dotenv.config();
 const app = express();
 
@@ -38,7 +39,7 @@ if (process.env.NODE_ENV !== 'production') {
 // --- 4. Routes ---
 app.use("/api/owner", ownerRoutes);
 app.use("/api/items", itemRoutes);
-
+app.use('/api/orders', orderRoutes);
 app.get("/", (req, res) => {
   res.send("🚀 Sudhara Server is Running...");
 });

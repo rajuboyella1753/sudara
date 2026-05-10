@@ -236,7 +236,32 @@ router.put("/track-analytics/:id", async (req, res) => {
     res.status(500).json({ message: "Error tracking data" });
   }
 });
+// routes/owner.js లో ఈ కొత్త రూట్ ని యాడ్ చెయ్ 👇
+router.put("/track-sales/:id", async (req, res) => {
+  const { date, amount, items } = req.body;
+  try {
+    const updatePath = `analytics.${date}`;
+    
+    // ఐటమ్స్ కౌంట్ అప్‌డేట్ చేసే ఆబ్జెక్ట్ తయారు చేయడం
+    let itemUpdates = {};
+    items.forEach(itemStr => {
+       const itemName = itemStr.includes('X ') ? itemStr.split('X ')[1].trim() : itemStr;
+       itemUpdates[`${updatePath}.food_clicks.${itemName}`] = 1;
+    });
 
+    await Owner.findByIdAndUpdate(req.params.id, {
+      $inc: { 
+        [`${updatePath}.daily_revenue`]: amount,
+        ...itemUpdates // అన్ని ఐటమ్స్ కౌంట్ ని 1 పెంచుతుంది
+      }
+    });
+
+    const updated = await Owner.findById(req.params.id);
+    res.status(200).json(updated);
+  } catch (err) {
+    res.status(500).json({ message: "Sales tracking failed" });
+  }
+});
 /* ================= 10. GENERAL NOTIFICATIONS (రాజు కోసం) ================= */
 
 // ఫ్రంటెండ్ నుండి వచ్చే జనరల్ టోకెన్ ని సేవ్ చేయడానికి

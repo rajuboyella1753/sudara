@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import api from "../api/api-base"; 
@@ -12,7 +12,7 @@ import {
   ArrowUpRight,
   ChevronDown,
   Bell,
-  Activity
+  Activity,
 } from "lucide-react";
 
 export default function Home() {
@@ -27,6 +27,14 @@ export default function Home() {
   const [selectedState, setSelectedState] = useState("All");
   const [selectedDistrict, setSelectedDistrict] = useState("All");
   const [selectedFoodType, setSelectedFoodType] = useState("All");
+
+const availableDistricts = useMemo(() => {
+  if (selectedState === "All") return dbDistricts;
+  const districtsInState = restaurants
+    .filter(r => r.state === selectedState)
+    .map(r => r.district);
+  return [...new Set(districtsInState)].filter(Boolean);
+}, [selectedState, dbDistricts, restaurants]);
 
   const navigate = useNavigate();
 
@@ -219,7 +227,14 @@ const fetchOwners = async () => {
 
               <div className="md:col-span-3 relative group">
                 <Compass className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-orange-500" />
-                <select value={selectedState} onChange={(e) => setSelectedState(e.target.value)} className="w-full bg-white border border-slate-200 py-5 pl-14 pr-10 rounded-[2rem] text-[10px] font-black uppercase tracking-widest outline-none appearance-none cursor-pointer focus:border-orange-400 shadow-xl shadow-orange-900/5 text-slate-600">
+                <select 
+                value={selectedState} 
+                onChange={(e) => {
+                  setSelectedState(e.target.value);
+                  setSelectedDistrict("All"); 
+                }}
+                className="w-full bg-white border border-slate-200 py-5 pl-14 pr-10 rounded-[2rem] text-[10px] font-black uppercase tracking-widest outline-none appearance-none cursor-pointer focus:border-orange-400 shadow-xl shadow-orange-900/5 text-slate-600"
+              >
                   <option value="All">All States</option>
                   {dbStates.map((s, idx) => <option key={idx} value={s}>{s}</option>)}
                 </select>
@@ -230,7 +245,9 @@ const fetchOwners = async () => {
                 <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-600" />
                 <select value={selectedDistrict} onChange={(e) => setSelectedDistrict(e.target.value)} className="w-full bg-white border border-slate-200 py-5 pl-14 pr-10 rounded-[2rem] text-[10px] font-black uppercase tracking-widest outline-none appearance-none cursor-pointer focus:border-blue-400 shadow-xl shadow-blue-900/5 text-slate-600">
                   <option value="All">All Districts</option>
-                  {dbDistricts.map((d, idx) => <option key={idx} value={d}>{d}</option>)}
+                  {availableDistricts.map((d, idx) => (
+                    <option key={idx} value={d}>{d}</option>
+                  ))}
                 </select>
                 <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               </div>

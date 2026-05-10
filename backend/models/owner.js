@@ -60,6 +60,7 @@ const ownerSchema = new mongoose.Schema(
         pre_order_click: { type: Number, default: 0 },
         post_order_click: { type: Number, default: 0 },
         call_click: { type: Number, default: 0 },
+        daily_revenue: { type: Number, default: 0 },
         food_clicks: { type: Map, of: Number } 
       },
       default: {},
