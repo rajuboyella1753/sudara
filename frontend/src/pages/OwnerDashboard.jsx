@@ -77,14 +77,14 @@ export default function OwnerDashboard() {
       
       const ownerData = oRes.data;
       setOwner(ownerData);
-      console.log("Full Owner Data:", oRes.data); // 👈 ఇది పెట్టు రాజు, డేటా వస్తుందో లేదో తెలిసిపోద్ది
-  console.log("Analytics Data:", oRes.data.analytics);
+      // console.log("Full Owner Data:", oRes.data); // 👈 ఇది పెట్టు రాజు, డేటా వస్తుందో లేదో తెలిసిపోద్ది
+      // console.log("Analytics Data:", oRes.data.analytics);
       setTodayMsg(ownerData.todaySpecial || "");
       setProfileForm({ ...ownerData });
       setItems(iRes.data);
       setOrders(ordRes.data || []);
     } catch (err) { 
-      console.error("Fetch Error:", err); 
+      // console.error("Fetch Error:", err); 
     } finally { 
       setLoading(false); 
     }
@@ -179,7 +179,7 @@ const handleServed = async (orderObj) => {
     fetchData(owner._id); 
     alert("Order Completed & Sales Logged! ✅");
   } catch (err) { 
-    console.error(err);
+    // console.error(err);
     alert("Action failed, please try again."); 
   }
 };
@@ -204,7 +204,46 @@ const handleServed = async (orderObj) => {
     } catch (err) { alert("Error!"); }
     finally { setSending(false); }
   };
+const handleInteriorUploads = async (e) => {
+  const files = Array.from(e.target.files);
+  if (files.length === 0) return;
 
+  setSending(true);
+  try {
+    const base64Images = await Promise.all(
+      files.map((file) => {
+        return new Promise((resolve) => {
+          optimizeImage(file, (base64) => resolve(base64));
+        });
+      })
+    );
+
+    // Backend లో నువ్వు రాసిన "/add-interior-images/:id" రూట్ కి డేటా పంపడం
+    const res = await api.put(`/owner/add-interior-images/${owner._id}`, { 
+      images: base64Images 
+    });
+
+    setOwner(res.data); // DB నుండి వచ్చిన అప్‌డేటెడ్ డేటాని సెట్ చేయడం
+    setProfileForm({ ...res.data });
+    alert("Interior Matrix Updated! 📸");
+  } catch (err) {
+    // console.error("Upload failed", err);
+    alert("Upload Error");
+  } finally {
+    setSending(false);
+  }
+};
+const removeInteriorImage = async (imageUrl) => {
+  if (!window.confirm("Remove this image from interior?")) return;
+  
+  try {
+    const res = await api.put(`/owner/remove-interior-image/${owner._id}`, { imageUrl });
+    setOwner(res.data);
+    setProfileForm({ ...res.data });
+  } catch (err) {
+    alert("Remove failed");
+  }
+};
   const getOwnerRangeStats = () => {
     if (!owner?.analytics) return { hits: 0, preOrders: 0, postOrders: 0, calls: 0, totalFoodClicks: 0 };
     const analyticsObj = owner.analytics instanceof Map ? Object.fromEntries(owner.analytics) : owner.analytics;
@@ -222,26 +261,110 @@ const handleServed = async (orderObj) => {
     return stats;
   };
 
-  const downloadQRCode = () => {
+const downloadQRCode = () => {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     const qrCanvas = document.getElementById("qr-gen");
-    canvas.width = 1200; canvas.height = 1800;
-    ctx.fillStyle = "#1E1B4B"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#312E81"; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(canvas.width, 0); ctx.lineTo(canvas.width, 420); ctx.quadraticCurveTo(canvas.width/2, 520, 0, 420); ctx.fill();
-    const hotelName = owner?.name?.toUpperCase() || "SUDARA RESTAURANT";
-    ctx.font = "bold 100px Arial"; ctx.fillStyle = "#FFFFFF"; ctx.textAlign = "center"; ctx.fillText(hotelName, canvas.width / 2, 230);
-    ctx.fillStyle = "#FACC15"; ctx.font = "bold 42px Arial"; ctx.fillText("SMART DIGITAL MENU", canvas.width / 2, 320);
-    ctx.fillStyle = "#FFFFFF"; ctx.beginPath(); ctx.roundRect(225, 520, 750, 750, 60); ctx.fill();
-    ctx.drawImage(qrCanvas, 300, 595, 600, 600);
-    ctx.fillStyle = "#FACC15"; ctx.font = "bold 55px Arial"; ctx.fillText("QUICK STEPS TO ORDER", canvas.width / 2, 1380);
-    const steps = ["📱 SCAN QR CODE", "🍕 SELECT YOUR FOOD", "✅ SEND & ENJOY!"];
-    ctx.font = "500 45px Arial"; ctx.fillStyle = "#FFFFFF";
-    steps.forEach((text, i) => ctx.fillText(text, canvas.width / 2, 1480 + (i * 80)));
-    ctx.globalAlpha = 0.6; ctx.fillText("POWERED BY SUDARA HUB", canvas.width / 2, 1780);
-    const link = document.createElement("a"); link.href = canvas.toDataURL("image/png");
-    link.download = `${owner?.name}_Poster.png`; link.click();
-  };
+    
+    canvas.width = 1200; 
+    canvas.height = 1900; // కొంచెం హైట్ పెంచాను స్పేసింగ్ కోసం
+
+    // 1. Background - Premium Dark
+    ctx.fillStyle = "#0F172A"; 
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // 2. Header Section
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+    gradient.addColorStop(0, "#1E293B");
+    gradient.addColorStop(1, "#334155");
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(canvas.width, 0);
+    ctx.lineTo(canvas.width, 400);
+    ctx.quadraticCurveTo(canvas.width / 2, 480, 0, 400);
+    ctx.fill();
+
+    // 3. Digital Menu Titles
+    // 3. Hotel Name - Responsive Logic
+    const hotelName = owner?.name?.toUpperCase() || "SUDARA HUB";
+    
+    // పేరు పొడవును బట్టి ఫాంట్ సైజు సెట్ చేయడం
+    let fontSize = 90; 
+    if (hotelName.length > 15) fontSize = 70;
+    if (hotelName.length > 20) fontSize = 55;
+    if (hotelName.length > 25) fontSize = 45;
+
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = `bold ${fontSize}px sans-serif`; 
+    
+    // పేరు మరీ పెద్దదైతే పక్కలకు వెళ్లకుండా గరిష్టంగా 1000px వెడల్పులో ఫిట్ చేస్తుంది
+    ctx.fillText(hotelName, canvas.width / 2, 230, 1000); 
+
+    // Sub-title spacing
+    ctx.fillStyle = "#FACC15"; 
+    ctx.font = "bold 40px sans-serif";
+    ctx.fillText("PREMIUM DIGITAL MENU", canvas.width / 2, 320);
+
+    // 4. QR Code Container (White Box)
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.5)";
+    ctx.shadowBlur = 60;
+    ctx.fillStyle = "#FFFFFF";
+    ctx.beginPath();
+    ctx.roundRect(250, 480, 700, 700, 60); 
+    ctx.fill();
+    ctx.restore();
+
+    // Draw QR Code
+    ctx.drawImage(qrCanvas, 325, 555, 550, 550);
+
+    // 5. Order Path Flow (New Feature)
+    ctx.fillStyle = "#FACC15";
+    ctx.font = "bold 45px sans-serif";
+    ctx.fillText("HOW TO ORDER", canvas.width / 2, 1280);
+
+    // Path Logic: Scan > Select > Info > Order
+    const pathText = "SCAN ➔ SELECT ITEMS ➔ POST-BOOK ➔ PLACE ORDER";
+    ctx.font = "bold 32px sans-serif";
+    ctx.fillStyle = "#CBD5E1";
+    ctx.fillText(pathText, canvas.width / 2, 1360);
+
+    // 6. Professional Steps
+    const steps = [
+        "1. Open Camera or Scanner", 
+        "2. Choose your favorite dishes", 
+        "3. Enter details and tap 'Order'"
+    ];
+
+    ctx.font = "600 38px sans-serif";
+    steps.forEach((text, i) => {
+        const barY = 1430 + (i * 90);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+        ctx.roundRect(200, barY, 800, 70, 15);
+        ctx.fill();
+
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillText(text, canvas.width / 2, barY + 45);
+    });
+
+    // 7. Pre-book Message (New Feature)
+    ctx.fillStyle = "#38BDF8"; // Light Blue
+    ctx.font = "italic bold 32px sans-serif";
+    ctx.fillText("💡 Try Pre-booking items before you arrive at our Restaurant!", canvas.width / 2, 1750);
+
+    // 8. Footer Branding
+    ctx.fillStyle = "#475569";
+    ctx.font = "bold 30px sans-serif";
+    ctx.fillText("POWERED BY SUDARA HUB • sudara.in", canvas.width / 2, 1840);
+
+    // 9. Download
+    const link = document.createElement("a");
+    link.href = canvas.toDataURL("image/png", 1.0);
+    link.download = `${owner?.name || "Hub"}_Poster.png`;
+    link.click();
+};
 
   const filteredItems = items.filter(i => {
     const s = i.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -289,10 +412,10 @@ const handleServed = async (orderObj) => {
         {activeTab === "dashboard" && (
           <div className="space-y-8 animate-in fade-in duration-500">
             {/* Special Section */}
-            <section className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-3">
+            {/* <section className="bg-white p-6 rounded-[2.5rem] border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-3">
               <input type="text" placeholder="Today's Special Entry..." value={todayMsg} onChange={e => setTodayMsg(e.target.value)} className="flex-1 bg-slate-50 border border-slate-100 p-4 rounded-2xl font-bold text-xs outline-none focus:border-blue-400 shadow-inner" />
               <button onClick={handleUpdateSpecial} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black uppercase italic text-[10px] flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all"><Send className="w-4 h-4" /> {sending ? '...' : 'Publish'}</button>
-            </section>
+            </section> */}
 
             {/* QR Poster Section (Original Design) */}
             <section className="bg-slate-900 p-8 rounded-[3rem] text-white flex flex-col md:flex-row items-center justify-between gap-8 relative overflow-hidden group">
@@ -495,54 +618,118 @@ const handleServed = async (orderObj) => {
             </motion.div>
           </>
         )}
+{/* SETTINGS MODAL - FULL MATRIX CONFIGURATION */}
+{isEditingProfile && (
+  <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
+    <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl relative max-h-[95vh] flex flex-col overflow-hidden">
+      
+      <div className="px-8 py-6 border-b flex justify-between items-center bg-white sticky top-0 z-10">
+        <div>
+          <h3 className="text-xl font-black italic uppercase text-slate-900">Hub Configuration</h3>
+          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Master Profile Matrix</p>
+        </div>
+        <button onClick={() => setIsEditingProfile(false)} className="p-2 bg-slate-50 rounded-full hover:bg-red-50 hover:text-red-500 transition-all"><X className="w-5 h-5"/></button>
+      </div>
+      
+      <form onSubmit={async (e) => { 
+          e.preventDefault(); 
+          setSending(true); 
+          try { 
+            const res = await api.put(`/owner/update-profile/${owner._id}`, profileForm); 
+            setOwner(res.data); 
+            localStorage.setItem("owner", JSON.stringify(res.data)); 
+            setIsEditingProfile(false); 
+            alert("Matrix Synchronized! ✅"); 
+          } catch(e){ alert("Transmission Error"); } 
+          finally { setSending(false); }
+        }} 
+        className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 scrollbar-hide"
+      >
 
-        {/* SETTINGS MODAL (Original Full Fields + Photo Upload Feature) */}
-        {isEditingProfile && (
-          <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl relative max-h-[90vh] flex flex-col overflow-hidden">
-              <div className="px-8 py-6 border-b flex justify-between items-center bg-white sticky top-0 z-10">
-                <div><h3 className="text-xl font-black italic uppercase text-slate-900">Hub Configuration</h3><p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Master Profile Matrix</p></div>
-                <button onClick={() => setIsEditingProfile(false)} className="p-2 bg-slate-50 rounded-full hover:bg-red-50 hover:text-red-500 transition-all"><X className="w-5 h-5"/></button>
+        {/* 🖼️ INTERIOR & BANNER IMAGES SECTION */}
+        <div className="space-y-4">
+          <label className="text-[10px] font-black uppercase text-slate-400 italic">Visual Assets (Banner & Interior)</label>
+          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+            {/* Banner Image */}
+            <div className="relative flex-shrink-0">
+              <img src={profileForm.hotelImage || "https://via.placeholder.com/150"} className="w-24 h-24 rounded-2xl object-cover border-2 border-blue-500" />
+              <label className="absolute -top-2 -right-2 bg-blue-600 text-white p-1.5 rounded-full cursor-pointer shadow-lg">
+                <Camera className="w-3 h-3" /><input type="file" className="hidden" onChange={handleProfileImage} />
+              </label>
+              <p className="text-[8px] text-center mt-1 font-bold uppercase">Main Banner</p>
+            </div>
+
+            {/* Interior Images Display */}
+            {profileForm.interiorImages?.map((img, idx) => (
+              <div key={idx} className="relative flex-shrink-0">
+                <img src={img} className="w-24 h-24 rounded-2xl object-cover border-2 border-slate-100" />
+                <button type="button" onClick={() => {
+                  const newImgs = profileForm.interiorImages.filter((_, i) => i !== idx);
+                  setProfileForm({...profileForm, interiorImages: newImgs});
+                }} className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full"><X className="w-3 h-3"/></button>
               </div>
-              
-              <form onSubmit={async (e) => { e.preventDefault(); setSending(true); try { const res = await api.put(`/owner/update-profile/${owner._id}`, profileForm); setOwner(res.data); localStorage.setItem("owner", JSON.stringify(res.data)); setIsEditingProfile(false); alert("Matrix Updated! ✅"); } catch(e){alert("Error")} finally {setSending(false)}} } className="flex-1 overflow-y-auto p-6 md:p-10 space-y-10 scrollbar-hide">
-                 
-                 {/* 📸 NEW: Restaurant Image Upload Section */}
-                 <div className="flex flex-col items-center gap-4 p-6 bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200">
-                    <div className="relative group">
-                      <img src={profileForm.hotelImage || "https://via.placeholder.com/150"} className="w-32 h-32 rounded-3xl object-cover shadow-xl border-4 border-white" />
-                      <label className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-3xl opacity-0 group-hover:opacity-100 cursor-pointer transition-all">
-                        <Camera className="text-white w-8 h-8" />
-                        <input type="file" className="hidden" accept="image/*" onChange={handleProfileImage} />
-                      </label>
-                    </div>
-                    <p className="text-[10px] font-black uppercase text-slate-400 italic">Upload Restaurant Banner</p>
-                 </div>
-
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="email" placeholder="Hub Email" value={profileForm.email} onChange={e=>setProfileForm({...profileForm, email:e.target.value})} className="bg-slate-50 p-4 rounded-2xl font-bold text-xs border outline-none focus:bg-white" required />
-                    <input type="text" placeholder="Security Password" value={profileForm.password} onChange={e=>setProfileForm({...profileForm, password:e.target.value})} className="bg-slate-50 p-4 rounded-2xl font-bold text-xs border outline-none focus:bg-white" required />
-                    <input type="text" placeholder="Phone" value={profileForm.phone} onChange={e=>setProfileForm({...profileForm, phone:e.target.value})} className="bg-slate-50 p-4 rounded-2xl font-bold text-xs border outline-none focus:bg-white" />
-                    <input type="text" placeholder="WhatsApp" value={profileForm.whatsappNumber} onChange={e=>setProfileForm({...profileForm, whatsappNumber:e.target.value})} className="bg-slate-50 p-4 rounded-2xl font-bold text-xs border outline-none focus:bg-white" />
-                    {/* <input type="text" placeholder="UPI ID (e.g. user@ybl)" value={profileForm.upiID} onChange={e=>setProfileForm({...profileForm, upiID:e.target.value})} className="bg-blue-50 p-4 rounded-2xl font-black text-blue-600 text-xs border border-blue-200 col-span-2 uppercase outline-none" required /> */}
-                 </div>
-                 
-                 <div className="grid grid-cols-2 gap-4">
-                    <button type="button" onClick={handleGetLocation} className="w-full bg-blue-600 text-white p-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 shadow-lg shadow-blue-100 active:scale-95 transition-all"><MapPin className="w-4 h-4" /> Capture GPS</button>
-                    <div className="flex bg-slate-100 p-1 rounded-2xl border">
-                      {['Veg', 'Non-Veg', 'Both'].map(t => <button key={t} type="button" onClick={() => setProfileForm({...profileForm, foodType:t})} className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase transition-all ${profileForm.foodType===t ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400'}`}>{t}</button>)}
-                    </div>
-                 </div>
-
-                 <textarea placeholder="Specific Building Address / Landmark" value={profileForm.address} onChange={e=>setProfileForm({...profileForm, address:e.target.value})} className="w-full bg-slate-50 p-4 rounded-2xl font-bold text-xs border h-24 outline-none focus:bg-white" />
-                 
-                 <button disabled={sending} className="w-full bg-slate-900 py-6 text-white rounded-[2rem] font-black uppercase italic shadow-2xl tracking-[0.2em] active:scale-95 transition-all">
-                   {sending ? "Transmitting..." : "Commit Matrix Updates"}
-                 </button>
-              </form>
-            </motion.div>
+            ))}
+            
+            {/* Add More Interior Button */}
+            <label className="w-24 h-24 flex-shrink-0 rounded-2xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50">
+              <Plus className="w-6 h-6 text-slate-400" />
+              <span className="text-[7px] font-black uppercase mt-1">Add Interior</span>
+              <input type="file" multiple className="hidden" onChange={handleInteriorUploads} />
+            </label>
           </div>
-        )}
+        </div>
+
+        {/* ⚡ STATUS & QUICK ACTIONS */}
+        <div className="grid grid-cols-2 gap-4 bg-slate-50 p-6 rounded-[2rem]">
+          <div className="space-y-2">
+            <label className="text-[9px] font-black uppercase text-slate-400">Hub Occupancy</label>
+            <select value={profileForm.busyStatus} onChange={e=>setProfileForm({...profileForm, busyStatus: e.target.value})} className="w-full bg-white p-3 rounded-xl text-xs font-bold border outline-none">
+              {['Low', 'Medium', 'High', 'Free', 'Normal', 'Busy'].map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-[9px] font-black uppercase text-slate-400">Total Tables</label>
+            <input type="number" value={profileForm.tableCount} onChange={e=>setProfileForm({...profileForm, tableCount: e.target.value})} className="w-full bg-white p-3 rounded-xl text-xs font-bold border outline-none" />
+          </div>
+        </div>
+
+        {/* 📢 TODAY'S SPECIAL MESSAGE */}
+        <div className="space-y-2">
+          <label className="text-[9px] font-black uppercase text-blue-500 italic">🔥 Today's Special Broadcast</label>
+          <input type="text" placeholder="E.g., Fresh Dum Biryani available now!" value={profileForm.todaySpecial} onChange={e=>setProfileForm({...profileForm, todaySpecial:e.target.value})} className="w-full bg-blue-50 p-4 rounded-2xl font-bold text-xs border border-blue-100 outline-none focus:bg-white" />
+        </div>
+
+        {/* 🏦 FINANCIAL NODE (UPI) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* <div className="space-y-2">
+            <label className="text-[9px] font-black uppercase text-slate-400">UPI ID</label>
+            <input type="text" placeholder="owner@okicici" value={profileForm.upiID} onChange={e=>setProfileForm({...profileForm, upiID:e.target.value})} className="w-full bg-slate-50 p-4 rounded-2xl font-bold text-xs border outline-none" />
+          </div> */}
+          <div className="space-y-2">
+            <label className="text-[9px] font-black uppercase text-slate-400">PhonePe/GPay Number</label>
+            <input type="text" placeholder="9876543210" value={profileForm.upiNumber} onChange={e=>setProfileForm({...profileForm, upiNumber:e.target.value})} className="w-full bg-slate-50 p-4 rounded-2xl font-bold text-xs border outline-none" />
+          </div>
+        </div>
+
+        {/* 📍 GEOLOCATION & ADDRESS */}
+        <div className="grid grid-cols-2 gap-4">
+          <button type="button" onClick={handleGetLocation} className="bg-blue-600 text-white p-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 active:scale-95 transition-all"><MapPin className="w-4 h-4" /> Sync GPS</button>
+          <div className="flex bg-slate-100 p-1 rounded-2xl border">
+            {['Veg', 'Non-Veg', 'Both'].map(t => (
+              <button key={t} type="button" onClick={() => setProfileForm({...profileForm, foodType:t})} className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase transition-all ${profileForm.foodType===t ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400'}`}>{t}</button>
+            ))}
+          </div>
+        </div>
+
+        <textarea placeholder="Specific Building Address / Landmark" value={profileForm.address} onChange={e=>setProfileForm({...profileForm, address:e.target.value})} className="w-full bg-slate-50 p-4 rounded-2xl font-bold text-xs border h-24 outline-none focus:bg-white" />
+        
+        <button disabled={sending} className="w-full bg-slate-900 py-6 text-white rounded-[2rem] font-black uppercase italic shadow-2xl tracking-[0.2em] active:scale-95 transition-all sticky bottom-0">
+          {sending ? "Transmitting Matrix..." : "Commit Global Update"}
+        </button>
+      </form>
+    </motion.div>
+  </div>
+)}
 
         {/* ANALYTICS MATRIX MODAL (Original Detailed Logic) */}
         {isShowingMatrix && (

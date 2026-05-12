@@ -162,25 +162,56 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-/* ================= 7. UPDATES & STATUS (Updated with Stability) ================= */
 router.put("/update-profile/:id", async (req, res) => {
   try {
-    // 🚀 RAJU STABILITY FIX: req.body mothanni $set lo pettu
+    let updateData = { ...req.body };
+    
+    // ఒకవేళ todaySpecial మెసేజ్ వస్తే, టైమ్‌స్టాంప్ ని కూడా ఇప్పుడే అప్‌డేట్ చేయాలి
+    if (req.body.todaySpecial) {
+      updateData.specialTimestamp = new Date();
+    }
+
     const updatedOwner = await Owner.findByIdAndUpdate(
       req.params.id, 
-      { $set: req.body }, 
+      { $set: updateData }, 
       { new: true, runValidators: true } 
     );
 
     if (!updatedOwner) return res.status(404).json({ message: "Owner not found" });
-    
     res.status(200).json(updatedOwner); 
   } catch (err) {
-    console.error("Update failed:", err);
     res.status(500).json({ message: "Server error during update" });
   }
 });
+/* ================= ADD INTERIOR IMAGES ================= */
+router.put("/add-interior-images/:id", async (req, res) => {
+  try {
+    const { images } = req.body; // Array of URLs
+    const updatedOwner = await Owner.findByIdAndUpdate(
+      req.params.id,
+      { $push: { interiorImages: { $each: images } } }, // కొత్త ఫోటోలను Array లోకి పుష్ చేస్తుంది
+      { new: true }
+    );
+    res.json(updatedOwner);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to add images" });
+  }
+});
 
+/* ================= REMOVE SPECIFIC INTERIOR IMAGE ================= */
+router.put("/remove-interior-image/:id", async (req, res) => {
+  try {
+    const { imageUrl } = req.body;
+    const updatedOwner = await Owner.findByIdAndUpdate(
+      req.params.id,
+      { $pull: { interiorImages: imageUrl } }, // ఆ ఇమేజ్ URL ని Array నుండి తీసేస్తుంది
+      { new: true }
+    );
+    res.json(updatedOwner);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to remove image" });
+  }
+});
 router.put("/update-status/:id", async (req, res) => {
   try {
     const updatedOwner = await Owner.findByIdAndUpdate(req.params.id, { isStoreOpen: req.body.isStoreOpen }, { new: true });

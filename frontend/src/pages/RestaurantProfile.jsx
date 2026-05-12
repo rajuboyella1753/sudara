@@ -25,11 +25,20 @@ export default function RestaurantProfile() {
   const [showInstantModal, setShowInstantModal] = useState(false); 
   const [showCallPopup, setShowCallPopup] = useState(false); // 🚀 Call instruction popup state
   const availableSubCats = useMemo(() => {
-    const catsInMenu = items.map(item => item.subCategory);
-    return ["Biryanis", "Starters", "Soups", "Noodles", "Gravys", "Rice", "Breads", "Sea Food", "Tiffins"].filter(cat => 
-      catsInMenu.includes(cat)
-    );
-  }, [items]);
+  // 1. నీ దగ్గర ఉన్న డిఫాల్ట్ కేటగిరీల లిస్ట్ 
+  const defaultCats = ["Biryanis", "Starters", "Soups", "Noodles", "Gravys", "Rice", "Breads", "Sea Food", "Tiffins"];
+  
+  // 2. ప్రస్తుతం మెనూలో ఉన్న అన్ని కేటగిరీలను తీసుకుంటున్నాం (ఓనర్ కొత్తగా యాడ్ చేసినవి కూడా ఇందులో ఉంటాయి) 
+  const catsInMenu = items.map(item => item.subCategory);
+  
+  // 3. డిఫాల్ట్ కేటగిరీలు + మెనూలో ఉన్న కేటగిరీలను కలిపి ఒక Set లో పెడుతున్నాం (దీనివల్ల డూప్లికేట్స్ రావు) 
+  const combined = new Set([...defaultCats, ...catsInMenu]);
+  
+  // 4. సెట్ లో ఉన్న వాటిలో ఏ కేటగిరీకైనా కనీసం ఒక ఐటమ్ ఉంటేనే దాన్ని లిస్ట్‌లో చూపిస్తాం 
+  return Array.from(combined).filter(cat => 
+    catsInMenu.includes(cat)
+  );
+}, [items]);
 
 const waTarget = (owner?.whatsappNumber || owner?.phone || "").replace(/[^0-9]/g, '');
 const payTarget = owner?.upiNumber || owner?.phone || "No Number Set";
