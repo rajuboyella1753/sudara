@@ -9,7 +9,7 @@ const itemSchema = new mongoose.Schema({
     required: true,
     // enum: ["Biryanis", "Starters", "Breads", "Sea Food", "Soups", "Noodles", "Gravys", "Rice", "Tiffins"]
   },
-  image: { type: String, required: true },
+  image: { type: String, required: false },
   isAvailable: { type: Boolean, default: true }, 
   ownerId: { type: mongoose.Schema.Types.ObjectId, ref: "Owner", required: true },
 }, { timestamps: true });
