@@ -22,10 +22,11 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // '*' వాడకు రాజు, కచ్చితంగా URL ఇవ్వు
+    origin: ["https://sudara.in", "https://www.sudara.in", "http://localhost:5173"], 
     methods: ["GET", "POST"],
-    credentials: true // 🎯 ఇది చాలా ముఖ్యం!
-  }
+    credentials: true
+  },
+  transports: ['websocket', 'polling'] // 👈 ఇది యాడ్ చెయ్, కనెక్షన్ స్పీడ్ పెరుగుతుంది
 });
 
 // 🎯 4. ఆర్డర్ రూట్స్ లో వాడుకోవడానికి io ని app లో సెట్ చెయ్

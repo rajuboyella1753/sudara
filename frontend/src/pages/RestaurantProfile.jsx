@@ -460,13 +460,13 @@ const handleInstantOrder = async () => {
     <span className="text-amber-600 font-black">Note:</span> These images are for representation only (sourced from Google). Please do not select food based solely on the image appearance. Check dish names and descriptions.
   </p>
 </div>
-<VoiceAssistant 
+{/* <VoiceAssistant 
   menuItems={items} 
   onOrderDetected={(detectedItems) => {
     // ఇక్కడ నీ కార్ట్ లాజిక్ ని కాల్ చెయ్ రాజు
     detectedItems.forEach(item => handleAddToCart(item));
   }} 
-/>
+/> */}
             {/* Items Grid: Responsive Column Count */}
             <div className="max-h-screen lg:max-h-[800px] overflow-y-auto pr-1 scrollbar-custom">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pb-10">

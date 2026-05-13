@@ -54,7 +54,7 @@ export default function OwnerDashboard() {
 
   const [isOtherSub, setIsOtherSub] = useState(false);
   const [customSub, setCustomSub] = useState("");
-
+  const [isAlertActive, setIsAlertActive] = useState(false);
   const defaultMenuOptions = ["Biryanis", "Starters", "Breads", "Egg Items", "Sea Food", "Soups", "Noodles", "Gravys", "Rice", "Tiffins"];
   
   const allCategories = useMemo(() => {
@@ -71,28 +71,37 @@ useEffect(() => {
     return;
   }
 
-  // 2. Initial Load: ప్రొఫైల్, ఐటమ్స్ మరియు ఉన్న ఆర్డర్లని ఒక్కసారి తెచ్చుకోవడం
+  // 2. Initial Load: ప్రొఫైల్, ఐటమ్స్ మరియు ఆర్డర్లని తెచ్చుకోవడం
   fetchData(stored._id);
 
   // 3. 🎯 Socket.io: ఓనర్ ని తన ఐడి ఉన్న రూమ్ లో జాయిన్ చేయడం
+  // ఇది ఒక్కసారి జరిగితే చాలు
   socket.emit("join_owner_room", stored._id);
 
   // 4. Real-time Listener: కొత్త ఆర్డర్ సిగ్నల్ రాగానే రియాక్ట్ అవ్వడం
- socket.on("new_order_received", (newOrder) => {
-  // 🔔 ఆడియో ప్లే చేయడం
-  const audio = new Audio("/order-beep.mp3");
-  audio.play().catch(err => {
-    console.log("యూజర్ క్లిక్ చేయలేదు కాబట్టి సౌండ్ ప్లే అవ్వలేదు!");
-  });
+  // ఇక్కడ ఈవెంట్ పేరు నీ బ్యాకెండ్‌లో (new_order_received) ఎలా ఉందో అదే వాడు
+  const handleNewOrder = (newOrder) => {
+    console.log("New order received! 📦", newOrder);
+    
+    // ఆర్డర్ లిస్ట్ అప్‌డేట్ చేయడం
+    setOrders((prev) => [newOrder, ...prev]);
 
-  setOrders((prev) => [newOrder, ...prev]);
-});
-
-  // 5. Cleanup: పేజీ క్లోజ్ చేసినప్పుడు సాకెట్ ఆఫ్ చేయడం (మెమరీ లీక్ అవ్వకుండా)
-  return () => {
-    socket.off("new_order_received");
+    // 🔔 ఒకవేళ ఓనర్ అలర్ట్ బటన్ ఆన్ చేసి ఉంటేనే సౌండ్ ప్లే అవుతుంది
+    if (isAlertActive) {
+      const audio = new Audio("/order-beep.mp3");
+      audio.play().catch(err => {
+        console.log("Browser blocked autoplay sound! యూజర్ యాక్షన్ అవసరం.");
+      });
+    }
   };
-}, [navigate]); // navigate మారినప్పుడు మాత్రమే ఇది రన్ అవుతుంది
+
+  socket.on("new_order_received", handleNewOrder);
+
+  // 5. Cleanup: మెమరీ లీక్స్ రాకుండా క్లీన్ చేయడం
+  return () => {
+    socket.off("new_order_received", handleNewOrder);
+  };
+}, [navigate, isAlertActive]); // navigate లేదా isAlertActive మారినప్పుడు అప్‌డేట్ అవుతుంది
 
   const fetchData = async (id) => {
     try {
@@ -465,19 +474,29 @@ const downloadQRCode = () => {
                 <QRCodeCanvas id="qr-gen" value={`https://sudara.in/restaurant/${owner?._id}`} size={150} level="H" />
               </div>
             </section>
-<div className="bg-indigo-50 p-3 rounded-xl flex items-center justify-between mb-4 border border-indigo-100">
-  <p className="text-[10px] font-black uppercase text-indigo-600 italic tracking-widest">
-    🔔 Enable Order Alerts for Real-time Sounds
+<div className={`p-3 rounded-xl flex items-center justify-between mb-4 border transition-all ${isAlertActive ? 'bg-green-50 border-green-200' : 'bg-indigo-50 border-indigo-100'}`}>
+  <p className={`text-[10px] font-black uppercase italic tracking-widest ${isAlertActive ? 'text-green-600' : 'text-indigo-600'}`}>
+    {isAlertActive ? '✅ Alerts Activated' : '🔔 Enable Order Alerts'}
   </p>
   <button 
     onClick={() => {
-      const a = new Audio("/order-beep.mp3");
-      a.play().then(() => a.pause()); // ఒక్కసారి ప్లే చేసి పాజ్ చేస్తే బ్రౌజర్ పర్మిషన్ ఇచ్చేస్తుంది
-      alert("Real-time Alerts Activated! 🚀");
+      if (!isAlertActive) {
+        // Activate చేసేటప్పుడు సౌండ్ పర్మిషన్ తీసుకోవడం
+        const a = new Audio("/order-beep.mp3");
+        a.play().then(() => {
+          a.pause();
+          setIsAlertActive(true);
+          alert("Real-time Alerts Activated! 🚀");
+        }).catch(() => alert("Please allow sound in browser settings!"));
+      } else {
+        // Deactivate చేయడం
+        setIsAlertActive(false);
+        alert("Alerts Deactivated! 🔇");
+      }
     }}
-    className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-[9px] font-black uppercase"
+    className={`${isAlertActive ? 'bg-green-600' : 'bg-indigo-600'} text-white px-4 py-2 rounded-lg text-[9px] font-black uppercase shadow-sm`}
   >
-    Activate
+    {isAlertActive ? 'Deactivate' : 'Activate'}
   </button>
 </div>
             {/* Menu Header & Grid */}
