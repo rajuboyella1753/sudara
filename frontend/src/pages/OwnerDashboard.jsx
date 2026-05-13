@@ -9,6 +9,8 @@ import {
   Menu, Power, Calendar, PhoneCall, BarChart3, Star, Send, QrCode, Download, Camera, ShieldCheck, CheckCircle2, Trash2
 } from "lucide-react"; 
 import { QRCodeCanvas } from "qrcode.react";
+// ✅ Correct Path: pages నుండి బయటకి వచ్చి (..), api ఫోల్డర్ లోకి వెళ్ళాలి
+import { socket } from "../api/api-base";
 
 export default function OwnerDashboard() {
   const navigate = useNavigate();
@@ -60,11 +62,37 @@ export default function OwnerDashboard() {
     return [...new Set([...defaultMenuOptions, ...uploadedCats])];
   }, [items]);
 
-  useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("owner"));
-    if (!stored) { navigate("/owner"); return; }
-    fetchData(stored._id);
-  }, [navigate]);
+useEffect(() => {
+  const stored = JSON.parse(localStorage.getItem("owner"));
+  
+  // 1. సెక్యూరిటీ చెక్: ఓనర్ లేకపోతే లాగిన్ కి పంపడం
+  if (!stored) {
+    navigate("/owner");
+    return;
+  }
+
+  // 2. Initial Load: ప్రొఫైల్, ఐటమ్స్ మరియు ఉన్న ఆర్డర్లని ఒక్కసారి తెచ్చుకోవడం
+  fetchData(stored._id);
+
+  // 3. 🎯 Socket.io: ఓనర్ ని తన ఐడి ఉన్న రూమ్ లో జాయిన్ చేయడం
+  socket.emit("join_owner_room", stored._id);
+
+  // 4. Real-time Listener: కొత్త ఆర్డర్ సిగ్నల్ రాగానే రియాక్ట్ అవ్వడం
+ socket.on("new_order_received", (newOrder) => {
+  // 🔔 ఆడియో ప్లే చేయడం
+  const audio = new Audio("/order-beep.mp3");
+  audio.play().catch(err => {
+    console.log("యూజర్ క్లిక్ చేయలేదు కాబట్టి సౌండ్ ప్లే అవ్వలేదు!");
+  });
+
+  setOrders((prev) => [newOrder, ...prev]);
+});
+
+  // 5. Cleanup: పేజీ క్లోజ్ చేసినప్పుడు సాకెట్ ఆఫ్ చేయడం (మెమరీ లీక్ అవ్వకుండా)
+  return () => {
+    socket.off("new_order_received");
+  };
+}, [navigate]); // navigate మారినప్పుడు మాత్రమే ఇది రన్ అవుతుంది
 
   const fetchData = async (id) => {
     try {
@@ -183,7 +211,17 @@ const handleServed = async (orderObj) => {
     alert("Action failed, please try again."); 
   }
 };
-
+// ఫిల్టర్ లాజిక్ లో ఇది యాడ్ చెయ్ రాజు
+const filteredOrders = useMemo(() => {
+  return orders.filter(order => {
+    const s = searchTerm.toLowerCase();
+    const nameMatch = order.customerName?.toLowerCase().includes(s);
+    const txnMatch = order.txnId?.toLowerCase().includes(s);
+    const typeMatch = order.orderType?.toLowerCase().includes(s); // 👈 Order Type ఫిల్టర్
+    
+    return nameMatch || txnMatch || typeMatch;
+  });
+}, [orders, searchTerm]);
   const handleSubmitItem = async (e) => {
     e.preventDefault();
     const finalSub = form.subCategory === "Others" ? customSub : form.subCategory;
@@ -427,7 +465,21 @@ const downloadQRCode = () => {
                 <QRCodeCanvas id="qr-gen" value={`https://sudara.in/restaurant/${owner?._id}`} size={150} level="H" />
               </div>
             </section>
-
+<div className="bg-indigo-50 p-3 rounded-xl flex items-center justify-between mb-4 border border-indigo-100">
+  <p className="text-[10px] font-black uppercase text-indigo-600 italic tracking-widest">
+    🔔 Enable Order Alerts for Real-time Sounds
+  </p>
+  <button 
+    onClick={() => {
+      const a = new Audio("/order-beep.mp3");
+      a.play().then(() => a.pause()); // ఒక్కసారి ప్లే చేసి పాజ్ చేస్తే బ్రౌజర్ పర్మిషన్ ఇచ్చేస్తుంది
+      alert("Real-time Alerts Activated! 🚀");
+    }}
+    className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-[9px] font-black uppercase"
+  >
+    Activate
+  </button>
+</div>
             {/* Menu Header & Grid */}
             <section className="space-y-8">
               <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -452,6 +504,7 @@ const downloadQRCode = () => {
                   </div>
                 </div>
               </header>
+
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {filteredItems.map(i => (
@@ -480,17 +533,38 @@ const downloadQRCode = () => {
           </div>
         )}
 
-       {/* PAGE 2: LIVE ORDERS (Responsive Grid UI) */}
+{/* PAGE 2: LIVE ORDERS (Responsive Grid UI) */}
 {activeTab === "live-orders" && (
   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-    <h2 className="text-4xl font-black italic uppercase text-slate-900">Live<br/><span className="text-orange-500">Orders Feed</span></h2>
+    <h2 className="text-4xl font-black italic uppercase text-slate-900">
+      Live<br/><span className="text-orange-500">Orders Feed</span>
+    </h2>
     
+    <div className="relative max-w-md">
+      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+      <input 
+        type="text" 
+        placeholder="Search by Name, Type (Pre/Post) or Txn ID..." 
+        value={searchTerm} 
+        onChange={(e) => setSearchTerm(e.target.value)} 
+        className="w-full bg-white border border-slate-200 p-4 pl-11 rounded-2xl text-xs font-bold outline-none shadow-sm focus:border-orange-400 transition-all"
+      />
+    </div>
+
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {orders.length === 0 ? (
-        <div className="col-span-full p-20 text-center text-slate-300 font-black uppercase italic bg-white rounded-[2.5rem] border">No Active Orders</div>
+      {filteredOrders.length === 0 ? (
+        <div className="col-span-full p-20 text-center text-slate-300 font-black uppercase italic bg-white rounded-[2.5rem] border border-dashed">
+          {searchTerm ? "No matching results found ❌" : "No Active Orders"}
+        </div>
       ) : (
-        orders.map(order => (
-          <div key={order._id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col justify-between gap-4 hover:shadow-md transition-all">
+        filteredOrders.map(order => (
+          <div key={order._id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col justify-between gap-4 hover:shadow-md transition-all relative overflow-hidden">
+            
+            {/* 🏷️ NEW: Order Type Ribbon (Pre/Post Order) */}
+            <div className={`absolute top-0 right-0 px-4 py-1 rounded-bl-2xl text-[8px] font-black uppercase italic text-white ${order.orderType === 'Pre-Order' ? 'bg-purple-600' : 'bg-orange-500'}`}>
+              {order.orderType || 'Post-Order'}
+            </div>
+
             <div>
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -526,7 +600,6 @@ const downloadQRCode = () => {
                 <p className="text-2xl font-black text-slate-900 mt-1 tracking-tighter">₹{order.totalAmount}</p>
               </div>
               <div className="flex gap-2">
-                {/* <button onClick={() => window.open(`tel:${order.customerPhone}`)} className="p-3.5 bg-blue-50 text-blue-600 rounded-2xl active:scale-90 transition-all"><PhoneCall className="w-5 h-5"/></button> */}
                 <button onClick={() => handleServed(order)} className="bg-emerald-500 text-white px-6 py-3.5 rounded-2xl text-[11px] font-black uppercase italic shadow-lg shadow-emerald-100 active:scale-95 transition-all">Served ✅</button>
               </div>
             </div>

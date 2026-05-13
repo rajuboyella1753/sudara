@@ -4,8 +4,13 @@ import api from "../api/api-base";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, Share2, Clock, MapPin, Search, Camera, CreditCard, X, PhoneCall, Plus, Minus, ShoppingBag,ShieldCheck, Copy, UtensilsCrossed , MessageSquare, Star, Send, Navigation} from "lucide-react"; 
-
+import { 
+  Heart, Share2, Clock, MapPin, Search, Camera, CreditCard, X, 
+  PhoneCall, Plus, Minus, ShoppingBag, ShieldCheck, Copy, 
+  UtensilsCrossed, MessageSquare, Star, Send, Navigation,
+  User, CheckCircle2 
+} from "lucide-react";
+import VoiceAssistant from "../components/VoiceAssistant";
 export default function RestaurantProfile() {
   const { id } = useParams();
   const [owner, setOwner] = useState(null);
@@ -166,6 +171,7 @@ const openGoogleMaps = () => {
   const halfAmount = (totalAmount / 2).toFixed(2);
 
 const handleConfirmOrder = async () => {
+  console.log("Sending Order Data:", orderData);
   // 🚀 ఫోన్ నంబర్ (phone) చెకింగ్ తీసేశాను, కేవలం name, txId, arrivalTime మాత్రమే చూస్తుంది
   if (!orderData.name || !orderData.txId || !orderData.arrivalTime) {
     return alert("Please fill details! 📝 (Name, Arrival Time, and Txn ID are required)");
@@ -454,6 +460,13 @@ const handleInstantOrder = async () => {
     <span className="text-amber-600 font-black">Note:</span> These images are for representation only (sourced from Google). Please do not select food based solely on the image appearance. Check dish names and descriptions.
   </p>
 </div>
+<VoiceAssistant 
+  menuItems={items} 
+  onOrderDetected={(detectedItems) => {
+    // ఇక్కడ నీ కార్ట్ లాజిక్ ని కాల్ చెయ్ రాజు
+    detectedItems.forEach(item => handleAddToCart(item));
+  }} 
+/>
             {/* Items Grid: Responsive Column Count */}
             <div className="max-h-screen lg:max-h-[800px] overflow-y-auto pr-1 scrollbar-custom">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pb-10">
@@ -563,106 +576,113 @@ const handleInstantOrder = async () => {
         )}
       </AnimatePresence>
 
-{/* 💎 Final Premium & Responsive Checkout Modal */}
+{/* 💎 Ultra-Premium & Responsive Checkout Modal */}
 <AnimatePresence>
   {showOrderForm && (
     <motion.div 
       initial={{ opacity: 0 }} 
       animate={{ opacity: 1 }} 
       exit={{ opacity: 0 }} 
-      className="fixed inset-0 z-[300] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4"
+      className="fixed inset-0 z-[300] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 sm:p-6"
     >
       {/* Backdrop Close logic */}
       <div className="absolute inset-0" onClick={() => setShowOrderForm(false)}></div>
 
       <motion.div 
-        initial={{ scale: 0.9, opacity: 0, y: 20 }} 
+        initial={{ scale: 0.9, opacity: 0, y: 30 }} 
         animate={{ scale: 1, opacity: 1, y: 0 }} 
-        exit={{ scale: 0.9, opacity: 0, y: 20 }}
-        className="relative bg-white w-full max-w-[400px] p-6 sm:p-8 rounded-[2rem] shadow-2xl overflow-y-auto max-h-[95vh] border border-slate-100"
+        exit={{ scale: 0.9, opacity: 0, y: 30 }}
+        className="relative bg-white w-full max-w-[420px] rounded-[2.5rem] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] overflow-hidden border border-slate-100 flex flex-col"
       >
-        {/* Top Accent Strip */}
-        <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500"></div>
-
-        {/* ❌ Close Button - High Z-Index Fix */}
-        <button 
-          onClick={(e) => {
-            e.stopPropagation(); 
-            setShowOrderForm(false);
-          }}
-          className="absolute top-5 right-5 z-[310] p-2 bg-slate-100 text-slate-500 rounded-full hover:bg-red-500 hover:text-white transition-all active:scale-90 shadow-sm"
-        >
-          <X className="w-4 h-4" />
-        </button>
-
-        {/* Header Section */}
-        <div className="mb-6 mt-2">
-          <h2 className="text-xl sm:text-2xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">
-            Checkout Menu
-          </h2>
-          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Finalize your pre-order</p>
+        {/* ✨ Top Premium Header Section */}
+        <div className="bg-slate-900 px-8 py-10 text-white relative">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/20 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+          <div className="relative z-10">
+            <h2 className="text-2xl font-black italic uppercase tracking-tighter leading-none">
+              Confirm <span className="text-blue-400">Order</span>
+            </h2>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-2 italic">Sudara Hub Transmission</p>
+          </div>
+          
+          {/* ❌ Close Button */}
+          <button 
+            onClick={(e) => { e.stopPropagation(); setShowOrderForm(false); }}
+            className="absolute top-6 right-6 p-2.5 bg-white/10 hover:bg-red-500 text-white rounded-2xl transition-all active:scale-90"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
-        {/* 📋 Bill Breakdown */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <div className="bg-blue-50/50 border border-blue-100 p-3 rounded-2xl text-center">
-            <p className="text-[8px] font-black text-blue-400 uppercase mb-1">Pay Advance</p>
-            <p className="text-lg font-black text-blue-700 italic leading-none">₹{halfAmount}</p>
+        <div className="p-6 sm:p-8 space-y-6 overflow-y-auto max-h-[70vh] scrollbar-hide">
+          {/* 📋 Bill Matrix - Clearer Spacing */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-blue-50 border border-blue-100 p-4 rounded-[1.8rem] text-center shadow-sm">
+              <p className="text-[9px] font-black text-blue-400 uppercase mb-1">Pay Advance</p>
+              <p className="text-2xl font-black text-blue-700 italic tracking-tighter">₹{halfAmount}</p>
+            </div>
+            <div className="bg-slate-50 border border-slate-100 p-4 rounded-[1.8rem] text-center shadow-sm">
+              <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Pay Later</p>
+              <p className="text-2xl font-black text-slate-900 italic tracking-tighter">₹{halfAmount}</p>
+            </div>
           </div>
-          <div className="bg-emerald-50/50 border border-emerald-100 p-3 rounded-2xl text-center">
-            <p className="text-[8px] font-black text-emerald-400 uppercase mb-1">Pay at Hotel</p>
-            <p className="text-lg font-black text-emerald-700 italic leading-none">₹{halfAmount}</p>
+
+          {/* 📝 Details Form - Icon Integrated */}
+          <div className="space-y-4">
+            <div className="relative group">
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+              <input 
+                type="text" 
+                placeholder="Full Name" 
+                value={orderData.name} 
+                onChange={(e)=>setOrderData({...orderData, name:e.target.value})} 
+                className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-[11px] font-bold outline-none focus:bg-white focus:border-blue-500 transition-all shadow-inner" 
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="relative group">
+                <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                <input 
+                  type="text" 
+                  placeholder="Arrival (Mins)" 
+                  value={orderData.arrivalTime} 
+                  onChange={(e)=>setOrderData({...orderData, arrivalTime:e.target.value})} 
+                  className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-[10px] font-bold outline-none focus:bg-white focus:border-blue-500 transition-all shadow-inner" 
+                />
+              </div>
+              
+              <div className="relative group">
+                <CheckCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />
+                <input 
+                  type="number" 
+                  maxLength="5"
+                  placeholder="Txn ID (Last 5)" 
+                  value={orderData.txId} 
+                  onChange={(e) => {
+                    if (e.target.value.length <= 5) {
+                      setOrderData({...orderData, txId: e.target.value})
+                    }
+                  }} 
+                  className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-[10px] font-bold outline-none focus:bg-white focus:border-emerald-500 transition-all shadow-inner" 
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* ✅ Step 3: Action Button */}
+          <div className="pt-2">
+            <button 
+              onClick={handleConfirmOrder} 
+              className="w-full py-5 bg-slate-900 hover:bg-black text-white rounded-[2rem] font-black uppercase text-[11px] tracking-[0.2em] italic flex items-center justify-center gap-3 shadow-2xl transition-all active:scale-95"
+            >
+              <Send className="w-4 h-4" /> Book Food
+            </button>
+            
+            <p className="mt-5 text-[8px] font-black text-slate-400 uppercase text-center italic tracking-widest leading-relaxed px-4">
+              * Order verified after <span className="text-slate-900">₹{halfAmount}</span> advance is confirmed.
+            </p>
           </div>
         </div>
-
-        {/* 📝 Step 2: Details Form - Clean Version */}
-<div className="grid grid-cols-1 gap-3">
-  {/* పేరు */}
-  <input 
-    type="text" 
-    placeholder="Full Name" 
-    value={orderData.name} 
-    onChange={(e)=>setOrderData({...orderData, name:e.target.value})} 
-    className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-[11px] font-bold outline-none focus:border-blue-500 transition-all shadow-sm" 
-  />
-  
-  <div className="grid grid-cols-2 gap-3">
-    {/* అరైవల్ టైమ్ */}
-    <input 
-      type="text" 
-      placeholder="Arrival Time (e.g. 20 mins)" 
-      value={orderData.arrivalTime} 
-      onChange={(e)=>setOrderData({...orderData, arrivalTime:e.target.value})} 
-      className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-[10px] font-bold outline-none focus:border-blue-500 transition-all shadow-sm" 
-    />
-    
-    {/* ట్రాన్సాక్షన్ ఐడి - 5 అంకెలు మాత్రమే */}
-    <input 
-      type="number" 
-      maxLength="5"
-      placeholder="Txn ID (Last 5)" 
-      value={orderData.txId} 
-      onChange={(e) => {
-        if (e.target.value.length <= 5) {
-          setOrderData({...orderData, txId: e.target.value})
-        }
-      }} 
-      className="w-full bg-slate-50 border border-slate-200 p-3.5 rounded-xl text-[10px] font-bold outline-none focus:border-blue-500 transition-all shadow-sm" 
-    />
-  </div>
-</div>
-
-        {/* ✅ Step 3: Final Send Action */}
-        <button 
-          onClick={handleConfirmOrder} 
-          className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black uppercase text-[10px] sm:text-[11px] tracking-widest flex items-center justify-center gap-3 shadow-lg transition-all active:scale-95"
-        >
-          <Send className="w-4 h-4" /> Send to Owner
-        </button>
-
-        <p className="mt-4 text-[7px] font-bold text-slate-400 uppercase text-center italic leading-relaxed px-4">
-          * Order verified only after advanced <span className="text-slate-900 font-black">₹{halfAmount}</span> is paid.
-        </p>
       </motion.div>
     </motion.div>
   )}
@@ -804,53 +824,104 @@ const handleInstantOrder = async () => {
           </motion.div>
         )}
       </AnimatePresence>
-{/* 🪑 INSTANT ORDER POPUP MODAL */}
+{/* 🪑 INSTANT ORDER POPUP MODAL - Premium UI Update */}
 <AnimatePresence>
   {showInstantModal && (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[400] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
-      <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }} className="bg-white w-full max-w-sm p-6 sm:p-8 rounded-[2.5rem] shadow-2xl relative border border-slate-100">
-        
-        <button onClick={() => setShowInstantModal(false)} className="absolute top-6 right-6 p-2 bg-slate-50 rounded-full active:scale-90"><X className="w-4 h-4" /></button>
-        
-        <div className="mb-6">
-          <h3 className="text-xl font-black uppercase italic text-slate-900 leading-none">Dining Details</h3>
-          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Final step to place order</p>
+    <motion.div 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      exit={{ opacity: 0 }} 
+      className="fixed inset-0 z-[400] bg-slate-900/90 backdrop-blur-md flex items-start pt-10 sm:items-center justify-center p-4 overflow-y-auto"
+    >
+      {/* Backdrop Close logic */}
+      <div className="absolute inset-0" onClick={() => setShowInstantModal(false)}></div>
+
+      <motion.div 
+        initial={{ scale: 0.9, opacity: 0, y: 30 }} 
+        animate={{ scale: 1, opacity: 1, y: 0 }} 
+        exit={{ scale: 0.9, opacity: 0, y: 30 }}
+        className="relative bg-white w-full max-w-[400px] rounded-[2.5rem] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] overflow-hidden border border-slate-100 flex flex-col mt-10 sm:mt-0"
+      >
+        {/* ✨ Top Premium Header Section */}
+        <div className="bg-slate-900 px-8 py-10 text-white relative">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-600/20 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+          <div className="relative z-10">
+            <h2 className="text-2xl font-black italic uppercase tracking-tighter leading-none">
+              Dining <span className="text-emerald-400">Details</span>
+            </h2>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-2 italic">Instant Hub Transmission</p>
+          </div>
+          
+          {/* ❌ Close Button */}
+          <button 
+            onClick={() => setShowInstantModal(false)}
+            className="absolute top-6 right-6 p-2.5 bg-white/10 hover:bg-red-500 text-white rounded-2xl transition-all active:scale-90"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
-        <div className="space-y-4">
-          {/* Name Input */}
-          <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100">
-            <label className="text-[9px] font-black uppercase text-blue-400 italic mb-2 block tracking-widest">Enter Your Name</label>
-            <input 
-              type="text" 
-              placeholder="Your Name" 
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-              className="w-full bg-white border border-slate-200 p-3.5 rounded-xl text-xs font-black outline-none focus:border-blue-500 shadow-sm"
-            />
+        <div className="p-6 sm:p-8 space-y-6">
+          {/* 📝 Details Form - Icon Integrated */}
+          <div className="space-y-5">
+            {/* Name Input */}
+            <div className="relative group">
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+              <input 
+                type="text" 
+                placeholder="Enter Your Name" 
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-xs font-black outline-none focus:bg-white focus:border-blue-500 transition-all shadow-inner"
+              />
+            </div>
+
+            {/* Table Selection */}
+{/* Table Selection - Custom Smart Dropdown */}
+<div className="relative group">
+  <UtensilsCrossed className="absolute left-4 top-5 w-4 h-4 text-slate-400 z-10" />
+  
+  <div className="relative">
+    <select 
+      value={selectedTable} 
+      onChange={(e) => setSelectedTable(e.target.value)}
+      /* 👇 ఇక్కడ సైజుని 5 లేదా 6 కి ఫిక్స్ చేస్తే అది స్క్రోల్ బాక్స్ లాగా మారిపోతుంది */
+      size={showInstantModal ? "1" : "1"} 
+      onFocus={(e) => e.target.size = "5"} 
+      onBlur={(e) => e.target.size = "1"}
+      onChangeCapture={(e) => e.target.size = "1"}
+      className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-xs font-black outline-none focus:bg-white focus:border-emerald-500 transition-all shadow-inner appearance-none cursor-pointer overflow-y-auto"
+      style={{ fontSize: '16px' }}
+    >
+      <option value="" className="p-3">Select Table Number</option>
+      {[...Array(owner?.tableCount || 0)].map((_, i) => (
+        <option key={i+1} value={i+1} className="p-3 border-b border-slate-100">
+          Table No: {i+1}
+        </option>
+      ))}
+    </select>
+
+    {/* Custom Arrow */}
+    <div className="absolute right-4 top-5 pointer-events-none">
+      <Plus className="w-3 h-3 text-slate-400 rotate-45" />
+    </div>
+  </div>
+</div>
           </div>
 
-          {/* Table Selection */}
-          <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100">
-            <label className="text-[9px] font-black uppercase text-blue-400 italic mb-2 block tracking-widest">Select Table Number</label>
-            <select 
-              value={selectedTable} 
-              onChange={(e) => setSelectedTable(e.target.value)}
-              className="w-full bg-white border border-slate-200 p-3.5 rounded-xl text-xs font-black outline-none focus:border-blue-500 shadow-sm"
+          {/* ✅ Transmission Action */}
+          <div className="pt-2">
+            <button 
+              onClick={handleInstantOrder}
+              className="w-full py-5 bg-slate-900 hover:bg-black text-white rounded-[2rem] font-black uppercase text-[11px] tracking-[0.2em] italic flex items-center justify-center gap-3 shadow-2xl transition-all active:scale-95"
             >
-              <option value="">Select Table...</option>
-              {[...Array(owner?.tableCount || 0)].map((_, i) => (
-                <option key={i+1} value={i+1}>Table No: {i+1}</option>
-              ))}
-            </select>
+              <Send className="w-4 h-4" /> Confirm & order
+            </button>
+            
+            <p className="mt-5 text-[8px] font-black text-slate-400 uppercase text-center italic tracking-widest leading-relaxed px-4">
+              Protocol: Instant order will be served at <span className="text-slate-900">Table #{selectedTable || "?"}</span>
+            </p>
           </div>
-
-          <button 
-            onClick={handleInstantOrder}
-            className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 shadow-xl active:scale-95 transition-all"
-          >
-            <Send className="w-4 h-4" /> Confirm & Send Order
-          </button>
         </div>
       </motion.div>
     </motion.div>

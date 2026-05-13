@@ -4,54 +4,79 @@ import cors from "cors";
 import dotenv from "dotenv";
 import admin from "firebase-admin"; 
 import { createRequire } from "module"; 
+// 🎯 1. Socket.io మరియు HTTP ని ఇంపోర్ట్ చెయ్
+import { Server } from "socket.io";
+import http from "http";
 
 const require = createRequire(import.meta.url);
 const serviceAccount = require("./serviceAccountKey.json"); 
 import ownerRoutes from "./routes/ownerRoutes.js";
 import itemRoutes from "./routes/itemRoutes.js";
 import orderRoutes from './routes/orderRoutes.js';
+
 dotenv.config();
 const app = express();
 
-// --- 1. Firebase Initialization ---
+// 🎯 2. HTTP సర్వర్ ని క్రియేట్ చేయాలి (Socket.io కోసం ఇది తప్పనిసరి)
+const server = http.createServer(app);
+
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173", // '*' వాడకు రాజు, కచ్చితంగా URL ఇవ్వు
+    methods: ["GET", "POST"],
+    credentials: true // 🎯 ఇది చాలా ముఖ్యం!
+  }
+});
+
+// 🎯 4. ఆర్డర్ రూట్స్ లో వాడుకోవడానికి io ని app లో సెట్ చెయ్
+app.set("socketio", io);
+
+// --- Firebase Initialization ---
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 
-// --- 2. JSON & Payload Limits ---
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// --- 3. CORS Configuration (Smart Logic) ---
-// ఇక్కడ మనం NODE_ENV ని చెక్ చేస్తున్నాం
 if (process.env.NODE_ENV !== 'production') {
-  // ✅ ఇది నీ లోకల్ కంప్యూటర్‌లో మాత్రమే రన్ అవుతుంది
   app.use(cors({
     origin: 'http://localhost:5173',
     credentials: true
   }));
   console.log("🛠️ CORS enabled for Local Development");
 } else {
-  // ✅ AWS సర్వర్‌లో ఉన్నప్పుడు ఇది రన్ అవుతుంది
   console.log("🌐 Production Mode: CORS handled by Nginx");
 }
 
-// --- 4. Routes ---
+// 🎯 5. Socket.io కనెక్షన్ హ్యాండ్లింగ్
+io.on("connection", (socket) => {
+  // ఓనర్ లాగిన్ అవ్వగానే తన రూమ్ లో జాయిన్ చేస్తాం
+  socket.on("join_owner_room", (ownerId) => {
+    socket.join(ownerId);
+    console.log(`Owner ${ownerId} joined their real-time room 🏠`);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected ❌");
+  });
+});
+
 app.use("/api/owner", ownerRoutes);
 app.use("/api/items", itemRoutes);
 app.use('/api/orders', orderRoutes);
+
 app.get("/", (req, res) => {
-  res.send("🚀 Sudhara Server is Running...");
+  res.send("🚀 Sudhara Server is Running with Real-time Support...");
 });
 
-// --- 5. MongoDB Connection ---
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected & Firebase Admin Ready"))
+  .then(() => console.log("✅ MongoDB Connected & Socket.io Ready"))
   .catch((err) => console.log("❌ Error:", err));
 
 const PORT = process.env.PORT || 5000;
 
-// ✅ ఇక్కడ '0.0.0.0' యాడ్ చేశాం, ఇది AWS లో రిక్వెస్ట్‌లను స్వీకరించడానికి అవసరం
-app.listen(PORT, '0.0.0.0', () => {
+// 🎯 6. ముఖ్యం: app.listen బదులు server.listen వాడాలి రాజు!
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
