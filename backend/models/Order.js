@@ -10,10 +10,23 @@ const OrderSchema = new mongoose.Schema({
   advancePaid: Number,
   txnId: String,
   arrivalTime: String,
-  orderType: { type: String, enum: ['Pre-book', 'Post-book'] },
-  status: { type: String, default: 'Pending' },
+  // 🎯 'Express-Route' ని enum లో యాడ్ చేశాను
+  orderType: { type: String, enum: ['Pre-book', 'Post-book', 'Express-Route'] }, 
+  status: { 
+        type: String, 
+        enum: ["Pending", "Accepted", "Preparing", "Served"], 
+        default: "Pending" 
+    },
+  
+  // 🚀 కొత్త ఫీచర్ కోసం కావాల్సిన అదనపు ఫీల్డ్స్
+  sudaraId: { type: String, unique: true, sparse: true }, // 6-digit ID
+  travelDuration: Number, // నిమిషాల్లో
+  prepTime: { type: Number, default: 20 }, 
+  scheduledStartTime: Date, // వంట మొదలుపెట్టాల్సిన టైమ్
+  isDelayed: { type: Boolean, default: false },
+
   createdAt: { type: Date, default: Date.now }
 });
 
 const Order = mongoose.model('Order', OrderSchema);
-export default Order; // ESM లో ఇలా ఎక్స్‌పోర్ట్ చేయాలి
+export default Order;

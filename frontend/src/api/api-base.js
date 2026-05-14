@@ -1,8 +1,8 @@
 // src/api-base.js
-import axios from "axios";
-import { io } from "socket.io-client"; // 🎯 1. సాకెట్ ని ఇంపోర్ట్ చెయ్
 
-// Vite ఆటోమేటిక్ గా మోడ్ ని డిటెక్ట్ చేస్తుంది
+import axios from "axios";
+import { io } from "socket.io-client";
+
 const baseURL = import.meta.env.MODE === "development"
     ? import.meta.env.VITE_API_DEV_URL
     : import.meta.env.VITE_API_PROD_URL;
@@ -12,11 +12,14 @@ const api = axios.create({
     withCredentials: true,
 });
 
-// 🎯 2. సాకెట్ కనెక్షన్ ఇక్కడ పెట్టు రాజు
-// baseURL లో చివర /api ఉంటుంది కాబట్టి, సాకెట్ కి మాత్రం కేవలం baseURL ఇస్తే చాలు
+// 🎯 సాకెట్ కనెక్షన్ అప్‌డేట్
 export const socket = io(baseURL, {
     withCredentials: true,
-    transports: ["polling", "websocket"]
+    // 💡 ఇక్కడ కేవలం "websocket" నే ఫోర్స్ చేయాలి రాజు
+    transports: ["websocket","polling"], 
+    reconnection: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
 });
 
 api.interceptors.request.use((config) => {

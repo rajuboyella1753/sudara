@@ -29,8 +29,9 @@ export default function RestaurantProfile() {
   const [customerName, setCustomerName] = useState("");
   const [showInstantModal, setShowInstantModal] = useState(false); 
   const [showCallPopup, setShowCallPopup] = useState(false); // 🚀 Call instruction popup state
+  const sudaraId = "SDR" + Math.floor(100 + Math.random() * 900);
+  const [orderStatus, setOrderStatus] = useState(null);
   const availableSubCats = useMemo(() => {
-  // 1. నీ దగ్గర ఉన్న డిఫాల్ట్ కేటగిరీల లిస్ట్ 
   const defaultCats = ["Biryanis", "Starters", "Soups", "Noodles", "Gravys", "Rice", "Breads", "Sea Food", "Tiffins"];
   
   // 2. ప్రస్తుతం మెనూలో ఉన్న అన్ని కేటగిరీలను తీసుకుంటున్నాం (ఓనర్ కొత్తగా యాడ్ చేసినవి కూడా ఇందులో ఉంటాయి) 
@@ -88,11 +89,62 @@ const handleCallAction = () => {
   trackCallInterest();
   setShowCallPopup(true); 
 };
-
-const proceedToCall = () => {
-  setShowCallPopup(false);
-  window.location.href = `tel:${owner?.phone}`;
+// 🚀 PRE-BOOK క్లిక్ ట్రాకింగ్
+const trackPreOrderClick = async () => {
+  try {
+    const today = new Date().toLocaleDateString('en-GB'); // "DD/MM/YYYY"
+    await api.put(`/owner/track-analytics/${id}`, { 
+      action: "pre_order_click", 
+      date: today 
+    });
+  } catch (err) { console.log("Pre-order track failed"); }
 };
+
+// 🚀 POST-BOOK (Instant) క్లిక్ ట్రాకింగ్
+const trackPostOrderClick = async () => {
+  try {
+    const today = new Date().toLocaleDateString('en-GB');
+    await api.put(`/owner/track-analytics/${id}`, { 
+      action: "post_order_click", 
+      date: today 
+    });
+  } catch (err) { console.log("Post-order track failed"); }
+};
+const proceedToCall = async () => {
+  try {
+    const todayDate = new Date().toLocaleDateString('en-GB');
+    // 🎯 కాల్ క్లిక్ ని ట్రాక్ చేయడం
+    await api.put(`/owner/track-analytics/${id}`, { 
+      action: "call_click", 
+      date: todayDate 
+    });
+  } catch (err) {
+    console.log("Call tracking failed");
+  } finally {
+    // ట్రాకింగ్ ఫెయిల్ అయినా సరే కాల్ వెళ్ళాలి, అందుకే finally లో పెట్టా
+    setShowCallPopup(false);
+    window.location.href = `tel:${owner?.phone}`;
+  }
+};
+const handleTrackOrder = async () => {
+  const sdrId = document.getElementById('customerSdrId').value.trim().toUpperCase();
+  
+  if (!sdrId) return alert("Please enter your ID! 📝");
+
+  try {
+    // 🎯 నీ బ్యాకెండ్ లో ఈ రూట్ ఉండాలి: /orders/status/:sdrId
+    const res = await api.get(`/orders/status/${sdrId}`);
+    
+    if (res.data) {
+      setOrderStatus(res.data.status); // Accepted, Preparing, etc.
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Order not found! ❌ Check your ID again.");
+    setOrderStatus(null);
+  }
+};
+
 const openGoogleMaps = () => {
   if (!owner?.latitude || !owner?.longitude || owner.latitude === 0) {
     return alert("Restaurant location not set by owner! 📍");
@@ -127,26 +179,31 @@ const openGoogleMaps = () => {
   }
 };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        const [oRes, iRes] = await Promise.all([
-          api.get(`/owner/${id}`),
-          api.get(`/items/owner/${id}`) 
-        ]);
-        setOwner(oRes.data);
-        setItems(iRes.data);
-        const favorites = JSON.parse(localStorage.getItem("favRestaurants") || "[]");
-        setIsFavorite(favorites.includes(id));
-      } catch (err) {
-        console.error("Error fetching profile:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (id) fetchData();
-  }, [id]);
+useEffect(() => {
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+
+      // 🎯 ఇక్కడ యాడ్ చెయ్ రాజు! పేజీ లోడ్ అవ్వగానే హిట్ కౌంట్ పెరుగుతుంది.
+      const todayDate = new Date().toLocaleDateString('en-GB');
+      api.put(`/owner/track-analytics/${id}`, { action: "kitchen_entry", date: todayDate });
+
+      const [oRes, iRes] = await Promise.all([
+        api.get(`/owner/${id}`),
+        api.get(`/items/owner/${id}`) 
+      ]);
+      setOwner(oRes.data);
+      setItems(iRes.data);
+      const favorites = JSON.parse(localStorage.getItem("favRestaurants") || "[]");
+      setIsFavorite(favorites.includes(id));
+    } catch (err) {
+      console.error("Error fetching profile:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  if (id) fetchData();
+}, [id]);
 
   const addToCart = (item) => {
     trackFoodInterest(item.name); 
@@ -171,43 +228,54 @@ const openGoogleMaps = () => {
   const halfAmount = (totalAmount / 2).toFixed(2);
 
 const handleConfirmOrder = async () => {
-  console.log("Sending Order Data:", orderData);
-  // 🚀 ఫోన్ నంబర్ (phone) చెకింగ్ తీసేశాను, కేవలం name, txId, arrivalTime మాత్రమే చూస్తుంది
+  // 1. ప్రాథమిక తనిఖీలు
   if (!orderData.name || !orderData.txId || !orderData.arrivalTime) {
     return alert("Please fill details! 📝 (Name, Arrival Time, and Txn ID are required)");
   }
 
   try {
-    setLoading(true); 
+    setLoading(true);
 
-    // 🚀 ఆర్డర్ డేటా ప్రిపరేషన్
+    // 2. 6-డిజిట్ ఐడి జనరేషన్ (SDR + 3 Numbers)
+    const sudaraId = "SDR" + Math.floor(100 + Math.random() * 900);
+
+    // 3. ఆర్డర్ డేటా ప్రిపరేషన్
     const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name}`);
+    const todayDate = new Date().toLocaleDateString('en-GB'); // DB Key: "14/05/2026"
+
     const payload = {
       restaurantId: id,
       customerName: orderData.name,
-      // 🚀 ఒకవేళ ఫోన్ నంబర్ లేకపోతే "Pre-booked" అని వెళ్తుంది
-      customerPhone: orderData.phone || "Pre-booked Customer", 
+      customerPhone: orderData.phone || "Pre-booked Customer",
       items: itemList,
       totalAmount: totalAmount,
       advancePaid: halfAmount,
       txnId: orderData.txId,
       arrivalTime: orderData.arrivalTime,
       orderType: "Pre-book",
+      sudaraId: sudaraId, // 🎯 కొత్తగా యాడ్ చేశాం
+      travelDuration: parseInt(orderData.arrivalTime), // 🎯 ట్రావెల్ టైమ్
       status: "Pending"
     };
 
-    // 🚀 నేరుగా API కి పంపిస్తున్నాం
-    await api.post("/orders/add", payload);
+    // 4. API కాల్స్ - ఆర్డర్ సేవ్ మరియు అనలిటిక్స్ ట్రాకింగ్
+    await Promise.all([
+      api.post("/orders/add", payload),
+      api.put(`/owner/track-analytics/${id}`, { 
+        action: "pre_order_click", 
+        date: todayDate 
+      })
+    ]);
+
+    alert(`ORDER SYNCED! ✅\n\nYour Unique ID: ${sudaraId}\nPlease show this ID at the restaurant.`);
     
-    alert("ORDER SYNCED! ✅ ఓనర్ డాష్‌బోర్డ్‌కి నీ ఆర్డర్ వెళ్ళిపోయింది.");
-    setCart({}); 
+    // 5. క్లీనప్
+    setCart({});
     setShowOrderForm(false);
-    
-    // క్లీనప్: ఫామ్ డేటా రీసెట్
     setOrderData({ name: "", phone: "", txId: "", arrivalTime: "" });
 
   } catch (err) {
-    console.error(err);
+    console.error("Pre-order Error:", err);
     alert("Order Sync Failed! ❌");
   } finally {
     setLoading(false);
@@ -398,7 +466,38 @@ const handleInstantOrder = async () => {
                 </div>
               </div>
             )}
+{/* 🔍 Order Tracking Section */}
+<div className="mt-8 p-6 bg-white border-2 border-dashed border-slate-200 rounded-[2.5rem]">
+  <p className="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest italic text-center">
+    Track Your Order Status
+  </p>
+  
+  <div className="flex flex-col gap-3">
+    <input 
+      type="text" 
+      id="customerSdrId"
+      placeholder="Enter Your ID (e.g. SDR158)" 
+      className="bg-slate-50 p-4 rounded-2xl text-xs font-bold outline-none border focus:border-blue-400 uppercase"
+    />
+    
+    <button 
+      onClick={() => handleTrackOrder()}
+      className="bg-slate-900 text-white px-6 py-4 rounded-2xl text-[10px] font-black uppercase italic shadow-lg active:scale-95 transition-all"
+    >
+      Check Status 🔍
+    </button>
+  </div>
 
+  {/* స్టేటస్ రిజల్ట్ ఇక్కడ చూపిస్తాం */}
+  {orderStatus && (
+    <div className="mt-4 p-4 bg-blue-50 rounded-2xl border border-blue-100 text-center">
+      <p className="text-[9px] font-black text-blue-400 uppercase">Current Status</p>
+      <p className="text-lg font-black text-blue-600 uppercase italic mt-1 animate-pulse">
+        {orderStatus}
+      </p>
+    </div>
+  )}
+</div>
             {/* Filter Section: Sticky with Responsive Spacing */}
             <div className="sticky top-16 sm:top-20 z-30 bg-white/95 py-2 border-b space-y-3 sm:space-y-4 backdrop-blur-md">
                 <div className="relative">

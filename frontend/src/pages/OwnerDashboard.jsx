@@ -54,7 +54,9 @@ export default function OwnerDashboard() {
 
   const [isOtherSub, setIsOtherSub] = useState(false);
   const [customSub, setCustomSub] = useState("");
-  const [isAlertActive, setIsAlertActive] = useState(false);
+  const [isAlertActive, setIsAlertActive] = useState(() => {
+  return localStorage.getItem("sudara_alert_status") === "active";
+});
   const defaultMenuOptions = ["Biryanis", "Starters", "Breads", "Egg Items", "Sea Food", "Soups", "Noodles", "Gravys", "Rice", "Tiffins"];
   
   const allCategories = useMemo(() => {
@@ -64,68 +66,75 @@ export default function OwnerDashboard() {
 
 useEffect(() => {
   const stored = JSON.parse(localStorage.getItem("owner"));
-  
-  // 1. సెక్యూరిటీ చెక్: ఓనర్ లేకపోతే లాగిన్ కి పంపడం
   if (!stored) {
     navigate("/owner");
     return;
   }
 
-  // 2. Initial Load: ప్రొఫైల్, ఐటమ్స్ మరియు ఆర్డర్లని తెచ్చుకోవడం
-  fetchData(stored._id);
+  // 🎯 ఇక్కడ fetchData ని కాల్ చేయాలి రాజు! అప్పుడే డేటా వస్తుంది, లోడింగ్ ఆగుతుంది.
+  fetchData(stored._id); 
 
-  // 3. 🎯 Socket.io: ఓనర్ ని తన ఐడి ఉన్న రూమ్ లో జాయిన్ చేయడం
-  // ఇది ఒక్కసారి జరిగితే చాలు
-  socket.emit("join_owner_room", stored._id);
+  // కనెక్ట్ అవ్వగానే రూమ్ జాయిన్ అవ్వడం
+  const onConnect = () => {
+    socket.emit("join_owner_room", stored._id);
+  };
 
-  // 4. Real-time Listener: కొత్త ఆర్డర్ సిగ్నల్ రాగానే రియాక్ట్ అవ్వడం
-  // ఇక్కడ ఈవెంట్ పేరు నీ బ్యాకెండ్‌లో (new_order_received) ఎలా ఉందో అదే వాడు
-  const handleNewOrder = (newOrder) => {
-    console.log("New order received! 📦", newOrder);
-    
-    // ఆర్డర్ లిస్ట్ అప్‌డేట్ చేయడం
+  const onNewOrder = (newOrder) => {
     setOrders((prev) => [newOrder, ...prev]);
-
-    // 🔔 ఒకవేళ ఓనర్ అలర్ట్ బటన్ ఆన్ చేసి ఉంటేనే సౌండ్ ప్లే అవుతుంది
-    if (isAlertActive) {
+    if (localStorage.getItem("sudara_alert_status") === "active") {
       const audio = new Audio("/order-beep.mp3");
-      audio.play().catch(err => {
-        console.log("Browser blocked autoplay sound! యూజర్ యాక్షన్ అవసరం.");
-      });
+      audio.play().catch(e => console.log("Sound error"));
     }
   };
 
-  socket.on("new_order_received", handleNewOrder);
+  socket.on("connect", onConnect);
+  socket.on("new_order_received", onNewOrder);
 
-  // 5. Cleanup: మెమరీ లీక్స్ రాకుండా క్లీన్ చేయడం
+  socket.on("reconnect", () => {
+    socket.emit("join_owner_room", stored._id);
+  });
+
+  socket.on("order_delayed", (data) => {
+  setOrders((prev) => 
+    prev.map((order) => 
+      order._id === data.orderId 
+        ? { ...order, scheduledStartTime: data.newTime, isDelayed: true } 
+        : order
+    )
+  );
+    const audio = new Audio("/delay-beep.mp3");
+      audio.play().catch(e => console.log("Sound error"));
+    });
   return () => {
-    socket.off("new_order_received", handleNewOrder);
+    socket.off("connect", onConnect);
+    socket.off("new_order_received", onNewOrder);
   };
-}, [navigate, isAlertActive]); // navigate లేదా isAlertActive మారినప్పుడు అప్‌డేట్ అవుతుంది
+}, []); // ఇక్కడ ఒకసారి మాత్రమే రన్ అవుతుంది
 
-  const fetchData = async (id) => {
-    try {
-      setLoading(true);
-      const [oRes, iRes, ordRes] = await Promise.all([
-        api.get(`/owner/${id}`),
-        api.get(`/items/owner/${id}`),
-        api.get(`/orders/restaurant/${id}`) // Order fetching integrated
-      ]);
-      
-      const ownerData = oRes.data;
-      setOwner(ownerData);
-      // console.log("Full Owner Data:", oRes.data); // 👈 ఇది పెట్టు రాజు, డేటా వస్తుందో లేదో తెలిసిపోద్ది
-      // console.log("Analytics Data:", oRes.data.analytics);
-      setTodayMsg(ownerData.todaySpecial || "");
-      setProfileForm({ ...ownerData });
-      setItems(iRes.data);
-      setOrders(ordRes.data || []);
-    } catch (err) { 
-      // console.error("Fetch Error:", err); 
-    } finally { 
-      setLoading(false); 
+const fetchData = async (id) => {
+  try {
+    setLoading(true);
+    const [oRes, iRes, ordRes] = await Promise.all([
+      api.get(`/owner/${id}`).catch(() => ({ data: null })), // empty object బదులు null
+      api.get(`/items/owner/${id}`).catch(() => ({ data: [] })),
+      api.get(`/orders/restaurant/${id}`).catch(() => ({ data: [] }))
+    ]);
+
+    if (oRes.data) {
+      setOwner(oRes.data);
+      setTodayMsg(oRes.data.todaySpecial || "");
+      setProfileForm({ ...oRes.data });
     }
-  };
+    
+    setItems(iRes.data || []);
+    setOrders(ordRes.data || []);
+
+  } catch (err) {
+    console.error("General Fetch Error:", err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   // --- Logic Functions (First Code Original) ---
   const optimizeImage = (file, callback) => {
@@ -184,7 +193,18 @@ useEffect(() => {
       localStorage.setItem("owner", JSON.stringify(res.data));
     } catch (err) { alert("Status Update Failed"); }
   };
-
+const updateOrderStatus = async (orderId, newStatus) => {
+  try {
+    // ఇక్కడ నీ బ్యాకెండ్ రూట్ /orders/update-status/:id కి డేటా వెళ్తుంది
+    await api.put(`/orders/update-status/${orderId}`, { status: newStatus });
+    
+    // అప్‌డేట్ అయ్యాక మళ్ళీ డేటా తెచ్చుకోవడానికి
+    fetchData(owner._id); 
+    alert(`Order ${newStatus} ! ✅`);
+  } catch (err) {
+    alert("Status update failed! ❌");
+  }
+};
 const handleServed = async (orderObj) => {
   if (!window.confirm("Mark as Served? Amount will be added to your permanent Sales Matrix.")) return;
   
@@ -226,9 +246,9 @@ const filteredOrders = useMemo(() => {
     const s = searchTerm.toLowerCase();
     const nameMatch = order.customerName?.toLowerCase().includes(s);
     const txnMatch = order.txnId?.toLowerCase().includes(s);
-    const typeMatch = order.orderType?.toLowerCase().includes(s); // 👈 Order Type ఫిల్టర్
-    
-    return nameMatch || txnMatch || typeMatch;
+    const typeMatch = order.orderType?.toLowerCase().includes(s);
+    const idMatch = (order.sudaraId || "").toLowerCase().includes(s);
+    return nameMatch || txnMatch || typeMatch || idMatch;
   });
 }, [orders, searchTerm]);
   const handleSubmitItem = async (e) => {
@@ -420,6 +440,7 @@ const downloadQRCode = () => {
     return s && c && sc;
   });
 
+
   if (loading) return <div className="h-screen flex items-center justify-center text-blue-600 font-black animate-pulse">LOADING...</div>;
 
   return (
@@ -474,31 +495,28 @@ const downloadQRCode = () => {
                 <QRCodeCanvas id="qr-gen" value={`https://sudara.in/restaurant/${owner?._id}`} size={150} level="H" />
               </div>
             </section>
-<div className={`p-3 rounded-xl flex items-center justify-between mb-4 border transition-all ${isAlertActive ? 'bg-green-50 border-green-200' : 'bg-indigo-50 border-indigo-100'}`}>
-  <p className={`text-[10px] font-black uppercase italic tracking-widest ${isAlertActive ? 'text-green-600' : 'text-indigo-600'}`}>
-    {isAlertActive ? '✅ Alerts Activated' : '🔔 Enable Order Alerts'}
-  </p>
-  <button 
-    onClick={() => {
-      if (!isAlertActive) {
-        // Activate చేసేటప్పుడు సౌండ్ పర్మిషన్ తీసుకోవడం
+{/* ఒకవేళ యాక్టివేట్ అవ్వకపోతేనే ఈ బటన్ కనిపిస్తుంది */}
+{!isAlertActive && (
+  <div className="bg-orange-50 p-4 rounded-xl mb-4 border border-orange-200">
+    <p className="text-xs font-bold text-orange-700 mb-2">
+      ⚠️ ఆర్డర్ సౌండ్స్ రావాలంటే ఒక్కసారి యాక్టివేట్ చేయండి!
+    </p>
+    <button 
+      onClick={() => {
         const a = new Audio("/order-beep.mp3");
         a.play().then(() => {
           a.pause();
           setIsAlertActive(true);
-          alert("Real-time Alerts Activated! 🚀");
-        }).catch(() => alert("Please allow sound in browser settings!"));
-      } else {
-        // Deactivate చేయడం
-        setIsAlertActive(false);
-        alert("Alerts Deactivated! 🔇");
-      }
-    }}
-    className={`${isAlertActive ? 'bg-green-600' : 'bg-indigo-600'} text-white px-4 py-2 rounded-lg text-[9px] font-black uppercase shadow-sm`}
-  >
-    {isAlertActive ? 'Deactivate' : 'Activate'}
-  </button>
-</div>
+          localStorage.setItem("sudara_alert_status", "active");
+          alert("Alerts Activated! 🚀");
+        }).catch(() => alert("బ్రౌజర్ పర్మిషన్ ఇవ్వండి!"));
+      }}
+      className="bg-orange-600 text-white px-6 py-2 rounded-lg text-xs font-black"
+    >
+      ACTIVATE NOW
+    </button>
+  </div>
+)}
             {/* Menu Header & Grid */}
             <section className="space-y-8">
               <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
@@ -571,7 +589,7 @@ const downloadQRCode = () => {
     </div>
 
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {filteredOrders.length === 0 ? (
+{filteredOrders.length === 0 ? (
         <div className="col-span-full p-20 text-center text-slate-300 font-black uppercase italic bg-white rounded-[2.5rem] border border-dashed">
           {searchTerm ? "No matching results found ❌" : "No Active Orders"}
         </div>
@@ -579,52 +597,118 @@ const downloadQRCode = () => {
         filteredOrders.map(order => (
           <div key={order._id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col justify-between gap-4 hover:shadow-md transition-all relative overflow-hidden">
             
-            {/* 🏷️ NEW: Order Type Ribbon (Pre/Post Order) */}
-            <div className={`absolute top-0 right-0 px-4 py-1 rounded-bl-2xl text-[8px] font-black uppercase italic text-white ${order.orderType === 'Pre-Order' ? 'bg-purple-600' : 'bg-orange-500'}`}>
+            {/* 🏷️ NEW: Order Type Ribbon (Pre/Post Order/Express) */}
+            <div className={`absolute top-0 right-0 px-4 py-1 rounded-bl-2xl text-[8px] font-black uppercase italic text-white ${order.orderType === 'Pre-Order' ? 'bg-purple-600' : order.orderType === 'Express-Route' ? 'bg-blue-600' : 'bg-orange-500'}`}>
               {order.orderType || 'Post-Order'}
             </div>
 
             <div>
               <div className="flex justify-between items-start mb-4">
-                <div>
-                  <p className="font-black uppercase italic text-lg text-slate-900 leading-tight">{order.customerName}</p>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{new Date(order.createdAt).toLocaleTimeString()}</p>
-                </div>
-                <div className="bg-blue-50 px-4 py-2 rounded-2xl text-center">
-                  <p className="text-[8px] font-black text-blue-400 uppercase leading-none">Table</p>
-                  <p className="text-xl font-black text-blue-600 leading-none mt-1"># {order.tableNo || "PRE"}</p>
-                </div>
-              </div>
+  <div>
+    <p className="font-black uppercase italic text-lg text-slate-900 leading-tight">
+      {order.customerName}
+    </p>
+    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+      {new Date(order.createdAt).toLocaleTimeString()}
+    </p>
+    {order.orderType === "Pre-book" && (
+    <p className="text-[10px] font-black text-orange-600 uppercase mt-1 italic">
+      🚗 Coming in: {order.arrivalTime} Mins
+    </p>
+  )}
+    {/* 🎯 Sudara ID ఇక్కడ యాడ్ చేస్తున్నాం రాజు */}
+    {order.sudaraId && (
+      <div className="mt-1">
+        <span className="bg-yellow-100 text-yellow-800 text-[9px] font-black px-2 py-0.5 rounded border border-yellow-200 uppercase italic">
+          ID: {order.sudaraId}
+        </span>
+      </div>
+    )}
+  </div>
+
+  <div className="bg-blue-50 px-4 py-2 rounded-2xl text-center">
+    <p className="text-[8px] font-black text-blue-400 uppercase leading-none">Table</p>
+    <p className="text-xl font-black text-blue-600 leading-none mt-1"># {order.tableNo || "PRE"}</p>
+  </div>
+</div>
 
               {/* Items List */}
-              <div className="flex flex-wrap gap-2 mb-4">
-                {order.items.map((it, idx) => (
-                  <span key={idx} className="bg-slate-50 text-slate-700 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase border border-slate-100 italic">
-                    {it}
-                  </span>
-                ))}
-              </div>
+              {/* 🎯 ఐటమ్స్ లిస్ట్ కి ఈ క్లాసెస్ యాడ్ చెయ్ రాజు */}
+<div className="flex flex-wrap gap-2 mb-4 max-h-24 overflow-y-auto scrollbar-hide p-1">
+  {order.items.map((it, idx) => (
+    <span key={idx} className="bg-slate-50 text-slate-700 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase border border-slate-100 italic shrink-0">
+      {it}
+    </span>
+  ))}
+</div>
+
+              {/* 🕒 EXPRESS ROUTE TIMER & DELAY ALERT */}
+              {order.orderType === 'Express-Route' && (
+                <div className={`mt-3 p-3 rounded-2xl border ${order.isDelayed ? 'bg-red-50 border-red-200 animate-pulse' : 'bg-blue-50 border-blue-100'}`}>
+                  <div className="flex items-center gap-2">
+                    <div className={`w-2 h-2 rounded-full ${order.isDelayed ? 'bg-red-500' : 'bg-blue-500'}`}></div>
+                    <p className="text-[9px] font-black uppercase text-slate-500">
+                      {order.isDelayed ? '⚠️ CUSTOMER DELAYED' : '🕒 EXPRESS START TIME'}
+                    </p>
+                  </div>
+                  <p className="text-sm font-black text-slate-900 mt-1 tracking-tight">
+                    {new Date(order.scheduledStartTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                  </p>
+                </div>
+              )}
 
               {order.txnId && (
-                <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-100 mb-4">
+                <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-100 mb-4 mt-4">
                   <p className="text-[8px] font-black text-emerald-400 uppercase">Transaction ID</p>
                   <p className="text-[10px] font-bold text-emerald-700 break-all">{order.txnId}</p>
                 </div>
               )}
             </div>
 
-            <div className="pt-4 border-t border-slate-50 flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase leading-none">Total Amount</p>
-                <p className="text-2xl font-black text-slate-900 mt-1 tracking-tighter">₹{order.totalAmount}</p>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => handleServed(order)} className="bg-emerald-500 text-white px-6 py-3.5 rounded-2xl text-[11px] font-black uppercase italic shadow-lg shadow-emerald-100 active:scale-95 transition-all">Served ✅</button>
-              </div>
-            </div>
+            {/* ✅ అమౌంట్ మరియు స్టేటస్ బటన్లు */}
+<div className="pt-4 border-t border-slate-50">
+  <div className="flex items-center justify-between mb-4">
+    <div>
+      <p className="text-[10px] font-black text-slate-400 uppercase leading-none">Total Amount</p>
+      <p className="text-2xl font-black text-slate-900 mt-1 tracking-tighter">₹{order.totalAmount}</p>
+    </div>
+    {/* ప్రస్తుత స్టేటస్ చూపించడానికి ఒక బ్యాడ్జ్ */}
+    <div className="text-[9px] font-black uppercase px-3 py-1 bg-slate-100 rounded-lg text-slate-500 italic">
+      Status: {order.status || 'Pending'}
+    </div>
+  </div>
+
+  {/* 🚀 ఓనర్ యాక్షన్ బటన్లు */}
+  <div className="flex gap-2">
+    {/* 1. Accept బటన్ */}
+    <button 
+      onClick={() => updateOrderStatus(order._id, "Accepted")}
+      className="flex-1 py-3 bg-blue-100 text-blue-600 rounded-xl text-[9px] font-black uppercase italic active:scale-95 transition-all"
+    >
+      Accept
+    </button>
+
+    {/* 2. Preparing బటన్ */}
+    <button 
+      onClick={() => updateOrderStatus(order._id, "Preparing")}
+      className="flex-1 py-3 bg-orange-100 text-orange-600 rounded-xl text-[9px] font-black uppercase italic active:scale-95 transition-all"
+    >
+      Preparing
+    </button>
+
+    {/* 3. Served బటన్ (ఇది ఆర్డర్ ని క్లియర్ చేస్తుంది) */}
+    <button 
+      onClick={() => handleServed(order)} 
+      className="flex-1 py-3 bg-emerald-500 text-white rounded-xl text-[9px] font-black uppercase italic shadow-lg shadow-emerald-100 active:scale-95 transition-all"
+    >
+      Served ✅
+    </button>
+  </div>
+</div>
           </div>
         ))
       )}
+
     </div>
   </motion.div>
 )}
