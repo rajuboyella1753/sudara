@@ -164,22 +164,27 @@ router.get("/:id", async (req, res) => {
 
 router.put("/update-profile/:id", async (req, res) => {
   try {
-    let updateData = { ...req.body };
-    
-    // ఒకవేళ todaySpecial మెసేజ్ వస్తే, టైమ్‌స్టాంప్ ని కూడా ఇప్పుడే అప్‌డేట్ చేయాలి
-    if (req.body.todaySpecial) {
-      updateData.specialTimestamp = new Date();
+    const { id } = req.params;
+    let updatePayload = { ...req.body };
+
+    // 🎯 1. todaySpecial ఉంటే టైమ్‌స్టాంప్ యాడ్ చేయడం
+    if (updatePayload.todaySpecial) {
+      updatePayload.specialTimestamp = new Date();
     }
 
+    // 🎯 2. మెయిన్ ఫిక్స్ ఇక్కడ ఉంది రాజు!
+    // మనం బాడీని డైరెక్ట్ గా పంపిస్తాం. 
+    // ఒకవేళ బాడీలో $inc ఉంటే అది కలుపుతుంది, $set ఉంటే మారుస్తుంది.
     const updatedOwner = await Owner.findByIdAndUpdate(
-      req.params.id, 
-      { $set: updateData }, 
-      { new: true, runValidators: true } 
+      id,
+      updatePayload, // $set తీసేసి డైరెక్ట్ గా బాడీని పంపాలి
+      { new: true, runValidators: true }
     );
 
     if (!updatedOwner) return res.status(404).json({ message: "Owner not found" });
     res.status(200).json(updatedOwner); 
   } catch (err) {
+    console.error("Update Error:", err);
     res.status(500).json({ message: "Server error during update" });
   }
 });

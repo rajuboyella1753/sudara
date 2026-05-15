@@ -7,7 +7,7 @@ import {
   ShieldAlert, LogOut, Search, BarChart3, Store, X, 
   TrendingUp, Calendar, Activity, Star, MapPin, CreditCard,
   ArrowUpRight, LayoutDashboard, Globe, Menu, Bell, Filter,
-  ChevronRight, RefreshCw,Send
+  ChevronRight, RefreshCw,Send,ShoppingBag,UtensilsCrossed,PhoneCall
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -74,21 +74,28 @@ const deleteOwnerForever = async (id, name) => {
   }
 };
 const getRangeStats = (analytics) => {
-  if (!analytics) return { hits: 0, orders: 0, postOrders: 0, calls: 0 }; 
+  if (!analytics) return { hits: 0, orders: 0, postOrders: 0, calls: 0 };
+  
+  // 🎯 Map ని ఆబ్జెక్ట్‌గా మార్చుకుంటున్నాం
   const analyticsObj = analytics instanceof Map ? Object.fromEntries(analytics) : analytics;
   let stats = { hits: 0, orders: 0, postOrders: 0, calls: 0 };
-  let start = new Date(startDate);
+  
+  let current = new Date(startDate);
   let end = new Date(endDate);
-  start.setHours(0, 0, 0, 0);
-  end.setHours(0, 0, 0, 0);
-  let current = new Date(start);
+  
   while (current <= end) {
-    const dKey = `${current.getDate()}/${current.getMonth() + 1}/${current.getFullYear()}`; 
-    const dayData = analyticsObj[dKey] || {};
+    // 🎯 రాజు, ఇక్కడ 'padStart' తీసేయాలి! అప్పుడే "8/3/2026" కి మ్యాచ్ అవుతుంది.
+    const dKey = `${current.getDate()}/${current.getMonth() + 1}/${current.getFullYear()}`;
+
+    // డేటాని తీసుకోవడం (పాత డేటాలో _doc ఉండే ఛాన్స్ ఉంది కాబట్టి ఇలా)
+    const rawData = analyticsObj[dKey] || {};
+    const dayData = rawData._doc || rawData;
+
     stats.hits += Number(dayData.kitchen_entry || 0);
     stats.orders += Number(dayData.pre_order_click || 0);
     stats.postOrders += Number(dayData.post_order_click || 0); 
     stats.calls += Number(dayData.call_click || 0);
+    
     current.setDate(current.getDate() + 1);
   }
   return stats;
@@ -420,80 +427,160 @@ const filteredList = owners.filter(owner => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
-                    {filteredList.map((res) => {
-                      const analyticsObj = res.analytics instanceof Map ? Object.fromEntries(res.analytics) : (res.analytics || {});
-                      let dHits, dOrders, dPostOrders, dCalls;
-                      if (viewMode === "daily") {
-                        const d = new Date(filterDate);
-                        const dayKey = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-                        const dayData = analyticsObj[dayKey] || {};
-                        dHits = dayData.kitchen_entry || 0;
-                        dOrders = dayData.pre_order_click || 0;
-                        dPostOrders = dayData.post_order_click || 0;
-                        dCalls = dayData.call_click || 0;
-                      } else {
-                        const stats = getRangeStats(res.analytics);
-                        dHits = stats.hits; dOrders = stats.orders; dPostOrders = stats.postOrders; dCalls = stats.calls;
-                      }
-                      return (
-                        <tr key={res._id} className="hover:bg-blue-50/30 transition-all duration-300">
-                          <td className="p-8">
-                            <div className="flex items-center gap-4">
-                              <img src={res.hotelImage || "https://via.placeholder.com/60"} className="w-12 h-12 rounded-xl object-cover" alt="" />
-                              <div className="min-w-0">
-                                <span className="font-black text-sm uppercase italic text-slate-800 block truncate">{res.name}</span>
-                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{res.collegeName}</span>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="p-8 text-center font-black text-lg text-slate-900">{dHits}</td>
-                          <td className="p-8 text-center font-black text-2xl text-blue-600">{dOrders}</td>
-                          <td className="p-8 text-center font-black text-2xl text-emerald-600">{dPostOrders}</td>
-                          <td className="p-8 text-center font-black text-2xl text-orange-600">{dCalls}</td>
-                          <td className="p-8 text-right">
-                             <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase italic ${dHits > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-400'}`}>{dHits > 0 ? 'Live Node' : 'Idle'}</div>
-                          </td>
-                        </tr>
-                      );
-                    })}
+            {filteredList.map((res) => {
+  const analyticsObj = res.analytics instanceof Map ? Object.fromEntries(res.analytics) : (res.analytics || {});
+
+  // 🎯 1. వేరియబుల్స్‌ని ఇక్కడ ముందే డిక్లేర్ చెయ్ రాజు!
+  // అప్పుడే ఇవి 'if' లోపల మరియు బయట కూడా పనిచేస్తాయి.
+  let dHits = 0;
+  let dOrders = 0;
+  let dPostOrders = 0;
+  let dCalls = 0;
+
+if (viewMode === "daily") {
+  const d = new Date(filterDate);
+  
+  // 1. సున్నా లేని కీ (కొత్తది): 15/5/2026
+  const key1 = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+  
+  // 2. సున్నా ఉన్న కీ (పాతది): 15/05/2026
+  const key2 = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+
+  const data1 = analyticsObj[key1] || {};
+  const data2 = analyticsObj[key2] || {};
+  
+  // 🎯 రెండింటినీ కలిపేయ్ రాజు, అప్పుడు పాతది + కొత్తది కనిపిస్తుంది
+  dHits = (data1.kitchen_entry || 0) + (data2.kitchen_entry || 0);
+  dOrders = (data1.pre_order_click || 0) + (data2.pre_order_click || 0);
+  dPostOrders = (data1.post_order_click || 0) + (data2.post_order_click || 0);
+  dCalls = (data1.call_click || 0) + (data2.call_click || 0);
+} else {
+    const stats = getRangeStats(res.analytics);
+    dHits = stats.hits;
+    dOrders = stats.orders;
+    dPostOrders = stats.postOrders;
+    dCalls = stats.calls;
+  }
+
+  return (
+    <tr key={res._id} className="hover:bg-blue-50/30 transition-all">
+      <td className="p-8">
+        <div className="flex items-center gap-4">
+          <img src={res.hotelImage || "https://via.placeholder.com/60"} className="w-12 h-12 rounded-xl object-cover" alt="" />
+          <div className="min-w-0">
+            <span className="font-black text-sm uppercase italic text-slate-800 block truncate">{res.name}</span>
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{res.collegeName}</span>
+          </div>
+        </div>
+      </td>
+      {/* 🎯 ఇప్పుడు ఇక్కడ dHits పక్కాగా కనిపిస్తుంది! */}
+      <td className="p-8 text-center font-black text-lg text-slate-900">{dHits}</td>
+      <td className="p-8 text-center font-black text-2xl text-blue-600">{dOrders}</td>
+      <td className="p-8 text-center font-black text-2xl text-emerald-600">{dPostOrders}</td>
+      <td className="p-8 text-center font-black text-2xl text-orange-600">{dCalls}</td>
+      <td className="p-8 text-right">
+        <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase italic ${dHits > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-400'}`}>
+          {dHits > 0 ? 'Live Node' : 'Idle'}
+        </div>
+      </td>
+    </tr>
+  );
+})}
                   </tbody>
                 </table>
               </div>
 
-              <div className="lg:hidden space-y-4">
-                {filteredList.map((res) => {
-                  const analyticsObj = res.analytics instanceof Map ? Object.fromEntries(res.analytics) : (res.analytics || {});
-                  let mHits, mOrders, mPostOrders, mCalls;
-                  if (viewMode === "daily") {
-                    const d = new Date(filterDate);
-                    const dayKey = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-                    const dayData = analyticsObj[dayKey] || {};
-                    mHits = dayData.kitchen_entry || 0; mOrders = dayData.pre_order_click || 0; mPostOrders = dayData.post_order_click || 0; mCalls = dayData.call_click || 0;
-                  } else {
-                    const stats = getRangeStats(res.analytics);
-                    mHits = stats.hits; mOrders = stats.orders; mPostOrders = stats.postOrders; mCalls = stats.calls;
-                  }
-                  return (
-                    <div key={res._id} className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-sm">
-                      <div className="flex items-center gap-4 mb-4">
-                        <img src={res.hotelImage || "https://via.placeholder.com/60"} className="w-12 h-12 rounded-xl object-cover" alt="" />
-                        <div className="min-w-0">
-                          <h4 className="font-black text-xs uppercase italic text-slate-800 truncate">{res.name}</h4>
-                          <span className="text-[7px] font-black text-blue-500 uppercase bg-blue-50 px-1.5 py-0.5 rounded-md">{res.collegeName}</span>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-4 gap-2">
-                        {[ {l:'Hits', v:mHits, c:'slate'}, {l:'Pre', v:mOrders, c:'blue'}, {l:'Post', v:mPostOrders, c:'emerald'}, {l:'Calls', v:mCalls, c:'orange'} ].map((s, idx)=>(
-                          <div key={idx} className={`bg-${s.c}-50 p-2 rounded-xl text-center border border-${s.c}-100`}>
-                            <p className={`text-[6px] font-black text-${s.c}-400 uppercase mb-0.5`}>{s.l}</p>
-                            <p className={`text-[11px] font-black text-${s.c}-600`}>{s.v}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+               <div className="lg:hidden space-y-4 px-2 pb-20">
+  {filteredList.map((res) => {
+    const analyticsObj = res.analytics instanceof Map ? Object.fromEntries(res.analytics) : (res.analytics || {});
+    let dHits = 0, dOrders = 0, dPostOrders = 0, dCalls = 0;
+
+    if (viewMode === "daily") {
+  const d = new Date(filterDate);
+  
+  // 🎯 1. సున్నా లేని కీ (ఉదా: 8/3/2026)
+  const dayKey = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+
+  // 🎯 2. డేటాబేస్ నుండి డేటాని పక్కాగా లాగే లాజిక్
+  let dayData = {};
+  
+  // ఒకవేళ అది Mongoose Map అయితే .get() వాడాలి
+  if (res.analytics instanceof Map) {
+    dayData = res.analytics.get(dayKey) || {};
+  } else {
+    // మామూలు ఆబ్జెక్ట్ అయితే ఇలా
+    dayData = analyticsObj[dayKey] || {};
+  }
+
+  // 🎯 3. ఒకవేళ డేటా లోపల '_doc' ఉంటే (Mongoose formatting issue) దాన్ని కూడా హ్యాండిల్ చేద్దాం
+  const finalData = dayData._doc || dayData;
+  
+  // 🎯 4. ఇప్పుడు వాల్యూస్ అసైన్ చెయ్
+  dHits = finalData.kitchen_entry || 0;
+  dOrders = finalData.pre_order_click || 0;
+  dPostOrders = finalData.post_order_click || 0;
+  dCalls = finalData.call_click || 0;
+} else {
+      const stats = getRangeStats(res.analytics);
+      dHits = stats.hits;
+      dOrders = stats.orders;
+      dPostOrders = stats.postOrders;
+      dCalls = stats.calls;
+    }
+
+    return (
+      <motion.div 
+        layout
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        key={res._id} 
+        className="bg-white p-5 rounded-[2.5rem] border border-slate-100 shadow-sm active:scale-[0.98] transition-all"
+      >
+        {/* Header: Logo + Name + Status */}
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <img 
+                src={res.hotelImage || "https://via.placeholder.com/60"} 
+                className="w-12 h-12 rounded-2xl object-cover border-2 border-slate-50" 
+                alt="" 
+              />
+              <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${dHits > 0 ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
+            </div>
+            <div className="min-w-0">
+              <h4 className="font-black text-[13px] uppercase italic text-slate-800 leading-tight truncate">{res.name}</h4>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">{res.collegeName}</p>
+            </div>
+          </div>
+          <div className={`px-3 py-1.5 rounded-xl text-[8px] font-black uppercase italic ${dHits > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-400'}`}>
+            {dHits > 0 ? 'Live' : 'Idle'}
+          </div>
+        </div>
+
+        {/* Analytics Grid: 4 Columns */}
+        <div className="grid grid-cols-4 gap-2">
+          {[
+            { label: 'Hits', val: dHits, color: 'slate', icon: Activity },
+            { label: 'Pre', val: dOrders, color: 'blue', icon: ShoppingBag },
+            { label: 'Post', val: dPostOrders, color: 'emerald', icon: UtensilsCrossed },
+            { label: 'Calls', val: dCalls, color: 'orange', icon: PhoneCall }
+          ].map((stat, idx) => (
+            <div key={idx} className={`bg-${stat.color}-50/50 p-3 rounded-2xl border border-${stat.color}-100/50 text-center`}>
+              <p className={`text-[7px] font-black text-${stat.color}-400 uppercase mb-1 tracking-tighter`}>{stat.label}</p>
+              <p className={`text-sm font-black text-${stat.color}-600 italic`}>{stat.val}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Bottom Quick Action (Optional) */}
+        <div className="mt-4 pt-4 border-t border-slate-50 flex justify-between items-center">
+           <span className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em]">Matrix Node v1.0</span>
+           <ChevronRight className="w-4 h-4 text-slate-200" />
+        </div>
+      </motion.div>
+    );
+  })}
+</div>
             </motion.div>
           )}
 

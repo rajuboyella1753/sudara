@@ -31,6 +31,7 @@ export default function RestaurantProfile() {
   const [showCallPopup, setShowCallPopup] = useState(false); // 🚀 Call instruction popup state
   const sudaraId = "SDR" + Math.floor(100 + Math.random() * 900);
   const [orderStatus, setOrderStatus] = useState(null);
+  const [placedOrderId, setPlacedOrderId] = useState(null);
   const availableSubCats = useMemo(() => {
   const defaultCats = ["Biryanis", "Starters", "Soups", "Noodles", "Gravys", "Rice", "Breads", "Sea Food", "Tiffins"];
   
@@ -52,7 +53,7 @@ const callTarget = owner?.phone || "";
 
   const trackFoodInterest = async (itemName) => {
     try {
-      const today = new Date().toLocaleDateString('en-GB'); 
+      const today = getTodayDate();
       await api.put(`/owner/track-analytics/${id}`, {
         action: "food_click",
         foodName: itemName,
@@ -92,7 +93,7 @@ const handleCallAction = () => {
 // 🚀 PRE-BOOK క్లిక్ ట్రాకింగ్
 const trackPreOrderClick = async () => {
   try {
-    const today = new Date().toLocaleDateString('en-GB'); // "DD/MM/YYYY"
+    const today = getUniversalDate(); // ✅ సున్నా లేని డేట్
     await api.put(`/owner/track-analytics/${id}`, { 
       action: "pre_order_click", 
       date: today 
@@ -103,7 +104,7 @@ const trackPreOrderClick = async () => {
 // 🚀 POST-BOOK (Instant) క్లిక్ ట్రాకింగ్
 const trackPostOrderClick = async () => {
   try {
-    const today = new Date().toLocaleDateString('en-GB');
+    const today = getUniversalDate(); // ✅ సున్నా లేని డేట్
     await api.put(`/owner/track-analytics/${id}`, { 
       action: "post_order_click", 
       date: today 
@@ -112,16 +113,13 @@ const trackPostOrderClick = async () => {
 };
 const proceedToCall = async () => {
   try {
-    const todayDate = new Date().toLocaleDateString('en-GB');
-    // 🎯 కాల్ క్లిక్ ని ట్రాక్ చేయడం
+    const todayDate = getUniversalDate(); // ✅ సున్నా లేని డేట్
     await api.put(`/owner/track-analytics/${id}`, { 
       action: "call_click", 
       date: todayDate 
     });
-  } catch (err) {
-    console.log("Call tracking failed");
-  } finally {
-    // ట్రాకింగ్ ఫెయిల్ అయినా సరే కాల్ వెళ్ళాలి, అందుకే finally లో పెట్టా
+  } catch (err) { console.log("Call tracking failed"); }
+  finally {
     setShowCallPopup(false);
     window.location.href = `tel:${owner?.phone}`;
   }
@@ -183,9 +181,11 @@ useEffect(() => {
   const fetchData = async () => {
     try {
       setLoading(true);
-
-      // 🎯 ఇక్కడ యాడ్ చెయ్ రాజు! పేజీ లోడ్ అవ్వగానే హిట్ కౌంట్ పెరుగుతుంది.
-      const todayDate = new Date().toLocaleDateString('en-GB');
+      const d = new Date();
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      const todayDate = getUniversalDate();
       api.put(`/owner/track-analytics/${id}`, { action: "kitchen_entry", date: todayDate });
 
       const [oRes, iRes] = await Promise.all([
@@ -194,6 +194,7 @@ useEffect(() => {
       ]);
       setOwner(oRes.data);
       setItems(iRes.data);
+
       const favorites = JSON.parse(localStorage.getItem("favRestaurants") || "[]");
       setIsFavorite(favorites.includes(id));
     } catch (err) {
@@ -212,7 +213,15 @@ useEffect(() => {
       [item._id]: { ...item, qty: (prev[item._id]?.qty || 0) + 1 }
     }));
   };
-
+  const getUniversalDate = () => {
+    const d = new Date();
+    return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+  };
+// 🎯 రాజు, ఈ ఒక్క ఫంక్షన్ ని ఫైల్ పైన యాడ్ చెయ్
+const getTodayDate = () => {
+  const d = new Date();
+  return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+};
   const removeFromCart = (item) => {
     setCart(prev => {
       const currentQty = prev[item._id]?.qty || 0;
@@ -228,20 +237,19 @@ useEffect(() => {
   const halfAmount = (totalAmount / 2).toFixed(2);
 
 const handleConfirmOrder = async () => {
-  // 1. ప్రాథమిక తనిఖీలు
   if (!orderData.name || !orderData.txId || !orderData.arrivalTime) {
-    return alert("Please fill details! 📝 (Name, Arrival Time, and Txn ID are required)");
+    return alert("Please fill details! 📝");
   }
 
   try {
     setLoading(true);
-
-    // 2. 6-డిజిట్ ఐడి జనరేషన్ (SDR + 3 Numbers)
     const sudaraId = "SDR" + Math.floor(100 + Math.random() * 900);
-
-    // 3. ఆర్డర్ డేటా ప్రిపరేషన్
     const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name}`);
-    const todayDate = new Date().toLocaleDateString('en-GB'); // DB Key: "14/05/2026"
+
+    // 🎯 రాజు, ఇక్కడ మార్చాను చూడు. షార్ట్‌కట్ లేకుండా మ్యాన్యువల్ డేట్!
+    const d = new Date();
+    const todayDate = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`; 
+    // ఇప్పుడు ఇది పక్కాగా "15/5/2026" అని ఇస్తుంది.
 
     const payload = {
       restaurantId: id,
@@ -253,23 +261,21 @@ const handleConfirmOrder = async () => {
       txnId: orderData.txId,
       arrivalTime: orderData.arrivalTime,
       orderType: "Pre-book",
-      sudaraId: sudaraId, // 🎯 కొత్తగా యాడ్ చేశాం
-      travelDuration: parseInt(orderData.arrivalTime), // 🎯 ట్రావెల్ టైమ్
+      sudaraId: sudaraId,
+      travelDuration: parseInt(orderData.arrivalTime),
       status: "Pending"
     };
 
-    // 4. API కాల్స్ - ఆర్డర్ సేవ్ మరియు అనలిటిక్స్ ట్రాకింగ్
     await Promise.all([
       api.post("/orders/add", payload),
       api.put(`/owner/track-analytics/${id}`, { 
         action: "pre_order_click", 
-        date: todayDate 
+        date: todayDate // ✅ ఇప్పుడు ఇది 15/5 లోనే స్టోర్ అవుతుంది
       })
     ]);
 
-    alert(`ORDER SYNCED! ✅\n\nYour Unique ID: ${sudaraId}\nPlease show this ID at the restaurant.`);
+    alert(`ORDER SYNCED! ✅\n\nYour Unique ID: ${sudaraId}`);
     
-    // 5. క్లీనప్
     setCart({});
     setShowOrderForm(false);
     setOrderData({ name: "", phone: "", txId: "", arrivalTime: "" });
@@ -319,14 +325,24 @@ const handleInstantOrder = async () => {
       tableNo: selectedTable,
       items: itemList,
       totalAmount: totalAmount,
-      orderType: "Post-book",
+      orderType: "Post-book", // 🎯 ఇది ఉండటం వల్ల బ్యాకెండ్ TAB ఐడి ఇస్తుంది
       status: "Pending"
     };
 
-    // 🚀 బ్యాకెండ్‌కి డేటా పంపిస్తున్నాం
-    await api.post("/orders/add", payload);
+    // 🚀 1. బ్యాకెండ్‌కి డేటా పంపిస్తున్నాం
+    const res = await api.post("/orders/add", payload);
 
-    alert("ORDER PLACED! 🍲 Sir/Madem your order has been sent to owner they will Bring it.");
+    // 🎯 2. ఇక్కడ మార్పు చేశాను రాజు! 
+    // బ్యాకెండ్ నుండి వచ్చిన sudaraId (Ex: TAB854) ని తీసుకుంటున్నాం
+    if (res.data && res.data.sudaraId) {
+      setPlacedOrderId(res.data.sudaraId); // ఈ ఐడిని స్క్రీన్ మీద చూపించడానికి సేవ్ చేస్తున్నాం
+      
+      alert(`ORDER PLACED! 🍲\nSir/Madam, Your Tracking ID: ${res.data.sudaraId}\nUse this to check your food status.`);
+    } else {
+      alert("ORDER PLACED! 🍲 Sir/Madam your order has been sent to owner.");
+    }
+
+    // 3. క్లీనప్ పాత లాజిక్ లాగే
     setCart({});
     setShowInstantModal(false);
   } catch (err) {
@@ -487,7 +503,13 @@ const handleInstantOrder = async () => {
       Check Status 🔍
     </button>
   </div>
-
+    {placedOrderId && (
+  <div className="mb-4 p-5 bg-emerald-50 border-2 border-emerald-100 rounded-[2rem] text-center">
+    <p className="text-[10px] font-black text-emerald-600 uppercase">Your Order ID</p>
+    <p className="text-2xl font-black text-slate-900 mt-1">{placedOrderId}</p>
+    <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase">Copy this ID to Track Status below</p>
+  </div>
+)}
   {/* స్టేటస్ రిజల్ట్ ఇక్కడ చూపిస్తాం */}
   {orderStatus && (
     <div className="mt-4 p-4 bg-blue-50 rounded-2xl border border-blue-100 text-center">
@@ -624,7 +646,14 @@ const handleInstantOrder = async () => {
   {/* ✨ NEW: Instant Order Button (Only for table dining) */}
   {owner?.tableCount > 0 && (
     <button 
-      onClick={() => totalAmount > 0 ? setShowInstantModal(true) : alert("Select items first! 🍲")}
+      onClick={() => {
+  if (totalAmount > 0) {
+    trackPostOrderClick();
+    setShowInstantModal(true);
+  } else {
+    alert("Select items first! 🍲");
+  }
+}}
       className={`w-full py-4 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 border-b-4 ${totalAmount > 0 ? 'bg-emerald-600 text-white border-emerald-800' : 'bg-slate-100 text-slate-300 border-slate-200'}`}
     >
       <MessageSquare className="w-4 h-4" /> Post-Book (At Restaurant)
@@ -634,7 +663,14 @@ const handleInstantOrder = async () => {
   {/* 💳 Pre-Book (For normal hotels - Hidden for specific 3 hotels) */}
   {owner?.name !== "Amaravathi Hotel" && owner?.name !== "Ruchi Hotel" && owner?.name !== "RR ROYAL RESTAURANT " && (
     <button 
-      onClick={() => totalAmount > 0 ? setShowPayWarning(true) : alert("Select items!")} 
+      onClick={() => {
+  if (totalAmount > 0) {
+    trackPreOrderClick(); 
+    setShowPayWarning(true);
+  } else {
+    alert("Select items!");
+  }
+}}
       className={`w-full py-3.5 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${totalAmount > 0 ? 'bg-slate-900 text-white shadow-lg active:scale-95' : 'bg-slate-100 text-slate-300'}`}
     >
       Pre-Book & Pay Advance

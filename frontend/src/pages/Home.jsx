@@ -119,21 +119,19 @@ const fetchOwners = async () => {
   useEffect(() => {
     let result = restaurants;
 
-    // 🚀 RAJU FIX: Safe Route Filtering
 if (isTravelMode && destination.trim() !== "") {
-    const destQuery = destination.toLowerCase();
-    const srcQuery = source.toLowerCase();
-    
-    result = result.filter(r => {
-        // ఇక్కడ మనం district మరియు address ఉన్నాయో లేదో చెక్ చేస్తున్నాం (Safe Check)
-        const dist = r.district?.toLowerCase() || "";
-        const addr = r.address?.toLowerCase() || "";
-        
-        return dist.includes(destQuery) || 
-               dist.includes(srcQuery) ||
-               addr.includes(destQuery);
-    });
-}
+      const destQuery = destination.trim().toLowerCase(); 
+      const srcQuery = source.trim().toLowerCase();
+      
+      result = result.filter(r => {
+          const dist = r.district?.toLowerCase() || "";
+          const addr = r.address?.toLowerCase() || "";
+          
+          return dist.includes(destQuery) || 
+                 dist.includes(srcQuery) ||
+                 addr.includes(destQuery);
+      });
+  }
 
     if (selectedState !== "All") {
       result = result.filter(r => 

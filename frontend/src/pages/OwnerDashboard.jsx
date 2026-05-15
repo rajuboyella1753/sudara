@@ -194,13 +194,15 @@ const fetchData = async (id) => {
     } catch (err) { alert("Status Update Failed"); }
   };
 const updateOrderStatus = async (orderId, newStatus) => {
+  // 🎯 ఒకవేళ పొరపాటున ఇక్కడ Served అని వస్తే, దాన్ని handleServed కి పంపేయాలి
+  if (newStatus === "Served") {
+    const order = orders.find(o => o._id === orderId);
+    return handleServed(order);
+  }
+
   try {
-    // ఇక్కడ నీ బ్యాకెండ్ రూట్ /orders/update-status/:id కి డేటా వెళ్తుంది
     await api.put(`/orders/update-status/${orderId}`, { status: newStatus });
-    
-    // అప్‌డేట్ అయ్యాక మళ్ళీ డేటా తెచ్చుకోవడానికి
-    fetchData(owner._id); 
-    alert(`Order ${newStatus} ! ✅`);
+    setOrders(prev => prev.map(o => o._id === orderId ? { ...o, status: newStatus } : o));
   } catch (err) {
     alert("Status update failed! ❌");
   }
@@ -209,48 +211,59 @@ const handleServed = async (orderObj) => {
   if (!window.confirm("Mark as Served? Amount will be added to your permanent Sales Matrix.")) return;
   
   const d = new Date();
-  const dKey = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+  const dayKey = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
 
-  // అమౌంట్ మరియు ఐటమ్ కౌంట్ అప్‌డేట్ చేసే ఆబ్జెక్ట్
-  const analyticsUpdate = {
-    [`analytics.${dKey}.daily_revenue`]: (owner.analytics?.[dKey]?.daily_revenue || 0) + orderObj.totalAmount,
-  };
-
-  // ఐటమ్స్ కౌంట్ పెంచడం (Trending Dish కోసం)
+  const foodUpdates = {};
   orderObj.items.forEach(itemString => {
-    // "1 X Chicken Biryani" నుండి పేరును మాత్రం తీసుకోవడం
-    const itemName = itemString.includes(' X ') ? itemString.split(' X ')[1] : itemString;
-    const currentCount = owner.analytics?.[dKey]?.food_clicks?.[itemName] || 0;
-    analyticsUpdate[`analytics.${dKey}.food_clicks.${itemName}`] = currentCount + 1;
+    const itemName = itemString.includes(' x ') ? itemString.split(' x ')[1] : itemString;
+    foodUpdates[`analytics.${dayKey}.food_clicks.${itemName}`] = 1;
   });
 
   try {
-    // 1. సేల్స్ డేటాని ఓనర్ అనలిటిక్స్ లో పర్మనెంట్ గా స్టోర్ చేయడం
-    await api.put(`/owner/update-profile/${owner._id}`, analyticsUpdate);
+    // 🚀 Step 1: Revenue & Food Clicks అప్‌డేట్ ($inc తో)
+    await api.put(`/owner/update-profile/${owner._id}`, {
+      $inc: { 
+        [`analytics.${dayKey}.daily_revenue`]: Number(orderObj.totalAmount),
+        ...foodUpdates
+      }
+    });
 
-    // 2. లైవ్ ఫీడ్ నుండి ఆర్డర్ ని డిలీట్ చేయడం
-    await api.delete(`/orders/delete/${orderObj._id}`);
+    // 🚀 Step 2: Order Status ని 'Served' గా మార్చడం
+    await api.put(`/orders/update-status/${orderObj._id}`, { status: "Served" });
     
-    // UI రిఫ్రెష్
+    // 🚀 Step 3: UI నుండి కార్డుని తీసేయడం
     setOrders(prev => prev.filter(o => o._id !== orderObj._id));
-    fetchData(owner._id); 
-    alert("Order Completed & Sales Logged! ✅");
+    
+    // 🚀 Step 4: లేటెస్ట్ రెవెన్యూ నంబర్ కోసం మళ్ళీ డేటా ఫెచ్ చేయడం
+    await fetchData(owner._id); 
+    
+    alert("Sales Logged & Order Completed! ✅");
   } catch (err) { 
-    // console.error(err);
-    alert("Action failed, please try again."); 
+    console.error("Served Error:", err);
+    alert("Action failed! Check Console."); 
   }
 };
-// ఫిల్టర్ లాజిక్ లో ఇది యాడ్ చెయ్ రాజు
+
 const filteredOrders = useMemo(() => {
   return orders.filter(order => {
-    const s = searchTerm.toLowerCase();
-    const nameMatch = order.customerName?.toLowerCase().includes(s);
-    const txnMatch = order.txnId?.toLowerCase().includes(s);
-    const typeMatch = order.orderType?.toLowerCase().includes(s);
-    const idMatch = (order.sudaraId || "").toLowerCase().includes(s);
+    // 1. సెర్చ్ టర్మ్ ని క్లీన్ చేస్తున్నాం (స్పేస్ లు తీసేసి చిన్న అక్షరాల్లోకి మారుస్తాం)
+    const s = searchTerm.toLowerCase().trim();
+
+    // 2. ప్రతి ఫీల్డ్ ని సేఫ్ గా చెక్ చేస్తున్నాం (ఒకవేళ డేటా లేకపోయినా ఎర్రర్ రాకుండా)
+    const nameMatch = (order.customerName || "").toLowerCase().includes(s);
+    const txnMatch = (order.txnId || "").toLowerCase().includes(s);
+    
+    // 🎯 నువ్వు అడిగిన టైప్ మ్యాచ్ (Pre-book / Post-book అని సెర్చ్ చేయడానికి)
+    const typeMatch = (order.orderType || "").toLowerCase().includes(s);
+    
+    // 🎯 SDR / TAB ఐడి కోసం సెర్చ్ లాజిక్
+    const idMatch = (order.sudaraId || "").toLowerCase().includes(s); 
+
+    // 3. ఇందులో ఏ ఒక్కటి మ్యాచ్ అయినా ఆ ఆర్డర్ కార్డు కనిపిస్తుంది
     return nameMatch || txnMatch || typeMatch || idMatch;
   });
 }, [orders, searchTerm]);
+
   const handleSubmitItem = async (e) => {
     e.preventDefault();
     const finalSub = form.subCategory === "Others" ? customSub : form.subCategory;
@@ -459,9 +472,34 @@ const downloadQRCode = () => {
             </div>
             {/* Tab Navigation Integration */}
             <div className="hidden md:flex items-center gap-6 border-l ml-6 pl-6">
-              <button onClick={() => setActiveTab("dashboard")} className={`text-[10px] font-black uppercase italic transition-all ${activeTab === "dashboard" ? "text-blue-600 border-b-2 border-blue-600" : "text-slate-400"}`}>Menu</button>
-              <button onClick={() => setActiveTab("live-orders")} className={`text-[10px] font-black uppercase italic transition-all ${activeTab === "live-orders" ? "text-orange-600 border-b-2 border-orange-600" : "text-slate-400"}`}>Orders ({orders.length})</button>
-              <button onClick={() => setActiveTab("sales-report")} className={`text-[10px] font-black uppercase italic transition-all ${activeTab === "sales-report" ? "text-emerald-600 border-b-2 border-emerald-600" : "text-slate-400"}`}>Sales</button>
+           <button 
+    onClick={() => setActiveTab("dashboard")} 
+    className={`text-[10px] font-black uppercase italic transition-all pb-1 ${activeTab === "dashboard" ? "text-blue-600 border-b-2 border-blue-600" : "text-slate-400 hover:text-slate-600"}`}
+  >
+    Menu
+  </button>
+
+  {/* Orders Tab */}
+  <button 
+    onClick={() => setActiveTab("live-orders")} 
+    className={`text-[10px] font-black uppercase italic transition-all pb-1 ${activeTab === "live-orders" ? "text-orange-600 border-b-2 border-orange-600" : "text-slate-400 hover:text-slate-600"}`}
+  >
+    Orders ({orders.length})
+  </button>
+
+  {/* Sales Tab */}
+  <button 
+    onClick={() => setActiveTab("sales-report")} 
+    className={`text-[10px] font-black uppercase italic transition-all pb-1 ${activeTab === "sales-report" ? "text-emerald-600 border-b-2 border-emerald-600" : "text-slate-400 hover:text-slate-600"}`}
+  >
+    Sales
+  </button>
+  <button 
+    onClick={() => setActiveTab("profile")} 
+    className={`text-[10px] font-black uppercase italic transition-all pb-1 ${activeTab === "profile" ? "text-purple-600 border-b-2 border-purple-600" : "text-slate-400 hover:text-slate-600"}`}
+  >
+    Login Details
+  </button>
             </div>
         </div>
         <div className="flex items-center gap-2">
@@ -608,6 +646,17 @@ const downloadQRCode = () => {
     <p className="font-black uppercase italic text-lg text-slate-900 leading-tight">
       {order.customerName}
     </p>
+    {order.sudaraId && (
+    <div className="mt-1 flex gap-2 items-center">
+      <span className="bg-blue-100 text-blue-800 text-[9px] font-black px-2 py-0.5 rounded border border-blue-200 uppercase italic">
+        ID: {order.sudaraId}
+      </span>
+      {/* ఆర్డర్ టైప్ ని బట్టి చిన్న ట్యాగ్ */}
+      <span className="text-[8px] font-bold text-slate-400 uppercase italic">
+        ({order.orderType})
+      </span>
+    </div>
+  )}
     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
       {new Date(order.createdAt).toLocaleTimeString()}
     </p>
@@ -665,46 +714,44 @@ const downloadQRCode = () => {
               )}
             </div>
 
-            {/* ✅ అమౌంట్ మరియు స్టేటస్ బటన్లు */}
-<div className="pt-4 border-t border-slate-50">
-  <div className="flex items-center justify-between mb-4">
+{/* 🎯 రాజు, ఇక్కడ అమౌంట్ పక్కన ఉన్న పాత బటన్ తీసేసి ఈ కొత్త సెక్షన్ పెట్టు */}
+<div className="pt-4 border-t border-slate-50 flex flex-col gap-4">
+  
+  <div className="flex items-center justify-between">
     <div>
       <p className="text-[10px] font-black text-slate-400 uppercase leading-none">Total Amount</p>
       <p className="text-2xl font-black text-slate-900 mt-1 tracking-tighter">₹{order.totalAmount}</p>
     </div>
-    {/* ప్రస్తుత స్టేటస్ చూపించడానికి ఒక బ్యాడ్జ్ */}
-    <div className="text-[9px] font-black uppercase px-3 py-1 bg-slate-100 rounded-lg text-slate-500 italic">
-      Status: {order.status || 'Pending'}
+    {/* స్టేటస్ ని బట్టి రంగు మారుతుంది */}
+    <div className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase italic ${order.status === 'Preparing' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
+      {order.status || 'Pending'}
     </div>
   </div>
 
-  {/* 🚀 ఓనర్ యాక్షన్ బటన్లు */}
   <div className="flex gap-2">
-    {/* 1. Accept బటన్ */}
     <button 
       onClick={() => updateOrderStatus(order._id, "Accepted")}
-      className="flex-1 py-3 bg-blue-100 text-blue-600 rounded-xl text-[9px] font-black uppercase italic active:scale-95 transition-all"
+      className="flex-1 py-3 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-md active:scale-95 transition-all"
     >
       Accept
     </button>
 
-    {/* 2. Preparing బటన్ */}
     <button 
       onClick={() => updateOrderStatus(order._id, "Preparing")}
-      className="flex-1 py-3 bg-orange-100 text-orange-600 rounded-xl text-[9px] font-black uppercase italic active:scale-95 transition-all"
+      className="flex-1 py-3 bg-orange-500 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-md active:scale-95 transition-all"
     >
       Preparing
     </button>
 
-    {/* 3. Served బటన్ (ఇది ఆర్డర్ ని క్లియర్ చేస్తుంది) */}
     <button 
-      onClick={() => handleServed(order)} 
-      className="flex-1 py-3 bg-emerald-500 text-white rounded-xl text-[9px] font-black uppercase italic shadow-lg shadow-emerald-100 active:scale-95 transition-all"
-    >
-      Served ✅
-    </button>
+  onClick={() => handleServed(order)}
+  className="flex-1 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-lg active:scale-95 transition-all"
+>
+  Served ✅
+</button>
   </div>
 </div>
+
           </div>
         ))
       )}
@@ -712,7 +759,76 @@ const downloadQRCode = () => {
     </div>
   </motion.div>
 )}
+{/* PAGE 4: OWNER PROFILE DETAILS */}
+{activeTab === "profile" && (
+  <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in zoom-in duration-500">
+    <h2 className="text-4xl font-black italic uppercase text-slate-900">
+      Owner<br/><span className="text-purple-600">Profile Matrix</span>
+    </h2>
 
+    <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-xl space-y-6 relative overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute -top-10 -right-10 w-32 h-32 bg-purple-50 rounded-full blur-3xl"></div>
+
+      {/* Profile Image & Name */}
+      <div className="flex flex-col items-center gap-4 border-b pb-6">
+        <img 
+          src={owner?.hotelImage || "https://via.placeholder.com/150"} 
+          className="w-24 h-24 rounded-[2rem] object-cover border-4 border-purple-50 shadow-lg" 
+          alt="Owner"
+        />
+        <div className="text-center">
+          <h3 className="text-2xl font-black uppercase italic text-slate-900">{owner?.name}</h3>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Registered Owner</p>
+        </div>
+      </div>
+
+      {/* Credential Fields */}
+      <div className="space-y-4">
+        {/* Email Field */}
+        <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+          <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Registered Email</p>
+          <p className="font-bold text-slate-700">{owner?.email}</p>
+        </div>
+
+        {/* Password Field - ఇక్కడ ఒక చిన్న ట్రిక్! */}
+        <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 relative group">
+          <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Secret Access Key (Password)</p>
+          <div className="flex justify-between items-center">
+             <p className="font-bold text-slate-700 tracking-tighter">
+               {/* పాస్‌వర్డ్ ని డైరెక్ట్ గా చూపించకుండా ఇలా పెడితే బాగుంటుంది రాజు */}
+               ••••••••••••
+             </p>
+             <button 
+               onClick={() => alert(`నీ పాస్‌వర్డ్: ${owner?.password}`)}
+               className="text-[9px] font-black uppercase text-purple-600 bg-purple-50 px-3 py-1 rounded-lg hover:bg-purple-100 transition-all"
+             >
+               See Password
+             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-2 gap-4 pt-4">
+        <div className="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
+          <p className="text-[8px] font-black text-slate-400 uppercase">Category</p>
+          <p className="text-xs font-black uppercase italic text-slate-700">{owner?.category || 'General'}</p>
+        </div>
+        <div className="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
+          <p className="text-[8px] font-black text-slate-400 uppercase">Status</p>
+          <p className="text-xs font-black uppercase italic text-emerald-600">Active Node</p>
+        </div>
+      </div>
+    </div>
+
+    {/* Security Note */}
+    <div className="bg-purple-50 p-6 rounded-[2rem] border border-purple-100 flex items-center gap-4 text-purple-700">
+      <ShieldCheck className="w-6 h-6 shrink-0" />
+      <p className="text-[10px] font-black uppercase italic">Protocol: Keep your credentials confidential. SUDARA never asks for passwords via call.</p>
+    </div>
+  </div>
+)}
         {/* PAGE 3: SALES REPORT */}
 {activeTab === "sales-report" && (
    <div className="space-y-8 animate-in slide-in-from-bottom duration-500">
@@ -721,20 +837,32 @@ const downloadQRCode = () => {
       {/* ఇక్కడ నుండి రీప్లేస్ చెయ్ రాజు 👇 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
-        {/* 1. రెవెన్యూ బాక్స్ */}
-        <div className="bg-slate-900 p-10 rounded-[3rem] text-white shadow-2xl relative overflow-hidden">
+{/* 1. రెవెన్యూ బాక్స్ */}
+<div className="bg-slate-900 p-10 rounded-[3rem] text-white shadow-2xl relative overflow-hidden">
   <p className="text-[10px] font-black uppercase opacity-40 mb-2 italic tracking-widest">Revenue (Today)</p>
   <p className="text-6xl font-black italic tracking-tighter text-emerald-400">
     ₹{(() => {
       const d = new Date();
-      const dayKey = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+      const k1 = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+      const k2 = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+
+      const analytics = owner?.analytics || {};
       
-      // 🚀 ఇక్కడ మ్యాజిక్: ఆబ్జెక్ట్ అయితే డైరెక్ట్ చూస్తుంది, మ్యాప్ అయితే .get() చేస్తుంది
-      const dayData = owner?.analytics instanceof Map 
-        ? owner.analytics.get(dayKey) 
-        : owner?.analytics?.[dayKey];
-        
-      return dayData?.daily_revenue || 0;
+      // 🚀 రాజు, ఇక్కడ మ్యాప్ ని ఆబ్జెక్ట్ గా మారుస్తున్నాం
+      const dataObj = analytics instanceof Map ? Object.fromEntries(analytics) : analytics;
+      
+      const dayData = dataObj[k1] || dataObj[k2] || {};
+      const final = dayData._doc || dayData;
+
+      // 🎯 కన్సోల్ లో ప్రింట్ చేస్తున్నాం రాజు, Inspect లో చూడు!
+      console.log("--- SUDARA DEBUG ---");
+      console.log("Trying Keys:", { k1, k2 });
+      console.log("Full Analytics Object:", dataObj);
+      console.log("Found Data for Today:", final);
+      console.log("Daily Revenue Value:", final?.daily_revenue);
+      console.log("--------------------");
+
+      return Number(final?.daily_revenue || 0);
     })()}
   </p>
   <BarChart3 className="absolute -right-6 -bottom-6 w-32 h-32 text-white/5 -rotate-12" />
@@ -786,6 +914,12 @@ const downloadQRCode = () => {
                 <button onClick={() => { setActiveTab("dashboard"); setIsMenuOpen(false); }} className={`p-4 rounded-2xl font-bold uppercase italic text-xs flex items-center gap-4 ${activeTab === 'dashboard' ? 'bg-blue-50 text-blue-600' : 'bg-slate-50'}`}><UtensilsCrossed className="w-5 h-5" /> Menu Management</button>
                 <button onClick={() => { setActiveTab("live-orders"); setIsMenuOpen(false); }} className={`p-4 rounded-2xl font-bold uppercase italic text-xs flex items-center gap-4 ${activeTab === 'live-orders' ? 'bg-orange-50 text-orange-600' : 'bg-slate-50'}`}><Bell className="w-5 h-5" /> Live Orders</button>
                 <button onClick={() => { setActiveTab("sales-report"); setIsMenuOpen(false); }} className={`p-4 rounded-2xl font-bold uppercase italic text-xs flex items-center gap-4 ${activeTab === 'sales-report' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50'}`}><BarChart3 className="w-5 h-5" /> Sales Report</button>
+                <button 
+  onClick={() => { setActiveTab("profile"); setIsMenuOpen(false); }} 
+  className={`p-4 rounded-2xl font-bold uppercase italic text-xs flex items-center gap-4 transition-all ${activeTab === 'profile' ? 'bg-purple-50 text-purple-600 shadow-sm' : 'bg-slate-50 text-slate-600'}`}
+>
+  <Settings className="w-5 h-5" /> Login Details
+</button>
                 <hr className="my-4" />
                 <button onClick={() => { setIsMenuOpen(false); setIsShowingMatrix(true); }} className="flex items-center gap-4 p-4 rounded-2xl bg-blue-50 text-blue-600 font-bold uppercase italic text-xs"><BarChart3 className="w-5 h-5" /> Analytics Matrix</button>
                 <button onClick={() => { setIsMenuOpen(false); setIsEditingProfile(true); }} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 text-slate-800 font-bold uppercase italic text-xs border border-slate-100"><Settings className="w-5 h-5" /> Hub Settings</button>

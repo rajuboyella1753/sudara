@@ -7,27 +7,33 @@ router.post('/add', async (req, res) => {
   try {
     const orderData = { ...req.body };
 
-    // 💡 'Express-Route' అయితే మాత్రమే ఈ స్పెషల్ లాజిక్ రన్ అవుతుంది
+    // 1. పాత Express-Route లాజిక్ (అలాగే ఉంచుతున్నాం)
     if (orderData.orderType === 'Express-Route') {
-      // 1. 6-Digit Sudara ID జనరేట్ చేయడం
-      orderData.sudaraId = "SDR" + crypto.randomInt(100, 999);
+      orderData.sudaraId = "SDR" + Math.floor(100 + Math.random() * 900);
 
-      // 2. వంట మొదలుపెట్టాల్సిన టైమ్ లెక్కించడం
       const startTime = new Date();
       const waitMinutes = (orderData.travelDuration || 0) - (orderData.prepTime || 20);
       startTime.setMinutes(startTime.getMinutes() + (waitMinutes > 0 ? waitMinutes : 0));
       orderData.scheduledStartTime = startTime;
     }
 
+    // 🎯 2. ఇక్కడ మార్పు: ఒకవేళ sudaraId ఇంకా జనరేట్ అవ్వకపోతే (Pre-book/Post-book కోసం)
+    // ఇది నీ పాత లాజిక్ కింద యాడ్ చెయ్ రాజు
+    if (!orderData.sudaraId) {
+      // Post-book అయితే TAB అని, మిగతా వాటికి SDR అని ఐడి వస్తుంది
+      const prefix = orderData.orderType === 'Post-book' ? "TAB" : "SDR";
+      orderData.sudaraId = prefix + Math.floor(100 + Math.random() * 900);
+    }
+
+    // 3. ఆర్డర్ సేవ్ చేయడం
     const newOrder = new Order(orderData);
     const savedOrder = await newOrder.save();
     
+    // 4. సాకెట్ నోటిఫికేషన్ (పాత కోడ్ లాగే)
     const io = req.app.get("socketio"); 
     if (io) {
       const targetId = (savedOrder.restaurantId || savedOrder.ownerId).toString();
       console.log("📢 Sending order to room:", targetId);
-      
-      // సాకెట్ ద్వారా డేటా పంపేటప్పుడు sudaraId కూడా వెళ్తుంది
       io.to(targetId).emit("new_order_received", savedOrder);
     }
     
@@ -79,32 +85,51 @@ router.get('/restaurant/:id', async (req, res) => {
     res.status(500).json(err);
   }
 });
+// 🎯 ఓనర్ స్టేటస్ అప్‌డేట్ రూట్ - ఇక్కడ మార్పు చెయ్ రాజు
 router.put("/update-status/:id", async (req, res) => {
-    await Order.findByIdAndUpdate(req.params.id, { status: req.body.status });
-    res.json({ message: "Status Updated" });
+  try {
+    const { status } = req.body;
+    
+    // 💡 ఒకవేళ స్టేటస్ 'Served' కాకపోతే (Accepted/Preparing అయితే)
+    if (status !== "Served") {
+      await Order.findByIdAndUpdate(req.params.id, { status });
+      return res.json({ message: "Status Updated to " + status });
+    }
+
+    // 🎯 స్టేటస్ 'Served' అయితే - సేల్స్ కి యాడ్ చేసి డిలీట్ చేయాలి
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ error: "Order Not Found" });
+
+    // నోట్: ఇక్కడ మనం ఆర్డర్ ని డిలీట్ చేస్తున్నాం. 
+    // కానీ అమౌంట్ ని సేల్స్ మ్యాట్రిక్స్ లోకి పంపే బాధ్యత ఫ్రంటెండ్ లోని 'handleServed' కి ఇచ్చాం.
+    // బ్యాకెండ్ లో కేవలం డిలీట్ చేస్తే చాలు.
+    await Order.findByIdAndDelete(req.params.id);
+    res.json({ message: "Order Served & Removed from Live Feed" });
+
+  } catch (err) {
+    res.status(500).json({ error: "Update Failed" });
+  }
 });
 
-// 2. ఐడి ద్వారా ఆర్డర్ వివరాలు (Customer side)
-router.get("/status/:sdrId", async (req, res) => {
-    const order = await Order.findOne({ sudaraId: req.params.sdrId });
-    if (!order) return res.status(404).json({ message: "Order not found" });
-    res.json(order);
-});
-// orderRoutes.js లో యాడ్ చెయ్ రాజు
-router.delete("/delete/:id", async (req, res) => {
-    await Order.findByIdAndDelete(req.params.id);
-    res.json({ message: "Order Deleted" });
-});
-// SDR ID ద్వారా స్టేటస్ ని పంపే API
 router.get("/status/:sdrId", async (req, res) => {
   try {
-    const order = await Order.findOne({ sudaraId: req.params.sdrId });
-    if (!order) return res.status(404).json({ message: "Not Found" });
+    // SDR158 లేదా TAB123 ఏదైనా సరే ఇక్కడ వెతుకుతుంది
+    const order = await Order.findOne({ sudaraId: req.params.sdrId.toUpperCase() });
     
-    // కేవలం స్టేటస్ మాత్రమే పంపిస్తున్నాం
-    res.json({ status: order.status }); 
+    if (!order) {
+      return res.status(404).json({ message: "Order not found or already Served!" });
+    }
+
+    // కస్టమర్ కి కావాల్సిన ముఖ్యంమైన వివరాలు మాత్రమే పంపిస్తున్నాం
+    res.json({ 
+      customerName: order.customerName,
+      status: order.status,
+      items: order.items,
+      totalAmount: order.totalAmount
+    }); 
   } catch (err) {
     res.status(500).json({ error: "Server Error" });
   }
 });
-export default router; // ESM ఎక్స్‌పోర్ట్
+
+export default router; 

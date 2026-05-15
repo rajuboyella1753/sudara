@@ -52,19 +52,18 @@ const ownerSchema = new mongoose.Schema(
       },
     ],
 
-    // ✅ అనలిటిక్స్ ఫీల్డ్
     analytics: {
-      type: Map,
-      of: {
-        kitchen_entry: { type: Number, default: 0 },
-        pre_order_click: { type: Number, default: 0 },
-        post_order_click: { type: Number, default: 0 },
-        call_click: { type: Number, default: 0 },
-        daily_revenue: { type: Number, default: 0 },
-        food_clicks: { type: Map, of: Number } 
-      },
-      default: {},
-    },
+  type: Map,
+  of: new mongoose.Schema({
+    kitchen_entry: { type: Number, default: 0 },
+    pre_order_click: { type: Number, default: 0 },
+    post_order_click: { type: Number, default: 0 },
+    call_click: { type: Number, default: 0 },
+    daily_revenue: { type: Number, default: 0 },
+    food_clicks: { type: Map, of: Number }
+  }, { _id: false }), // ఇక్కడ _id: false పెడితే ప్రతి డేట్ కి ఐడి రాకుండా క్లీన్ గా ఉంటుంది
+  default: {}
+},
     fcmTokens: { type: [String], default: [] },
   },
   { timestamps: true }
