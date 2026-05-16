@@ -500,8 +500,12 @@ const downloadQRCode = () => {
   >
     Login Details
   </button>
+
+  
+  
             </div>
         </div>
+
         <div className="flex items-center gap-2">
             <button onClick={() => setIsShowingMatrix(true)} className="hidden lg:flex items-center gap-2 px-4 py-2 font-black uppercase italic text-[9px] text-blue-600"><BarChart3 className="w-4 h-4" /> Matrix</button>
             <button onClick={() => setIsEditingProfile(true)} className="hidden lg:flex items-center gap-2 px-4 py-2 font-black uppercase italic text-[9px] text-slate-600"><Settings className="w-4 h-4" /> Settings</button>
@@ -766,6 +770,197 @@ const downloadQRCode = () => {
       Owner<br/><span className="text-purple-600">Profile Matrix</span>
     </h2>
 
+<div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-[2.5rem] p-6 md:p-8 border border-slate-700/50 shadow-2xl relative overflow-hidden w-full">
+      {/* Background Ambient Glows */}
+      <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-48 h-48 bg-orange-500/5 rounded-full blur-2xl pointer-events-none" />
+
+      <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
+        <div className="flex flex-col sm:flex-row items-start gap-4">
+          <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-400 border border-blue-500/20 shadow-lg shrink-0 mx-auto sm:mx-0">
+            <span className="text-xl">🛡️</span>
+          </div>
+          <div className="text-center sm:text-left">
+            <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
+              <h4 className="text-base md:text-lg font-black text-white uppercase tracking-tight italic">Sudara Trust & Verification</h4>
+              <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-black uppercase px-2 py-0.5 rounded-md tracking-widest">Active</span>
+            </div>
+            <p className="text-slate-400 text-[11px] md:text-xs mt-1 max-w-2xl font-medium leading-relaxed uppercase tracking-wider">
+              Your establishment is officially verified within the Sudara Network. Download your official partner certificate to enhance merchant credibility and showcase community trust.
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+onClick={() => {
+  try {
+    console.log("--- 🚀 SUDARA PREMIUM FRONTEND CERTIFICATE GENERATION ---");
+    
+    // 1. ఓనర్ డేటా వేరియబుల్స్ (డైనమిక్)
+    const name = owner?.name || "SUDARA PARTNER";
+    const district = owner?.district || "LOCAL";
+    const state = owner?.state || "ANDHRA PRADESH";
+    
+    const certificateId = `SUDARA-2026-${(owner?._id || "HUBSOT").toString().slice(-6).toUpperCase()}`;
+    const issueDate = owner?.createdAt ? new Date(owner.createdAt).toLocaleDateString('en-IN', {
+      day: '2-digit', month: 'long', year: 'numeric'
+    }) : new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    // 2. రాయల్ గోల్డ్ & బ్లూ మిక్స్డ్ ప్రొఫెషనల్ HTML డిజైన్
+    const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Montserrat:wght@400;600;800&display=swap');
+        
+        @page { size: A4 landscape; margin: 0; }
+        body { margin: 0; padding: 0; font-family: 'Montserrat', sans-serif; color: #0f172a; background: #ffffff; -webkit-print-color-adjust: exact; }
+        
+        /* మెయిన్ కంటైనర్ & రాయల్ బోర్డర్ */
+        .container { width: 297mm; height: 210mm; padding: 14mm; box-sizing: border-box; position: relative; background: #ffffff; }
+        .outer-border { width: 269mm; height: 182mm; border: 4px solid #1e3a8a; padding: 4mm; box-sizing: border-box; position: relative; }
+        .inner-border { width: 100%; height: 100%; border: 2px solid #b45309; padding: 12mm; box-sizing: border-box; position: relative; text-align: center; background: #fafaf9; }
+        
+        /* కార్నర్ డెకరేషన్స్ */
+        .corner { position: absolute; width: 16px; height: 16px; border: 4px solid #b45309; }
+        .top-left { top: -4px; left: -4px; border-right: none; border-bottom: none; }
+        .top-right { top: -4px; right: -4px; border-left: none; border-bottom: none; }
+        .bottom-left { bottom: -4px; left: -4px; border-right: none; border-top: none; }
+        .bottom-right { bottom: -4px; right: -4px; border-left: none; border-top: none; }
+        
+        /* బ్రాండింగ్ హెడర్ */
+        .header .title { font-family: 'Cinzel', serif; font-size: 34pt; font-weight: 800; letter-spacing: 0.12em; color: #1e3a8a; text-transform: uppercase; margin: 0; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
+        .header .subtitle { font-family: 'Montserrat', sans-serif; font-size: 8.5pt; font-weight: 800; letter-spacing: 0.45em; color: #b45309; text-transform: uppercase; margin: 3mm 0 0 0; }
+        
+        .cert-label { font-family: 'Montserrat', sans-serif; font-size: 11pt; font-weight: 800; letter-spacing: 0.3em; color: #64748b; text-transform: uppercase; margin-top: 8mm; }
+        .present { font-size: 12pt; font-style: italic; color: #475569; margin-top: 3mm; font-family: 'Georgia', serif; }
+        
+        /* ప్రొఫెషనల్ హబ్ నేమ్ */
+        .hub-name { font-family: 'Cinzel', serif; font-size: 26pt; font-weight: 800; color: #1e1b4b; margin: 4mm auto; border-bottom: 2px dashed #cbd5e1; display: inline-block; padding-bottom: 2mm; min-width: 170mm; }
+        
+        .location { font-family: 'Montserrat', sans-serif; font-size: 9.5pt; font-weight: 700; color: #475569; text-transform: uppercase; tracking: 0.05em; margin-top: 1mm; }
+        .location span { color: #1e3a8a; font-weight: 800; }
+        
+        /* లీగల్ టెక్స్ట్ */
+        .desc { font-family: 'Montserrat', sans-serif; font-size: 10.5pt; line-height: 1.6; color: #334155; max-width: 215mm; margin: 6mm auto 0 auto; text-align: center; font-weight: 500; }
+        
+        /* ఫుటర్ ఏరియా */
+        .footer { position: absolute; bottom: 12mm; width: 90%; left: 5%; }
+        .meta { float: left; text-align: left; font-family: 'Montserrat', sans-serif; font-size: 8.5pt; color: #475569; line-height: 1.6; font-weight: 600; }
+        .meta strong { color: #0f172a; }
+        
+        .badge { display: inline-block; text-align: center; margin-top: -4mm; }
+        .badge-icon { font-size: 32pt; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.1)); }
+        .badge-text { font-family: 'Montserrat', sans-serif; font-size: 7.5pt; font-weight: 800; color: #1e3a8a; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 1mm; }
+        
+        .sig-block { float: right; text-align: right; }
+        .sig-stamp { font-family: 'Courier New', monospace; font-size: 13pt; font-weight: 900; color: #16a34a; margin-bottom: 1mm; font-style: italic; letter-spacing: -0.5px; background: rgba(22, 163, 74, 0.08); padding: 2px 8px; border: 1.5px dashed #16a34a; border-radius: 4px; display: inline-block; transform: rotate(-2deg); }
+        .sig-line { width: 52mm; border-top: 1.5px solid #475569; margin: 3mm 0 2mm auto; }
+        .sig-text { font-family: 'Montserrat', sans-serif; font-size: 8pt; color: #475569; line-height: 1.4; font-weight: 600; }
+        .sig-text strong { color: #0f172a; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="outer-border">
+          <div class="inner-border">
+            <div class="corner top-left"></div>
+            <div class="corner top-right"></div>
+            <div class="corner bottom-left"></div>
+            <div class="corner bottom-right"></div>
+
+            <div class="header">
+              <div class="title">Sudara Hub</div>
+              <div class="subtitle">Hyperlocal Discovery Network</div>
+            </div>
+            
+            <div class="cert-label">Certificate of Excellence</div>
+            <div class="present">This establishment is officially recognized and verified as an elite partner</div>
+            
+            <div class="hub-name">${name}</div>
+            <div class="location">Region: <span>${district} District, ${state}</span></div>
+            
+            <div class="desc">
+              This verification certifies that the aforementioned establishment has successfully integrated into the Sudara Network ecosystem. It has demonstrated unwavering compliance with premium quality benchmarks, live matrix synchronization protocols, real-time catalog accuracy, and local neighborhood dining service excellence.
+            </div>
+            
+            <div class="footer">
+              <div class="meta">
+                <div style="width: 48mm; border-top: 1.5px solid #64748b; margin-bottom: 2.5mm;"></div>
+                <strong>Certificate ID:</strong> ${certificateId}<br>
+                <strong>Issue Date:</strong> ${issueDate}<br>
+                <strong>Status:</strong> Active & Verified
+              </div>
+              
+              <div class="badge">
+                <div class="badge-icon">🛡️</div>
+                <div class="badge-text">Verified Partner</div>
+              </div>
+              
+              <div class="sig-block">
+                <div class="sig-stamp">✓ OVT_Verified</div>
+                <div class="sig-line"></div>
+                <div class="sig-text">
+                  <strong>Owner Verifying Team (OVT)</strong><br>
+                  Sudara Trust & Safety Compliance
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
+    </html>
+    `;
+
+    // 3. ఐఫ్రేమ్ మెకానిజం ద్వారా పక్కాగా ప్రింట్ చేయడం
+    const oldFrame = document.getElementById('sudara-cert-iframe');
+    if (oldFrame) oldFrame.remove();
+
+    const iframe = document.createElement('iframe');
+    iframe.id = 'sudara-cert-iframe';
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '1px'; 
+    iframe.style.height = '1px';
+    iframe.style.border = 'none';
+    
+    document.body.appendChild(iframe);
+
+    const iframeDoc = iframe.contentWindow.document || iframe.contentDocument;
+    iframeDoc.open();
+    iframeDoc.write(htmlContent); 
+    iframeDoc.close();
+
+    const checkAndPrint = () => {
+      const isContentReady = iframeDoc.body && iframeDoc.body.innerHTML.trim().length > 0;
+      if (isContentReady) {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      } else {
+        setTimeout(checkAndPrint, 50);
+      }
+    };
+
+    checkAndPrint();
+
+  } catch (err) {
+    console.error(err);
+    alert("Something went wrong with local generation, Raju!");
+  }
+}}
+          className="w-full lg:w-auto bg-blue-600 hover:bg-blue-500 text-white font-black uppercase text-[10px] tracking-[0.2em] px-6 py-3.5 rounded-xl shadow-[0_10px_20px_-5px_rgba(59,130,246,0.4)] active:scale-95 transition-all duration-300 shrink-0 flex items-center justify-center gap-2"
+        >
+          <span>Download Certificate</span>
+          <span className="text-xs">⬇️</span>
+        </button>
+      </div>
+    </div>
+
     <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-xl space-y-6 relative overflow-hidden">
       {/* Background Decor */}
       <div className="absolute -top-10 -right-10 w-32 h-32 bg-purple-50 rounded-full blur-3xl"></div>
@@ -918,7 +1113,7 @@ const downloadQRCode = () => {
   onClick={() => { setActiveTab("profile"); setIsMenuOpen(false); }} 
   className={`p-4 rounded-2xl font-bold uppercase italic text-xs flex items-center gap-4 transition-all ${activeTab === 'profile' ? 'bg-purple-50 text-purple-600 shadow-sm' : 'bg-slate-50 text-slate-600'}`}
 >
-  <Settings className="w-5 h-5" /> Login Details
+  <Settings className="w-5 h-5" /> Login Details & Verified Certificate
 </button>
                 <hr className="my-4" />
                 <button onClick={() => { setIsMenuOpen(false); setIsShowingMatrix(true); }} className="flex items-center gap-4 p-4 rounded-2xl bg-blue-50 text-blue-600 font-bold uppercase italic text-xs"><BarChart3 className="w-5 h-5" /> Analytics Matrix</button>

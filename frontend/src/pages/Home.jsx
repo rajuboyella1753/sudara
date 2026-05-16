@@ -24,8 +24,8 @@ export default function Home() {
   
   const [dbStates, setDbStates] = useState([]);
   const [dbDistricts, setDbDistricts] = useState([]);
-  const [selectedState, setSelectedState] = useState("All");
-  const [selectedDistrict, setSelectedDistrict] = useState("All");
+  const [selectedState, setSelectedState] = useState("Andhra Pradesh");
+  const [selectedDistrict, setSelectedDistrict] = useState("Select");
   const [selectedFoodType, setSelectedFoodType] = useState("All");
   const [isTravelMode, setIsTravelMode] = useState(false);
   const [travelDuration, setTravelDuration] = useState(0);
@@ -116,60 +116,102 @@ const fetchOwners = async () => {
     requestNotificationPermission();
   }, []);
 
-  useEffect(() => {
-    let result = restaurants;
-
-if (isTravelMode && destination.trim() !== "") {
-      const destQuery = destination.trim().toLowerCase(); 
-      const srcQuery = source.trim().toLowerCase();
-      
-      result = result.filter(r => {
-          const dist = r.district?.toLowerCase() || "";
-          const addr = r.address?.toLowerCase() || "";
-          
-          return dist.includes(destQuery) || 
-                 dist.includes(srcQuery) ||
-                 addr.includes(destQuery);
-      });
+useEffect(() => {
+  // 1. ఒకవేళ రూట్ మోడ్ ఆఫ్‌లో ఉండి, యూజర్ ఇంకా డిస్ట్రిక్ట్ సెలెక్ట్ చేయకపోతే లిస్ట్ ఖాళీగా ఉంచాలి
+  if (!isTravelMode && selectedDistrict === "Select") {
+    setFilteredRestaurants([]);
+    return;
   }
 
+  let result = restaurants;
+
+  // 2. 🚀 రాజు కొత్త రూట్ ప్లానర్ లాజిక్ (Highway Mode)
+  if (isTravelMode && destination.trim() !== "") {
+    const destQuery = destination.trim().toLowerCase(); 
+    const srcQuery = source.trim().toLowerCase();
+    
+    result = result.filter(r => {
+        const dist = r.district?.toLowerCase() || "";
+        const addr = r.address?.toLowerCase() || "";
+        const stateName = r.state?.toLowerCase() || "";
+        
+        // ఇది రూట్‌లో ఉన్న డిస్ట్రిక్ట్, అడ్రస్ లేదా స్టేట్ మ్యాచ్ అయినా హోటల్స్ చూపిస్తుంది
+        return dist.includes(destQuery) || 
+               dist.includes(srcQuery) ||
+               addr.includes(destQuery) ||
+               addr.includes(srcQuery);
+    });
+  }
+
+  // 3. 🚀 ఇక్కడ ట్విస్ట్: రూట్ మోడ్ ఆఫ్‌లో ఉన్నప్పుడు మాత్రమే స్టేట్, డిస్ట్రిక్ట్ ఫిల్టర్లు పని చేయాలి!
+  if (!isTravelMode) {
     if (selectedState !== "All") {
       result = result.filter(r => 
         r.state && r.state.toLowerCase() === selectedState.toLowerCase()
       );
     }
 
-    if (selectedDistrict !== "All") {
+    if (selectedDistrict !== "Select" && selectedDistrict !== "All") {
       result = result.filter(r => 
         r.district && r.district.toLowerCase() === selectedDistrict.toLowerCase()
       );
     }
+  }
 
-    if (selectedFoodType !== "All") {
-      result = result.filter(r => {
-        const resType = r.foodType;
-        const filterType = selectedFoodType;
-        if (filterType === "Veg") return resType === "Veg" || resType === "Both";
-        if (filterType === "Non-Veg") return resType === "Non-Veg" || resType === "Both";
-        return true;
-      });
-    }
+  // 4. ఫుడ్ టైప్ ఫిల్టర్ (వెజ్ / నాన్-వెజ్) - ఇది రెండింటికీ కామన్
+  if (selectedFoodType !== "All") {
+    result = result.filter(r => {
+      const resType = r.foodType;
+      const filterType = selectedFoodType;
+      if (filterType === "Veg") return resType === "Veg" || resType === "Both";
+      if (filterType === "Non-Veg") return resType === "Non-Veg" || resType === "Both";
+      return true;
+    });
+  }
 
-    if (searchTerm.trim() !== "") {
-      const query = searchTerm.toLowerCase();
-      result = result.filter(r => r.name.toLowerCase().includes(query));
-    }
+  // 5. సెర్చ్ బార్ లాజిక్
+  if (searchTerm.trim() !== "") {
+    const query = searchTerm.toLowerCase();
+    result = result.filter(r => r.name.toLowerCase().includes(query));
+  }
 
-    if (userCoords) {
-      result = [...result].sort((a, b) => {
-        const distA = a.latitude ? getDistanceRaw(userCoords.lat, userCoords.lng, a.latitude, a.longitude) : 999;
-        const distB = b.latitude ? getDistanceRaw(userCoords.lat, userCoords.lng, b.latitude, b.longitude) : 999;
-        return distA - distB;
-      });
-    }
+  // 6. 🚀 రాజు అల్టిమేట్ హైబ్రిడ్ సార్టింగ్ (Current Location + Route Match)
+  if (isTravelMode) {
+    result = [...result].sort((a, b) => {
+      // ఒకవేళ యూజర్ GPS లొకేషన్ ఆన్ లో ఉంటే, కరెంట్ లొకేషన్ కి దగ్గర్లో ఉన్న వాటికి ఫస్ట్ ప్రయారిటీ ఇవ్వు
+      if (userCoords && a.latitude && b.latitude) {
+        const distToUserA = getDistanceRaw(userCoords.lat, userCoords.lng, a.latitude, a.longitude);
+        const distToUserB = getDistanceRaw(userCoords.lat, userCoords.lng, b.latitude, b.longitude);
+        
+        // రెండు హోటల్స్ మధ్య దూరం డిఫరెన్స్ ఉంటే, దగ్గరగా ఉన్నదాన్ని పైకి పంపు
+        return distToUserA - distToUserB;
+      }
 
-    setFilteredRestaurants(result);
-  }, [searchTerm, restaurants, userCoords, selectedState, selectedDistrict, selectedFoodType, isTravelMode, source, destination]);
+      // ఒకవేళ GPS సిగ్నల్ లేకపోతే... నార్మల్ గా సోర్స్ సిటీ బట్టి ఆర్డర్ అవుతుంది
+      const srcQuery = source.trim().toLowerCase();
+      const aAddr = a.address?.toLowerCase() || "";
+      const aDist = a.district?.toLowerCase() || "";
+      const bAddr = b.address?.toLowerCase() || "";
+      const bDist = b.district?.toLowerCase() || "";
+
+      const aIsSource = aAddr.includes(srcQuery) || aDist.includes(srcQuery);
+      const bIsSource = bAddr.includes(srcQuery) || bDist.includes(srcQuery);
+
+      if (aIsSource && !bIsSource) return -1;
+      if (!aIsSource && bIsSource) return 1;
+      return 0;
+    });
+  } else if (userCoords) {
+    // నార్మల్ మోడ్ లో కరెంట్ లొకేషన్ సార్టింగ్ యథావిధిగా పనిచేస్తుంది
+    result = [...result].sort((a, b) => {
+      const distA = a.latitude ? getDistanceRaw(userCoords.lat, userCoords.lng, a.latitude, a.longitude) : 999;
+      const distB = b.latitude ? getDistanceRaw(userCoords.lat, userCoords.lng, b.latitude, b.longitude) : 999;
+      return distA - distB;
+    });
+  }
+
+  setFilteredRestaurants(result);
+}, [searchTerm, restaurants, userCoords, selectedState, selectedDistrict, selectedFoodType, isTravelMode, source, destination]);
 
   const getDistance = (lat1, lon1, lat2, lon2) => {
     if (!lat1 || !lon1 || !lat2 || !lon2) return "---";
@@ -261,7 +303,8 @@ if (isTravelMode && destination.trim() !== "") {
 
               <div className="md:col-span-3 relative group">
                 <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-600" />
-                <select value={selectedDistrict} onChange={(e) => setSelectedDistrict(e.target.value)} className="w-full bg-white border border-slate-200 py-5 pl-14 pr-10 rounded-[2rem] text-[10px] font-black uppercase tracking-widest outline-none appearance-none cursor-pointer focus:border-blue-400 shadow-xl shadow-blue-900/5 text-slate-600">
+                 <select value={selectedDistrict} onChange={(e) => setSelectedDistrict(e.target.value)} className="w-full bg-white border border-slate-200 py-5 pl-14 pr-10 rounded-[2rem] text-[10px] font-black uppercase tracking-widest outline-none appearance-none cursor-pointer focus:border-blue-400 shadow-xl shadow-blue-900/5 text-slate-600">
+                  <option value="Select">❌ Please Select District</option>
                   <option value="All">All Districts</option>
                   {availableDistricts.map((d, idx) => (
                     <option key={idx} value={d}>{d}</option>
@@ -342,81 +385,96 @@ if (isTravelMode && destination.trim() !== "") {
         <div className="absolute top-40 left-0 w-[400px] h-[400px] bg-blue-100/30 blur-[120px] rounded-full -z-10"></div>
 
         {loading ? (
-          <div className="flex flex-col items-center py-32">
-             <Activity className="w-12 h-12 text-blue-600 animate-spin" />
-             <p className="mt-4 text-[10px] font-black uppercase text-slate-400 tracking-[0.3em]">Syncing Matrix...</p>
-          </div>
-        ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          <AnimatePresence>
-            {filteredRestaurants.map((res) => (
-              <motion.div 
-                layout 
-                initial={{ opacity: 0, y: 20 }} 
-                animate={{ opacity: 1, y: 0 }} 
-                key={res._id} 
-                className="group h-full"
-                onClick={() => res.isStoreOpen && handleRestaurantClick(res._id)}
-              >
-                <div className="flex flex-col h-full bg-white rounded-[2rem] border border-slate-100 overflow-hidden hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] transition-all duration-500 cursor-pointer">
-                  
-                  <div className="relative aspect-[16/9] overflow-hidden">
-                    <img 
-                      src={res.hotelImage || "https://images.unsplash.com/photo-1517248135467-4c7ed9d42339?w=500"} 
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
-                      alt={res.name} 
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60" />
-                  </div>
-                  
-                  <div className="p-6 flex flex-col flex-grow">
-                    <div className="flex justify-between items-start mb-4">
-                      <h3 className="text-xl font-black uppercase italic tracking-tighter text-slate-900 group-hover:text-blue-600 transition-colors leading-none truncate pr-2">
-                        {res.name}
-                      </h3>
-                      <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-black text-[9px] uppercase tracking-tighter ${res.isStoreOpen ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-red-50 border-red-100 text-red-500'}`}>
-                        <div className={`w-1.5 h-1.5 rounded-full ${res.isStoreOpen ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
-                        {res.isStoreOpen ? 'LIVE' : 'CLOSED'}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2 mb-6">
-                      <div className="flex items-center gap-1 bg-blue-50 text-blue-600 px-2.5 py-1 rounded-md border border-blue-100 shadow-sm">
-                        <MapPin className="w-3 h-3 text-orange-500" />
-                        <span className="text-[10px] font-black uppercase tracking-wider">
-                          {userCoords && res.latitude ? getDistance(userCoords.lat, userCoords.lng, res.latitude, res.longitude) : "Locate"}
-                        </span>
-                      </div>
-                      <span className="text-[9px] font-black text-slate-400 uppercase bg-slate-50 px-2.5 py-1 rounded-md border border-slate-100 italic">
-                        {res.district}
-                      </span>
-                      <span className="text-[9px] font-black text-blue-500 uppercase bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100 italic">
-                        {res.collegeName}
-                      </span>
-                    </div>
-
-                    <div className="mt-auto">
-                      <button 
-                        disabled={!res.isStoreOpen} 
-                        className={`w-full group/btn relative py-4 rounded-xl font-black uppercase text-[11px] tracking-[0.2em] transition-all duration-300 overflow-hidden flex items-center justify-center gap-3 ${
-                          res.isStoreOpen 
-                            ? 'bg-slate-900 text-white hover:bg-blue-600 shadow-[0_10px_20px_-5px_rgba(15,23,42,0.3)] hover:shadow-blue-600/30 active:scale-95' 
-                            : 'bg-slate-100 text-slate-300 cursor-not-allowed'
-                        }`}
-                      >
-                        <div className="absolute inset-0 bg-white/10 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
-                        <span className="relative z-10">{res.isStoreOpen ? 'Enter Restaurant' : 'CURRENTLY CLOSED'}</span>
-                        {res.isStoreOpen && <ArrowUpRight className="relative z-10 w-4 h-4 transition-transform group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1" />}
-                      </button>
-                    </div>
-
-                  </div>
+  <div className="flex flex-col items-center py-32">
+     <Activity className="w-12 h-12 text-blue-600 animate-spin" />
+     <p className="mt-4 text-[10px] font-black uppercase text-slate-400 tracking-[0.3em]">Syncing Matrix...</p>
+  </div>
+) : (!isTravelMode && selectedDistrict === "Select") ? (
+  /* 🚀 మార్పు ఇక్కడే: రూట్ మోడ్ ఆఫ్‌లో ఉండి, జిల్లా సెలెక్ట్ చేయనప్పుడు మాత్రమే ఇది కనిపిస్తుంది */
+  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center justify-center py-24 text-center">
+    <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 mb-4 border border-blue-100 shadow-md animate-pulse">
+      <MapPin className="w-6 h-6" />
+    </div>
+    <h3 className="text-xl font-black uppercase italic text-slate-700 tracking-tight">Discover Your Neighborhood</h3>
+    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">Please select your district above to explore Sudara Hubs</p>
+  </motion.div>
+) : filteredRestaurants.length === 0 ? (
+  /* ఒకవేళ జిల్లాలో లేదా రూట్ లో హోటల్స్ లేకపోతే ఇది వస్తుంది */
+  <div className="flex flex-col items-center justify-center py-24 text-center">
+    <p className="text-xs font-black text-orange-600 uppercase tracking-widest">No Sudara Hubs registered in this region yet!</p>
+  </div>
+) : (
+  /* 🚀 ఇప్పుడు ఇక్కడ రెస్టారెంట్లు పక్కాగా లోడ్ అవుతాయి రాజు! */
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <AnimatePresence>
+      {filteredRestaurants.map((res) => (
+        <motion.div 
+          layout 
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          key={res._id} 
+          className="group h-full"
+          onClick={() => res.isStoreOpen && handleRestaurantClick(res._id)}
+        >
+          <div className="flex flex-col h-full bg-white rounded-[2rem] border border-slate-100 overflow-hidden hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] transition-all duration-500 cursor-pointer">
+            
+            <div className="relative aspect-[16/9] overflow-hidden">
+              <img 
+                src={res.hotelImage || "https://images.unsplash.com/photo-1517248135467-4c7ed9d42339?w=500"} 
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                alt={res.name} 
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-60" />
+            </div>
+            
+            <div className="p-6 flex flex-col flex-grow">
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="text-xl font-black uppercase italic tracking-tighter text-slate-900 group-hover:text-blue-600 transition-colors leading-none truncate pr-2">
+                  {res.name}
+                </h3>
+                <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-black text-[9px] uppercase tracking-tighter ${res.isStoreOpen ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-red-50 border-red-100 text-red-500'}`}>
+                  <div className={`w-1.5 h-1.5 rounded-full ${res.isStoreOpen ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`} />
+                  {res.isStoreOpen ? 'LIVE' : 'CLOSED'}
                 </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-        )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 mb-6">
+                <div className="flex items-center gap-1 bg-blue-50 text-blue-600 px-2.5 py-1 rounded-md border border-blue-100 shadow-sm">
+                  <MapPin className="w-3 h-3 text-orange-500" />
+                  <span className="text-[10px] font-black uppercase tracking-wider">
+                    {userCoords && res.latitude ? getDistance(userCoords.lat, userCoords.lng, res.latitude, res.longitude) : "Locate"}
+                  </span>
+                </div>
+                <span className="text-[9px] font-black text-slate-400 uppercase bg-slate-50 px-2.5 py-1 rounded-md border border-slate-100 italic">
+                  {res.district}
+                </span>
+                <span className="text-[9px] font-black text-blue-500 uppercase bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100 italic">
+                  {res.collegeName}
+                </span>
+              </div>
+
+              <div className="mt-auto">
+                <button 
+                  disabled={!res.isStoreOpen} 
+                  className={`w-full group/btn relative py-4 rounded-xl font-black uppercase text-[11px] tracking-[0.2em] transition-all duration-300 overflow-hidden flex items-center justify-center gap-3 ${
+                    res.isStoreOpen 
+                      ? 'bg-slate-900 text-white hover:bg-blue-600 shadow-[0_10px_20px_-5px_rgba(15,23,42,0.3)] hover:shadow-blue-600/30 active:scale-95' 
+                      : 'bg-slate-100 text-slate-300 cursor-not-allowed'
+                  }`}
+                >
+                  <div className="absolute inset-0 bg-white/10 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
+                  <span className="relative z-10">{res.isStoreOpen ? 'Enter Restaurant' : 'CURRENTLY CLOSED'}</span>
+                  {res.isStoreOpen && <ArrowUpRight className="relative z-10 w-4 h-4 transition-transform group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1" />}
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </motion.div>
+      ))}
+    </AnimatePresence>
+  </div>
+)}
       </main>
 
       <Footer />

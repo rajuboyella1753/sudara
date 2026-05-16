@@ -60,12 +60,25 @@ router.get("/admin-all-owners", async (req, res) => {
   }
 });
 /* ================= GET UNIQUE DISTRICTS ================= */
+// బ్యాకెండ్ రూట్: /api/owner/districts
 router.get("/districts", async (req, res) => {
   try {
-    const districts = await Owner.distinct("district");
+    // 🚀 1. ఫ్రంటెండ్ నుండి క్వెరీ పారామీటర్ ద్వారా వచ్చే స్టేట్ (E.g., ?state=Andhra Pradesh)
+    const { state } = req.query;
+
+    let filterCondition = {};
+    if (state) {
+      // ఒకవేళ స్టేట్ వస్తే, కేవలం ఆ స్టేట్ కి సంబంధించిన డాక్యుమెంట్స్ లోనే వెతుకుతుంది రాజు
+      filterCondition.state = state;
+    }
+
+    // 🚀 2. ఇక్కడ ట్విస్ట్: ఫిల్టర్ కండిషన్ ని 'distinct' లోపల రెండవ పారామీటర్ గా పంపాలి!
+    const districts = await Owner.distinct("district", filterCondition);
+    
     res.status(200).json(districts);
   } catch (err) {
-    res.status(500).json({ message: "Error fetching districts" });
+    console.error("Districts query error:", err);
+    res.status(500).json({ message: "Error fetching filtered districts" });
   }
 });
 /* ================= 4. LOGIN (Updated for District) ================= */

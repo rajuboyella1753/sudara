@@ -27,20 +27,36 @@ export default function OwnerLogin() {
     district: "" 
   });
 
+// =========================================================================
+  // 🚀 రాజు మ్యాజిక్: స్టేట్ మారిన ప్రతిసారి ఆటోమేటిక్ గా డిస్ట్రిక్ట్స్ ఫిల్టర్ అయ్యే లాజిక్
+  // =========================================================================
   useEffect(() => {
     const fetchDistricts = async () => {
       try {
-        const res = await api.get("/owner/districts");
+        // 🎯 ఫ్రంటెండ్ నుండి కరెంట్ సెలెక్టెడ్ స్టేట్ ని క్వెరీ పారామీటర్ లాగా పంపుతున్నాం రాజు
+        const res = await api.get(`/owner/districts?state=${form.state}`);
+        
         if (res.data && res.data.length > 0) {
           setDbDistricts(res.data);
+          // డిస్ట్రిక్ట్స్ మారినప్పుడు, కొత్త లిస్ట్ లో ఉన్న మొదటి జిల్లాను ఆటోమేటిక్ గా డ్రాప్‌డౌన్ లో సెలెక్ట్ చేస్తుంది
           setForm(prev => ({ ...prev, district: res.data[0] }));
+        } else {
+          setDbDistricts([]);
+          setForm(prev => ({ ...prev, district: "" }));
         }
       } catch (err) {
         console.error("Districts load failed ❌");
       }
     };
+    
     fetchDistricts();
+  }, [form.state]); // 🔥 ట్విస్ట్: ఓనర్ డ్రాప్‌డౌన్ లో స్టేట్ మార్చిన ప్రతిసారి ఈ యూజ్ ఎఫెక్ట్ ట్రిగ్గర్ అవుతుంది!
 
+
+  // =========================================================================
+  // 🚀 రెండవ యూజ్ ఎఫెక్ట్: ఆల్రెడీ లాగిన్ అయి అప్రూవ్ అయిన ఓనర్ ని నేరుగా డాష్ బోర్డ్ కి పంపడానికి
+  // =========================================================================
+  useEffect(() => {
     const storedOwner = JSON.parse(localStorage.getItem("owner"));
     if (storedOwner && storedOwner.isApproved) {
         navigate("/owner/dashboard");

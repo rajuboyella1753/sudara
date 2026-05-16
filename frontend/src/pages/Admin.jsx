@@ -31,6 +31,7 @@ export default function AdminDashboard() {
   const [availableDistricts, setAvailableDistricts] = useState([]);
   const [viewMode, setViewMode] = useState("daily");
 
+// 🚀 1. ఫస్ట్ టైమ్ పేజీ లోడ్ అయినప్పుడు మొత్తం డేటాను లాగడానికి (నీ పాత యూజ్ ఎఫెక్ట్ రాజు)
 useEffect(() => {
   const fetchInitialData = async () => {
     try {
@@ -38,15 +39,44 @@ useEffect(() => {
       const res = await api.get("/owner/admin-all-owners");
       const ownersData = Array.isArray(res.data) ? res.data : [];
       setOwners(ownersData);
+      
+      // అవైలబుల్ స్టేట్స్ ని యూనిక్ గా సెట్ చేయడం
       const states = [...new Set(ownersData.map(o => o.state))].filter(Boolean);
       setAvailableStates(states);
+      
+      // బై-డిఫాల్ట్ ఫస్ట్ టైమ్ అన్ని జిల్లాలను చూపిస్తాం
       const districts = [...new Set(ownersData.map(o => o.district))].filter(Boolean);
       setAvailableDistricts(districts);
-    } catch (err) { console.error(err); } 
-    finally { setLoading(false); }
+    } catch (err) { 
+      console.error(err); 
+    } finally { 
+      setLoading(false); 
+    }
   };
   fetchInitialData();
 }, []);
+
+
+// 🚀 2. రాజు అడ్మిన్ మ్యాజిక్: అడ్మిన్ స్టేట్ మార్చిన ప్రతిసారి డిస్ట్రిక్ట్స్ ని ఫిల్టర్ చేసే కొత్త యూజ్ ఎఫెక్ట్!
+useEffect(() => {
+  // ఒకవేళ అడ్మిన్ "All" సెలెక్ట్ చేస్తే, మెయిన్ లిస్ట్ లోని అన్ని జిల్లాలను చూపిస్తాం
+  if (selectedState === "All") {
+    const allDistricts = [...new Set(owners.map(o => o.district))].filter(Boolean);
+    setAvailableDistricts(allDistricts);
+  } else {
+    // ఒకవేళ పర్టిక్యులర్ స్టేట్ సెలెక్ట్ చేస్తే... కేవలం ఆ స్టేట్ కి సంబంధించిన జిల్లాలను మాత్రమే ఫిల్టర్ చేస్తాం రాజు!
+    const filteredDistricts = [...new Set(
+      owners
+        .filter(o => o.state === selectedState)
+        .map(o => o.district)
+    )].filter(Boolean);
+    
+    setAvailableDistricts(filteredDistricts);
+  }
+
+  // 🎯 సేఫ్టీ చెక్: స్టేట్ మారినప్పుడు డిస్ట్రిక్ట్ సెలెక్షన్ ని మళ్లీ "All" కి రీసెట్ చేస్తున్నాం రాజు
+  setSelectedDistrict("All"); 
+}, [selectedState, owners]); // 🔥 selectedState మారిన ప్రతిసారి ఈ మ్యాజిక్ రన్ అవుతుంది!
 
   const fetchOwners = async () => {
     try {
@@ -59,6 +89,7 @@ useEffect(() => {
       setLoading(false); 
     }
   };
+
 const deleteOwnerForever = async (id, name) => {
   const confirmDelete = window.confirm(`⚠️ DANGER: Are you sure you want to delete "${name}"? \n\nThis will remove the owner and ALL their food items from Database. This cannot be undone!`);
   
@@ -646,14 +677,58 @@ if (viewMode === "daily") {
                              </div>
                              {sub.isExpired && (
                                 <button 
-                                  onClick={() => {
-                                    const message = `*URGENT: SUDARA HUB SUBSCRIPTION EXPIRED* 🚩%0A%0AHi *${owner.name}*,%0A%0AYour monthly subscription for Sudara Hub has expired. To keep your restaurant *LIVE* and visible to customers, please renew your plan immediately.%0A%0A💰 *Renewal Amount:* ₹299 / Month%0A👤 *Pay To:* **Boyella Raju**%0A%0A📍 *Payment Methods:*%0A• PhonePe: *7569896128*%0A• UPI ID: *boyellaraju@ybl*%0A%0A✅ *IMPORTANT STEP:*%0AAfter payment, please send the screenshot and a message saying *"SUBSCRIPTION RECHARGED"* to our official number: *7569896128* (Boyella Raju) to resume your services instantly.%0A%0A_Note: Failure to renew will result in your restaurant being hidden from the hub._`;
-                                    window.open(`https://wa.me/${owner.phone}?text=${message}`);
-                                  }} 
-                                  className="bg-red-600 text-white p-2 rounded-xl shadow-lg active:scale-90 transition-all hover:bg-red-700"
-                                >
-                                  <Send className="w-3.5 h-3.5" />
-                                </button>
+  onClick={() => {
+    // 🚀 1. నీ కోడ్‌లో ఉన్న డైనమిక్ డేటాను ఇక్కడ వేరియబుల్స్ లోకి తీసుకుంటున్నాం రాజు
+    const restaurantName = owner?.name || "Partner Restaurant";
+    const ownerPhone = owner?.phone || "";
+    
+    // 📊 ప్రీ & పోస్ట్ బుకింగ్ మెట్రిక్స్ (నీ డాష్ బోర్డ్ స్టేట్ వేరియబుల్స్ ని బట్టి మార్చుకో రాజు)
+    const preBookings = owner?.preBookingsCount || 0; 
+    const postBookings = owner?.postBookingsCount || 0; 
+    
+    // యూనిక్ బిల్లింగ్ రిఫరెన్స్ నంబర్ (చూడటానికి కార్పొరేట్ లుక్ వస్తుంది)
+    const billingRef = `SUDARA-SUB-${Math.floor(100000 + Math.random() * 900000)}`;
+
+    // 🚀 2. రాయల్ కార్పొరేట్ స్టైల్ లో వాట్సాప్ టెంప్లేట్ మెసేజ్
+    const message = `*🛡️ SUDARA HUB NETWORK - BILLING DEPT* ---------------------------------------------
+*URGENT NOTICE: SUBSCRIPTION EXPIRY*
+
+Dear *${restaurantName}* Management,
+
+This is an automated notification from Sudara Hub Compliance. Your commercial merchant account subscription has *EXPIRED*.
+
+⚠️ *CURRENT STATUS:* YOUR RESTAURANT IS NOW INACTIVE (HIDDEN FROM HUB)
+
+📊 *PENDING BUSINESS MATRIX AFFECTED:*
+• Pending Pre-Bookings (Active Orders): *${preBookings} Orders*
+• Post-Booking Records (Live Catalog/History): *${postBookings} Locked*
+
+To bypass the service restriction, resume visibility within your neighborhood search engine, and instantly unlock your active matrix dashboard, please clear the node renewal fee.
+
+💸 *Renewal Premium:* ₹299 / Month
+👤 *Beneficiary Account:* Boyella Raju
+🆔 *Billing Reference:* ${billingRef}
+
+📌 *OFFICIAL MERCHANT PAYMENT PORTALS:*
+• PhonePe Secure: *7569896128*
+• Unified UPI ID: *boyellaraju@ybl*
+
+🔄 *CRITICAL ACTIVATION STEP:*
+Immediately after completing the transaction, transmit the digital payment receipt (screenshot) with the text *"SUBSCRIPTION RECHARGED"* to our merchant safety operations line: *7569896128* for instant grid restoration.
+
+_Sudara Trust & Safety Compliance Team_
+_Sudara.in | Empowering Hyperlocal Ecosystems_`;
+
+    // 🚀 3. సేఫ్ గా ఎన్‌కోడ్ చేసి వాట్సాప్ వెబ్ లేదా యాప్ ద్వారా ఓపెన్ చేయడం రాజు
+    const encodedMessage = encodeURIComponent(message);
+    window.open(`https://wa.me/${ownerPhone}?text=${encodedMessage}`, '_blank');
+  }} 
+  className="bg-rose-600 text-white p-3 rounded-2xl shadow-xl active:scale-95 transition-all duration-300 hover:bg-rose-700 flex items-center justify-center gap-2 border border-rose-500/30"
+  title="Send Professional Subscription Alert"
+>
+  <Send className="w-4 h-4" />
+  <span className="text-[10px] font-black uppercase tracking-wider px-1">Alert Merchant</span>
+</button>
                              )}
                           </div>
                         </div>
