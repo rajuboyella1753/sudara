@@ -156,13 +156,47 @@ const fetchData = async (id) => {
   // 📸 Restaurant Image Handler (New Feature)
   const handleProfileImage = (e) => {
     const file = e.target.files[0];
-    if (file) optimizeImage(file, (base64) => setProfileForm({ ...profileForm, hotelImage: base64 }));
+    
+    if (file) {
+      optimizeImage(file, (base64) => {
+        // 🎯 రాజు, `prev` వాడటం వల్ల లేటెస్ట్ స్టేట్ మాత్రమే అప్‌డేట్ అవుతుంది, పాత ఇమేజ్ బగ్ రాదు!
+        setProfileForm((prev) => ({ 
+          ...prev, 
+          hotelImage: base64 
+        }));
+      });
+    }
+    e.target.value = ""; // 🔄 ఇన్‌పుట్ రీసెట్
   };
 
   const handleItemImage = (e) => {
     const file = e.target.files[0];
     if (file) optimizeImage(file, (base64) => setForm({ ...form, image: base64 }));
     e.target.value = ""; 
+  };
+const handleInteriorUploads = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    let processedCount = 0;
+    const newBase64Images = [];
+
+    files.forEach((file) => {
+      optimizeImage(file, (base64) => {
+        newBase64Images.push(base64);
+        processedCount++;
+
+        if (processedCount === files.length) {
+          // 🚀 మెయిన్ ఇమేజ్ పాతది అవ్వకుండా ఇక్కడ కూడా `prev` మ్యాజిక్ వాడుతున్నాం రాజు!
+          setProfileForm((prev) => ({
+            ...prev,
+            interiorImages: [...(prev.interiorImages || []), ...newBase64Images]
+          }));
+        }
+      });
+    });
+
+    e.target.value = "";
   };
 
   const handleGetLocation = () => {
@@ -284,35 +318,35 @@ const filteredOrders = useMemo(() => {
     } catch (err) { alert("Error!"); }
     finally { setSending(false); }
   };
-const handleInteriorUploads = async (e) => {
-  const files = Array.from(e.target.files);
-  if (files.length === 0) return;
+// const handleInteriorUploads = async (e) => {
+//   const files = Array.from(e.target.files);
+//   if (files.length === 0) return;
 
-  setSending(true);
-  try {
-    const base64Images = await Promise.all(
-      files.map((file) => {
-        return new Promise((resolve) => {
-          optimizeImage(file, (base64) => resolve(base64));
-        });
-      })
-    );
+//   setSending(true);
+//   try {
+//     const base64Images = await Promise.all(
+//       files.map((file) => {
+//         return new Promise((resolve) => {
+//           optimizeImage(file, (base64) => resolve(base64));
+//         });
+//       })
+//     );
 
-    // Backend లో నువ్వు రాసిన "/add-interior-images/:id" రూట్ కి డేటా పంపడం
-    const res = await api.put(`/owner/add-interior-images/${owner._id}`, { 
-      images: base64Images 
-    });
+//     // Backend లో నువ్వు రాసిన "/add-interior-images/:id" రూట్ కి డేటా పంపడం
+//     const res = await api.put(`/owner/add-interior-images/${owner._id}`, { 
+//       images: base64Images 
+//     });
 
-    setOwner(res.data); // DB నుండి వచ్చిన అప్‌డేటెడ్ డేటాని సెట్ చేయడం
-    setProfileForm({ ...res.data });
-    alert("Interior Matrix Updated! 📸");
-  } catch (err) {
-    // console.error("Upload failed", err);
-    alert("Upload Error");
-  } finally {
-    setSending(false);
-  }
-};
+//     setOwner(res.data); // DB నుండి వచ్చిన అప్‌డేటెడ్ డేటాని సెట్ చేయడం
+//     setProfileForm({ ...res.data });
+//     alert("Interior Matrix Updated! 📸");
+//   } catch (err) {
+//     // console.error("Upload failed", err);
+//     alert("Upload Error");
+//   } finally {
+//     setSending(false);
+//   }
+// };
 const removeInteriorImage = async (imageUrl) => {
   if (!window.confirm("Remove this image from interior?")) return;
   
@@ -1152,37 +1186,52 @@ onClick={() => {
       >
 
         {/* 🖼️ INTERIOR & BANNER IMAGES SECTION */}
-        <div className="space-y-4">
-          <label className="text-[10px] font-black uppercase text-slate-400 italic">Visual Assets (Banner & Interior)</label>
-          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-            {/* Banner Image */}
-            <div className="relative flex-shrink-0">
-              <img src={profileForm.hotelImage || "https://via.placeholder.com/150"} className="w-24 h-24 rounded-2xl object-cover border-2 border-blue-500" />
-              <label className="absolute -top-2 -right-2 bg-blue-600 text-white p-1.5 rounded-full cursor-pointer shadow-lg">
-                <Camera className="w-3 h-3" /><input type="file" className="hidden" onChange={handleProfileImage} />
-              </label>
-              <p className="text-[8px] text-center mt-1 font-bold uppercase">Main Banner</p>
-            </div>
+<div className="space-y-4">
+  <label className="text-[10px] font-black uppercase text-slate-400 italic">Visual Assets (Banner & Interior)</label>
+  <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+    
+    {/* Main Banner Image */}
+    <div className="relative flex-shrink-0">
+      <img src={profileForm.hotelImage || "https://via.placeholder.com/150"} className="w-24 h-24 rounded-2xl object-cover border-2 border-blue-500" />
+      <label className="absolute -top-2 -right-2 bg-blue-600 text-white p-1.5 rounded-full cursor-pointer shadow-lg">
+        <Camera className="w-3 h-3" />
+        <input type="file" accept="image/*" className="hidden" onChange={handleProfileImage} />
+      </label>
+      <p className="text-[8px] text-center mt-1 font-bold uppercase">Main Banner</p>
+    </div>
 
-            {/* Interior Images Display */}
-            {profileForm.interiorImages?.map((img, idx) => (
-              <div key={idx} className="relative flex-shrink-0">
-                <img src={img} className="w-24 h-24 rounded-2xl object-cover border-2 border-slate-100" />
-                <button type="button" onClick={() => {
-                  const newImgs = profileForm.interiorImages.filter((_, i) => i !== idx);
-                  setProfileForm({...profileForm, interiorImages: newImgs});
-                }} className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full"><X className="w-3 h-3"/></button>
-              </div>
-            ))}
-            
-            {/* Add More Interior Button */}
-            <label className="w-24 h-24 flex-shrink-0 rounded-2xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50">
-              <Plus className="w-6 h-6 text-slate-400" />
-              <span className="text-[7px] font-black uppercase mt-1">Add Interior</span>
-              <input type="file" multiple className="hidden" onChange={handleInteriorUploads} />
-            </label>
-          </div>
-        </div>
+    {/* Interior Images Display */}
+    {profileForm.interiorImages?.map((img, idx) => (
+      <div key={idx} className="relative flex-shrink-0">
+        <img src={img} className="w-24 h-24 rounded-2xl object-cover border-2 border-slate-100" />
+        <button 
+          type="button" 
+          onClick={() => {
+            // ❌ ఇమేజ్ ని లిస్ట్ నుండి డిలీట్ చేసే రాజు లాజిక్
+            const newImgs = profileForm.interiorImages.filter((_, i) => i !== idx);
+            setProfileForm({...profileForm, interiorImages: newImgs});
+          }} 
+          className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full active:scale-90 transition-all shadow-md"
+        >
+          <X className="w-3 h-3"/>
+        </button>
+      </div>
+    ))}
+    
+    {/* Add More Interior Button */}
+    <label className="w-24 h-24 flex-shrink-0 rounded-2xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-all active:scale-95 shadow-inner">
+      <Plus className="w-6 h-6 text-slate-400" />
+      <span className="text-[7px] font-black uppercase mt-1">Add Interior</span>
+      <input 
+        type="file" 
+        multiple 
+        accept="image/*" // 💡 కేవలం ఇమేజ్ ఫైల్స్ మాత్రమే ఓపెన్ అవ్వడానికి రాజు!
+        className="hidden" 
+        onChange={handleInteriorUploads} // 🎯 ఇప్పుడు ఈ ఫంక్షన్ పక్కాగా రన్ అవుతుంది రాజు!
+      />
+    </label>
+  </div>
+</div>
 
         {/* ⚡ STATUS & QUICK ACTIONS */}
         <div className="grid grid-cols-2 gap-4 bg-slate-50 p-6 rounded-[2rem]">
