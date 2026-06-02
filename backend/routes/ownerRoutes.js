@@ -49,11 +49,14 @@ router.post("/register", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+/* ================= 2. ADMIN GET ALL OWNERS (RAJU FIXED SELECT) ================= */
 router.get("/admin-all-owners", async (req, res) => {
   try {
-  const owners = await Owner.find({}) 
-  .select("name hotelImage collegeName isStoreOpen category averageRating isApproved phone upiID analytics state district createdAt")
-  .lean();
+    const owners = await Owner.find({}) 
+    // 🎯 రాజు ఫిక్స్: సెలెక్ట్ లోపల nextBillingDate, billingStatus, pendingMonthsCount యాడ్ చేసాను!
+    .select("name hotelImage collegeName isStoreOpen category averageRating isApproved phone upiID analytics state district createdAt nextBillingDate billingStatus pendingMonthsCount planType")
+    .lean();
+    
     res.status(200).json(owners);
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch owners for admin" });
@@ -80,12 +83,12 @@ router.get("/districts", async (req, res) => {
     console.error("Districts query error:", err);
     res.status(500).json({ message: "Error fetching filtered districts" });
   }
-});
+}); 
 /* ================= 4. LOGIN (Updated for District) ================= */
 router.post("/login", async (req, res) => {
   try {
-    // 1. collegeName బదులు district ని తీసుకో రాజు
-    const { email, password, district } = req.body;
+    // 1. 🛑 district ని ఇక్కడ నుండి తీసేయ్ రాజు, కేవలం email, password చాలు
+    const { email, password } = req.body;
 
     // 🎯 Admin Login Check
     if (email === "telugubiblequiz959@gmail.com" && password === "Raju1753@s") {
@@ -103,13 +106,15 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ message: "Invalid Email or Password ❌" });
     }
 
-    // 🎯 🆕 ఇక్కడ కాలేజీ బదులు DISTRICT చెక్ చేయాలి
-    if (owner.district !== district) {
-      return res.status(401).json({ 
-        message: "Wrong District Selected! ⚠️",
-        registeredDistrict: owner.district // హింట్ కోసం డిస్ట్రిక్ట్ ని పంపిస్తున్నాం
-      });
-    }
+    // 🛑 2. ఈ కింద ఉన్న DISTRICT చెక్ చేసే ఇఫ్ కండిషన్ మొత్తాన్ని డిలీట్ లేదా కామెంట్ చేసేయ్ రాజు!
+    // =========================================================================
+    // if (owner.district !== district) {
+    //   return res.status(401).json({ 
+    //     message: "Wrong District Selected! ⚠️",
+    //     registeredDistrict: owner.district 
+    //   });
+    // }
+    // =========================================================================
 
     // 🎯 Approval Check
     if (owner.isApproved === false) {
@@ -121,7 +126,6 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
-
 /* ================= 5. APPROVE OWNER (Admin Only) ================= */
 router.put("/approve-owner/:id", async (req, res) => {
   try {
@@ -435,6 +439,48 @@ router.post("/send-broadcast/:ownerId", async (req, res) => {
     res.status(200).json({ success: true, sentCount: response.successCount });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+// 🚀 రాజు అల్టిమేట్ పెయిడ్-ఓన్లీ బిల్లింగ్ API
+router.put("/update-billing/:id", async (req, res) => {
+  try {
+    const owner = await Owner.findById(req.params.id);
+    if (!owner) return res.status(404).json({ success: false, message: "Owner not found" });
+
+    // 🎯 రాజు ప్లాన్: పెయిడ్ కొట్టిన రోజు (ఈరోజు) నుండి కరెక్ట్ గా 30 రోజులు ముందుకు డేట్ లాక్!
+    let newBillingDate = new Date();
+    newBillingDate.setDate(newBillingDate.getDate() + 30);
+
+    owner.nextBillingDate = newBillingDate;
+    owner.billingStatus = "Paid";
+    owner.pendingMonthsCount = 0; // ఎలాంటి పాత బాకీలు ఉండవు
+
+    await owner.save();
+
+    console.log(`\n=====================================`);
+    console.log(`🛡️ SUDARA FRESH BILLING RESTORED`);
+    console.log(`Hotel: ${owner.name}`);
+    console.log(`New 30 Days Cycle Started From Today!`);
+    console.log(`Next Due Date: ${owner.nextBillingDate.toLocaleDateString('en-GB')}`);
+    console.log(`=====================================\n`);
+
+    return res.json({ success: true, owner });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+/* ================= 🚀 11. UPDATE PLAN TYPE (Admin Only) ================= */
+router.put("/update-plan/:id", async (req, res) => {
+  try {
+    const { planType } = req.body;
+    const updatedOwner = await Owner.findByIdAndUpdate(
+      req.params.id, 
+      { planType: planType }, 
+      { new: true }
+    );
+    res.json({ success: true, owner: updatedOwner });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Plan update failed" });
   }
 });
 

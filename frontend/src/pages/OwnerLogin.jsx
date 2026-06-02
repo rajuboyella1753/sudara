@@ -21,37 +21,8 @@ export default function OwnerLogin() {
 
   const [form, setForm] = useState({
     email: "", 
-    password: "", 
-    category: "food", 
-    state: "Andhra Pradesh",
-    district: "" 
+    password: "",  
   });
-
-// =========================================================================
-  // 🚀 రాజు మ్యాజిక్: స్టేట్ మారిన ప్రతిసారి ఆటోమేటిక్ గా డిస్ట్రిక్ట్స్ ఫిల్టర్ అయ్యే లాజిక్
-  // =========================================================================
-  useEffect(() => {
-    const fetchDistricts = async () => {
-      try {
-        // 🎯 ఫ్రంటెండ్ నుండి కరెంట్ సెలెక్టెడ్ స్టేట్ ని క్వెరీ పారామీటర్ లాగా పంపుతున్నాం రాజు
-        const res = await api.get(`/owner/districts?state=${form.state}`);
-        
-        if (res.data && res.data.length > 0) {
-          setDbDistricts(res.data);
-          // డిస్ట్రిక్ట్స్ మారినప్పుడు, కొత్త లిస్ట్ లో ఉన్న మొదటి జిల్లాను ఆటోమేటిక్ గా డ్రాప్‌డౌన్ లో సెలెక్ట్ చేస్తుంది
-          setForm(prev => ({ ...prev, district: res.data[0] }));
-        } else {
-          setDbDistricts([]);
-          setForm(prev => ({ ...prev, district: "" }));
-        }
-      } catch (err) {
-        console.error("Districts load failed ❌");
-      }
-    };
-    
-    fetchDistricts();
-  }, [form.state]); // 🔥 ట్విస్ట్: ఓనర్ డ్రాప్‌డౌన్ లో స్టేట్ మార్చిన ప్రతిసారి ఈ యూజ్ ఎఫెక్ట్ ట్రిగ్గర్ అవుతుంది!
-
 
   // =========================================================================
   // 🚀 రెండవ యూజ్ ఎఫెక్ట్: ఆల్రెడీ లాగిన్ అయి అప్రూవ్ అయిన ఓనర్ ని నేరుగా డాష్ బోర్డ్ కి పంపడానికి
@@ -93,9 +64,6 @@ export default function OwnerLogin() {
       const payload = {
         email: form.email,
         password: form.password,
-        district: form.district, 
-        category: form.category,
-        state: form.state
       };
 
       const res = await api.post("/owner/login", payload);
@@ -194,7 +162,7 @@ export default function OwnerLogin() {
               </div>
             </div>
 
-            <div className="p-6 bg-indigo-50/40 rounded-[2.5rem] border border-indigo-100 space-y-5">
+            {/* <div className="p-6 bg-indigo-50/40 rounded-[2.5rem] border border-indigo-100 space-y-5">
               <div className="flex items-center gap-2 mb-1">
                 <Globe className="w-4 h-4 text-indigo-600" />
                 <span className="text-[10px] font-black uppercase tracking-widest text-indigo-900">Regional Sync</span>
@@ -232,7 +200,7 @@ export default function OwnerLogin() {
                   <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-orange-300 w-4 h-4 pointer-events-none" />
                 </div>
               </div>
-            </div>
+            </div> */}
 
             <button 
               type="submit" 

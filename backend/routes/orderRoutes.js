@@ -3,11 +3,12 @@ import Order from '../models/Order.js'; // చివరన .js కచ్చి�
 import { processVoiceOrder } from './aiController.js';
 const router = express.Router();
 
-router.post('/add', async (req, res) => {
+// 🚀 రాజు అల్టిమేట్ ఆల్-ఇన్-వన్ ఆర్డర్ క్రియేషన్ API
+router.post("/add", async (req, res) => {
   try {
     const orderData = { ...req.body };
 
-    // 1. పాత Express-Route లాజిక్ (అలాగే ఉంచుతున్నాం)
+    // 1. ఎక్స్‌ప్రెస్ రూట్ కి ఐడి & టైమ్ కాలిక్యులేషన్ లాజిక్
     if (orderData.orderType === 'Express-Route') {
       orderData.sudaraId = "SDR" + Math.floor(100 + Math.random() * 900);
 
@@ -17,30 +18,31 @@ router.post('/add', async (req, res) => {
       orderData.scheduledStartTime = startTime;
     }
 
-    // 🎯 2. ఇక్కడ మార్పు: ఒకవేళ sudaraId ఇంకా జనరేట్ అవ్వకపోతే (Pre-book/Post-book కోసం)
-    // ఇది నీ పాత లాజిక్ కింద యాడ్ చెయ్ రాజు
+    // 2. ఒకవేళ ఫ్రంటెండ్ నుండి sudaraId రాకపోతే (లైక్ Post-book / Instant ఆర్డర్స్ కోసం)
     if (!orderData.sudaraId) {
-      // Post-book అయితే TAB అని, మిగతా వాటికి SDR అని ఐడి వస్తుంది
       const prefix = orderData.orderType === 'Post-book' ? "TAB" : "SDR";
       orderData.sudaraId = prefix + Math.floor(100 + Math.random() * 900);
     }
 
-    // 3. ఆర్డర్ సేవ్ చేయడం
+    // 3. ఆర్డర్ ని డేటాబేస్ లో సేవ్ చేయడం (ఇందులో deliveryType ఆటోమేటిక్ గా సేవ్ అవుతుంది రాజు!)
     const newOrder = new Order(orderData);
     const savedOrder = await newOrder.save();
     
-    // 4. సాకెట్ నోటిఫికేషన్ (పాత కోడ్ లాగే)
+    // 4. సాకెట్ నోటిఫికేషన్ - ఓనర్ కి రియల్ టైమ్ లో సౌండ్ సిగ్నల్ వెళ్తుంది
     const io = req.app.get("socketio"); 
     if (io) {
-      const targetId = (savedOrder.restaurantId || savedOrder.ownerId).toString();
-      console.log("📢 Sending order to room:", targetId);
-      io.to(targetId).emit("new_order_received", savedOrder);
+      const targetId = (savedOrder.restaurantId || savedOrder.ownerId || "").toString();
+      if (targetId) {
+        console.log("📢 Transmitting order to live merchant room:", targetId);
+        io.to(targetId).emit("new_order_received", savedOrder);
+      }
     }
     
+    // 5. సక్సెస్ రెస్పాన్స్ - ఫ్రంటెండ్ ఐడి ని వాడుకోవడానికి వీలుగా!
     res.status(201).json(savedOrder);
   } catch (err) {
-    console.error("Order Error:", err);
-    res.status(500).json(err);
+    console.error("Order Transmission Error ❌:", err);
+    res.status(500).json({ message: err.message || "Order Sync Failed" });
   }
 });
 

@@ -318,35 +318,7 @@ const filteredOrders = useMemo(() => {
     } catch (err) { alert("Error!"); }
     finally { setSending(false); }
   };
-// const handleInteriorUploads = async (e) => {
-//   const files = Array.from(e.target.files);
-//   if (files.length === 0) return;
 
-//   setSending(true);
-//   try {
-//     const base64Images = await Promise.all(
-//       files.map((file) => {
-//         return new Promise((resolve) => {
-//           optimizeImage(file, (base64) => resolve(base64));
-//         });
-//       })
-//     );
-
-//     // Backend లో నువ్వు రాసిన "/add-interior-images/:id" రూట్ కి డేటా పంపడం
-//     const res = await api.put(`/owner/add-interior-images/${owner._id}`, { 
-//       images: base64Images 
-//     });
-
-//     setOwner(res.data); // DB నుండి వచ్చిన అప్‌డేటెడ్ డేటాని సెట్ చేయడం
-//     setProfileForm({ ...res.data });
-//     alert("Interior Matrix Updated! 📸");
-//   } catch (err) {
-//     // console.error("Upload failed", err);
-//     alert("Upload Error");
-//   } finally {
-//     setSending(false);
-//   }
-// };
 const removeInteriorImage = async (imageUrl) => {
   if (!window.confirm("Remove this image from interior?")) return;
   
@@ -596,7 +568,22 @@ const downloadQRCode = () => {
             {/* Menu Header & Grid */}
             <section className="space-y-8">
               <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                <h2 className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">Kitchen<br/><span className="text-blue-600">Dashboard</span></h2>
+  {/* 🏛️ Kitchen Dashboard Heading */}
+<h2 className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">
+  Kitchen<br/><span className="text-blue-600">Dashboard</span>
+</h2>
+
+{/* 🚀 రాజు అల్టిమేట్ ఫిక్స్‌డ్ ఫ్లోటింగ్ యాడ్ బటన్ - ఓనర్ ఎంత కిందకి స్క్రోల్ చేసినా ఇది స్క్రీన్ మీదే ఉంటుంది! */}
+<div className="fixed bottom-24 right-6 md:bottom-8 md:right-8 z-[90]">
+  <button 
+    type="button"
+    onClick={() => setIsAddingItem(true)} 
+    className="w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-[0_12px_24px_-6px_rgba(37,99,235,0.5)] active:scale-90 transition-all flex items-center justify-center border-2 border-white/20 group"
+    title="Add New Dish"
+  >
+    <Plus className="w-7 h-7 stroke-[3.5] group-hover:rotate-90 transition-transform duration-300" />
+  </button>
+</div>
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col sm:flex-row gap-3">
                     <div className="relative flex-1 sm:w-64">
@@ -648,154 +635,229 @@ const downloadQRCode = () => {
 
 {/* PAGE 2: LIVE ORDERS (Responsive Grid UI) */}
 {activeTab === "live-orders" && (
-  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-    <h2 className="text-4xl font-black italic uppercase text-slate-900">
-      Live<br/><span className="text-orange-500">Orders Feed</span>
-    </h2>
-    
-    <div className="relative max-w-md">
-      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-      <input 
-        type="text" 
-        placeholder="Search by Name, Type (Pre/Post) or Txn ID..." 
-        value={searchTerm} 
-        onChange={(e) => setSearchTerm(e.target.value)} 
-        className="w-full bg-white border border-slate-200 p-4 pl-11 rounded-2xl text-xs font-bold outline-none shadow-sm focus:border-orange-400 transition-all"
-      />
-    </div>
-
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-{filteredOrders.length === 0 ? (
-        <div className="col-span-full p-20 text-center text-slate-300 font-black uppercase italic bg-white rounded-[2.5rem] border border-dashed">
-          {searchTerm ? "No matching results found ❌" : "No Active Orders"}
-        </div>
-      ) : (
-        filteredOrders.map(order => (
-          <div key={order._id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col justify-between gap-4 hover:shadow-md transition-all relative overflow-hidden">
-            
-            {/* 🏷️ NEW: Order Type Ribbon (Pre/Post Order/Express) */}
-            <div className={`absolute top-0 right-0 px-4 py-1 rounded-bl-2xl text-[8px] font-black uppercase italic text-white ${order.orderType === 'Pre-Order' ? 'bg-purple-600' : order.orderType === 'Express-Route' ? 'bg-blue-600' : 'bg-orange-500'}`}>
-              {order.orderType || 'Post-Order'}
-            </div>
-
-            <div>
-              <div className="flex justify-between items-start mb-4">
-  <div>
-    <p className="font-black uppercase italic text-lg text-slate-900 leading-tight">
-      {order.customerName}
-    </p>
-    {order.sudaraId && (
-    <div className="mt-1 flex gap-2 items-center">
-      <span className="bg-blue-100 text-blue-800 text-[9px] font-black px-2 py-0.5 rounded border border-blue-200 uppercase italic">
-        ID: {order.sudaraId}
-      </span>
-      {/* ఆర్డర్ టైప్ ని బట్టి చిన్న ట్యాగ్ */}
-      <span className="text-[8px] font-bold text-slate-400 uppercase italic">
-        ({order.orderType})
-      </span>
-    </div>
-  )}
-    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-      {new Date(order.createdAt).toLocaleTimeString()}
-    </p>
-    {order.orderType === "Pre-book" && (
-    <p className="text-[10px] font-black text-orange-600 uppercase mt-1 italic">
-      🚗 Coming in: {order.arrivalTime} Mins
-    </p>
-  )}
-    {/* 🎯 Sudara ID ఇక్కడ యాడ్ చేస్తున్నాం రాజు */}
-    {order.sudaraId && (
-      <div className="mt-1">
-        <span className="bg-yellow-100 text-yellow-800 text-[9px] font-black px-2 py-0.5 rounded border border-yellow-200 uppercase italic">
-          ID: {order.sudaraId}
-        </span>
+  owner?.planType === "premium" ? (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+      <h2 className="text-4xl font-black italic uppercase text-slate-900">
+        Live<br/><span className="text-orange-500">Orders Feed</span>
+      </h2>
+      
+      <div className="relative max-w-md">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+        <input 
+          type="text" 
+          placeholder="Search by Name, Type (Pre/Post) or Txn ID..." 
+          value={searchTerm} 
+          onChange={(e) => setSearchTerm(e.target.value)} 
+          className="w-full bg-white border border-slate-200 p-4 pl-11 rounded-2xl text-xs font-bold outline-none shadow-sm focus:border-orange-400 transition-all"
+        />
       </div>
-    )}
-  </div>
 
-  <div className="bg-blue-50 px-4 py-2 rounded-2xl text-center">
-    <p className="text-[8px] font-black text-blue-400 uppercase leading-none">Table</p>
-    <p className="text-xl font-black text-blue-600 leading-none mt-1"># {order.tableNo || "PRE"}</p>
-  </div>
-</div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredOrders.length === 0 ? (
+          <div className="col-span-full p-20 text-center text-slate-300 font-black uppercase italic bg-white rounded-[2.5rem] border border-dashed">
+            {searchTerm ? "No matching results found ❌" : "No Active Orders"}
+          </div>
+        ) : (
+          filteredOrders.map(order => (
+            <div key={order._id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col justify-between gap-4 hover:shadow-md transition-all relative overflow-hidden">
+              
+              {/* 🏷️ NEW: Order Type Ribbon (Pre/Post Order/Express) */}
+              <div className={`absolute top-0 right-0 px-4 py-1 rounded-bl-2xl text-[8px] font-black uppercase italic text-white ${order.orderType === 'Pre-Order' ? 'bg-purple-600' : order.orderType === 'Express-Route' ? 'bg-blue-600' : 'bg-orange-500'}`}>
+                {order.orderType || 'Post-Order'}
+              </div>
 
-              {/* Items List */}
-              {/* 🎯 ఐటమ్స్ లిస్ట్ కి ఈ క్లాసెస్ యాడ్ చెయ్ రాజు */}
-<div className="flex flex-wrap gap-2 mb-4 max-h-24 overflow-y-auto scrollbar-hide p-1">
-  {order.items.map((it, idx) => (
-    <span key={idx} className="bg-slate-50 text-slate-700 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase border border-slate-100 italic shrink-0">
-      {it}
-    </span>
-  ))}
-</div>
+              <div>
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <p className="font-black uppercase italic text-lg text-slate-900 leading-tight">
+                      {order.customerName}
+                    </p>
+                    {order.sudaraId && (
+                      <div className="mt-1 flex gap-2 items-center">
+                        <span className="bg-blue-100 text-blue-800 text-[9px] font-black px-2 py-0.5 rounded border border-blue-200 uppercase italic">
+                          ID: {order.sudaraId}
+                        </span>
+                        {/* ఆర్డర్ టైప్ ని బట్టి చిన్న ట్యాగ్ */}
+                        <span className="text-[8px] font-bold text-slate-400 uppercase italic">
+                          ({order.orderType})
+                        </span>
+                      </div>
+                    )}
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      {new Date(order.createdAt).toLocaleTimeString()}
+                    </p>
+                    {order.orderType === "Pre-book" && (
+                      <p className="text-[10px] font-black text-orange-600 uppercase mt-1 italic">
+                        🚗 Coming in: {order.arrivalTime} Mins
+                      </p>
+                    )}
+                    {/* 🎯 Sudara ID ఇక్కడ యాడ్ చేస్తున్నాం రాజు */}
+                    {order.sudaraId && (
+                      <div className="mt-1">
+                        <span className="bg-yellow-100 text-yellow-800 text-[9px] font-black px-2 py-0.5 rounded border border-yellow-200 uppercase italic">
+                          ID: {order.sudaraId}
+                        </span>
+                      </div>
+                    )}
+                  </div>
 
-              {/* 🕒 EXPRESS ROUTE TIMER & DELAY ALERT */}
-              {order.orderType === 'Express-Route' && (
-                <div className={`mt-3 p-3 rounded-2xl border ${order.isDelayed ? 'bg-red-50 border-red-200 animate-pulse' : 'bg-blue-50 border-blue-100'}`}>
-                  <div className="flex items-center gap-2">
-                    <div className={`w-2 h-2 rounded-full ${order.isDelayed ? 'bg-red-500' : 'bg-blue-500'}`}></div>
-                    <p className="text-[9px] font-black uppercase text-slate-500">
-                      {order.isDelayed ? '⚠️ CUSTOMER DELAYED' : '🕒 EXPRESS START TIME'}
+                  <div className="bg-blue-50 px-4 py-2 rounded-2xl text-center">
+                    <p className="text-[8px] font-black text-blue-400 uppercase leading-none">Table</p>
+                    <p className="text-xl font-black text-blue-600 leading-none mt-1"># {order.tableNo || "PRE"}</p>
+                  </div>
+                </div>
+
+                {/* Items List */}
+                <div className="flex flex-wrap gap-2 mb-4 max-h-24 overflow-y-auto scrollbar-hide p-1">
+                  {order.items.map((it, idx) => (
+                    <span key={idx} className="bg-slate-50 text-slate-700 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase border border-slate-100 italic shrink-0">
+                      {it}
+                    </span>
+                  ))}
+                </div>
+
+                {/* 🕒 EXPRESS ROUTE TIMER & DELAY ALERT */}
+                {order.orderType === 'Express-Route' && (
+                  <div className={`mt-3 p-3 rounded-2xl border ${order.isDelayed ? 'bg-red-50 border-red-200 animate-pulse' : 'bg-blue-50 border-blue-100'}`}>
+                    <div className="flex items-center gap-2">
+                      <div className={`w-2 h-2 rounded-full ${order.isDelayed ? 'bg-red-500' : 'bg-blue-500'}`}></div>
+                      <p className="text-[9px] font-black uppercase text-slate-500">
+                        {order.isDelayed ? '⚠️ CUSTOMER DELAYED' : '🕒 EXPRESS START TIME'}
+                      </p>
+                    </div>
+                    <p className="text-sm font-black text-slate-900 mt-1 tracking-tight">
+                      {new Date(order.scheduledStartTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                     </p>
                   </div>
-                  <p className="text-sm font-black text-slate-900 mt-1 tracking-tight">
-                    {new Date(order.scheduledStartTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                  </p>
-                </div>
-              )}
+                )}
 
-              {order.txnId && (
-                <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-100 mb-4 mt-4">
-                  <p className="text-[8px] font-black text-emerald-400 uppercase">Transaction ID</p>
-                  <p className="text-[10px] font-bold text-emerald-700 break-all">{order.txnId}</p>
+                {order.txnId && (
+                  <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-100 mb-4 mt-4">
+                    <p className="text-[8px] font-black text-emerald-400 uppercase">Transaction ID</p>
+                    <p className="text-[10px] font-bold text-emerald-700 break-all">{order.txnId}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* 🎯 అమౌంట్ మరియు యాక్షన్ బటన్స్ సెక్షన్ */}
+              <div className="pt-4 border-t border-slate-50 flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-black text-slate-400 uppercase leading-none">Total Amount</p>
+                    <p className="text-2xl font-black text-slate-900 mt-1 tracking-tighter">₹{order.totalAmount}</p>
+                    
+                    {/* 🚀 డైనమిక్ డెలివరీ టైప్ బ్యాడ్జ్ */}
+                    {order.deliveryType && order.deliveryType !== "None" && (
+                      <div className={`mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase italic tracking-wide border ${
+                        order.deliveryType === 'Take Away' 
+                          ? 'bg-purple-50 border-purple-100 text-purple-600' 
+                          : 'bg-blue-50 border-blue-100 text-blue-600'
+                      }`}>
+                        <span>{order.deliveryType === 'Take Away' ? '📦 Parcel' : '🪑 Dining'}</span>
+                        <span>{order.deliveryType}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* స్టేటస్ ని బట్టి రంగు మారుతుంది */}
+                  <div className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase italic ${order.status === 'Preparing' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
+                    {order.status || 'Pending'}
+                  </div>
                 </div>
-              )}
+
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => updateOrderStatus(order._id, "Accepted")}
+                    className="flex-1 py-3 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-md active:scale-95 transition-all"
+                  >
+                    Accept
+                  </button>
+
+                  <button 
+                    onClick={() => updateOrderStatus(order._id, "Preparing")}
+                    className="flex-1 py-3 bg-orange-500 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-md active:scale-95 transition-all"
+                  >
+                    Preparing
+                  </button>
+
+                  <button 
+                    onClick={() => handleServed(order)}
+                    className="flex-1 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-lg active:scale-95 transition-all"
+                  >
+                    Served ✅
+                  </button>
+                </div>
+              </div>
+
             </div>
+          ))
+        )}
+      </div>
+    </motion.div>
+  ) : (
+    <UpgradeBanner /> 
+  )
+)}
 
-{/* 🎯 రాజు, ఇక్కడ అమౌంట్ పక్కన ఉన్న పాత బటన్ తీసేసి ఈ కొత్త సెక్షన్ పెట్టు */}
-<div className="pt-4 border-t border-slate-50 flex flex-col gap-4">
-  
-  <div className="flex items-center justify-between">
-    <div>
-      <p className="text-[10px] font-black text-slate-400 uppercase leading-none">Total Amount</p>
-      <p className="text-2xl font-black text-slate-900 mt-1 tracking-tighter">₹{order.totalAmount}</p>
+{/* PAGE 3: SALES REPORT */}
+{activeTab === "sales-report" && (
+  owner?.planType === "premium" ? (
+    <div className="space-y-8 animate-in slide-in-from-bottom duration-500">
+      <h2 className="text-4xl font-black italic uppercase text-slate-900">Sales<br/><span className="text-emerald-500">Matrix</span></h2>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        {/* 1. రెవెన్యూ బాక్స్ */}
+        <div className="bg-slate-900 p-10 rounded-[3rem] text-white shadow-2xl relative overflow-hidden">
+          <p className="text-[10px] font-black uppercase opacity-40 mb-2 italic tracking-widest">Revenue (Today)</p>
+          <p className="text-6xl font-black italic tracking-tighter text-emerald-400">
+            ₹{(() => {
+              const d = new Date();
+              const k1 = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+              const k2 = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+
+              const analytics = owner?.analytics || {};
+              const dataObj = analytics instanceof Map ? Object.fromEntries(analytics) : analytics;
+              const dayData = dataObj[k1] || dataObj[k2] || {};
+              const final = dayData._doc || dayData;
+
+              return Number(final?.daily_revenue || 0);
+            })()}
+          </p>
+          <BarChart3 className="absolute -right-6 -bottom-6 w-32 h-32 text-white/5 -rotate-12" />
+        </div>
+
+        {/* 2. ట్రెండింగ్ డిష్ బాక్స్ */}
+        <div className="bg-blue-600 p-10 rounded-[3rem] text-white shadow-xl relative overflow-hidden">
+          <p className="text-[10px] font-black uppercase opacity-40 mb-2 italic tracking-widest">Trending Dish</p>
+          <p className="text-2xl font-black italic uppercase leading-tight">
+             {(() => {
+                const dayKey = `${new Date().getDate()}/${new Date().getMonth() + 1}/${new Date().getFullYear()}`;
+                const dayData = owner?.analytics instanceof Map ? owner.analytics.get(dayKey) : owner?.analytics?.[dayKey];
+                const foodMap = dayData?.food_clicks || {};
+                const top = Object.entries(foodMap).sort((a,b) => b[1]-a[1])[0];
+                return top ? top[0] : "No Data Yet";
+             })()}
+          </p>
+          <Star className="absolute -right-4 -bottom-4 w-24 h-24 text-white/10 -rotate-12 fill-current" />
+        </div>
+
+        {/* 3. ఆర్డర్స్ కౌంట్ బాక్స్ */}
+        <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
+          <p className="text-[10px] font-black uppercase text-slate-400 mb-2 italic tracking-widest">Live Feed Count</p>
+          <p className="text-6xl font-black italic tracking-tighter text-slate-900">{orders.length}</p>
+        </div>
+
+      </div>
+
+      <div className="bg-emerald-50 p-6 rounded-[2rem] border border-emerald-100 flex items-center gap-4 text-emerald-700">
+        <ShieldCheck className="w-6 h-6 shrink-0" />
+        <p className="text-[10px] font-black uppercase italic">Protocol: Data auto-purged every 15 days for speed optimization.</p>
+      </div>
     </div>
-    {/* స్టేటస్ ని బట్టి రంగు మారుతుంది */}
-    <div className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase italic ${order.status === 'Preparing' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
-      {order.status || 'Pending'}
-    </div>
-  </div>
-
-  <div className="flex gap-2">
-    <button 
-      onClick={() => updateOrderStatus(order._id, "Accepted")}
-      className="flex-1 py-3 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-md active:scale-95 transition-all"
-    >
-      Accept
-    </button>
-
-    <button 
-      onClick={() => updateOrderStatus(order._id, "Preparing")}
-      className="flex-1 py-3 bg-orange-500 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-md active:scale-95 transition-all"
-    >
-      Preparing
-    </button>
-
-    <button 
-  onClick={() => handleServed(order)}
-  className="flex-1 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-lg active:scale-95 transition-all"
->
-  Served ✅
-</button>
-  </div>
-</div>
-
-          </div>
-        ))
-      )}
-
-    </div>
-  </motion.div>
+  ) : (
+    <UpgradeBanner />
+  )
 )}
 {/* PAGE 4: OWNER PROFILE DETAILS */}
 {activeTab === "profile" && (
@@ -829,7 +891,7 @@ const downloadQRCode = () => {
           type="button"
 onClick={() => {
   try {
-    console.log("--- 🚀 SUDARA PREMIUM FRONTEND CERTIFICATE GENERATION ---");
+  
     
     // 1. ఓనర్ డేటా వేరియబుల్స్ (డైనమిక్)
     const name = owner?.name || "SUDARA PARTNER";
@@ -1058,76 +1120,7 @@ onClick={() => {
     </div>
   </div>
 )}
-        {/* PAGE 3: SALES REPORT */}
-{activeTab === "sales-report" && (
-   <div className="space-y-8 animate-in slide-in-from-bottom duration-500">
-      <h2 className="text-4xl font-black italic uppercase text-slate-900">Sales<br/><span className="text-emerald-500">Matrix</span></h2>
-      
-      {/* ఇక్కడ నుండి రీప్లేస్ చెయ్ రాజు 👇 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
-{/* 1. రెవెన్యూ బాక్స్ */}
-<div className="bg-slate-900 p-10 rounded-[3rem] text-white shadow-2xl relative overflow-hidden">
-  <p className="text-[10px] font-black uppercase opacity-40 mb-2 italic tracking-widest">Revenue (Today)</p>
-  <p className="text-6xl font-black italic tracking-tighter text-emerald-400">
-    ₹{(() => {
-      const d = new Date();
-      const k1 = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-      const k2 = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
 
-      const analytics = owner?.analytics || {};
-      
-      // 🚀 రాజు, ఇక్కడ మ్యాప్ ని ఆబ్జెక్ట్ గా మారుస్తున్నాం
-      const dataObj = analytics instanceof Map ? Object.fromEntries(analytics) : analytics;
-      
-      const dayData = dataObj[k1] || dataObj[k2] || {};
-      const final = dayData._doc || dayData;
-
-      // 🎯 కన్సోల్ లో ప్రింట్ చేస్తున్నాం రాజు, Inspect లో చూడు!
-      console.log("--- SUDARA DEBUG ---");
-      console.log("Trying Keys:", { k1, k2 });
-      console.log("Full Analytics Object:", dataObj);
-      console.log("Found Data for Today:", final);
-      console.log("Daily Revenue Value:", final?.daily_revenue);
-      console.log("--------------------");
-
-      return Number(final?.daily_revenue || 0);
-    })()}
-  </p>
-  <BarChart3 className="absolute -right-6 -bottom-6 w-32 h-32 text-white/5 -rotate-12" />
-</div>
-
-        {/* 2. ట్రెండింగ్ డిష్ బాక్స్ */}
-        <div className="bg-blue-600 p-10 rounded-[3rem] text-white shadow-xl relative overflow-hidden">
-          <p className="text-[10px] font-black uppercase opacity-40 mb-2 italic tracking-widest">Trending Dish</p>
-          <p className="text-2xl font-black italic uppercase leading-tight">
-             {(() => {
-                const dayKey = `${new Date().getDate()}/${new Date().getMonth() + 1}/${new Date().getFullYear()}`;
-                // మ్యాప్ డేటా కోసం సేఫ్ చెక్
-                const dayData = owner?.analytics instanceof Map ? owner.analytics.get(dayKey) : owner?.analytics?.[dayKey];
-                const foodMap = dayData?.food_clicks || {};
-                const top = Object.entries(foodMap).sort((a,b) => b[1]-a[1])[0];
-                return top ? top[0] : "No Data Yet";
-             })()}
-          </p>
-          <Star className="absolute -right-4 -bottom-4 w-24 h-24 text-white/10 -rotate-12 fill-current" />
-        </div>
-
-        {/* 3. ఆర్డర్స్ కౌంట్ బాక్స్ */}
-        <div className="bg-white p-10 rounded-[3rem] border border-slate-100 shadow-sm">
-          <p className="text-[10px] font-black uppercase text-slate-400 mb-2 italic tracking-widest">Live Feed Count</p>
-          <p className="text-6xl font-black italic tracking-tighter text-slate-900">{orders.length}</p>
-        </div>
-
-      </div>
-      {/* ఇక్కడి వరకు 👆 */}
-
-      <div className="bg-emerald-50 p-6 rounded-[2rem] border border-emerald-100 flex items-center gap-4 text-emerald-700">
-        <ShieldCheck className="w-6 h-6 shrink-0" />
-        <p className="text-[10px] font-black uppercase italic">Protocol: Data auto-purged every 15 days for speed optimization.</p>
-      </div>
-   </div>
-)}
       </main>
 
       {/* MODALS - NO FEATURES REMOVED, RESTAURANT IMAGE ADDED */}
@@ -1286,50 +1279,64 @@ onClick={() => {
 )}
 
         {/* ANALYTICS MATRIX MODAL (Original Detailed Logic) */}
-        {isShowingMatrix && (
-          <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white w-full max-w-5xl p-6 md:p-12 rounded-[2.5rem] md:rounded-[4rem] shadow-2xl relative max-h-[90vh] overflow-y-auto scrollbar-hide">
-              <button onClick={() => setIsShowingMatrix(false)} className="absolute top-6 right-6 p-2 bg-slate-100 rounded-full active:scale-90"><X className="w-5 h-5"/></button>
-              <h3 className="text-xl sm:text-3xl font-black italic uppercase tracking-tighter mb-8 border-l-8 border-blue-600 pl-6">Hub Matrix</h3>
-              <div className="flex bg-slate-100 p-1.5 rounded-2xl w-fit mb-6">
-                <button onClick={() => setViewMode("daily")} className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase ${viewMode === "daily" ? "bg-white text-blue-600 shadow-lg" : "text-slate-400"}`}>Today</button>
-                <button onClick={() => setViewMode("range")} className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase ${viewMode === "range" ? "bg-white text-blue-600 shadow-lg" : "text-slate-400"}`}>Range</button>
-              </div>
-              <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-                {viewMode === "daily" ? (
-                  <input type="date" value={filterDate} onChange={e=>setFilterDate(e.target.value)} className="bg-slate-50 p-4 rounded-2xl font-bold text-xs border" />
-                ) : (
-                  <>
-                    <input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)} className="bg-slate-50 p-4 rounded-2xl font-bold text-xs border" />
-                    <input type="date" value={endDate} onChange={e=>setEndDate(e.target.value)} className="bg-slate-50 p-4 rounded-2xl font-bold text-xs border" />
-                  </>
-                )}
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {(() => {
-                  let stats = viewMode === "daily" ? {
-                    hits: owner?.analytics?.[`${new Date(filterDate).getDate()}/${new Date(filterDate).getMonth()+1}/${new Date(filterDate).getFullYear()}`]?.kitchen_entry || 0,
-                    preOrders: owner?.analytics?.[`${new Date(filterDate).getDate()}/${new Date(filterDate).getMonth()+1}/${new Date(filterDate).getFullYear()}`]?.pre_order_click || 0,
-                    postOrders: owner?.analytics?.[`${new Date(filterDate).getDate()}/${new Date(filterDate).getMonth()+1}/${new Date(filterDate).getFullYear()}`]?.post_order_click || 0,
-                    calls: owner?.analytics?.[`${new Date(filterDate).getDate()}/${new Date(filterDate).getMonth()+1}/${new Date(filterDate).getFullYear()}`]?.call_click || 0,
-                  } : getOwnerRangeStats();
-                  return [
-                    { label: "Menu Hits", val: stats.hits, icon: Compass, color: "text-slate-500", bg: "bg-slate-100" },
-                    { label: "Pre-Orders", val: stats.preOrders, icon: UtensilsCrossed, color: "text-blue-600", bg: "bg-blue-100" },
-                    { label: "Post-Booking", val: stats.postOrders, icon: Bell, color: "text-orange-600", bg: "bg-orange-100" },
-                    { label: "Calls Made", val: stats.calls, icon: PhoneCall, color: "text-emerald-600", bg: "bg-emerald-100" },
-                  ].map((s, idx) => (
-                    <div key={idx} className="bg-white p-8 rounded-[3rem] border border-slate-100 text-center hover:shadow-xl transition-all group">
-                      <div className={`w-14 h-14 ${s.bg} ${s.color} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform`}><s.icon className="w-7 h-7"/></div>
-                      <p className="text-[10px] font-black uppercase opacity-40 mb-2">{s.label}</p>
-                      <p className="text-5xl font-black italic text-slate-900 tracking-tighter">{s.val}</p>
-                    </div>
-                  ));
-                })()}
-              </div>
-            </motion.div>
+{isShowingMatrix && (
+  <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
+    <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white w-full max-w-5xl p-6 md:p-12 rounded-[2.5rem] md:rounded-[4rem] shadow-2xl relative max-h-[90vh] overflow-y-auto scrollbar-hide">
+      <button type="button" onClick={() => setIsShowingMatrix(false)} className="absolute top-6 right-6 p-2 bg-slate-100 rounded-full active:scale-90"><X className="w-5 h-5"/></button>
+      <h3 className="text-xl sm:text-3xl font-black italic uppercase tracking-tighter mb-8 border-l-8 border-blue-600 pl-6">Hub Matrix</h3>
+      
+      {/* 🎯 రాజు మాస్టర్ లాక్: ఒకవేళ ఓనర్ ప్రీమియం కాకపోతే (అంటే బేసిక్ ₹50 ప్లాన్ అయితే) మ్యాట్రిక్స్ డేటా మొత్తం హైడ్ అయిపోతుంది! */}
+      {owner?.planType !== "premium" ? (
+        <div className="py-4 text-center">
+          <UpgradeBanner />
+        </div>
+      ) : (
+        /* 👑 ఓనర్ ప్రీమియం అయితేనే ఈ కింద ఉన్న అనలిటిక్స్ మ్యాట్రిక్స్ అంతా ఓపెన్ అవుతుంది రాజు! */
+        <>
+          <div className="flex bg-slate-100 p-1.5 rounded-2xl w-fit mb-6">
+            <button type="button" onClick={() => setViewMode("daily")} className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase ${viewMode === "daily" ? "bg-white text-blue-600 shadow-lg" : "text-slate-400"}`}>Today</button>
+            <button type="button" onClick={() => setViewMode("range")} className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase ${viewMode === "range" ? "bg-white text-blue-600 shadow-lg" : "text-slate-400"}`}>Range</button>
           </div>
-        )}
+          
+          <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+            {viewMode === "daily" ? (
+              <input type="date" value={filterDate} onChange={e=>setFilterDate(e.target.value)} className="bg-slate-50 p-4 rounded-2xl font-bold text-xs border" />
+            ) : (
+              <>
+                <input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)} className="bg-slate-50 p-4 rounded-2xl font-bold text-xs border" />
+                <input type="date" value={endDate} onChange={e=>setEndDate(e.target.value)} className="bg-slate-50 p-4 rounded-2xl font-bold text-xs border" />
+              </>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {(() => {
+              let stats = viewMode === "daily" ? {
+                hits: owner?.analytics?.[`${new Date(filterDate).getDate()}/${new Date(filterDate).getMonth()+1}/${new Date(filterDate).getFullYear()}`]?.kitchen_entry || 0,
+                preOrders: owner?.analytics?.[`${new Date(filterDate).getDate()}/${new Date(filterDate).getMonth()+1}/${new Date(filterDate).getFullYear()}`]?.pre_order_click || 0,
+                postOrders: owner?.analytics?.[`${new Date(filterDate).getDate()}/${new Date(filterDate).getMonth()+1}/${new Date(filterDate).getFullYear()}`]?.post_order_click || 0,
+                calls: owner?.analytics?.[`${new Date(filterDate).getDate()}/${new Date(filterDate).getMonth()+1}/${new Date(filterDate).getFullYear()}`]?.call_click || 0,
+              } : getOwnerRangeStats();
+              
+              return [
+                { label: "Menu Hits", val: stats.hits, icon: Compass, color: "text-slate-500", bg: "bg-slate-100" },
+                { label: "Pre-Orders", val: stats.preOrders, icon: UtensilsCrossed, color: "text-blue-600", bg: "bg-blue-100" },
+                { label: "Post-Booking", val: stats.postOrders, icon: Bell, color: "text-orange-600", bg: "bg-orange-100" },
+                { label: "Calls Made", val: stats.calls, icon: PhoneCall, color: "text-emerald-600", bg: "bg-emerald-100" },
+              ].map((s, idx) => (
+                <div key={idx} className="bg-white p-8 rounded-[3rem] border border-slate-100 text-center hover:shadow-xl transition-all group">
+                  <div className={`w-14 h-14 ${s.bg} ${s.color} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform`}><s.icon className="w-7 h-7"/></div>
+                  <p className="text-[10px] font-black uppercase opacity-40 mb-2">{s.label}</p>
+                  <p className="text-5xl font-black italic text-slate-900 tracking-tighter">{s.val}</p>
+                </div>
+              ));
+            })()}
+          </div>
+        </>
+      )}
+    </motion.div>
+  </div>
+)}
 
         {/* ADD/EDIT DISH MODAL (Original Logic) */}
         {(isAddingItem || isEditingItem) && (
@@ -1361,6 +1368,23 @@ onClick={() => {
       </AnimatePresence>
 
       <footer className="mt-auto border-t border-slate-200 bg-white p-8"><Footer /></footer>
+    </div>
+  );
+}
+// 👑 రాజు ప్రీమియం ప్రమోషన్ యుఐ బ్యానర్
+function UpgradeBanner() {
+  return (
+    <div className="max-w-xl mx-auto bg-white p-10 rounded-[3rem] border border-purple-100 text-center shadow-2xl mt-12 relative overflow-hidden">
+      <div className="absolute -top-10 -right-10 w-32 h-32 bg-purple-50 rounded-full blur-2xl"></div>
+      <div className="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6 border border-purple-100 shadow-md">👑</div>
+      <h3 className="text-2xl font-black uppercase italic tracking-tight text-slate-900">Upgrade to Advanced Pro Node</h3>
+      <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mt-2">Unlock the full power of Sudara Hub</p>
+      <p className="text-xs font-medium text-slate-500 mt-4 leading-relaxed uppercase tracking-wide">
+        Your account is currently on the Basic Plan (₹50/Day). To unlock Live Real-time Orders, Table Dining Configurations, Automatic Invoice Printing, and graphical Sales Matrix Reports, upgrade to Premium Plan for just ₹100/day.
+      </p>
+      <div className="mt-8 pt-6 border-t flex flex-col sm:flex-row gap-3 justify-center">
+        <a href="tel:7569896128" className="bg-slate-950 text-white px-6 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest italic shadow-lg active:scale-95 transition-all">Contact Account Manager</a>
+      </div>
     </div>
   );
 }

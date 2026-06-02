@@ -25,6 +25,12 @@ const OrderSchema = new mongoose.Schema({
     enum: ["Pending", "Accepted", "Preparing", "Served"], 
     default: "Pending" 
   },
+  // నీ ఆర్డర్ స్కీమా లోపల ఇవి యాడ్ చెయ్ మచ్చా:
+  deliveryType: { 
+    type: String, 
+    enum: ['Take Away', 'Book at Restaurant', 'None'], 
+    default: 'None' 
+  },
   
   // 🎯 మార్పు 2: sudaraId - ఇక్కడ 'unique: true' జాగ్రత్త!
   // నువ్వు అన్నీ డిలీట్ చేస్తున్నావు కాబట్టి 'sparse: true' ఉండటం మంచిది.
@@ -34,6 +40,7 @@ const OrderSchema = new mongoose.Schema({
   prepTime: { type: Number, default: 20 }, 
   scheduledStartTime: Date, 
   isDelayed: { type: Boolean, default: false },
+
 
   createdAt: { type: Date, default: Date.now }
 });

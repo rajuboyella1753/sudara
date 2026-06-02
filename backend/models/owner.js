@@ -44,6 +44,11 @@ const ownerSchema = new mongoose.Schema(
     numberOfReviews: { type: Number, default: 0 },
     totalRatings: { type: Number, default: 0 },
     averageRating: { type: Number, default: 0 },
+
+    nextBillingDate: { type: Date },      
+    billingStatus: { type: String, default: "Unpaid" }, 
+    planType: { type: String, enum: ["basic", "premium"], default: "basic" },
+    pendingMonthsCount: { type: Number, default: 0 },
     reviews: [
       {
         comment: { type: String, required: true },

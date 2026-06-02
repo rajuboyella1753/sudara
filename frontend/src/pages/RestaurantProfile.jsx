@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useParams } from "react-router-dom";
 import api from "../api/api-base";
 import Navbar from "../components/Navbar";
@@ -16,12 +16,14 @@ export default function RestaurantProfile() {
   const [owner, setOwner] = useState(null);
   const [items, setItems] = useState([]);
   const [filter, setFilter] = useState("All");
+  const orderSectionRef = useRef(null); // 🎯 రాజు న్యూ చేంజ్: స్క్రోలింగ్ కోసం రిఫరెన్స్
   const [activeSubCat, setActiveSubCat] = useState("All"); 
   const [itemSearch, setItemSearch] = useState(""); 
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
   const [selectedImg, setSelectedImg] = useState(null); 
   const [cart, setCart] = useState({}); 
+  const [deliveryType, setDeliveryType] = useState("Take Away");
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [orderData, setOrderData] = useState({ name: "", phone: "", txId: "", arrivalTime: "" });
   const [showPayWarning, setShowPayWarning] = useState(false); 
@@ -32,9 +34,11 @@ export default function RestaurantProfile() {
   const sudaraId = "SDR" + Math.floor(100 + Math.random() * 900);
   const [orderStatus, setOrderStatus] = useState(null);
   const [placedOrderId, setPlacedOrderId] = useState(null);
+
   const availableSubCats = useMemo(() => {
   const defaultCats = ["Biryanis", "Starters", "Soups", "Noodles", "Gravys", "Rice", "Breads", "Sea Food", "Tiffins"];
-  
+  // 🎯 రాజు చేంజ్: డ్రాప్‌డౌన్ వాల్యూ స్టోర్ చేయడానికి కొత్త స్టేట్
+
   // 2. ప్రస్తుతం మెనూలో ఉన్న అన్ని కేటగిరీలను తీసుకుంటున్నాం (ఓనర్ కొత్తగా యాడ్ చేసినవి కూడా ఇందులో ఉంటాయి) 
   const catsInMenu = items.map(item => item.subCategory);
   
@@ -236,6 +240,7 @@ const getTodayDate = () => {
   const totalAmount = Object.values(cart).reduce((acc, curr) => acc + (curr.price * curr.qty), 0);
   const halfAmount = (totalAmount / 2).toFixed(2);
 
+// 🚀 రాజు పక్కా డైనమిక్ సబ్‌మిషన్ ఇంజన్
 const handleConfirmOrder = async () => {
   if (!orderData.name || !orderData.txId || !orderData.arrivalTime) {
     return alert("Please fill details! 📝");
@@ -243,13 +248,14 @@ const handleConfirmOrder = async () => {
 
   try {
     setLoading(true);
+    
+    // 🎯 మ్యాన్యువల్ సేఫ్ ఐడి (బ్యాకెండ్ లో కూడా చెక్ ఉంది కాబట్టి ఇబ్బంది లేదు రాజు)
     const sudaraId = "SDR" + Math.floor(100 + Math.random() * 900);
     const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name}`);
-
-    // 🎯 రాజు, ఇక్కడ మార్చాను చూడు. షార్ట్‌కట్ లేకుండా మ్యాన్యువల్ డేట్!
+    
+    // 🎯 మ్యాన్యువల్ డేట్ కాలిక్యులేషన్ (Ex: 2/6/2026 - నో లూప్స్, నో షార్ట్‌కట్స్)
     const d = new Date();
     const todayDate = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`; 
-    // ఇప్పుడు ఇది పక్కాగా "15/5/2026" అని ఇస్తుంది.
 
     const payload = {
       restaurantId: id,
@@ -263,25 +269,29 @@ const handleConfirmOrder = async () => {
       orderType: "Pre-book",
       sudaraId: sudaraId,
       travelDuration: parseInt(orderData.arrivalTime),
-      status: "Pending"
+      status: "Pending",
+      deliveryType: deliveryType // 🚀 డ్రాప్‌డౌన్ వాల్యూ (Take Away లేదా Book at Restaurant) పక్కాగా వెళ్తుంది రాజు!
     };
 
+    // 🤝 ఏకకాలంలో ఆర్డర్ క్రియేట్ చేసి, ఓనర్ అనలిటిక్స్ లో ఒక క్లిక్ పెంచుతున్నాం రాజు మచ్చా
     await Promise.all([
       api.post("/orders/add", payload),
       api.put(`/owner/track-analytics/${id}`, { 
         action: "pre_order_click", 
-        date: todayDate // ✅ ఇప్పుడు ఇది 15/5 లోనే స్టోర్ అవుతుంది
+        date: todayDate 
       })
     ]);
 
     alert(`ORDER SYNCED! ✅\n\nYour Unique ID: ${sudaraId}`);
     
+    // 🎉 స్టేట్స్ అన్నీ క్లీన్ గా రీసెట్
     setCart({});
     setShowOrderForm(false);
     setOrderData({ name: "", phone: "", txId: "", arrivalTime: "" });
+    if (typeof setDeliveryType === "function") setDeliveryType("Take Away"); 
 
   } catch (err) {
-    console.error("Pre-order Error:", err);
+    console.error("Pre-order Error ❌:", err);
     alert("Order Sync Failed! ❌");
   } finally {
     setLoading(false);
@@ -361,7 +371,34 @@ const handleInstantOrder = async () => {
   const availableItems = searchFiltered.filter(item => item.isAvailable);
 
   if (loading) return <div className="h-screen bg-white flex items-center justify-center font-black animate-pulse text-blue-600 uppercase tracking-widest text-[10px]">Scanning Menu...</div>;
+// 🚀 రాజు అడ్మిన్ కంట్రోల్ రూల్: ఓనర్ కి యాక్సెస్ లేకపోతే మెయిన్ పేజీని అస్సలు ఓపెన్ చేయనివ్వద్దు!
+if (!owner || !owner.isApproved) {
+  return (
+    <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-950 text-white p-6 text-center select-none animate-fade-in">
+      <div className="w-16 h-16 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-center mb-6 shadow-2xl shadow-red-500/10">
+        <ShieldAlert className="w-8 h-8 text-red-500 animate-pulse" />
+      </div>
+      
+      <h1 className="text-xl font-black uppercase italic tracking-tighter text-slate-100">
+        SUDARA HUB <span className="text-red-500">GRID RESTRICTION</span>
+      </h1>
+      
+      <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 mt-2">
+        Node Address Inactive
+      </p>
 
+      <div className="mt-6 p-5 bg-white/5 border border-white/10 rounded-2xl max-w-xs">
+        <p className="text-xs font-bold text-slate-400 leading-relaxed uppercase">
+          ⚠️ ఈ రెస్టారెంట్ యొక్క డిజిటల్ మెనూ సర్వీస్ టెంపరరీగా <span className="text-red-400 font-black">SUSPENDED</span> చేయబడింది. దయచేసి క్యాష్ కౌంటర్ దగ్గర ఆర్డర్ ఇవ్వండి.
+        </p>
+      </div>
+
+      <p className="text-[8px] font-black uppercase text-slate-600 tracking-widest mt-12">
+        Powered by Sudara.in | Hyperlocal Ecosystem
+      </p>
+    </div>
+  );
+}
   return (
     <div className="min-h-screen bg-white text-slate-900 overflow-x-hidden selection:bg-blue-500/30">
     {/* 📱 Solid White Navbar - No Transparency */}
@@ -471,55 +508,61 @@ const handleInstantOrder = async () => {
         }
         return null;
       })()}
-          {/* special offers end  */}
-            {owner?.interiorImages?.length > 0 && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 border-l-4 border-blue-600 pl-3"><h3 className="text-[10px] sm:text-xs font-black uppercase text-slate-800 tracking-widest italic">Ambience</h3></div>
-                <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 scrollbar-hide">
-                  {owner.interiorImages.map((img, idx) => (
-                    <img key={idx} src={img} loading="lazy" onClick={() => setSelectedImg(img)} className="w-60 sm:w-72 h-40 sm:h-48 object-cover rounded-[1.5rem] sm:rounded-[2rem] border shadow-sm shrink-0 cursor-zoom-in" alt="" />
-                  ))}
-                </div>
-              </div>
-            )}
-{/* 🔍 Order Tracking Section */}
-<div className="mt-8 p-6 bg-white border-2 border-dashed border-slate-200 rounded-[2.5rem]">
-  <p className="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest italic text-center">
-    Track Your Order Status
-  </p>
-  
-  <div className="flex flex-col gap-3">
-    <input 
-      type="text" 
-      id="customerSdrId"
-      placeholder="Enter Your ID (e.g. SDR158)" 
-      className="bg-slate-50 p-4 rounded-2xl text-xs font-bold outline-none border focus:border-blue-400 uppercase"
-    />
-    
-    <button 
-      onClick={() => handleTrackOrder()}
-      className="bg-slate-900 text-white px-6 py-4 rounded-2xl text-[10px] font-black uppercase italic shadow-lg active:scale-95 transition-all"
-    >
-      Check Status 🔍
-    </button>
-  </div>
-    {placedOrderId && (
-  <div className="mb-4 p-5 bg-emerald-50 border-2 border-emerald-100 rounded-[2rem] text-center">
-    <p className="text-[10px] font-black text-emerald-600 uppercase">Your Order ID</p>
-    <p className="text-2xl font-black text-slate-900 mt-1">{placedOrderId}</p>
-    <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase">Copy this ID to Track Status below</p>
+
+{owner?.planType === "premium" && owner?.interiorImages?.length > 0 && (
+  <div className="space-y-4">
+    <div className="flex items-center gap-2 border-l-4 border-blue-600 pl-3">
+      <h3 className="text-[10px] sm:text-xs font-black uppercase text-slate-800 tracking-widest italic">Ambience</h3>
+    </div>
+    <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 scrollbar-hide">
+      {owner.interiorImages.map((img, idx) => (
+        <img key={idx} src={img} loading="lazy" onClick={() => setSelectedImg(img)} className="w-60 sm:w-72 h-40 sm:h-48 object-cover rounded-[1.5rem] sm:rounded-[2rem] border shadow-sm shrink-0 cursor-zoom-in" alt="" />
+      ))}
+    </div>
   </div>
 )}
-  {/* స్టేటస్ రిజల్ట్ ఇక్కడ చూపిస్తాం */}
-  {orderStatus && (
-    <div className="mt-4 p-4 bg-blue-50 rounded-2xl border border-blue-100 text-center">
-      <p className="text-[9px] font-black text-blue-400 uppercase">Current Status</p>
-      <p className="text-lg font-black text-blue-600 uppercase italic mt-1 animate-pulse">
-        {orderStatus}
-      </p>
+{/* 🔍 Order Tracking Section */}
+{owner?.planType === "premium" && (
+  <div className="mt-8 p-6 bg-white border-2 border-dashed border-slate-200 rounded-[2.5rem]">
+    <p className="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest italic text-center">
+      Track Your Order Status
+    </p>
+    
+    <div className="flex flex-col gap-3">
+      <input 
+        type="text" 
+        id="customerSdrId"
+        placeholder="Enter Your ID (e.g. SDR158)" 
+        className="bg-slate-50 p-4 rounded-2xl text-xs font-bold outline-none border focus:border-blue-400 uppercase"
+      />
+      
+      <button 
+        onClick={() => handleTrackOrder()}
+        className="bg-slate-900 text-white px-6 py-4 rounded-2xl text-[10px] font-black uppercase italic shadow-lg active:scale-95 transition-all"
+      >
+        Check Status 🔍
+      </button>
     </div>
-  )}
-</div>
+
+    {placedOrderId && (
+      <div className="mb-4 p-5 bg-emerald-50 border-2 border-emerald-100 rounded-[2rem] text-center">
+        <p className="text-[10px] font-black text-emerald-600 uppercase">Your Order ID</p>
+        <p className="text-2xl font-black text-slate-900 mt-1">{placedOrderId}</p>
+        <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase">Copy this ID to Track Status below</p>
+      </div>
+    )}
+
+    {/* స్టేటస్ రిజల్ట్ ఇక్కడ చూపిస్తాం */}
+    {orderStatus && (
+      <div className="mt-4 p-4 bg-blue-50 rounded-2xl border border-blue-100 text-center">
+        <p className="text-[9px] font-black text-blue-400 uppercase">Current Status</p>
+        <p className="text-lg font-black text-blue-600 uppercase italic mt-1 animate-pulse">
+          {orderStatus}
+        </p>
+      </div>
+    )}
+  </div>
+)}
             {/* Filter Section: Sticky with Responsive Spacing */}
             <div className="sticky top-16 sm:top-20 z-30 bg-white/95 py-2 border-b space-y-3 sm:space-y-4 backdrop-blur-md">
                 <div className="relative">
@@ -615,86 +658,90 @@ const handleInstantOrder = async () => {
             </div>
         </div>
 
+
 {/* Right Sidebar: Mobile-First Order */}
 <div className="order-1 lg:order-2 lg:col-span-4">
-  <div className="bg-white p-4 rounded-2xl lg:sticky lg:top-32 shadow-lg border border-slate-100">
+  <div ref={orderSectionRef} className="bg-white p-4 rounded-2xl lg:sticky lg:top-32 shadow-lg border border-slate-100 scroll-mt-24">
     
-    {/* 🚀 1. Order Summary (Keep as is) */}
-    {owner?.name !== "Amaravathi Hotel" && owner?.name !== "Ruchi Hotel" && owner?.name !== "RR ROYAL RESTAURANT " && (
-      <div className="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-100">
-        <span className="text-[9px] font-black uppercase text-blue-600 italic tracking-widest">Order Summary</span>
-        <div className="space-y-1.5 my-3 max-h-40 overflow-y-auto scrollbar-hide">
-          {Object.values(cart).map((i) => (
-            <div key={i._id} className="flex justify-between text-[10px] font-bold italic text-slate-600">
-              <span>{i.qty} x {i.name}</span>
-              <span>₹{i.price * i.qty}</span>
+    {/* 🎯 రాజు మాస్టర్ ลాక్ కండిషన్ */}
+    {owner?.planType === "premium" ? (
+      <>
+        {/* 🚀 1. Order Summary (Premium Only) */}
+        {owner?.name !== "Amaravathi Hotel" && owner?.name !== "Ruchi Hotel" && owner?.name !== "RR ROYAL RESTAURANT " && (
+          <div className="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-100">
+            <span className="text-[9px] font-black uppercase text-blue-600 italic tracking-widest">Order Summary</span>
+            <div className="space-y-1.5 my-3 max-h-40 overflow-y-auto scrollbar-hide">
+              {Object.values(cart).map((i) => (
+                <div key={i._id} className="flex justify-between text-[10px] font-bold italic text-slate-600">
+                  <span>{i.qty} x {i.name}</span>
+                  <span>₹{i.price * i.qty}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <div className="border-t border-blue-100 pt-3 space-y-1">
-          <div className="flex justify-between text-sm font-black italic text-blue-600">
-            <span>Pay Total:</span>
-            <span>₹{totalAmount}</span>
+            <div className="border-t border-blue-100 pt-3 space-y-1">
+              <div className="flex justify-between text-sm font-black italic text-blue-600">
+                <span>Pay Total:</span>
+                <span>₹{totalAmount}</span>
+              </div>
+            </div>
           </div>
+        )}
+
+        {/* 🚀 ACTION BUTTONS SECTION (Premium Only) */}
+        <div className="flex flex-col gap-2.5">
+          {owner?.tableCount > 0 && (
+            <button  
+              onClick={() => {
+                if (totalAmount > 0) { trackPostOrderClick(); setShowInstantModal(true); }  
+                else { alert("Select items first! 🍲"); }
+              }}
+              className={`w-full py-4 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 border-b-4 ${totalAmount > 0 ? 'bg-emerald-600 text-white border-emerald-800' : 'bg-slate-100 text-slate-300 border-slate-200'}`}
+            >
+              <MessageSquare className="w-4 h-4" /> Post-Book (At Restaurant)
+            </button>
+          )}
+
+          {owner?.name !== "Amaravathi Hotel" && owner?.name !== "Ruchi Hotel" && owner?.name !== "RR ROYAL RESTAURANT " && (
+            <button  
+              onClick={() => {
+                if (totalAmount > 0) { trackPreOrderClick(); setShowPayWarning(true); }  
+                else { alert("Select items!"); }
+              }}
+              className={`w-full py-3.5 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${totalAmount > 0 ? 'bg-slate-900 text-white shadow-lg active:scale-95' : 'bg-slate-100 text-slate-300'}`}
+            >
+              Pre-Book & Pay Advance
+            </button>
+          )}
+
+          <button  
+            onClick={handleCallAction}  
+            className="w-full py-3.5 rounded-xl font-black uppercase text-[10px] bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all"
+          >
+            <PhoneCall className="w-4 h-4" /> Call to Owner
+          </button>
         </div>
+      </>
+    ) : (
+      /* 🟢 రాజు బేసిక్ ప్లాన్ డిజైన్: ఆన్లైన్ ఆర్డర్స్ కనిపించవు, కేవలం కాల్ అండ్ డైరెక్ట్ ఆర్డర్ メసేజ్! */
+      <div className="text-center py-6">
+        <div className="bg-amber-50 text-amber-800 p-5 rounded-[2rem] border border-amber-200/60 mb-5">
+          <UtensilsCrossed className="w-8 h-8 text-amber-600 mx-auto mb-3 animate-pulse" />
+          <p className="text-[11px] font-black uppercase tracking-wider leading-relaxed">
+            Digital Menu Active ✅
+          </p>
+          <p className="text-[9px] font-bold text-slate-500 uppercase mt-2 leading-relaxed">
+            Online ordering via phone is restricted for this node. Please look at the prices and order directly to server.
+          </p>
+        </div>
+         
+        <button  
+          onClick={handleCallAction}  
+          className="w-full py-4 rounded-xl font-black uppercase text-[10px] bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all"
+        >
+          <PhoneCall className="w-4 h-4" /> Call for Inquiries
+        </button>
       </div>
     )}
-
-   {/* 🚀 ACTION BUTTONS SECTION */}
-<div className="flex flex-col gap-2.5">
-  
-  {/* ✨ NEW: Instant Order Button (Only for table dining) */}
-  {owner?.tableCount > 0 && (
-    <button 
-      onClick={() => {
-  if (totalAmount > 0) {
-    trackPostOrderClick();
-    setShowInstantModal(true);
-  } else {
-    alert("Select items first! 🍲");
-  }
-}}
-      className={`w-full py-4 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 border-b-4 ${totalAmount > 0 ? 'bg-emerald-600 text-white border-emerald-800' : 'bg-slate-100 text-slate-300 border-slate-200'}`}
-    >
-      <MessageSquare className="w-4 h-4" /> Post-Book (At Restaurant)
-    </button>
-  )}
-
-  {/* 💳 Pre-Book (For normal hotels - Hidden for specific 3 hotels) */}
-  {owner?.name !== "Amaravathi Hotel" && owner?.name !== "Ruchi Hotel" && owner?.name !== "RR ROYAL RESTAURANT " && (
-    <button 
-      onClick={() => {
-  if (totalAmount > 0) {
-    trackPreOrderClick(); 
-    setShowPayWarning(true);
-  } else {
-    alert("Select items!");
-  }
-}}
-      className={`w-full py-3.5 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${totalAmount > 0 ? 'bg-slate-900 text-white shadow-lg active:scale-95' : 'bg-slate-100 text-slate-300'}`}
-    >
-      Pre-Book & Pay Advance
-    </button>
-  )}
-
-  {/* 📢 MESSAGE FOR CALL-ONLY HOTELS */}
-  {/* రాజు, ఇక్కడ ఆ మూడు హోటల్స్ కి మాత్రమే ఈ మెసేజ్ కనిపిస్తుంది */}
-  {(owner?.name === "Amaravathi Hotel" || owner?.name === "Ruchi Hotel" || owner?.name === "RR ROYAL RESTAURANT ") && (
-    <div className="bg-amber-50 border border-amber-100 p-2.5 rounded-xl text-center mb-1 shadow-sm">
-      <p className="text-[9px] font-black text-amber-600 uppercase italic tracking-tighter flex items-center justify-center gap-2">
-        <PhoneCall className="w-3 h-3" /> Pre-book & orders via calls only
-      </p>
-    </div>
-  )}
-
- {/* 📞 Call Owner Button - Trigger Popup */}
-<button 
-  onClick={handleCallAction} 
-  className="w-full py-3.5 rounded-xl font-black uppercase text-[10px] bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all"
->
-  <PhoneCall className="w-4 h-4" /> Call to Owner
-</button>
-</div>
 
   </div>
 </div>
@@ -741,11 +788,16 @@ const handleInstantOrder = async () => {
           
           {/* ❌ Close Button */}
           <button 
-            onClick={(e) => { e.stopPropagation(); setShowOrderForm(false); }}
-            className="absolute top-6 right-6 p-2.5 bg-white/10 hover:bg-red-500 text-white rounded-2xl transition-all active:scale-90"
-          >
-            <X className="w-4 h-4" />
-          </button>
+  onClick={(e) => { 
+    e.preventDefault();
+    e.stopPropagation(); 
+    setShowOrderForm(false); 
+  }}
+  className="absolute top-6 right-6 p-2.5 bg-white/10 hover:bg-red-500 text-white rounded-2xl transition-all active:scale-90 z-[310] cursor-pointer pointer-events-auto flex items-center justify-center border border-white/5"
+  type="button"
+>
+  <X className="w-4 h-4 pointer-events-none" />
+</button>
         </div>
 
         <div className="p-6 sm:p-8 space-y-6 overflow-y-auto max-h-[70vh] scrollbar-hide">
@@ -761,48 +813,74 @@ const handleInstantOrder = async () => {
             </div>
           </div>
 
-          {/* 📝 Details Form - Icon Integrated */}
-          <div className="space-y-4">
-            <div className="relative group">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
-              <input 
-                type="text" 
-                placeholder="Full Name" 
-                value={orderData.name} 
-                onChange={(e)=>setOrderData({...orderData, name:e.target.value})} 
-                className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-[11px] font-bold outline-none focus:bg-white focus:border-blue-500 transition-all shadow-inner" 
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div className="relative group">
-                <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
-                <input 
-                  type="text" 
-                  placeholder="Arrival (Mins)" 
-                  value={orderData.arrivalTime} 
-                  onChange={(e)=>setOrderData({...orderData, arrivalTime:e.target.value})} 
-                  className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-[10px] font-bold outline-none focus:bg-white focus:border-blue-500 transition-all shadow-inner" 
-                />
-              </div>
-              
-              <div className="relative group">
-                <CheckCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />
-                <input 
-                  type="number" 
-                  maxLength="5"
-                  placeholder="Txn ID (Last 5)" 
-                  value={orderData.txId} 
-                  onChange={(e) => {
-                    if (e.target.value.length <= 5) {
-                      setOrderData({...orderData, txId: e.target.value})
-                    }
-                  }} 
-                  className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-[10px] font-bold outline-none focus:bg-white focus:border-emerald-500 transition-all shadow-inner" 
-                />
-              </div>
-            </div>
-          </div>
+         {/* 📝 Details Form - Full Name కింద రాజు కొత్త డ్రాప్‌డౌన్ సెక్షన్ */}
+<div className="space-y-4">
+  
+  {/* 👤 1. ఇది నీ పాత Full Name ఇన్‌పుట్ బాక్స్ రాజు */}
+  <div className="relative group">
+    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+    <input 
+      type="text" 
+      placeholder="Full Name" 
+      value={orderData.name} 
+      onChange={(e)=>setOrderData({...orderData, name:e.target.value})} 
+      className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-[11px] font-bold outline-none focus:bg-white focus:border-blue-500 transition-all shadow-inner" 
+    />
+  </div>
+  
+  {/* 🎯 2. న్యూ డ్రాప్‌డౌన్: ఇది టేక్ అవే ఆ లేక డైనింగ్ బుకింగ్ ఆ అని అడుగుతుంది రాజు మచ్చా */}
+  <div className="relative group">
+    <UtensilsCrossed className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-600 transition-colors z-10" />
+    
+    <div className="relative">
+      <select 
+        value={deliveryType} 
+        onChange={(e) => setDeliveryType(e.target.value)}
+        className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-[11px] font-black uppercase outline-none focus:bg-white focus:border-blue-500 transition-all shadow-inner appearance-none cursor-pointer text-slate-700"
+        style={{ fontSize: '13px' }}
+      >
+        <option value="Take Away">📦 Take Away (Parcel)</option>
+        <option value="Book at Restaurant">🪑 Book at Restaurant (Dining)</option>
+      </select>
+
+      {/* డ్రాప్‌డౌన్ లోపల కనిపించే చిన్న ప్లస్/యారో ఐకాన్ ఎఫెక్ట్ రాజు */}
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+        <Plus className="w-3 h-3 text-slate-400 rotate-45" />
+      </div>
+    </div>
+  </div>
+  
+  {/* ⏰ 3. ఇది నీ పాత Arrival మరియు Txn ID ఇన్‌పుట్ గ్రిడ్ బాక్స్ */}
+  <div className="grid grid-cols-2 gap-4">
+    <div className="relative group">
+      <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+      <input 
+        type="text" 
+        placeholder="Arrival (Mins)" 
+        value={orderData.arrivalTime} 
+        onChange={(e)=>setOrderData({...orderData, arrivalTime:e.target.value})} 
+        className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-[10px] font-bold outline-none focus:bg-white focus:border-blue-500 transition-all shadow-inner" 
+      />
+    </div>
+    
+    <div className="relative group">
+      <CheckCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />
+      <input 
+        type="number" 
+        maxLength="5"
+        placeholder="Txn ID (Last 5)" 
+        value={orderData.txId} 
+        onChange={(e) => {
+          if (e.target.value.length <= 5) {
+            setOrderData({...orderData, txId: e.target.value})
+          }
+        }} 
+        className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-[10px] font-bold outline-none focus:bg-white focus:border-emerald-500 transition-all shadow-inner" 
+      />
+    </div>
+  </div>
+
+</div>
 
           {/* ✅ Step 3: Action Button */}
           <div className="pt-2">
@@ -989,11 +1067,16 @@ const handleInstantOrder = async () => {
           
           {/* ❌ Close Button */}
           <button 
-            onClick={() => setShowInstantModal(false)}
-            className="absolute top-6 right-6 p-2.5 bg-white/10 hover:bg-red-500 text-white rounded-2xl transition-all active:scale-90"
-          >
-            <X className="w-4 h-4" />
-          </button>
+    onClick={(e) => { 
+      e.preventDefault();
+      e.stopPropagation(); 
+      setShowInstantModal(false); 
+    }}
+    className="absolute top-6 right-6 p-2.5 bg-white/10 hover:bg-red-500 text-white rounded-2xl transition-all active:scale-90 z-[410] cursor-pointer pointer-events-auto flex items-center justify-center border border-white/5"
+    type="button"
+  >
+    <X className="w-4 h-4 pointer-events-none" />
+  </button>
         </div>
 
         <div className="p-6 sm:p-8 space-y-6">
@@ -1105,6 +1188,46 @@ const handleInstantOrder = async () => {
   )}
 </AnimatePresence>
       <Footer />
+      <AnimatePresence>
+        {totalAmount > 0 && owner?.planType === "premium" && (
+          <motion.div
+            initial={{ opacity: 0, y: 100 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 100 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[90] w-full max-w-md px-4 pointer-events-none"
+          >
+            <button
+              onClick={() => {
+                // 🎯 రాజు మ్యాజిక్: క్లిక్ చేయగానే ఆర్డర్ బటన్స్ దగ్గరకు స్మూత్ స్క్రోలింగ్!
+                orderSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+              className="w-full bg-slate-950 text-white p-4 rounded-2xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.4)] flex items-center justify-between border border-white/10 pointer-events-auto active:scale-95 transition-all"
+              type="button"
+            >
+              {/* Left Side: Basket details */}
+              <div className="flex items-center gap-3 text-left">
+                <div className="bg-blue-600 p-2.5 rounded-xl text-white relative">
+                  <ShoppingBag className="w-4 h-4" />
+                  <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-slate-950 animate-bounce">
+                    {Object.values(cart).reduce((acc, curr) => acc + curr.qty, 0)}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider leading-none">Order / Book Now</p>
+                  <p className="text-sm font-black text-white italic mt-1 leading-none">Total: ₹{totalAmount}</p>
+                </div>
+              </div>
+
+              {/* Right Side: View Action */}
+              <div className="flex items-center gap-1.5 text-blue-400 font-black text-[10px] uppercase tracking-widest bg-white/5 py-2 px-4 rounded-xl border border-white/5">
+                <span>View Order Details</span>
+                <Plus className="w-3 h-3 rotate-45" />
+              </div>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }

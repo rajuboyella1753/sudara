@@ -7,7 +7,7 @@ import {
   ShieldAlert, LogOut, Search, BarChart3, Store, X, 
   TrendingUp, Calendar, Activity, Star, MapPin, CreditCard,
   ArrowUpRight, LayoutDashboard, Globe, Menu, Bell, Filter,
-  ChevronRight, RefreshCw,Send,ShoppingBag,UtensilsCrossed,PhoneCall
+  ChevronRight, RefreshCw,Send,ShoppingBag,UtensilsCrossed,PhoneCall,Trash2
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -132,37 +132,59 @@ const getRangeStats = (analytics) => {
   return stats;
 };
 
-const getSubscriptionStatus = (createdAt, ownerId) => {
-  let joinDate;
-  if (createdAt) {
-    joinDate = new Date(createdAt);
-  } else if (ownerId && typeof ownerId === 'string' && ownerId.length === 24) {
-    joinDate = new Date(parseInt(ownerId.substring(0, 8), 16) * 1000);
-  }
-  if (!joinDate || isNaN(joinDate.getTime())) {
-    return { status: "Unknown", message: "Syncing...", isExpired: false };
-  }
+// 🚀 రాజు మాస్టర్ బిల్లింగ్ క్యాలిక్యులేటర్ (₹2499 హార్డ్‌కోడ్ పూర్తిగా క్లీన్డ్)
+const getSubscriptionStatus = (createdAt, nextBillingDate, planType) => {
   const today = new Date();
-  const start = new Date(joinDate);
-  start.setHours(0, 0, 0, 0);
-  const now = new Date(today);
-  now.setHours(0, 0, 0, 0);
-  const diffTime = now.getTime() - start.getTime();
+  today.setHours(0, 0, 0, 0);
+
+  // ఓనర్ ప్లాన్ ని బట్టి నెలవారీ ఫీజు డిసైడ్ అవుతుంది
+  const currentPlan = planType || "basic";
+  const actualFee = currentPlan === "premium" ? 3000 : 1500;
+
+  if (nextBillingDate) {
+    const billingDate = new Date(nextBillingDate);
+    billingDate.setHours(0, 0, 0, 0);
+
+    if (today <= billingDate) {
+      const timeDiff = billingDate.getTime() - today.getTime();
+      const daysRemaining = Math.round(timeDiff / (1000 * 60 * 60 * 24));
+
+      return { 
+        status: "Active", 
+        message: daysRemaining <= 0 ? "Expires Today! ⚠️" : `${daysRemaining} Days left in Cycle`, 
+        isExpired: false, 
+        chargeAmount: actualFee 
+      };
+    } else {
+      const overdueTime = today.getTime() - billingDate.getTime();
+      const overdueDays = Math.floor(overdueTime / (1000 * 60 * 60 * 24));
+
+      return { 
+        status: "Payment Due", 
+        message: `Subscription Expired! ⚠️`, 
+        isExpired: true,
+        chargeAmount: actualFee,
+        overdueText: `${overdueDays} Days Overdue`
+      };
+    }
+  }
+
+  const joinDate = createdAt ? new Date(createdAt) : new Date();
+  const diffTime = today.getTime() - joinDate.getTime();
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-  if (diffDays <= 30) {
-    const daysLeft = 30 - diffDays;
+
+  if (diffDays <= 7) {
+    const daysLeft = 7 - diffDays;
     return { 
       status: "Trialing", 
-      message: daysLeft <= 0 ? "Last day of Trial" : `${daysLeft} days left in Free Trial`, 
-      isExpired: false 
-    };
-  } else {
-    return { 
-      status: "Payment Due", 
-      message: "Subscription Expired! (₹299)", 
-      isExpired: true 
+      message: daysLeft <= 0 ? "Last day of Trial" : `${daysLeft} days left in Trial`, 
+      isExpired: false,
+      chargeAmount: actualFee,
+      overdueText: ""
     };
   }
+
+  return { status: "Payment Due", message: "Subscription Expired! ⚠️", isExpired: true, chargeAmount: actualFee, overdueText: "Trial Ended" };
 };
 
   const updateApprovalStatus = async (id, status) => {
@@ -224,6 +246,35 @@ const filteredList = owners.filter(owner => {
   // ✅ Ikkada 'isNotGeneral' ni return condition lo add chesa
   return isNotGeneral && matchesTab && matchesState && matchesDistrict && matchesSearch;
 });
+// Daily totals calculate చేయడం
+const dailyTotals = filteredList.reduce((acc, res) => {
+  const analyticsObj = res.analytics instanceof Map 
+    ? Object.fromEntries(res.analytics) 
+    : (res.analytics || {});
+
+  let hits = 0, pre = 0, post = 0, calls = 0;
+
+  if (viewMode === "daily") {
+    const d = new Date(filterDate);
+    const key1 = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+    const key2 = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+    const data1 = analyticsObj[key1] || {};
+    const data2 = analyticsObj[key2] || {};
+    hits  = (data1.kitchen_entry    || 0) + (data2.kitchen_entry    || 0);
+    pre   = (data1.pre_order_click  || 0) + (data2.pre_order_click  || 0);
+    post  = (data1.post_order_click || 0) + (data2.post_order_click || 0);
+    calls = (data1.call_click       || 0) + (data2.call_click       || 0);
+  } else {
+    const s = getRangeStats(res.analytics);
+    hits = s.hits; pre = s.orders; post = s.postOrders; calls = s.calls;
+  }
+
+  acc.hits  += hits;
+  acc.pre   += pre;
+  acc.post  += post;
+  acc.calls += calls;
+  return acc;
+}, { hits: 0, pre: 0, post: 0, calls: 0 });
 
   if (loading) return (
     <div className="h-screen flex flex-col items-center justify-center bg-white text-blue-600 font-black px-6">
@@ -445,6 +496,21 @@ const filteredList = owners.filter(owner => {
         <div className="p-4 lg:p-10 max-w-7xl mx-auto w-full pb-20">
           {activeTab === "analytics" && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+              {/* 📊 DAILY SUMMARY TOTALS */}
+<div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+  {[
+    { label: "Total Hits",      val: dailyTotals.hits,  color: "slate",   icon: Activity,     desc: "Page visits" },
+    { label: "Pre-Bookings",    val: dailyTotals.pre,   color: "blue",    icon: ShoppingBag,  desc: "Pre-orders" },
+    { label: "Post-Bookings",   val: dailyTotals.post,  color: "emerald", icon: UtensilsCrossed, desc: "Post-orders" },
+    { label: "Total Calls",     val: dailyTotals.calls, color: "orange",  icon: PhoneCall,    desc: "Call clicks" },
+  ].map((s, i) => (
+    <div key={i} className={`bg-white border border-${s.color}-100 rounded-[2rem] p-6 shadow-sm`}>
+      <p className={`text-[9px] font-black text-${s.color}-400 uppercase tracking-widest mb-1`}>{s.label}</p>
+      <p className={`text-4xl font-black italic text-${s.color}-600`}>{s.val}</p>
+      <p className="text-[8px] text-slate-400 uppercase mt-1">{s.desc}</p>
+    </div>
+  ))}
+</div>
               <div className="hidden lg:block bg-white rounded-[2.5rem] border border-slate-200/60 shadow-sm overflow-hidden">
                 <table className="w-full text-left border-collapse">
                   <thead>
@@ -521,38 +587,29 @@ if (viewMode === "daily") {
                 </table>
               </div>
 
-               <div className="lg:hidden space-y-4 px-2 pb-20">
-  {filteredList.map((res) => {
-    const analyticsObj = res.analytics instanceof Map ? Object.fromEntries(res.analytics) : (res.analytics || {});
+               {/* 📱 MOBILE/TABLET GRID VIEW (RAJU PIN-TO-PIN FIXED LAYOUT) */}
+<div className="lg:hidden space-y-4 px-2 pb-20">
+  {filteredList.map((owner) => {
+    // 🎯 లూప్ వేరియబుల్ ని పక్కాగా 'owner' కింద మార్చాం రాజు
+    const analyticsObj = owner.analytics instanceof Map ? Object.fromEntries(owner.analytics) : (owner.analytics || {});
     let dHits = 0, dOrders = 0, dPostOrders = 0, dCalls = 0;
 
+    // 🚀 సబ్‌స్క్రిప్షన్ స్టేటస్ కరెక్ట్ పారామీటర్స్ తో ఇక్కడే కాల్ అవుతుంది రాజు!
+    const sub = getSubscriptionStatus(owner.createdAt, owner.nextBillingDate, owner.planType);
+
     if (viewMode === "daily") {
-  const d = new Date(filterDate);
-  
-  // 🎯 1. సున్నా లేని కీ (ఉదా: 8/3/2026)
-  const dayKey = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-
-  // 🎯 2. డేటాబేస్ నుండి డేటాని పక్కాగా లాగే లాజిక్
-  let dayData = {};
-  
-  // ఒకవేళ అది Mongoose Map అయితే .get() వాడాలి
-  if (res.analytics instanceof Map) {
-    dayData = res.analytics.get(dayKey) || {};
-  } else {
-    // మామూలు ఆబ్జెక్ట్ అయితే ఇలా
-    dayData = analyticsObj[dayKey] || {};
-  }
-
-  // 🎯 3. ఒకవేళ డేటా లోపల '_doc' ఉంటే (Mongoose formatting issue) దాన్ని కూడా హ్యాండిల్ చేద్దాం
-  const finalData = dayData._doc || dayData;
-  
-  // 🎯 4. ఇప్పుడు వాల్యూస్ అసైన్ చెయ్
-  dHits = finalData.kitchen_entry || 0;
-  dOrders = finalData.pre_order_click || 0;
-  dPostOrders = finalData.post_order_click || 0;
-  dCalls = finalData.call_click || 0;
-} else {
-      const stats = getRangeStats(res.analytics);
+      const d = new Date(filterDate);
+      const dayKey = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+      
+      let dayData = owner.analytics instanceof Map ? owner.analytics.get(dayKey) || {} : analyticsObj[dayKey] || {};
+      const finalData = dayData._doc || dayData;
+      
+      dHits = finalData.kitchen_entry || 0;
+      dOrders = finalData.pre_order_click || 0;
+      dPostOrders = finalData.post_order_click || 0;
+      dCalls = finalData.call_click || 0;
+    } else {
+      const stats = getRangeStats(owner.analytics);
       dHits = stats.hits;
       dOrders = stats.orders;
       dPostOrders = stats.postOrders;
@@ -564,23 +621,30 @@ if (viewMode === "daily") {
         layout
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        key={res._id} 
-        className="bg-white p-5 rounded-[2.5rem] border border-slate-100 shadow-sm active:scale-[0.98] transition-all"
+        key={owner._id} 
+        className="bg-white p-5 rounded-[2.5rem] border border-slate-200 shadow-sm relative flex flex-col h-full overflow-hidden group"
       >
-        {/* Header: Logo + Name + Status */}
-        <div className="flex items-center justify-between mb-5">
+        {/* 🚩 TOP BADGE: SUBSCRIPTION ALERT (MOBILE) */}
+        {activeTab === "approved" && sub.isExpired && (
+          <div className="absolute top-0 left-0 w-full bg-red-500 text-white text-[7px] font-black uppercase py-1 text-center z-10 animate-pulse">
+            Monthly Due Pending (₹{sub.chargeAmount})
+          </div>
+        )}
+
+        {/* 🏨 HOTEL NAME & LOGO */}
+        <div className="flex items-center justify-between mb-5 mt-2">
           <div className="flex items-center gap-3">
             <div className="relative">
               <img 
-                src={res.hotelImage || "https://via.placeholder.com/60"} 
+                src={owner.hotelImage || "https://via.placeholder.com/60"} 
                 className="w-12 h-12 rounded-2xl object-cover border-2 border-slate-50" 
                 alt="" 
               />
               <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${dHits > 0 ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
             </div>
             <div className="min-w-0">
-              <h4 className="font-black text-[13px] uppercase italic text-slate-800 leading-tight truncate">{res.name}</h4>
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">{res.collegeName}</p>
+              <h4 className="font-black text-[13px] uppercase italic text-slate-800 leading-tight truncate">{owner.name}</h4>
+              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">{owner.collegeName}</p>
             </div>
           </div>
           <div className={`px-3 py-1.5 rounded-xl text-[8px] font-black uppercase italic ${dHits > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50 text-slate-400'}`}>
@@ -588,26 +652,156 @@ if (viewMode === "daily") {
           </div>
         </div>
 
-        {/* Analytics Grid: 4 Columns */}
-        <div className="grid grid-cols-4 gap-2">
+        {/* 📊 ANALYTICS MATRIX GRID */}
+        <div className="grid grid-cols-4 gap-2 mb-4">
           {[
             { label: 'Hits', val: dHits, color: 'slate', icon: Activity },
             { label: 'Pre', val: dOrders, color: 'blue', icon: ShoppingBag },
             { label: 'Post', val: dPostOrders, color: 'emerald', icon: UtensilsCrossed },
             { label: 'Calls', val: dCalls, color: 'orange', icon: PhoneCall }
           ].map((stat, idx) => (
-            <div key={idx} className={`bg-${stat.color}-50/50 p-3 rounded-2xl border border-${stat.color}-100/50 text-center`}>
-              <p className={`text-[7px] font-black text-${stat.color}-400 uppercase mb-1 tracking-tighter`}>{stat.label}</p>
-              <p className={`text-sm font-black text-${stat.color}-600 italic`}>{stat.val}</p>
+            <div key={idx} className="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-center">
+              <p className="text-[7px] font-black text-slate-400 uppercase mb-1 tracking-tighter">{stat.label}</p>
+              <p className="text-sm font-black text-slate-700 italic">{stat.val}</p>
             </div>
           ))}
         </div>
 
-        {/* Bottom Quick Action (Optional) */}
-        <div className="mt-4 pt-4 border-t border-slate-50 flex justify-between items-center">
-           <span className="text-[8px] font-black text-slate-300 uppercase tracking-[0.2em]">Matrix Node v1.0</span>
-           <ChevronRight className="w-4 h-4 text-slate-200" />
+        {/* 📅 REGISTERED DATE INFO */}
+        <div className="flex items-center gap-2 mb-4 px-1">
+          <Calendar className="w-3 h-3 text-slate-400" />
+          <span className="text-[9px] font-black text-slate-400 uppercase italic tracking-tighter">
+            Registered: {owner?.createdAt ? new Date(owner.createdAt).toLocaleDateString('en-GB') : "New Entry"}
+          </span>
         </div>
+
+        {/* 💳 PREMIUM PROTOCOL BOX (MOBILE RESPONSIVE FIXED - 100% ACCURATE) */}
+{activeTab === "approved" && (() => {
+
+  const displayAmount = owner?.planType === "premium" ? 3000 : 1500;
+  const planNameText = owner?.planType === "premium" ? "👑 PREMIUM PRO NODE (₹100/Day)" : "🟢 BASIC NODE (₹50/Day)";
+
+  return (
+    <div className={`mb-4 p-4 rounded-2xl border transition-all duration-300 ${sub.isExpired ? 'bg-red-50 border-red-100 shadow-sm shadow-red-50' : 'bg-emerald-50 border-emerald-100 shadow-sm shadow-emerald-50'}`}>
+      <div className="flex justify-between items-center gap-4">
+        
+        {/* Left Core Node Stats */}
+        <div className="min-w-0 flex-1 w-full text-slate-900">
+          <div className="flex items-center justify-between gap-2 mb-3">
+            <div className="flex flex-col gap-0.5">
+              <p className="text-[8px] font-black opacity-40 uppercase tracking-[0.25em] text-slate-500">System Protocol</p>
+              <h5 className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Node Status</h5>
+            </div>
+            
+            {/* Status Pill Alert */}
+            <div className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border animate-pulse shadow-sm flex items-center gap-1 ${sub.isExpired ? 'bg-rose-50/60 border-rose-100 text-rose-600' : 'bg-emerald-50/60 border-emerald-100 text-emerald-600'}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${sub.isExpired ? 'bg-rose-500' : 'bg-emerald-500'}`}></span>
+              {sub.isExpired ? 'Offline' : 'Active'}
+            </div>
+          </div>
+
+          {/* Fee & Due Meta Card */}
+          <div className={`p-3 rounded-xl border bg-white/80 ${sub.isExpired ? 'border-rose-100' : 'border-emerald-100'}`}>
+            <span className={`text-xs font-black uppercase italic tracking-tight block ${sub.isExpired ? 'text-rose-600' : 'text-emerald-600'}`}>
+              {sub.message}
+            </span>
+            
+            {!sub.isExpired && (
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide mt-1">
+                • Plan: <span className="text-slate-600 font-black">₹{displayAmount}</span>
+              </p>
+            )}
+            
+            {sub.isExpired && (
+              <div className="mt-2 pt-2 border-t border-rose-100/50 grid grid-cols-2 gap-2">
+                <div className="flex flex-col">
+                  <span className="text-[6px] font-black uppercase text-slate-400">Timeline</span>
+                  <span className="text-[9px] font-black text-rose-600">{sub.overdueText || "Expired"}</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[6px] font-black uppercase text-slate-400">Fee</span>
+                  <span className="text-[9px] font-black text-slate-800">₹{displayAmount}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 📲 WHATSAPP ALERT ACTION BUTTON */}
+        {sub.isExpired && (
+          <button 
+            type="button"
+            onClick={() => {
+              const restaurantName = owner?.name || "Partner Restaurant";
+              const ownerPhone = owner?.phone || "";
+              const preBookings = owner?.preBookingsCount || 0; 
+              const postBookings = owner?.postBookingsCount || 0; 
+              const billingRef = `SUDARA-SUB-${Math.floor(100000 + Math.random() * 900000)}`;
+
+              const message = `*🛡️ SUDARA HUB NETWORK - BILLING DEPT* \n---------------------------------------------\n*URGENT NOTICE: SUBSCRIPTION EXPIRY*\n\nDear *${restaurantName}* Management,\n\nThis is an automated notification from Sudara Hub Compliance. Your commercial merchant account subscription for *${planNameText}* has *EXPIRED*.\n\n⚠️ *CURRENT STATUS:* YOUR RESTAURANT IS NOW INACTIVE (HIDDEN FROM HUB)\n\n📊 *PENDING BUSINESS MATRIX AFFECTED:*\n• Pending Pre-Bookings (Active Orders): *${preBookings} Orders*\n• Post-Booking Records (Live Catalog/History): *${postBookings} Locked*\n\nTo bypass the service restriction, resume visibility within your neighborhood search engine, and instantly unlock your active matrix dashboard, please clear the node renewal fee.\n\n💸 • Pending Due Amount: *₹${displayAmount} / Month*\n👤 *Beneficiary Account:* Boyella Raju\n🆔 *Billing Reference:* ${billingRef}\n\n📌 *OFFICIAL MERCHANT PAYMENT PORTALS:*\n• PhonePe Secure: *7569896128*\n• Unified UPI ID: *boyellaraju@ybl*\n\n🔄 *CRITICAL ACTIVATION STEP:*\nImmediately after completing the transaction, transmit the digital payment receipt (screenshot) with the text *"SUBSCRIPTION RECHARGED"* to our merchant safety operations line: *7569896128* for instant grid restoration.\n\n_Sudara Trust & Safety Compliance Team_\n_Sudara.in | Empowering Hyperlocal Ecosystems_`;
+
+              window.open(`https://wa.me/${ownerPhone}?text=${encodeURIComponent(message)}`, '_blank');
+            }} 
+            className="bg-rose-600 text-white p-3.5 rounded-2xl shadow-xl active:scale-95 transition-all duration-300 hover:bg-rose-700 border border-rose-500/30 shrink-0 flex items-center justify-center border-b-4 border-b-rose-800"
+            title="Transmit Expiry Alert"
+          >
+            <Send className="w-4 h-4" />
+          </button>
+        )}
+
+      </div>
+    </div>
+  );
+})()}
+
+        {/* 🟢 RENEW CYCLE BUTTON */}
+        {activeTab === "approved" && (
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={async () => {
+                try {
+                  const response = await api.put(`/owner/update-billing/${owner._id}`);
+                  if (response.data.success) {
+                    setOwners(prev => prev.map(o => o._id === owner._id ? response.data.owner : o));
+                    alert("✅ Subscription Renewed for 30 Days!");
+                  }
+                } catch(err) { console.error("Billing update failed ❌"); }
+              }}
+              className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[11px] uppercase tracking-wider rounded-2xl active:scale-95 transition-all shadow-md flex items-center justify-center gap-2"
+            >
+              Renew 30 Days Cycle ✅
+            </button>
+          </div>
+        )}
+
+        {/* 📱 PARTNER CONTACT */}
+        <div className="flex items-center gap-3 bg-slate-900 p-4 rounded-2xl mt-auto mb-4 shadow-inner">
+          <div className="w-8 h-8 bg-white/10 rounded-xl flex items-center justify-center text-blue-400">
+            <Phone className="w-4 h-4" /> 
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[7px] font-black text-white/40 uppercase tracking-widest leading-none mb-1">Partner Contact</span>
+            <span className="text-[11px] font-black text-white tracking-wider uppercase leading-none">{owner.phone || "No Number"}</span>
+          </div>
+        </div>
+
+        {/* 🛠️ VERIFY & DELETE ACTION FOOTER */}
+        <div className="flex gap-2 pt-4 border-t border-slate-100">
+          <button 
+            onClick={() => updateApprovalStatus(owner._id, !owner.isApproved)} 
+            className={`flex-1 py-3.5 rounded-2xl font-black text-[9px] uppercase italic tracking-widest transition-all shadow-xl active:scale-95 ${owner.isApproved ? 'bg-white border border-red-100 text-red-500 hover:bg-red-50' : 'bg-slate-900 text-white hover:bg-blue-600'}`}
+          >
+            {owner.isApproved ? 'Revoke' : 'Verify'}
+          </button>
+
+          <button 
+            onClick={() => deleteOwnerForever(owner._id, owner.name)}
+            className="p-3.5 bg-red-50 text-red-500 rounded-2xl border border-red-100 hover:bg-red-500 hover:text-white transition-all active:scale-90 shadow-sm"
+          >
+            <X className="w-4 h-4" /> 
+          </button>
+        </div>
+
       </motion.div>
     );
   })}
@@ -619,14 +813,16 @@ if (viewMode === "daily") {
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-8 pb-10">
               <AnimatePresence mode="popLayout">
                 {filteredList.map((owner) => {
-                  const sub = getSubscriptionStatus(owner.createdAt, owner._id);
+                  const sub = getSubscriptionStatus(owner.createdAt, owner.nextBillingDate, owner.planType);
                   return (
                     <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={owner._id} className="bg-white p-5 lg:p-8 rounded-[2rem] border border-slate-200 shadow-sm relative flex flex-col h-full overflow-hidden group">
                       
                       {/* 🚩 TOP BADGE: SUBSCRIPTION ALERT */}
                       {activeTab === "approved" && sub.isExpired && (
-                        <div className="absolute top-0 left-0 w-full bg-red-500 text-white text-[7px] font-black uppercase py-1 text-center z-10 animate-pulse">Monthly Due Pending (₹299)</div>
-                      )}
+                      <div className="absolute top-0 left-0 w-full bg-red-500 text-white text-[7px] font-black uppercase py-1 text-center z-10 animate-pulse">
+                        Monthly Due Pending (₹{sub.chargeAmount})
+                      </div>
+                    )}
 
                       {/* 🏨 RESTAURANT NAME & IMAGE */}
                       <div className="flex items-start gap-4 mb-6 mt-2">
@@ -667,30 +863,97 @@ if (viewMode === "daily") {
                          <span className="text-[9px] font-black text-slate-400 uppercase italic tracking-tighter">Registered: {owner?.createdAt ? new Date(owner.createdAt).toLocaleDateString('en-GB') : "New Entry"}</span>
                       </div>
 
-                      {/* 💳 SUBSCRIPTION STATUS BOX */}
-                      {activeTab === "approved" && (
-                        <div className={`mb-4 p-3 rounded-2xl border ${sub.isExpired ? 'bg-red-50 border-red-100' : 'bg-green-50 border-green-100'}`}>
-                          <div className="flex justify-between items-center">
-                             <div className="min-w-0">
-                               <p className="text-[7px] font-black opacity-50 uppercase mb-0.5 tracking-widest">Protocol Status</p>
-                               <span className={`text-[10px] font-black uppercase italic ${sub.isExpired ? 'text-red-600' : 'text-green-600'}`}>{sub.message}</span>
-                             </div>
-                             {sub.isExpired && (
-                                <button 
-  onClick={() => {
-    // 🚀 1. నీ కోడ్‌లో ఉన్న డైనమిక్ డేటాను ఇక్కడ వేరియబుల్స్ లోకి తీసుకుంటున్నాం రాజు
-    const restaurantName = owner?.name || "Partner Restaurant";
-    const ownerPhone = owner?.phone || "";
+                      {/* 💳 SUDARA SUBSCRIPTION STATUS BOX (RAJU ALL-IN-ONE COMBINED FIX) */}
+{activeTab === "approved" && (
+  <div className={`mb-4 p-4 rounded-2xl border ${sub.isExpired ? 'bg-red-50 border-red-100' : 'bg-emerald-50 border-emerald-100'}`}>
+    <div className="flex justify-between items-center gap-4">
+       <div className="min-w-0 flex-1 w-full text-slate-900">
+  {/* 🎯 HEADER ROW: Protocol Status & Badge */}
+  <div className="flex items-center justify-between gap-2 mb-3">
+    <div className="flex flex-col gap-0.5">
+      <p className="text-[8px] font-black opacity-40 uppercase tracking-[0.25em] text-slate-500">
+        System Protocol
+      </p>
+      <h5 className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
+        Merchant Node Status
+      </h5>
+    </div>
     
-    // 📊 ప్రీ & పోస్ట్ బుకింగ్ మెట్రిక్స్ (నీ డాష్ బోర్డ్ స్టేట్ వేరియబుల్స్ ని బట్టి మార్చుకో రాజు)
-    const preBookings = owner?.preBookingsCount || 0; 
-    const postBookings = owner?.postBookingsCount || 0; 
-    
-    // యూనిక్ బిల్లింగ్ రిఫరెన్స్ నంబర్ (చూడటానికి కార్పొరేట్ లుక్ వస్తుంది)
-    const billingRef = `SUDARA-SUB-${Math.floor(100000 + Math.random() * 900000)}`;
+    {/* 🚀 డైనమిక్ లైవ్ బ్యాడ్జ్ - గ్రీన్ లేదా రెడ్ గ్లో ఎఫెక్ట్ రాజు */}
+    <div className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border animate-pulse shadow-sm flex items-center gap-1 ${
+      sub.isExpired 
+        ? 'bg-rose-50/60 border-rose-100 text-rose-600 shadow-rose-50' 
+        : 'bg-emerald-50/60 border-emerald-100 text-emerald-600 shadow-emerald-50'
+    }`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${sub.isExpired ? 'bg-rose-500' : 'bg-emerald-500'}`}></span>
+      {sub.isExpired ? 'Offline' : 'Active'}
+    </div>
+  </div>
 
-    // 🚀 2. రాయల్ కార్పొరేట్ స్టైల్ లో వాట్సాప్ టెంప్లేట్ మెసేజ్
-    const message = `*🛡️ SUDARA HUB NETWORK - BILLING DEPT* ---------------------------------------------
+  {/* 💳 CORE CARD BOX: గ్లాస్మార్ఫిజం ప్రీమియం లుక్ */}
+  <div className={`p-4 rounded-2xl border transition-all duration-300 relative overflow-hidden backdrop-blur-sm shadow-inner group-hover:scale-[1.01] ${
+    sub.isExpired 
+      ? 'bg-gradient-to-br from-rose-50/60 to-white border-rose-100/70 shadow-rose-50/10' 
+      : 'bg-gradient-to-br from-emerald-50/40 to-white border-emerald-100/60 shadow-emerald-50/5'
+  }`}>
+    
+    {/* బ్యాక్‌గ్రౌండ్ గ్లో ఎఫెక్ట్ రాజు */}
+    <div className={`absolute -right-6 -bottom-6 w-24 h-24 rounded-full blur-2xl opacity-20 pointer-events-none ${
+      sub.isExpired ? 'bg-rose-500' : 'bg-emerald-500'
+    }`}></div>
+
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative z-10">
+      
+      {/* 📊 LEFT: మెసేజ్ టెక్స్ట్ */}
+      <div className="space-y-1">
+        <span className={`text-sm lg:text-base font-black uppercase italic tracking-tight leading-none block ${
+          sub.isExpired ? 'text-rose-600 drop-shadow-sm' : 'text-emerald-600'
+        }`}>
+          {sub.message}
+        </span>
+        
+        {/* ఒకవేళ యాక్టివ్ గా ఉంటే నెక్స్ట్ బిల్లింగ్ అమౌంట్ హింట్ చూపిస్తుంది రాజు */}
+        {!sub.isExpired && (
+          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide">
+            • Cycle Plan Locked: <span className="text-slate-600 font-black">₹{sub.chargeAmount}</span>
+          </p>
+        )}
+      </div>
+
+      {/* ⚠️ RIGHT: ఒకవేళ ఎక్స్‌పైర్/అన్‌పెయిడ్ అయితే బాకీ రోజులు మరియు అమౌంట్ స్మార్ట్ గ్రిడ్ లేఅవుట్ లో చూపిస్తుంది */}
+      {sub.isExpired && (
+        <div className="w-full sm:w-auto grid grid-cols-2 sm:flex sm:flex-col gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 sm:border-l border-slate-200/60 sm:pl-4">
+          <div className="flex flex-col">
+            <span className="text-[7px] font-black uppercase tracking-widest text-slate-400 leading-none mb-1">Timeline Due</span>
+            <span className="text-[10px] font-black text-rose-600 bg-rose-100/50 px-2 py-0.5 rounded-lg w-fit">
+              {sub.overdueText || "Expired"}
+            </span>
+          </div>
+          
+          <div className="flex flex-col">
+            <span className="text-[7px] font-black uppercase tracking-widest text-slate-400 leading-none mb-1">Clearance Fee</span>
+            <span className="text-xs font-black text-slate-800 tracking-tight flex items-center leading-none">
+              ₹{sub.chargeAmount}
+            </span>
+          </div>
+        </div>
+      )}
+      
+    </div>
+  </div>
+</div>
+
+       {/* 📲 వాట్సాప్ అలర్ట్ బటన్ (లాజిక్ ఏమాత్రం మిస్ అవ్వకుండా ఇక్కడే ఇంటిగ్రేట్ చేశా రాజు) */}
+       {sub.isExpired && (
+          <button 
+            onClick={() => {
+              const restaurantName = owner?.name || "Partner Restaurant";
+              const ownerPhone = owner?.phone || "";
+              const preBookings = owner?.preBookingsCount || 0; 
+              const postBookings = owner?.postBookingsCount || 0; 
+              const billingRef = `SUDARA-SUB-${Math.floor(100000 + Math.random() * 900000)}`;
+
+              const message = `*🛡️ SUDARA HUB NETWORK - BILLING DEPT* ---------------------------------------------
 *URGENT NOTICE: SUBSCRIPTION EXPIRY*
 
 Dear *${restaurantName}* Management,
@@ -705,7 +968,7 @@ This is an automated notification from Sudara Hub Compliance. Your commercial me
 
 To bypass the service restriction, resume visibility within your neighborhood search engine, and instantly unlock your active matrix dashboard, please clear the node renewal fee.
 
-💸 *Renewal Premium:* ₹299 / Month
+💸 • Pending Due Amount: ₹${sub.chargeAmount}
 👤 *Beneficiary Account:* Boyella Raju
 🆔 *Billing Reference:* ${billingRef}
 
@@ -719,20 +982,43 @@ Immediately after completing the transaction, transmit the digital payment recei
 _Sudara Trust & Safety Compliance Team_
 _Sudara.in | Empowering Hyperlocal Ecosystems_`;
 
-    // 🚀 3. సేఫ్ గా ఎన్‌కోడ్ చేసి వాట్సాప్ వెబ్ లేదా యాప్ ద్వారా ఓపెన్ చేయడం రాజు
-    const encodedMessage = encodeURIComponent(message);
-    window.open(`https://wa.me/${ownerPhone}?text=${encodedMessage}`, '_blank');
-  }} 
-  className="bg-rose-600 text-white p-3 rounded-2xl shadow-xl active:scale-95 transition-all duration-300 hover:bg-rose-700 flex items-center justify-center gap-2 border border-rose-500/30"
-  title="Send Professional Subscription Alert"
->
-  <Send className="w-4 h-4" />
-  <span className="text-[10px] font-black uppercase tracking-wider px-1">Alert Merchant</span>
-</button>
-                             )}
-                          </div>
-                        </div>
-                      )}
+              const encodedMessage = encodeURIComponent(message);
+              window.open(`https://wa.me/${ownerPhone}?text=${encodedMessage}`, '_blank');
+            }} 
+            className="bg-rose-600 text-white p-3 rounded-2xl shadow-xl active:scale-95 transition-all duration-300 hover:bg-rose-700 flex items-center justify-center gap-2 border border-rose-500/30 shrink-0"
+            title="Send Professional Subscription Alert"
+          >
+            <Send className="w-4 h-4" />
+            <span className="text-[10px] font-black uppercase tracking-wider px-1 hidden sm:inline">Alert Merchant</span>
+          </button>
+       )}
+    </div>
+  </div>
+)}
+
+{activeTab === "approved" && (
+  <div className="flex gap-2 mb-4">
+    <button
+      onClick={async () => {
+        try {
+          // 🎯 రాజు ఫిక్స్: యుఆర్ఎల్ చివర్లో స్ట్రింగ్ టెంప్లేట్ బ్యాక్-టిక్స్ (`) కరెక్ట్ గా ఉండాలి రాజు!
+          const response = await api.put(`/owner/update-billing/${owner._id}`);
+          
+          if (response.data.success) {
+            // ఫ్రంటెండ్ స్టేట్ అప్‌డేట్
+            setOwners(prev => prev.map(o => o._id === owner._id ? response.data.owner : o));
+            alert("Subscription Renewed for 30 Days! 🚀");
+          }
+        } catch(err) { 
+          console.error("Billing update failed ❌"); 
+        }
+      }}
+      className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[11px] uppercase tracking-wider rounded-2xl active:scale-95 transition-all shadow-md flex items-center justify-center gap-2"
+    >
+      Renew 30 Days Cycle ✅
+    </button>
+  </div>
+)}
 
                       {/* 📱 REGISTERED MOBILE NUMBER */}
                       <div className="flex items-center gap-3 bg-slate-900 p-4 rounded-2xl mt-auto mb-4 shadow-inner">
@@ -745,23 +1031,72 @@ _Sudara.in | Empowering Hyperlocal Ecosystems_`;
                           </div>
                       </div>
 
-                      {/* 🛠️ ACTION FOOTER: VERIFY & DELETE */}
-                      <div className="flex gap-2 pt-4 border-t border-slate-100">
-                        <button 
-                          onClick={() => updateApprovalStatus(owner._id, !owner.isApproved)} 
-                          className={`flex-1 py-3.5 rounded-2xl font-black text-[9px] uppercase italic tracking-widest transition-all shadow-xl active:scale-95 ${owner.isApproved ? 'bg-white border border-red-100 text-red-500 hover:bg-red-50' : 'bg-slate-900 text-white hover:bg-blue-600'}`}
-                        >
-                          {owner.isApproved ? 'Revoke' : 'Verify'}
-                        </button>
+                      {/* 🛠️ ACTION FOOTER: VERIFY, PLAN TYPE & DELETE (100% Responsive) */}
+<div className="flex flex-col gap-3.5 pt-4 border-t border-slate-100/80 mt-2">
+  
+  {/* 👑 రాజు చేంజ్: నెట్‌వర్క్ యాక్సెస్ ప్లాన్ సెలెక్టర్ (Top row on Mobile, Left side on Desktop) */}
+  {activeTab === "approved" && (
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-slate-50/60 p-3 rounded-2xl border border-slate-100 gap-3 transition-all">
+      <div className="flex flex-col pl-1">
+        <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider leading-none">
+          Network Access
+        </span>
+        <span className="text-[8px] font-black text-slate-500 uppercase tracking-wide mt-1 italic">
+          Protocol Active
+        </span>
+      </div>
 
-                        <button 
-                          onClick={() => deleteOwnerForever(owner._id, owner.name)}
-                          className="p-3.5 bg-red-50 text-red-500 rounded-2xl border border-red-100 hover:bg-red-500 hover:text-white transition-all active:scale-90 shadow-sm"
-                          title="Delete Forever"
-                        >
-                          <X className="w-4 h-4" /> 
-                        </button>
-                      </div>
+      <select  
+        value={owner.planType || "basic"}  
+        onChange={async (e) => {
+          try {
+            const nextPlan = e.target.value;
+            const response = await api.put(`/owner/update-plan/${owner._id}`, { planType: nextPlan });
+            if (response.data.success) {
+              setOwners(prev => prev.map(o => o._id === owner._id ? { ...o, planType: nextPlan } : o));
+              alert(`✅ Node Upgraded to ${nextPlan.toUpperCase()} successfully!`);
+            }
+          } catch(err) {
+            alert("❌ Access Update Failed!");
+          }
+        }}
+        className="w-full sm:w-auto p-2.5 bg-white border border-slate-200/80 rounded-xl text-[10px] font-black uppercase text-slate-700 outline-none cursor-pointer shadow-sm focus:border-blue-500 min-w-[140px] text-center"
+      >
+        <option value="basic">🟢 Basic (₹50/Day)</option>
+        <option value="premium">👑 Premium (₹100/Day)</option>
+      </select>
+    </div>
+  )}
+
+  {/* ⚡ మెయిన్ యాక్షన్ బటన్స్: వెరిఫై అండ్ డిలీట్ (Side by Side everywhere with high UX impact) */}
+  <div className="flex items-center gap-2.5 w-full">
+    
+    {/* Verify / Revoke Button */}
+    <button 
+      type="button"
+      onClick={() => updateApprovalStatus(owner._id, !owner.isApproved)} 
+      className={`flex-1 py-3.5 rounded-2xl font-black text-[9px] uppercase italic tracking-widest transition-all shadow-sm active:scale-95 border-b-4 border-r inline-flex items-center justify-center gap-1.5 ${
+        owner.isApproved 
+          ? 'bg-white border-slate-200 text-red-500 hover:bg-red-50/50 border-b-slate-300' 
+          : 'bg-slate-900 text-white border-b-slate-950 hover:bg-blue-600 hover:border-b-blue-800'
+      }`}
+    >
+      <span>{owner.isApproved ? '🛡️ Revoke Access' : '⚡ Verify Node'}</span>
+    </button>
+
+    {/* Delete Forever Button */}
+    <button 
+      type="button"
+      onClick={() => deleteOwnerForever(owner._id, owner.name)}
+      className="p-3.5 bg-red-50 text-red-500 rounded-2xl border border-red-100/70 hover:bg-red-500 hover:text-white transition-all active:scale-90 shadow-sm flex items-center justify-center border-b-4 border-b-red-200 hover:border-b-red-700 aspect-square"
+      title="Delete Forever"
+    >
+      <Trash2 className="w-4 h-4 stroke-[2.5]" /> 
+    </button>
+
+  </div>
+
+</div>
 
                     </motion.div>
                   );
