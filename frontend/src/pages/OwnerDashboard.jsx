@@ -24,6 +24,7 @@
     const [allCategories, setAllCategories] = useState(defaultMenuOptions);
     const [loading, setLoading] = useState(true);
     const counterPrintButtonRef = useRef(null);
+    // const [counterCart, setCounterCart] = useState({});
     // UI States
     const [activeTab, setActiveTab] = useState("dashboard"); // Tab switching
     const [isMenuOpen, setIsMenuOpen] = useState(false);         
@@ -948,7 +949,7 @@ const dailyStats = {
     <section className="sticky top-[70px] z-50 bg-[#F8FAFC] pb-2 pt-2 border-b border-slate-100">
       <div className="flex justify-between items-end mb-4">
         <h2 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-slate-900">
-          Kitchen <span className="text-blue-600">Dashboard</span>
+          Kitchen 
         </h2>
         {/* పైన ఉండే బటన్ */}
         <button onClick={() => setIsAddingItem(true)} className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase italic flex items-center gap-2 shadow-lg active:scale-95 transition-all">

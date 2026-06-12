@@ -28,6 +28,7 @@ export default function RestaurantProfile() {
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
   const [selectedImg, setSelectedImg] = useState(null); 
+  const [counterCart, setCounterCart] = useState({});
   const [cart, setCart] = useState({}); 
   const [deliveryType, setDeliveryType] = useState("Take Away");
   const [showOrderForm, setShowOrderForm] = useState(false);
@@ -620,7 +621,7 @@ if (!owner || !owner.isApproved) {
 
     return (
       <button 
-        key={cat} 
+        key={`${cat}-${index}`} onClick={() => setFilter(cat)} 
         onClick={() => setFilter(cat)} 
         className={`px-4 sm:px-6 py-1.5 rounded-full text-[8px] sm:text-[9px] font-black uppercase border transition-all shrink-0 flex items-center gap-1.5 ${btnStyles}`}
       >
@@ -705,7 +706,7 @@ if (!owner || !owner.isApproved) {
             <span className="text-[9px] font-black uppercase text-blue-600 italic tracking-widest">Order Summary</span>
             <div className="space-y-1.5 my-3 max-h-40 overflow-y-auto scrollbar-hide">
               {Object.values(cart).map((i) => (
-                <div key={i._id} className="flex justify-between text-[10px] font-bold italic text-slate-600">
+                <div key={i._id || i.name} className="flex justify-between text-[10px] font-bold italic text-slate-600">
                   <span>{i.qty} x {i.name}</span>
                   <span>₹{i.price * i.qty}</span>
                 </div>

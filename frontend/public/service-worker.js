@@ -16,7 +16,6 @@ self.addEventListener("install", (event) => {
   );
 });
 
-// service-worker.js fetch block
 self.addEventListener("fetch", (event) => {
   const url = event.request.url;
 
@@ -36,8 +35,13 @@ self.addEventListener("fetch", (event) => {
         }
         return networkResponse;
       })
-      .catch(() => {
-        return caches.match(event.request);
+      .catch(async () => {
+        // 🎯 FIX: ఇక్కడ caches.match ని పక్కాగా రిటర్న్ చేయి
+        const cachedResponse = await caches.match(event.request);
+        
+        // ఒకవేళ క్యాచీలో కూడా లేకపోతే (cachedResponse undefined అయితే), 
+        // కనీసం ఒక ఖాళీ 404 Response అయినా రిటర్న్ చేయి, లేదంటే ఎర్రర్ వస్తుంది.
+        return cachedResponse || new Response("Not found", { status: 404 });
       })
   );
 });
