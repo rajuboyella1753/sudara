@@ -7,7 +7,8 @@ import { createRequire } from "module";
 // 🎯 1. Socket.io మరియు HTTP ని ఇంపోర్ట్ చెయ్
 import { Server } from "socket.io";
 import http from "http";
-
+import cron from 'node-cron';
+import Owner from './models/Owner.js';
 const require = createRequire(import.meta.url);
 const serviceAccount = require("./serviceAccountKey.json"); 
 import ownerRoutes from "./routes/ownerRoutes.js";
@@ -62,7 +63,46 @@ io.on("connection", (socket) => {
     console.log("User disconnected ❌");
   });
 });
+cron.schedule('5 0 * * *', async () => {
+  const owners = await Owner.find({});
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yKey = `${yesterday.getDate()}/${yesterday.getMonth() + 1}/${yesterday.getFullYear()}`;
+  const mKey = `${yesterday.getMonth() + 1}-${yesterday.getFullYear()}`; // ఉదా: 6-2026
 
+  for (let owner of owners) {
+    const dailyData = owner.analytics.daily.get(yKey);
+    if (dailyData) {
+      // 1. నెలవారీ రిపోర్ట్ అప్‌డేట్
+      await Owner.findByIdAndUpdate(owner._id, {
+        $inc: { [`analytics.monthly.${mKey}.revenue`]: dailyData.daily_revenue || 0 }
+      });
+      // 2. డైలీ రిపోర్ట్ డిలీట్
+      await Owner.findByIdAndUpdate(owner._id, { $unset: { [`analytics.daily.${yKey}`]: "" } });
+    }
+  }
+});
+cron.schedule('0 0 1 * *', async () => {
+  try {
+    await Owner.updateMany({}, {
+      $set: {
+        "analytics.daily": {},
+        "analytics.kitchen_entry": 0,
+        "analytics.pre_order_click": 0,
+        "analytics.post_order_click": 0,
+        "analytics.call_click": 0,
+        "analytics.daily_revenue": 0,
+        "analytics.cash_sales": 0,
+        "analytics.upi_sales": 0,
+        "analytics.total_orders": 0,
+        "analytics.food_clicks": {} 
+      }
+    });
+    console.log("Monthly Analytics Reset Successfully!");
+  } catch (err) {
+    console.error("Reset Error:", err);
+  }
+});
 app.use("/api/owner", ownerRoutes);
 app.use("/api/items", itemRoutes);
 app.use('/api/orders', orderRoutes);

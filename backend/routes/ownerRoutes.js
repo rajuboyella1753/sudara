@@ -2,6 +2,9 @@ import express from "express";
 import Owner from "../models/owner.js";
 import Item from "../models/item.js";
 import admin from "firebase-admin";
+import { upload } from '../config/uploadMiddleware.js'; // ఇందాక క్రియేట్ చేసిన ఫైల్
+import { uploadImage } from '../utils/imageUpload.js';
+import mongoose from "mongoose";
 const router = express.Router();
 
 /* ================= 1. GET UNIQUE COLLEGES ================= */
@@ -54,7 +57,7 @@ router.get("/admin-all-owners", async (req, res) => {
   try {
     const owners = await Owner.find({}) 
     // 🎯 రాజు ఫిక్స్: సెలెక్ట్ లోపల nextBillingDate, billingStatus, pendingMonthsCount యాడ్ చేసాను!
-    .select("name hotelImage collegeName isStoreOpen category averageRating isApproved phone upiID analytics state district createdAt nextBillingDate billingStatus pendingMonthsCount planType")
+    .select("name hotelImage collegeName isStoreOpen category averageRating isApproved phone upiID analytics state district createdAt nextBillingDate billingStatus pendingMonthsCount planType paymentReceipt requestedPlanDuration")
     .lean();
     
     res.status(200).json(owners);
@@ -137,15 +140,35 @@ router.put("/approve-owner/:id", async (req, res) => {
   }
 });
 /* ================= DELETE OWNER & THEIR ITEMS ================= */
-// Ee code nee backend router file lo undali
 router.delete("/delete-owner/:id", async (req, res) => {
   try {
     const ownerId = req.params.id;
-    await Item.deleteMany({ ownerId: ownerId }); // Food items delete avthunnayi
-    const deletedOwner = await Owner.findByIdAndDelete(ownerId); // Owner profile delete avthundi
-    res.json({ success: true, message: "Deleted!" });
+
+    // 🎯 1. సేఫ్టీ చెక్: పంపిన ఐడీ అసలు వాలిడ్ మోంగో ఐడీ కాదా అని చెక్ చేయడం రాజు
+    if (!mongoose.Types.ObjectId.isValid(ownerId)) {
+      return res.status(400).json({ success: false, message: "Invalid Owner ID Matrix!" });
+    }
+
+    // 🎯 2. కన్వర్షన్: స్ట్రింగ్ ఐడీని పక్కాగా మోంగో ఆబ్జెక్ట్ ఐడీ కింద మారుస్తున్నాం
+    const targetObjectId = new mongoose.Types.ObjectId(ownerId);
+
+    // 🎯 3. ఫస్ట్ ఓనర్ కి సంబంధించిన అన్ని ఫుడ్ ఐటమ్స్ & ఇమేజెస్ క్లీన్ అవుతాయి
+    await Item.deleteMany({ ownerId: targetObjectId }); 
+
+    // 🎯 4. ఆ తర్వాతే ఓనర్ ప్రొఫైల్ ని డిలీట్ చేస్తున్నాం
+    const deletedOwner = await Owner.findByIdAndDelete(targetObjectId); 
+
+    // 🎯 5. ఒకవేళ ఆ ఐడీతో ఓనర్ ఆల్రెడీ లేకపోతే సేఫ్టీ రెస్పాన్స్ రాజు
+    if (!deletedOwner) {
+      return res.status(404).json({ success: false, message: "Owner not found in Matrix!" });
+    }
+
+    // 🔥 అంతా పక్కాగా జరిగితేనే సక్సెస్ రెస్పాన్స్ వెళ్తుంది
+    res.json({ success: true, message: "Owner and all assets erased completely! 🧹" });
+
   } catch (err) {
-    res.status(500).json({ message: "Delete failed" });
+    console.error("DANGER DELETE ERROR:", err); // సర్వర్ లాగ్స్ లో ఎర్రర్ చూడటానికి రాజు
+    res.status(500).json({ success: false, message: "Delete failed completely" });
   }
 });
 /* ================= 🚀 DIRECT PASSWORD RESET (NO OTP) ================= */
@@ -189,20 +212,24 @@ router.put("/update-profile/:id", async (req, res) => {
       updatePayload.specialTimestamp = new Date();
     }
 
-    // 🎯 2. మెయిన్ ఫిక్స్ ఇక్కడ ఉంది రాజు!
-    // మనం బాడీని డైరెక్ట్ గా పంపిస్తాం. 
-    // ఒకవేళ బాడీలో $inc ఉంటే అది కలుపుతుంది, $set ఉంటే మారుస్తుంది.
+    // 🎯 2. రాజు బుల్లెట్ ప్రూఫ్ లాక్:
+    // ఎప్పుడైనా అప్‌డేట్ చేసేటప్పుడు పాత డేటా పోకుండా, కొత్త డేటా మాత్రమే అప్‌డేట్ అవ్వడానికి 
+    // పక్కాగా మోంగూస్ లో $set వాడటం వంద శాతం సేఫ్ రాజు!
     const updatedOwner = await Owner.findByIdAndUpdate(
       id,
-      updatePayload, // $set తీసేసి డైరెక్ట్ గా బాడీని పంపాలి
+      { $set: updatePayload }, // 👈 ఇక్కడ $set లోపల పేలోడ్ పెట్టడం వల్ల పాత డేటా ఓవర్‌రైట్ అవ్వదు!
       { new: true, runValidators: true }
     );
 
-    if (!updatedOwner) return res.status(404).json({ message: "Owner not found" });
+    if (!updatedOwner) {
+      return res.status(404).json({ message: "Owner not found" });
+    }
+
+    console.log(`✅ Owner ${id} Profile Updated Successfully! (GST: ${updatedOwner.gstPercentage}%, Extra: ₹${updatedOwner.extraCharges})`);
     res.status(200).json(updatedOwner); 
   } catch (err) {
-    console.error("Update Error:", err);
-    res.status(500).json({ message: "Server error during update" });
+    console.error("Update Error ❌:", err);
+    res.status(500).json({ message: "Server error during update", error: err.message });
   }
 });
 /* ================= ADD INTERIOR IMAGES ================= */
@@ -289,30 +316,37 @@ router.put("/track-analytics/:id", async (req, res) => {
     res.status(500).json({ message: "Error tracking data" });
   }
 });
-// routes/owner.js లో ఈ కొత్త రూట్ ని యాడ్ చెయ్ 👇
 router.put("/track-sales/:id", async (req, res) => {
-  const { date, amount, items } = req.body;
+  const { date, amount, items, paymentMode } = req.body;
+  console.log("DEBUG: Received Payment Mode:", paymentMode);
   try {
     const updatePath = `analytics.${date}`;
     
-    // ఐటమ్స్ కౌంట్ అప్‌డేట్ చేసే ఆబ్జెక్ట్ తయారు చేయడం
-    let itemUpdates = {};
-    items.forEach(itemStr => {
-       const itemName = itemStr.includes('X ') ? itemStr.split('X ')[1].trim() : itemStr;
-       itemUpdates[`${updatePath}.food_clicks.${itemName}`] = 1;
-    });
+    // 🎯 పేమెంట్ మోడ్ కీస్ పక్కాగా
+    const modeKey = (paymentMode || 'CASH').toLowerCase() === 'cash' ? 'cash_sales' : 'upi_sales';
 
-    await Owner.findByIdAndUpdate(req.params.id, {
+    let itemUpdates = {};
+    if (items && Array.isArray(items)) {
+        items.forEach(itemStr => {
+           const itemName = itemStr.includes(' x ') ? itemStr.split(' x ')[1].trim() : itemStr;
+           itemUpdates[`${updatePath}.food_clicks.${itemName}`] = 1;
+        });
+    }
+
+    // 🚀 ఇక్కడ `total_orders` ని కూడా $inc లో యాడ్ చేశాను
+    const updatedOwner = await Owner.findByIdAndUpdate(req.params.id, {
       $inc: { 
         [`${updatePath}.daily_revenue`]: amount,
-        ...itemUpdates // అన్ని ఐటమ్స్ కౌంట్ ని 1 పెంచుతుంది
+        [`${updatePath}.${modeKey}`]: amount, 
+        [`${updatePath}.total_orders`]: 1, // 👈 ఆర్డర్ కౌంట్ ఇక్కడే పెరుగుతుంది
+        ...itemUpdates 
       }
-    });
+    }, { new: true });
 
-    const updated = await Owner.findById(req.params.id);
-    res.status(200).json(updated);
+    res.status(200).json(updatedOwner);
   } catch (err) {
-    res.status(500).json({ message: "Sales tracking failed" });
+    console.error("Sales tracking failed:", err);
+    res.status(500).json({ message: "Sales tracking failed", error: err.message });
   }
 });
 /* ================= 10. GENERAL NOTIFICATIONS (రాజు కోసం) ================= */
@@ -351,24 +385,24 @@ router.post("/broadcast-to-all", async (req, res) => {
     // 2. Tokens cleaning (Same as yours)
     const uniqueTokens = [...new Set(adminUser.fcmTokens)].filter(t => t && t.length > 10);
 
-    // 🚀 3. RAJU FIX: Web compatible message objects
-    const messages = uniqueTokens.map(token => ({
-      token: token,
-      notification: {
-        title: title || "Sudara Hub Update",
-        body: body || "Check out new updates!"
-      },
-      // 🛡️ Web specific redirect fix
-      webpush: {
-        fcm_options: {
-          link: "https://sudara.in" 
-        }
-      },
-      // 📱 Optional: Data payload for mobile apps
-      data: {
-        url: "https://sudara.in"
-      }
-    }));
+    // 🚀 ఫిల్టర్ చేసి, మొబైల్ & వెబ్ రెండింటికీ పని చేసేలా మెసేజ్ ఆబ్జెక్ట్
+const messages = uniqueTokens.filter(token => token && token.length > 10).map(token => ({
+  token: token,
+  notification: {
+    title: title || "Sudara Hub Update",
+    body: body || "Check out new updates!"
+  },
+  // 📱 Mobile & Web రెండింటికీ డేటా వెళ్తుంది
+  data: {
+    url: "https://sudara.in"
+  },
+  // 🛡️ Web specific redirect (ఇది ఉంటే వెబ్ బ్రౌజర్ క్లిక్ చేసినప్పుడు ఆటోమేటిక్ గా వెబ్‌సైట్ ఓపెన్ అవుతుంది)
+  webpush: {
+    fcm_options: {
+      link: "https://sudara.in"
+    }
+  }
+}));
 
     // 4. Firebase send (Same as yours)
     const response = await admin.messaging().sendEach(messages);
@@ -483,5 +517,87 @@ router.put("/update-plan/:id", async (req, res) => {
     res.status(500).json({ success: false, message: "Plan update failed" });
   }
 });
+/* ================= 👑 12. SUBSCRIPTION APPROVAL (Admin Only - Plan B) ================= */
+router.put("/admin/approve-subscription/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const ownerData = await Owner.findById(id);
+    if (!ownerData) return res.status(404).json({ success: false, message: "Owner not found" });
 
+    // 🎯 పక్కాగా 30 లేదా 90 మాత్రమే తీసుకోవాలి
+    const daysToAdd = [30, 90].includes(Number(ownerData.requestedPlanDuration)) 
+                      ? Number(ownerData.requestedPlanDuration) 
+                      : 30; 
+    
+    // పాత ఎక్స్‌పైరీ డేట్ ఉంటే దాని నుండి, లేదంటే ఈరోజు నుండి యాడ్ చెయ్
+    let newBillingDate = ownerData.nextBillingDate && new Date(ownerData.nextBillingDate) > new Date() 
+      ? new Date(ownerData.nextBillingDate) 
+      : new Date();
+      
+    newBillingDate.setDate(newBillingDate.getDate() + daysToAdd);
+
+    const approvedOwner = await Owner.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          billingStatus: "Active",
+          nextBillingDate: newBillingDate,
+          paymentReceipt: "", 
+          requestedPlanDuration: 0 // అప్రూవ్ అయ్యాక క్లియర్ చెయ్
+        }
+      },
+      { new: true }
+    );
+
+    res.status(200).json({ success: true, message: "Subscription Approved! ✅", owner: approvedOwner });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Approval runtime error", error: err.message });
+  }
+});
+
+// 🚀 అడ్మిన్ తప్పుడు రిసిప్ట్ అని రిజెక్ట్ కొడితే రన్ అయ్యే రూట్ రాజు
+router.put("/admin/reject-subscription/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // ఓనర్ ఫేక్/తప్పుడు స్క్రీన్‌షాట్ పంపితే... రిసిప్ట్ ని డిలీట్ చేసి పాత బాకీ స్టేటస్ కి మార్చేస్తాం
+    const rejectedOwner = await Owner.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          billingStatus: "Expired", // లేదా "Unpaid"
+          paymentReceipt: "" // తప్పుడు స్క్రీన్‌షాట్ ని క్లియర్ చేస్తాం
+        }
+      },
+      { new: true }
+    );
+
+    res.status(200).json({ success: true, message: "Subscription Rejected & Cleared! ❌", owner: rejectedOwner });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Rejection runtime error", error: err.message });
+  }
+});
+router.post('/update-profile-pic/:id', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No image file uploaded!" });
+    }
+
+    // 1. క్లౌడినరీకి పంపి, URL తెచ్చుకోవడం
+    const imageUrl = await uploadImage(req.file.path);
+    
+    // 2. ఇప్పుడు ఈ URL ని నీ MongoDB లో సేవ్ చెయ్
+    const updatedOwner = await Owner.findByIdAndUpdate(
+      req.params.id, 
+      { hotelImage: imageUrl }, 
+      { new: true }
+    );
+    
+    res.json({ success: true, message: "Image uploaded!", url: imageUrl, owner: updatedOwner });
+  } catch (err) {
+    console.error("Upload Error:", err);
+    res.status(500).json({ error: "Upload failed" });
+  }
+});
 export default router;

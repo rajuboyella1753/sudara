@@ -16,7 +16,13 @@ export default function RestaurantProfile() {
   const [owner, setOwner] = useState(null);
   const [items, setItems] = useState([]);
   const [filter, setFilter] = useState("All");
+  const filterOptions = useMemo(() => {
+    const cats = ["All", "Veg", "Non-Veg", "General"];
+    const itemCats = [...new Set(items.map(i => i.category))].filter(Boolean);
+    return [...new Set([...cats, ...itemCats])];
+  }, [items]);
   const orderSectionRef = useRef(null); // 🎯 రాజు న్యూ చేంజ్: స్క్రోలింగ్ కోసం రిఫరెన్స్
+  const counterPrintButtonRef = useRef(null);
   const [activeSubCat, setActiveSubCat] = useState("All"); 
   const [itemSearch, setItemSearch] = useState(""); 
   const [loading, setLoading] = useState(true);
@@ -34,7 +40,8 @@ export default function RestaurantProfile() {
   const sudaraId = "SDR" + Math.floor(100 + Math.random() * 900);
   const [orderStatus, setOrderStatus] = useState(null);
   const [placedOrderId, setPlacedOrderId] = useState(null);
-
+  const [assignedTable, setAssignedTable] = useState(null);
+  const [trackedOrderType, setTrackedOrderType] = useState(null);
   const availableSubCats = useMemo(() => {
   const defaultCats = ["Biryanis", "Starters", "Soups", "Noodles", "Gravys", "Rice", "Breads", "Sea Food", "Tiffins"];
   // 🎯 రాజు చేంజ్: డ్రాప్‌డౌన్ వాల్యూ స్టోర్ చేయడానికి కొత్త స్టేట్
@@ -129,24 +136,20 @@ const proceedToCall = async () => {
   }
 };
 const handleTrackOrder = async () => {
-  const sdrId = document.getElementById('customerSdrId').value.trim().toUpperCase();
+  const sdrId = document.getElementById("customerSdrId").value;
+  if (!sdrId) return alert("Please enter a valid ID!");
   
-  if (!sdrId) return alert("Please enter your ID! 📝");
-
   try {
-    // 🎯 నీ బ్యాకెండ్ లో ఈ రూట్ ఉండాలి: /orders/status/:sdrId
     const res = await api.get(`/orders/status/${sdrId}`);
+    setOrderStatus(res.data.status);
+    setAssignedTable(res.data.tableNo); 
     
-    if (res.data) {
-      setOrderStatus(res.data.status); // Accepted, Preparing, etc.
-    }
+    // 🎯 బ్యాకెండ్ నుండి వచ్చిన ఆర్డర్ టైప్ (Pre-book / Post-book) ని ఇక్కడ స్టేట్ లో సేవ్ చేస్తున్నాం!
+    setTrackedOrderType(res.data.orderType); 
   } catch (err) {
-    console.error(err);
-    alert("Order not found! ❌ Check your ID again.");
-    setOrderStatus(null);
+    alert("Order not found!");
   }
 };
-
 const openGoogleMaps = () => {
   if (!owner?.latitude || !owner?.longitude || owner.latitude === 0) {
     return alert("Restaurant location not set by owner! 📍");
@@ -359,14 +362,15 @@ const handleInstantOrder = async () => {
     alert("Order Failed! ❌");
   }
 };
-  const searchFiltered = useMemo(() => {
-    return items.filter(item => {
-      const matchesFilter = filter === "All" ? true : item.category === filter;
-      const matchesSubCat = activeSubCat === "All" ? true : item.subCategory === activeSubCat;
-      const matchesSearch = item.name.toLowerCase().includes(itemSearch.toLowerCase());
-      return matchesFilter && matchesSubCat && matchesSearch;
-    });
-  }, [items, filter, activeSubCat, itemSearch]);
+ const searchFiltered = useMemo(() => {
+  return items.filter(item => {
+    // 'All' అయితే అన్ని ఐటమ్స్ చూపిస్తుంది
+    const matchesFilter = filter === "All" ? true : item.category === filter;
+    const matchesSubCat = activeSubCat === "All" ? true : item.subCategory === activeSubCat;
+    const matchesSearch = item.name.toLowerCase().includes(itemSearch.toLowerCase());
+    return matchesFilter && matchesSubCat && matchesSearch;
+  });
+}, [items, filter, activeSubCat, itemSearch]);
 
   const availableItems = searchFiltered.filter(item => item.isAvailable);
 
@@ -545,7 +549,7 @@ if (!owner || !owner.isApproved) {
     </div>
 
     {placedOrderId && (
-      <div className="mb-4 p-5 bg-emerald-50 border-2 border-emerald-100 rounded-[2rem] text-center">
+      <div className="mb-4 p-5 bg-emerald-50 border-2 border-emerald-100 rounded-[2rem] text-center mt-4">
         <p className="text-[10px] font-black text-emerald-600 uppercase">Your Order ID</p>
         <p className="text-2xl font-black text-slate-900 mt-1">{placedOrderId}</p>
         <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase">Copy this ID to Track Status below</p>
@@ -561,6 +565,29 @@ if (!owner || !owner.isApproved) {
         </p>
       </div>
     )}
+
+    {/* 🎯 రాజు మాస్టర్ లాక్: టేబుల్ నంబర్ ఉండి, అది "PRE" కాకుండా ఉండి, మరియు ఆర్డర్ టైప్ ఖచ్చితంగా "Pre-book" అయితేనే ఈ రాయల్ కార్డ్ కనిపిస్తుంది! */}
+    {assignedTable && assignedTable !== "PRE" && trackedOrderType === "Pre-book" && (
+      <motion.div 
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="mt-4 p-6 bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-[2rem] text-center shadow-xl border-2 border-amber-400/40 relative overflow-hidden"
+      >
+        {/* Background Ambient Glow */}
+        <div className="absolute -right-6 -bottom-6 w-20 h-20 bg-amber-400/10 rounded-full blur-xl pointer-events-none"></div>
+        
+        <p className="text-[8px] font-black uppercase tracking-[0.2em] text-amber-400 italic leading-none mb-1">Sudara Premium Protocol</p>
+        <h4 className="text-[11px] font-black text-slate-300 uppercase tracking-wider">YOUR TABLE IS READY 🪑</h4>
+        
+        <p className="text-4xl font-black text-amber-400 tracking-tighter italic mt-3 animate-bounce">
+          TABLE # {assignedTable}
+        </p>
+        
+        <p className="text-[9px] font-bold text-slate-400 mt-2 uppercase tracking-wide">
+          Please walk in and take your seat directly if any doubt call to owner!
+        </p>
+      </motion.div>
+    )}
   </div>
 )}
             {/* Filter Section: Sticky with Responsive Spacing */}
@@ -570,11 +597,11 @@ if (!owner || !owner.isApproved) {
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 sm:w-4 h-4" />
                 </div>
                 
-                <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-  {["All", "Veg", "Non-Veg"].map((cat) => {
+               <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+ {filterOptions.map((cat, index) => {
     const isSelected = filter === cat;
     
-    // 🎨 ఇక్కడ కేటగిరీ కలర్ లాజిక్ ఉంది రాజు
+    // 🎨 కలర్ లాజిక్: Veg/Non-Veg పాత స్టైల్స్ అలాగే ఉంటాయి, కొత్తవి బ్లూ లోకి వస్తాయి
     let btnStyles = "";
     if (cat === "Veg") {
       btnStyles = isSelected 
@@ -585,25 +612,31 @@ if (!owner || !owner.isApproved) {
         ? "bg-red-600 text-white border-red-600 shadow-md" 
         : "bg-white text-red-600 border-red-200 hover:bg-red-50";
     } else {
+      // General మరియు కొత్త కేటగిరీల కోసం ఈ స్టైల్
       btnStyles = isSelected 
         ? "bg-slate-900 text-white border-slate-900 shadow-md" 
         : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50";
     }
+
     return (
       <button 
         key={cat} 
         onClick={() => setFilter(cat)} 
         className={`px-4 sm:px-6 py-1.5 rounded-full text-[8px] sm:text-[9px] font-black uppercase border transition-all shrink-0 flex items-center gap-1.5 ${btnStyles}`}
       >
-        {/* చిన్న కలర్ డాట్ - ఫుడ్ ఐటమ్స్ లాగానే */}
+        {/* కలర్ డాట్ లాజిక్ */}
+        {cat === "All" && (
+           <div className="flex -space-x-1">
+             <div className="w-1.5 h-1.5 rounded-full bg-green-500 border border-white"></div>
+             <div className="w-1.5 h-1.5 rounded-full bg-red-500 border border-white"></div>
+           </div>
+        )}
         {cat === "Veg" && <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-green-500'}`}></div>}
         {cat === "Non-Veg" && <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-red-500'}`}></div>}
-        {cat === "All" && (
-          <div className="flex -space-x-1">
-            <div className="w-1.2 h-1.2 sm:w-1.5 rounded-full bg-green-500 border border-white"></div>
-            <div className="w-1.2 h-1.2 sm:w-1.5 rounded-full bg-red-500 border border-white"></div>
-          </div>
+        {cat !== "All" && cat !== "Veg" && cat !== "Non-Veg" && (
+           <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-blue-500'}`}></div>
         )}
+        
         {cat}
       </button>
     );
@@ -1227,7 +1260,37 @@ if (!owner || !owner.isApproved) {
           </motion.div>
         )}
       </AnimatePresence>
-
+        {/* 🎯 కౌంటర్ కార్ట్ లో ఐటమ్స్ ఉంటేనే ఈ బటన్ కనిపిస్తుంది */}
+{Object.keys(counterCart).length > 0 && (
+  <motion.div
+    initial={{ opacity: 0, y: 100 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: 100 }}
+    className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[90] w-full max-w-md px-4 pointer-events-none"
+  >
+    <button
+      type="button"
+      onClick={() => {
+        // ఇక్కడ రిఫరెన్స్ ఇస్తున్నాం
+        counterPrintButtonRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }}
+      className="w-full bg-slate-950 text-white p-4 rounded-2xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.4)] flex items-center justify-between border border-white/10 pointer-events-auto active:scale-95 transition-all"
+    >
+      <div className="flex items-center gap-3">
+        <div className="bg-emerald-600 p-2.5 rounded-xl text-white">
+          <ShoppingBag className="w-4 h-4" />
+        </div>
+        <div>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Counter Order</p>
+          <p className="text-sm font-black text-white italic">{Object.keys(counterCart).length} Items Selected</p>
+        </div>
+      </div>
+      <div className="text-blue-400 font-black text-[10px] uppercase bg-white/5 py-2 px-4 rounded-xl border border-white/5">
+        Go to Print
+      </div>
+    </button>
+  </motion.div>
+)}
     </div>
   );
 }

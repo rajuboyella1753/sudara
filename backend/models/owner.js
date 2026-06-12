@@ -49,6 +49,10 @@ const ownerSchema = new mongoose.Schema(
     billingStatus: { type: String, default: "Unpaid" }, 
     planType: { type: String, enum: ["basic", "premium"], default: "basic" },
     pendingMonthsCount: { type: Number, default: 0 },
+    paymentReceipt: { type: String, default: "" }, 
+    requestedPlanDuration: { type: Number, default: 30 },
+    gstPercentage: { type: Number, default: 5 }, 
+    extraCharges: { type: Number, default: 0 },
     reviews: [
       {
         comment: { type: String, required: true },
@@ -65,7 +69,12 @@ const ownerSchema = new mongoose.Schema(
     post_order_click: { type: Number, default: 0 },
     call_click: { type: Number, default: 0 },
     daily_revenue: { type: Number, default: 0 },
-    food_clicks: { type: Map, of: Number }
+    cash_sales: { type: Number, default: 0 },  // 🎯 ఇవి కొత్తగా యాడ్ చెయ్
+    upi_sales: { type: Number, default: 0 },   // 🎯 ఇవి కొత్తగా యాడ్ చెయ్
+    total_orders: { type: Number, default: 0 },
+    food_clicks: { type: Map, of: Number },
+    daily: { type: Map, of: Object },   // ఇది 15 రోజులు మాత్రమే ఉంటుంది
+    monthly: { type: Map, of: Object }
   }, { _id: false }), // ఇక్కడ _id: false పెడితే ప్రతి డేట్ కి ఐడి రాకుండా క్లీన్ గా ఉంటుంది
   default: {}
 },
@@ -73,5 +82,5 @@ const ownerSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
-export default mongoose.model("Owner", ownerSchema);
+const Owner = mongoose.models.Owner || mongoose.model("Owner", ownerSchema);
+export default Owner;

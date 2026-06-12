@@ -6,3 +6,10 @@
 .nav-link {
   @apply text-gray-600 hover:text-blue-600 transition;
 }
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}

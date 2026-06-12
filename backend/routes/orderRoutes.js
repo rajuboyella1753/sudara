@@ -1,6 +1,7 @@
 import express from 'express';
 import Order from '../models/Order.js'; // చివరన .js కచ్చితంగా ఉండాలి
 import { processVoiceOrder } from './aiController.js';
+
 const router = express.Router();
 
 // 🚀 రాజు అల్టిమేట్ ఆల్-ఇన్-వన్ ఆర్డర్ క్రియేషన్ API
@@ -87,29 +88,26 @@ router.get('/restaurant/:id', async (req, res) => {
     res.status(500).json(err);
   }
 });
-// 🎯 ఓనర్ స్టేటస్ అప్‌డేట్ రూట్ - ఇక్కడ మార్పు చెయ్ రాజు
 router.put("/update-status/:id", async (req, res) => {
   try {
     const { status } = req.body;
-    
-    // 💡 ఒకవేళ స్టేటస్ 'Served' కాకపోతే (Accepted/Preparing అయితే)
-    if (status !== "Served") {
-      await Order.findByIdAndUpdate(req.params.id, { status });
-      return res.json({ message: "Status Updated to " + status });
-    }
-
-    // 🎯 స్టేటస్ 'Served' అయితే - సేల్స్ కి యాడ్ చేసి డిలీట్ చేయాలి
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ error: "Order Not Found" });
 
-    // నోట్: ఇక్కడ మనం ఆర్డర్ ని డిలీట్ చేస్తున్నాం. 
-    // కానీ అమౌంట్ ని సేల్స్ మ్యాట్రిక్స్ లోకి పంపే బాధ్యత ఫ్రంటెండ్ లోని 'handleServed' కి ఇచ్చాం.
-    // బ్యాకెండ్ లో కేవలం డిలీట్ చేస్తే చాలు.
-    await Order.findByIdAndDelete(req.params.id);
-    res.json({ message: "Order Served & Removed from Live Feed" });
+    // డేటా అప్‌డేట్ చెయ్
+    order.status = status;
+    await order.save();
 
+    // ఒకవేళ Served అయితే - డిలీట్ చెయ్
+    if (status === "Served") {
+       await Order.findByIdAndDelete(req.params.id);
+       return res.json({ message: "Order Served & Removed" });
+    }
+
+    res.json({ message: "Status Updated", order });
   } catch (err) {
-    res.status(500).json({ error: "Update Failed" });
+    console.error("Server Side Update Error:", err);
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -122,16 +120,77 @@ router.get("/status/:sdrId", async (req, res) => {
       return res.status(404).json({ message: "Order not found or already Served!" });
     }
 
-    // కస్టమర్ కి కావాల్సిన ముఖ్యంమైన వివరాలు మాత్రమే పంపిస్తున్నాం
+    // 🎯 రాజు ఫిక్స్: ఇక్కడ 'orderType: order.orderType' కూడా రిటర్న్ చేస్తున్నాం రాజు!
     res.json({ 
       customerName: order.customerName,
       status: order.status,
       items: order.items,
-      totalAmount: order.totalAmount
+      totalAmount: order.totalAmount,
+      tableNo: order.tableNo,
+      orderType: order.orderType 
     }); 
   } catch (err) {
     res.status(500).json({ error: "Server Error" });
   }
 });
+// 🚀 రాజు మ్యాజిక్: ఓనర్ ప్రీ-బుకింగ్ ఆర్డర్ కి టేబుల్ అసైన్ చేయడానికి రూట్
+router.put('/assign-table/:id', async (req, res) => {
+  try {
+    const { tableNo } = req.body;
+    
+    // 1. డేటాబేస్ లో ఆర్డర్ ని వెతకడం
+    const order = await Order.findById(req.params.id);
 
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // 2. టేబుల్ నంబర్ ని అప్‌డేట్ చేయడం
+    order.tableNo = tableNo;
+    await order.save();
+
+    // 3. సాకెట్ (Socket.io) ద్వారా కస్టమర్ కి రియల్ టైమ్ సిగ్నల్ పంపడం
+    const io = req.app.get("socketio");
+    if (io && order.sudaraId) {
+      console.log(`📡 Emitting table_assigned to customer room: ${order.sudaraId}`);
+      io.to(order.sudaraId).emit("table_assigned", { 
+        tableNo: tableNo, 
+        message: `Your Table #${tableNo} is Ready! 🪑` 
+      });
+    }
+
+    // 4. సక్సెస్ రెస్పాన్స్ పంపడం
+    res.status(200).json(order);
+  } catch (err) {
+    console.error("Table Assign Error ❌:", err);
+    res.status(500).json({ message: "Failed to assign table", error: err.message });
+  }
+});
+router.get('/reports/today/:restaurantId', async (req, res) => {
+  const { restaurantId } = req.params;
+  
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  try {
+    const orders = await Order.find({
+      restaurantId,
+      createdAt: { $gte: startOfDay }
+    });
+
+    const report = orders.reduce((acc, order) => {
+      acc.totalOrders += 1;
+      acc.totalSales += (order.totalAmount || 0);
+      
+      if (order.paymentMode === 'CASH') acc.cashSales += (order.totalAmount || 0);
+      else if (order.paymentMode === 'UPI') acc.upiSales += (order.totalAmount || 0);
+      
+      return acc;
+    }, { totalOrders: 0, totalSales: 0, cashSales: 0, upiSales: 0 });
+
+    res.json(report);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching reports", error });
+  }
+});
 export default router; 

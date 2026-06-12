@@ -16,7 +16,7 @@ const OrderSchema = new mongoose.Schema({
   
   orderType: { 
     type: String, 
-    enum: ['Pre-book', 'Post-book', 'Express-Route'],
+    enum: ['Pre-book', 'Post-book', 'Express-Route','Counter'],
     required: true // ఇది ఉంటేనే మనం ఐడిలు సరిగ్గా జనరేట్ చేయగలం
   }, 
   
@@ -40,9 +40,14 @@ const OrderSchema = new mongoose.Schema({
   prepTime: { type: Number, default: 20 }, 
   scheduledStartTime: Date, 
   isDelayed: { type: Boolean, default: false },
+  // నీ స్కీమాలో ఈ ఫీల్డ్ ని యాడ్ చెయ్:
+  paymentMode: { 
+    type: String, 
+    enum: ['CASH', 'UPI', 'PENDING'], 
+    default: 'CASH' 
+  },
 
-
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now , expires: 86400} // ఆర్డర్ 24 గంటల తర్వాత ఆటోమేటిక్ గా డిలీట్ అవుతుంది
 });
 
 const Order = mongoose.model('Order', OrderSchema);
