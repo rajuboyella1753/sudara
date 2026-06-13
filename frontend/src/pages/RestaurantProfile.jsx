@@ -622,7 +622,7 @@ if (!owner || !owner.isApproved) {
     return (
       <button 
         key={`${cat}-${index}`} onClick={() => setFilter(cat)} 
-        onClick={() => setFilter(cat)} 
+        // onClick={() => setFilter(cat)} 
         className={`px-4 sm:px-6 py-1.5 rounded-full text-[8px] sm:text-[9px] font-black uppercase border transition-all shrink-0 flex items-center gap-1.5 ${btnStyles}`}
       >
         {/* కలర్ డాట్ లాజిక్ */}

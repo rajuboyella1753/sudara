@@ -8,7 +8,7 @@ import { createRequire } from "module";
 import { Server } from "socket.io";
 import http from "http";
 import cron from 'node-cron';
-import Owner from './models/owner.js';
+import Owner from './models/Owner.js';
 const require = createRequire(import.meta.url);
 const serviceAccount = require("./serviceAccountKey.json"); 
 import ownerRoutes from "./routes/ownerRoutes.js";
