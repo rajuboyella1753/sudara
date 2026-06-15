@@ -75,7 +75,7 @@
 
   // 👑 రాజు మంత్లీ సబ్‌స్క్రిప్షన్ క్యాలిక్యులేటర్ (డిస్కౌంట్ లేకుండా పక్కా 100% అమౌంట్ లాజిక్)
   const calculatedAmount = useMemo(() => {
-    const baseRate = selectedPlanType === "premium" ? 1999 : 500;
+    const baseRate = selectedPlanType === "premium" ? 1499 : 500;
     const months = planDuration === 90 ? 3 : 1;
     
     // ఎటువంటి డిస్కౌంట్లు లేవు, 3 నెలలకి పక్కా స్ట్రెయిట్ మల్టిప్లికేషన్ రాజు!
@@ -1978,7 +1978,7 @@ const dailyStats = {
             {/* ప్లాన్ టైప్ స్విచ్ */}
             <div className="flex bg-slate-100 p-1 rounded-xl border shadow-inner">
               <button type="button" onClick={() => setSelectedPlanType("basic")} className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase transition-all ${selectedPlanType === "basic" ? "bg-slate-900 text-white shadow-md" : "text-slate-500"}`}>Basic (₹500/Month)</button>
-              <button type="button" onClick={() => setSelectedPlanType("premium")} className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase transition-all ${selectedPlanType === "premium" ? "bg-blue-600 text-white shadow-md" : "text-slate-500"}`}>Premium (₹1999/Month)</button>
+              <button type="button" onClick={() => setSelectedPlanType("premium")} className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase transition-all ${selectedPlanType === "premium" ? "bg-blue-600 text-white shadow-md" : "text-slate-500"}`}>Premium (₹1499/Month)</button>
             </div>
 
             {/* రోజుల స్విచ్ */}

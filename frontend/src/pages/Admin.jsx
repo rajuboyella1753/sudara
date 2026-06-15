@@ -138,9 +138,9 @@ const getSubscriptionStatus = (createdAt, nextBillingDate, planType) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // రాజు కొత్త ప్రైసింగ్: ప్రీమియం 1999 & బేసిక్ 499
+  // రాజు కొత్త ప్రైసింగ్: ప్రీమియం 1499 & బేసిక్ 499
   const currentPlan = planType || "basic";
-  const actualFee = currentPlan === "premium" ? 1999 : 499;
+  const actualFee = currentPlan === "premium" ? 1499 : 499;
 
   // Case 1: ఒకవేళ ఓనర్ ఆల్రెడీ పేమెంట్ చేసి నెక్స్ట్ బిల్లింగ్ డేట్ సెట్ అయి ఉంటే రాజు
   if (nextBillingDate) {
@@ -710,8 +710,8 @@ if (viewMode === "daily") {
         {/* 💳 PREMIUM PROTOCOL BOX (MOBILE RESPONSIVE FIXED - 100% ACCURATE) */}
 {activeTab === "approved" && (() => {
 
-  const displayAmount = owner?.planType === "premium" ? 1999 : 499;
-  const planNameText = owner?.planType === "premium" ? "👑 PREMIUM PRO NODE (₹1999/Month)" : "🟢 BASIC NODE (₹499/Month)";
+  const displayAmount = owner?.planType === "premium" ? 1499 : 499;
+  const planNameText = owner?.planType === "premium" ? "👑 PREMIUM PRO NODE (₹1499/Month)" : "🟢 BASIC NODE (₹499/Month)";
 
   return (
     <div className={`mb-4 p-4 rounded-2xl border transition-all duration-300 ${sub.isExpired ? 'bg-red-50 border-red-100 shadow-sm shadow-red-50' : 'bg-emerald-50 border-emerald-100 shadow-sm shadow-emerald-50'}`}>
@@ -1114,7 +1114,7 @@ if (viewMode === "daily") {
                     className="w-full sm:w-auto p-2.5 bg-white border border-slate-200/80 rounded-xl text-[10px] font-black uppercase text-slate-700 cursor-pointer shadow-sm focus:border-blue-500 text-center"
                   >
                     <option value="basic">🟢 Basic (₹499/Month)</option>
-                    <option value="premium">👑 Premium (₹1999/Month)</option>
+                    <option value="premium">👑 Premium (₹1499/Month)</option>
                   </select>
                 </div>
               )}
