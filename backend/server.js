@@ -14,8 +14,14 @@ const serviceAccount = require("./serviceAccountKey.json");
 import ownerRoutes from "./routes/ownerRoutes.js";
 import itemRoutes from "./routes/itemRoutes.js";
 import orderRoutes from './routes/orderRoutes.js';
-
+import { v2 as cloudinary } from 'cloudinary';
 dotenv.config();
+javascript
+   cloudinary.config({
+     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+     api_key: process.env.CLOUDINARY_API_KEY,
+     api_secret: process.env.CLOUDINARY_API_SECRET
+   });
 const app = express();
 
 // 🎯 2. HTTP సర్వర్ ని క్రియేట్ చేయాలి (Socket.io కోసం ఇది తప్పనిసరి)
@@ -64,22 +70,26 @@ io.on("connection", (socket) => {
   });
 });
 cron.schedule('5 0 * * *', async () => {
-  const owners = await Owner.find({});
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yKey = `${yesterday.getDate()}/${yesterday.getMonth() + 1}/${yesterday.getFullYear()}`;
-  const mKey = `${yesterday.getMonth() + 1}-${yesterday.getFullYear()}`; // ఉదా: 6-2026
+  try {
+    const owners = await Owner.find({});
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yKey = `${yesterday.getDate()}/${yesterday.getMonth() + 1}/${yesterday.getFullYear()}`;
+    const mKey = `${yesterday.getMonth() + 1}-${yesterday.getFullYear()}`;
 
-  for (let owner of owners) {
-    const dailyData = owner.analytics.daily.get(yKey);
-    if (dailyData) {
-      // 1. నెలవారీ రిపోర్ట్ అప్‌డేట్
-      await Owner.findByIdAndUpdate(owner._id, {
-        $inc: { [`analytics.monthly.${mKey}.revenue`]: dailyData.daily_revenue || 0 }
-      });
-      // 2. డైలీ రిపోర్ట్ డిలీట్
-      await Owner.findByIdAndUpdate(owner._id, { $unset: { [`analytics.daily.${yKey}`]: "" } });
+    for (let owner of owners) {
+      // ఇక్కడ .get() బదులు ఆబ్జెక్ట్ బ్రాకెట్ నొటేషన్ వాడాలి
+      const dailyData = owner.analytics.daily[yKey]; 
+      
+      if (dailyData) {
+        await Owner.findByIdAndUpdate(owner._id, {
+          $inc: { [`analytics.monthly.${mKey}.revenue`]: dailyData.daily_revenue || 0 }
+        });
+        await Owner.findByIdAndUpdate(owner._id, { $unset: { [`analytics.daily.${yKey}`]: "" } });
+      }
     }
+  } catch (error) {
+    console.error("Cron Job Error:", error);
   }
 });
 cron.schedule('0 0 1 * *', async () => {
