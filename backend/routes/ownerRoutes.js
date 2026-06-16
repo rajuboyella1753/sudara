@@ -600,4 +600,18 @@ router.post('/update-profile-pic/:id', upload.single('image'), async (req, res) 
     res.status(500).json({ error: "Upload failed" });
   }
 });
+router.get('/admin/daily-stats', async (req, res) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const stats = await Order.aggregate([
+      { $match: { createdAt: { $gte: today } } },
+      { $group: { _id: "$orderType", count: { $sum: 1 } } }
+    ]);
+    res.json(stats);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch stats" });
+  }
+});
 export default router;

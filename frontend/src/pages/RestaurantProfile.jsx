@@ -8,9 +8,10 @@ import {
   Heart, Share2, Clock, MapPin, Search, Camera, CreditCard, X, 
   PhoneCall, Plus, Minus, ShoppingBag, ShieldCheck, Copy, 
   UtensilsCrossed, MessageSquare, Star, Send, Navigation,
-  User, CheckCircle2 
+  User, CheckCircle2 ,Download
 } from "lucide-react";
 import VoiceAssistant from "../components/VoiceAssistant";
+import QRCode from 'qrcode';
 export default function RestaurantProfile() {
   const { id } = useParams();
   const [owner, setOwner] = useState(null);
@@ -32,7 +33,7 @@ export default function RestaurantProfile() {
   const [cart, setCart] = useState({}); 
   const [deliveryType, setDeliveryType] = useState("Take Away");
   const [showOrderForm, setShowOrderForm] = useState(false);
-  const [orderData, setOrderData] = useState({ name: "", phone: "", txId: "", arrivalTime: "" });
+  const [orderData, setOrderData] = useState({ name: "", phone: "", txId: "", arrivalTime: "" ,peopleCount: 1});
   const [showPayWarning, setShowPayWarning] = useState(false); 
   const [selectedTable, setSelectedTable] = useState(""); 
   const [customerName, setCustomerName] = useState("");
@@ -43,6 +44,7 @@ export default function RestaurantProfile() {
   const [placedOrderId, setPlacedOrderId] = useState(null);
   const [assignedTable, setAssignedTable] = useState(null);
   const [trackedOrderType, setTrackedOrderType] = useState(null);
+  const [recentOrderItems, setRecentOrderItems] = useState([]);
   const availableSubCats = useMemo(() => {
   const defaultCats = ["Biryanis", "Starters", "Soups", "Noodles", "Gravys", "Rice", "Breads", "Sea Food", "Tiffins"];
   // 🎯 రాజు చేంజ్: డ్రాప్‌డౌన్ వాల్యూ స్టోర్ చేయడానికి కొత్త స్టేట్
@@ -144,9 +146,10 @@ const handleTrackOrder = async () => {
     const res = await api.get(`/orders/status/${sdrId}`);
     setOrderStatus(res.data.status);
     setAssignedTable(res.data.tableNo); 
+    setTrackedOrderType(res.data.orderType);
     
-    // 🎯 బ్యాకెండ్ నుండి వచ్చిన ఆర్డర్ టైప్ (Pre-book / Post-book) ని ఇక్కడ స్టేట్ లో సేవ్ చేస్తున్నాం!
-    setTrackedOrderType(res.data.orderType); 
+    // 🎯 ఇక్కడ చిన్న మార్పు: ట్రాక్ చేసిన ఐడిని placedOrderId స్టేట్ కి సెట్ చెయ్
+    setPlacedOrderId(sdrId); 
   } catch (err) {
     alert("Order not found!");
   }
@@ -270,6 +273,7 @@ const handleConfirmOrder = async () => {
       advancePaid: halfAmount,
       txnId: orderData.txId,
       arrivalTime: orderData.arrivalTime,
+      peopleCount: deliveryType === "Book at Restaurant" ? Number(orderData.peopleCount) : 1,
       orderType: "Pre-book",
       sudaraId: sudaraId,
       travelDuration: parseInt(orderData.arrivalTime),
@@ -299,6 +303,118 @@ const handleConfirmOrder = async () => {
     alert("Order Sync Failed! ❌");
   } finally {
     setLoading(false);
+  }
+};
+const handlePrintBill = async (orderObj, manualPaymentMethod = "CASH", ownerData = owner) => {
+  try {
+    // 1. డేటా ప్రిపరేషన్
+    const restaurantName = ownerData?.name?.toUpperCase() || "SUDARA PARTNER";
+    const address = ownerData?.address || "Local Neighborhood";
+    const phone = ownerData?.phone || "";
+    const table = orderObj.tableNo || "PRE";
+    const billNo = orderObj.sudaraId || "8760";
+    orderObj.paymentMode = manualPaymentMethod.toUpperCase();
+    const dateText = new Date(orderObj.createdAt || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase();
+    const timeText = new Date(orderObj.createdAt || Date.now()).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const configGstPercent = Number(ownerData?.gstPercentage ?? 5);
+    const configExtraCharges = Number(ownerData?.extraCharges ?? 0);
+    const grandTotal = Number(orderObj.totalAmount || 0);
+    const foodTotalInclusive = grandTotal - configExtraCharges;
+    const subTotal = Number((foodTotalInclusive / (1 + (configGstPercent / 100))).toFixed(2));
+    const totalGst = Number((foodTotalInclusive - subTotal).toFixed(2));
+    const cgstAmount = Number((totalGst / 2).toFixed(2));
+    const sgstAmount = Number((totalGst / 2).toFixed(2));
+    const halfGstPercent = (configGstPercent / 2);
+    const gstAmount = (totalAmount * (owner?.gstPercentage || 0)) / 100;
+    const finalPayable = totalAmount + gstAmount + (owner?.extraCharges || 0);
+    const isAppOnline = orderObj.txnId || (Number(orderObj.advancePaid) > 0) || orderObj.orderType === 'Pre-book' || orderObj.orderType === 'Express-Route';
+    const finalPaymentMethod = isAppOnline ? "ONLINE/UPI" : manualPaymentMethod.toUpperCase();
+
+    // 2. టేబుల్ రోస్
+    let tableRowsHTML = "";
+    orderObj.items.forEach((itemString) => {
+      let qty = 1; let itemName = itemString;
+      if (itemString.includes(' x ')) {
+        const parts = itemString.split(' x ');
+        qty = Number(parts[0]) || 1;
+        itemName = parts[1];
+      }
+      const itemAmount = Number(((grandTotal - configExtraCharges) / (orderObj.items.length || 1)).toFixed(0));
+      tableRowsHTML += `
+        <tr>
+          <td style="text-align: left; padding: 3px 0; font-size: 10.5px; max-width: 24mm; word-wrap: break-word;">${itemName.toUpperCase()}</td>
+          <td style="text-align: center; padding: 3px 0; font-size: 10.5px;">${qty}</td>
+          <td style="text-align: right; padding: 3px 0; font-size: 10.5px;">${itemAmount}</td>
+        </tr>
+      `;
+    });
+
+    // 🎯 QR కోడ్ జనరేషన్ (ఇక్కడ మార్పు చేశాను - ఇదే కచ్చితంగా వస్తుంది)
+    const qrDataUrl = await QRCode.toDataURL(`https://sudara.in/restaurant/${ownerData._id}`, { width: 120, margin: 1, errorCorrectionLevel: 'H' });
+
+    // 3. పూర్తి బిల్ HTML
+    const billHTML = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <style>
+          @page { size: 58mm auto; margin: 0; }
+          body { width: 48mm; margin: 0 auto; padding: 3mm 0; font-family: 'Courier New', monospace; font-size: 10.5px; line-height: 1.2; }
+          .text-center { text-align: center; }
+          .bold { font-weight: bold; }
+          .header { font-size: 13px; font-weight: bold; margin-bottom: 2px; }
+          .divider { border-top: 1px dashed #000; margin: 4px 0; }
+          table { width: 100%; border-collapse: collapse; margin: 3px 0; }
+          .flex-row { display: flex; justify-content: space-between; padding: 1.5px 0; }
+          .total-section { font-size: 12px; font-weight: bold; margin-top: 3px; }
+        </style>
+      </head>
+      <body>
+        <div class="text-center">
+          <div class="header">${restaurantName}</div>
+          <div style="font-size: 9px;">${address.toUpperCase()}</div>
+          ${phone ? `<div style="font-size: 9px;">PH: ${phone}</div>` : ''}
+          <div class="bold" style="margin-top: 3px; font-size: 11px;">BILL NO: ${billNo}</div>
+        </div>
+        <div class="divider"></div>
+        <div class="flex-row"><span>T: ${table}</span><span>DT: ${dateText}</span></div>
+        <div class="flex-row"><span>C: ${(orderObj.customerName || "GUEST").toUpperCase()}</span><span>TM: ${timeText}</span></div>
+        <div class="divider"></div>
+        <table><thead><tr><th style="text-align: left;">ITEM</th><th style="text-align: center;">Q</th><th style="text-align: right;">AMT</th></tr></thead><tbody>${tableRowsHTML}</tbody></table>
+        <div class="divider"></div>
+        <div class="flex-row"><span>SUB TOTAL</span><span>₹${subTotal.toFixed(2)}</span></div>
+        ${configGstPercent > 0 ? `<div class="flex-row"><span>CGST @${halfGstPercent}%</span><span>₹${cgstAmount.toFixed(2)}</span></div><div class="flex-row"><span>SGST @${halfGstPercent}%</span><span>₹${sgstAmount.toFixed(2)}</span></div>` : ''}
+        ${configExtraCharges > 0 ? `<div class="flex-row"><span>PACK/SERV CHG</span><span>₹${configExtraCharges.toFixed(2)}</span></div>` : ''}
+        <div class="divider"></div>
+        <div class="total-section"><div class="flex-row"><span>NET TOTAL</span><span>₹${grandTotal.toFixed(2)}</span></div></div>
+        <div class="divider"></div>
+        <div class="text-center">
+          <div class="bold">INCL. OF ALL TAXES</div>
+          <div class="flex-row"><span>PAID BY:</span><span class="bold">${finalPaymentMethod}</span></div>
+          <div style="margin: 10px 0;"><img src="${qrDataUrl}" style="width: 100px; height: 100px; display: block; margin: 0 auto;" /></div>
+          <p style="font-weight: bold; font-size: 9px;">SCAN TO ORDER AGAIN</p>
+          <p style="margin-top: 5px; font-size: 7.5px;">POWERED BY SUDARA.IN</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // 4. ప్రింటింగ్ ఇంజన్
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed'; iframe.style.width = '0'; iframe.style.height = '0';
+    document.body.appendChild(iframe);
+    const iframeDoc = iframe.contentWindow.document;
+    iframeDoc.open(); iframeDoc.write(billHTML); iframeDoc.close();
+
+    const img = iframeDoc.querySelector('img');
+    img.onload = () => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      setTimeout(() => iframe.remove(), 1000);
+    };
+  } catch (err) {
+    console.error("Bill Error:", err);
   }
 };
 // 📢 WhatsApp Share Function
@@ -339,25 +455,21 @@ const handleInstantOrder = async () => {
       tableNo: selectedTable,
       items: itemList,
       totalAmount: totalAmount,
-      orderType: "Post-book", // 🎯 ఇది ఉండటం వల్ల బ్యాకెండ్ TAB ఐడి ఇస్తుంది
+      orderType: "Post-book",
+      arrivalTime: "Immediate",
       status: "Pending"
     };
 
-    // 🚀 1. బ్యాకెండ్‌కి డేటా పంపిస్తున్నాం
     const res = await api.post("/orders/add", payload);
 
-    // 🎯 2. ఇక్కడ మార్పు చేశాను రాజు! 
-    // బ్యాకెండ్ నుండి వచ్చిన sudaraId (Ex: TAB854) ని తీసుకుంటున్నాం
     if (res.data && res.data.sudaraId) {
-      setPlacedOrderId(res.data.sudaraId); // ఈ ఐడిని స్క్రీన్ మీద చూపించడానికి సేవ్ చేస్తున్నాం
-      
-      alert(`ORDER PLACED! 🍲\nSir/Madam, Your Tracking ID: ${res.data.sudaraId}\nUse this to check your food status.`);
+      setPlacedOrderId(res.data.sudaraId);
+      alert(`ORDER PLACED! 🍲\nSir/Madam, Your Tracking ID: ${res.data.sudaraId}`);
     } else {
       alert("ORDER PLACED! 🍲 Sir/Madam your order has been sent to owner.");
     }
 
-    // 3. క్లీనప్ పాత లాజిక్ లాగే
-    setCart({});
+    setCart({}); // కార్ట్ క్లీన్ అవుతుంది
     setShowInstantModal(false);
   } catch (err) {
     alert("Order Failed! ❌");
@@ -556,7 +668,30 @@ if (!owner || !owner.isApproved) {
         <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase">Copy this ID to Track Status below</p>
       </div>
     )}
-
+  {/* {placedOrderId && (
+  <button 
+    onClick={() => {
+      // 🎯 లాజిక్: recentOrderItems లో డేటా ఉంటే అది కొత్త ఆర్డర్, లేకపోతే అది పాత ఆర్డర్
+      const isNewOrder = recentOrderItems.length > 0;
+      
+      const orderObj = {
+        customerName: customerName,
+        tableNo: selectedTable,
+        items: isNewOrder ? recentOrderItems.map(i => `${i.qty} x ${i.name}`) : [], 
+        totalAmount: isNewOrder ? finalPayable : 0, 
+        sudaraId: placedOrderId,
+        createdAt: new Date(),
+        orderType: "Post-book" 
+      };
+      
+      handlePrintBill(orderObj, "ONLINE", owner);
+    }}
+    className="bg-slate-900 text-white px-6 py-4 rounded-2xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all w-full mb-4"
+  >
+    <Download className="w-4 h-4" /> 
+    Download Digital Bill {recentOrderItems.length > 0 ? `(₹${finalPayable.toFixed(2)})` : ""}
+  </button>
+)} */}
     {/* స్టేటస్ రిజల్ట్ ఇక్కడ చూపిస్తాం */}
     {orderStatus && (
       <div className="mt-4 p-4 bg-blue-50 rounded-2xl border border-blue-100 text-center">
@@ -883,10 +1018,38 @@ if (!owner || !owner.isApproved) {
       </div>
     </div>
   </div>
-  
+  {/* 👤 People Count Selector */}
+{deliveryType === "Book at Restaurant" && (
+  <div className="relative group">
+    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+    <input 
+      type="number" 
+      min="1"
+      placeholder="Number of People" 
+      value={orderData.peopleCount} 
+      onChange={(e) => setOrderData({...orderData, peopleCount: e.target.value})}
+      className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-[11px] font-bold outline-none focus:bg-white focus:border-blue-500 transition-all shadow-inner" 
+    />
+  </div>
+)}
+
+{/* ⏰ Arrival Time Selector (Select instead of text) */}
+<div className="relative group">
+  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+  <select 
+  value={orderData.arrivalTime} 
+  onChange={(e) => setOrderData({...orderData, arrivalTime: e.target.value})}
+  className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-[11px] font-black outline-none focus:bg-white focus:border-blue-500 transition-all shadow-inner"
+>
+  <option value="">-- Select Arrival Time --</option> {/* ఇక్కడ ఖాళీ వాల్యూ పెట్టు */}
+  {["16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30", "20:00"].map(time => (
+    <option key={time} value={time}>{time}</option>
+  ))}
+</select>
+</div>
   {/* ⏰ 3. ఇది నీ పాత Arrival మరియు Txn ID ఇన్‌పుట్ గ్రిడ్ బాక్స్ */}
   <div className="grid grid-cols-2 gap-4">
-    <div className="relative group">
+    {/* <div className="relative group">
       <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
       <input 
         type="text" 
@@ -895,7 +1058,7 @@ if (!owner || !owner.isApproved) {
         onChange={(e)=>setOrderData({...orderData, arrivalTime:e.target.value})} 
         className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-[10px] font-bold outline-none focus:bg-white focus:border-blue-500 transition-all shadow-inner" 
       />
-    </div>
+    </div> */}
     
     <div className="relative group">
       <CheckCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />

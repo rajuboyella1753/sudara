@@ -37,6 +37,7 @@ router.post("/add", async (req, res) => {
         console.log("📢 Transmitting order to live merchant room:", targetId);
         io.to(targetId).emit("new_order_received", savedOrder);
       }
+      io.emit("order_placed", savedOrder);
     }
     
     // 5. సక్సెస్ రెస్పాన్స్ - ఫ్రంటెండ్ ఐడి ని వాడుకోవడానికి వీలుగా!
@@ -191,6 +192,24 @@ router.get('/reports/today/:restaurantId', async (req, res) => {
     res.json(report);
   } catch (error) {
     res.status(500).json({ message: "Error fetching reports", error });
+  }
+});
+// 🎯 ADMIN: Daily Stats (ఇది యాడ్ చెయ్)
+router.get('/admin/daily-stats', async (req, res) => {
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const stats = await Order.aggregate([
+      { $match: { createdAt: { $gte: today } } },
+      { $group: { _id: "$orderType", count: { $sum: 1 } } }
+    ]);
+    
+    // ఫలితాన్ని కన్సోల్ లో కూడా చూడు, అప్పుడు నీకు డేటా వస్తుందో లేదో తెలుస్తుంది
+    res.json(stats);
+  } catch (err) {
+    console.error("Admin Stats Error ❌:", err);
+    res.status(500).json({ error: "Failed to fetch stats" });
   }
 });
 export default router; 

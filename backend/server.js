@@ -16,7 +16,6 @@ import itemRoutes from "./routes/itemRoutes.js";
 import orderRoutes from './routes/orderRoutes.js';
 import { v2 as cloudinary } from 'cloudinary';
 dotenv.config();
-javascript
    cloudinary.config({
      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
      api_key: process.env.CLOUDINARY_API_KEY,

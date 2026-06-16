@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api-base";
+import { io } from "socket.io-client";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   ShieldCheck, CheckCircle, Building2, Phone, Users, 
@@ -30,8 +31,8 @@ export default function AdminDashboard() {
   const [availableStates, setAvailableStates] = useState([]);
   const [availableDistricts, setAvailableDistricts] = useState([]);
   const [viewMode, setViewMode] = useState("daily");
-  const [impersonatedOwner, setImpersonatedOwner] = useState(null); // 👑 రాజు ఓవర్‌కమ్ మోడ్ స్టేట్
-// 🚀 1. ఫస్ట్ టైమ్ పేజీ లోడ్ అయినప్పుడు మొత్తం డేటాను లాగడానికి (నీ పాత యూజ్ ఎఫెక్ట్ రాజు)
+  const [impersonatedOwner, setImpersonatedOwner] = useState(null); 
+  const [globalStats, setGlobalStats] = useState({ pre: 0, post: 0 });
 useEffect(() => {
   const fetchInitialData = async () => {
     try {
@@ -39,7 +40,15 @@ useEffect(() => {
       const res = await api.get("/owner/admin-all-owners");
       const ownersData = Array.isArray(res.data) ? res.data : [];
       setOwners(ownersData);
-      
+
+        try {
+  const statsRes = await api.get("/orders/admin/daily-stats");
+  const stats = statsRes.data;
+  const pre = stats.find(s => s._id === "Pre-book")?.count || 0;
+  const post = stats.find(s => s._id === "Post-book")?.count || 0;
+  setGlobalStats({ pre, post });
+} catch (e) { console.log("Stats fetch failed"); }
+
       // అవైలబుల్ స్టేట్స్ ని యూనిక్ గా సెట్ చేయడం
       const states = [...new Set(ownersData.map(o => o.state))].filter(Boolean);
       setAvailableStates(states);
@@ -77,7 +86,26 @@ useEffect(() => {
   // 🎯 సేఫ్టీ చెక్: స్టేట్ మారినప్పుడు డిస్ట్రిక్ట్ సెలెక్షన్ ని మళ్లీ "All" కి రీసెట్ చేస్తున్నాం రాజు
   setSelectedDistrict("All"); 
 }, [selectedState, owners]); // 🔥 selectedState మారిన ప్రతిసారి ఈ మ్యాజిక్ రన్ అవుతుంది!
+useEffect(() => {
+    // 1. డైనమిక్ URL సెలెక్షన్ (Production vs Dev)
+    const socketUrl = import.meta.env.MODE === 'production' 
+        ? import.meta.env.VITE_API_PROD_URL 
+        : import.meta.env.VITE_API_DEV_URL;
 
+    // 2. సాకెట్ కనెక్షన్
+    const socket = io(socketUrl);
+
+    // 3. ఆర్డర్ ప్లేస్ అయినప్పుడు అప్డేట్ లాజిక్
+    socket.on("order_placed", (newOrder) => {
+        setGlobalStats(prev => ({
+            ...prev,
+            [newOrder.orderType === "Pre-book" ? "pre" : "post"]: prev[newOrder.orderType === "Pre-book" ? "pre" : "post"] + 1
+        }));
+    });
+
+    // 4. క్లీన్ అప్ (మెమరీ లీక్ అవ్వకుండా)
+    return () => socket.disconnect();
+}, []);
   const fetchOwners = async () => {
     try {
       setLoading(true);
@@ -490,7 +518,17 @@ const dailyTotals = filteredList.reduce((acc, res) => {
     </div>
   </div>
 </header>
-
+{/* 🚀 GLOBAL DAILY COUNTS (Static Display) */}
+<div className="max-w-7xl mx-auto px-4 lg:px-10 mt-6 grid grid-cols-2 gap-4">
+    <div className="bg-blue-600 p-6 rounded-[2rem] shadow-lg text-white">
+      <p className="text-[8px] font-black uppercase tracking-widest opacity-70 mb-1">Global Pre-Bookings</p>
+      <p className="text-3xl font-black">{globalStats.pre}</p>
+    </div>
+    <div className="bg-emerald-600 p-6 rounded-[2rem] shadow-lg text-white">
+      <p className="text-[8px] font-black uppercase tracking-widest opacity-70 mb-1">Global Post-Bookings</p>
+      <p className="text-3xl font-black">{globalStats.post}</p>
+    </div>
+  </div>
         <div className="p-4 lg:p-10 max-w-7xl mx-auto w-full pb-20">
           {activeTab === "analytics" && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">

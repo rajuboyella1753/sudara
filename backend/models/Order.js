@@ -12,7 +12,11 @@ const OrderSchema = new mongoose.Schema({
   totalAmount: Number,
   advancePaid: Number,
   txnId: String,
-  arrivalTime: String,
+  peopleCount: { type: Number, default: 1 },
+  arrivalTime: { 
+  type: String, 
+  required: false 
+},
   
   orderType: { 
     type: String, 

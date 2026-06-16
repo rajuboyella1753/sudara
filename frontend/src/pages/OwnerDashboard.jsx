@@ -24,6 +24,7 @@
     const [allCategories, setAllCategories] = useState(defaultMenuOptions);
     const [loading, setLoading] = useState(true);
     const counterPrintButtonRef = useRef(null);
+    const categoryRefs = useRef({});
     // const [counterCart, setCounterCart] = useState({});
     // UI States
     const [activeTab, setActiveTab] = useState("dashboard"); // Tab switching
@@ -34,6 +35,8 @@
     const [isShowingMatrix, setIsShowingMatrix] = useState(false); 
     const [sending, setSending] = useState(false);
     const [todayMsg, setTodayMsg] = useState(""); 
+    const [activeCategory, setActiveCategory] = useState("All");
+    const [activeSubCategory, setActiveSubCategory] = useState("All");
     // const counterPrintButtonRef = useRef(null); 
     const orderSectionRef = useRef(null);
     // Profile Form (First Code Fields + New Schema Fields)
@@ -159,29 +162,32 @@ useEffect(() => {
 }, [items, customSub]); // items లేదా customSub మారినప్పుడల్లా ఇది అప్‌డేట్ అవుతుంది
 
   const fetchData = async (id) => {
-    try {
-      setLoading(true);
-      const [oRes, iRes, ordRes] = await Promise.all([
-        api.get(`/owner/${id}`).catch(() => ({ data: null })), // empty object బదులు null
-        api.get(`/items/owner/${id}`).catch(() => ({ data: [] })),
-        api.get(`/orders/restaurant/${id}`).catch(() => ({ data: [] }))
-      ]);
+  try {
+    setLoading(true);
+    const [oRes, iRes, ordRes] = await Promise.all([
+      api.get(`/owner/${id}`).catch(() => ({ data: null })),
+      api.get(`/items/owner/${id}`).catch(() => ({ data: [] })),
+      api.get(`/orders/restaurant/${id}`).catch(() => ({ data: [] }))
+    ]);
 
-      if (oRes.data) {
-        setOwner(oRes.data);
-        setTodayMsg(oRes.data.todaySpecial || "");
-        setProfileForm({ ...oRes.data });
-      }
-      
-      setItems(iRes.data || []);
-      setOrders(ordRes.data || []);
+    // 🎯 ఇక్కడ కన్సోల్ లో చెక్ చెయ్
+    console.log("🔥 Items received from backend:", iRes.data); 
 
-    } catch (err) {
-      console.error("General Fetch Error:", err);
-    } finally {
-      setLoading(false);
+    if (oRes.data) {
+      setOwner(oRes.data);
+      setTodayMsg(oRes.data.todaySpecial || "");
+      setProfileForm({ ...oRes.data });
     }
-  };
+    
+    setItems(iRes.data || []); // ఇక్కడ ఐటమ్స్ సెట్ అవుతున్నాయి
+    setOrders(ordRes.data || []);
+
+  } catch (err) {
+    console.error("General Fetch Error:", err);
+  } finally {
+    setLoading(false);
+  }
+};
 
     // --- Logic Functions (First Code Original) ---
     const optimizeImage = (file, callback) => {
@@ -392,27 +398,34 @@ const handleCounterPrint = async () => {
 const handleServed = async (orderObj) => {
   if (!window.confirm("Mark as Served?")) return;
 
-  // 🎯 ఇక్కడ డ్రాప్-డౌన్ నుండి వాల్యూ ని రీడ్ చేస్తున్నాం
+  // 1. పేమెంట్ మోడ్ ని డ్రాప్-డౌన్ నుండి తీసుకోవడం
   const selectEl = document.getElementById(`payMode-${orderObj._id}`);
-  const selectedMode = selectEl ? selectEl.value : "CASH"; // డిఫాల్ట్ CASH
+  const selectedMode = selectEl ? selectEl.value : "CASH";
+
+  // 2. ముఖ్యమైన మార్పు: అడ్వాన్స్ పోను మిగిలిన అమౌంట్ మాత్రమే సేల్స్ లోకి వెళ్లాలి
+  const advancePaid = Number(orderObj.advancePaid || 0);
+  const remainingBalance = Number(orderObj.totalAmount) - advancePaid;
 
   const d = new Date();
   const dayKey = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
   
   try {
-    // 🎯 ఇక్కడ సర్వర్‌కు పంపుతున్నాం
+    // 3. సేల్స్ ట్రాకింగ్ లో 'remainingBalance' మాత్రమే పంపడం
     await api.put(`/owner/track-sales/${owner._id}`, {
       date: dayKey,
-      amount: Number(orderObj.totalAmount),
+      amount: remainingBalance, // అడ్వాన్స్ కాకుండా బ్యాలెన్స్ మాత్రమే
       items: orderObj.items,
-      paymentMode: selectedMode // <--- ఇది పంపితేనే DB లో సేవ్ అవుతుంది
+      paymentMode: selectedMode
     });
 
+    // 4. ఆర్డర్ స్టేటస్ అప్‌డేట్
     await api.put(`/orders/update-status/${orderObj._id}`, { status: "Served" });
     
+    // 5. UI అప్‌డేట్
     setOrders(prev => prev.filter(o => o._id !== orderObj._id));
     await fetchData(owner._id);
-    alert("Sales Logged! ✅");
+    
+    alert("Sales Logged Successfully! ✅");
   } catch (err) { 
     console.error(err);
     alert("Failed!"); 
@@ -439,7 +452,8 @@ const handlePrintBill = async (orderObj, manualPaymentMethod = "CASH", ownerData
     const cgstAmount = Number((totalGst / 2).toFixed(2));
     const sgstAmount = Number((totalGst / 2).toFixed(2));
     const halfGstPercent = (configGstPercent / 2);
-
+    const advancePaid = Number(orderObj.advancePaid || 0);
+    const remainingBalance = grandTotal - advancePaid;
     const isAppOnline = orderObj.txnId || (Number(orderObj.advancePaid) > 0) || orderObj.orderType === 'Pre-book' || orderObj.orderType === 'Express-Route';
     const finalPaymentMethod = isAppOnline ? "ONLINE/UPI" : manualPaymentMethod.toUpperCase();
 
@@ -500,6 +514,11 @@ const handlePrintBill = async (orderObj, manualPaymentMethod = "CASH", ownerData
         ${configGstPercent > 0 ? `<div class="flex-row"><span>CGST @${halfGstPercent}%</span><span>₹${cgstAmount.toFixed(2)}</span></div><div class="flex-row"><span>SGST @${halfGstPercent}%</span><span>₹${sgstAmount.toFixed(2)}</span></div>` : ''}
         ${configExtraCharges > 0 ? `<div class="flex-row"><span>PACK/SERV CHG</span><span>₹${configExtraCharges.toFixed(2)}</span></div>` : ''}
         <div class="divider"></div>
+        ${advancePaid > 0 ? `
+          <div class="divider"></div>
+          <div class="flex-row"><span>ADVANCE PAID</span><span>-₹${advancePaid.toFixed(2)}</span></div>
+          <div class="flex-row bold"><span>BALANCE DUE</span><span>₹${remainingBalance.toFixed(2)}</span></div>
+        ` : ''}
         <div class="total-section"><div class="flex-row"><span>NET TOTAL</span><span>₹${grandTotal.toFixed(2)}</span></div></div>
         <div class="divider"></div>
         <div class="text-center">
@@ -582,24 +601,18 @@ const handleSubmitItem = async (e) => {
   e.preventDefault();
   setSending(true);
 
-  // 1. సబ్-కేటగిరీ నిర్ణయించు (Others అయితే నువ్వు ఎంటర్ చేసిన పేరు, లేదంటే సెలెక్ట్ చేసిన పేరు)
+  // 1. సబ్-కేటగిరీ నిర్ణయించు
   const finalSub = form.subCategory === "Others" ? customSub : form.subCategory;
   
-  // 2. కొత్త కేటగిరీని UI లిస్ట్ లోకి యాడ్ చెయ్ (వెంటనే టాబ్ లో కనిపిస్తుంది)
-  if (form.subCategory === "Others" && customSub && !allCategories.includes(customSub)) {
-      // మనం ఇక్కడ నేరుగా స్టేట్ ని అప్‌డేట్ చేస్తున్నాం
-      setForm(prev => ({ ...prev, subCategory: customSub }));
-  }
-
-  // 3. FormData క్రియేషన్
+  // 2. FormData క్రియేషన్
   const formData = new FormData();
   formData.append("name", form.name);
   formData.append("price", form.price);
-  formData.append("category", form.category); // Veg/Non-Veg
-  formData.append("subCategory", finalSub);   // ఇక్కడ కొత్త కేటగిరీ పేరు వెళ్తుంది
+  formData.append("category", form.category); 
+  formData.append("subCategory", finalSub);   
   formData.append("ownerId", owner._id);
 
-  // 4. ఇమేజ్ అపెండ్
+  // 3. ఇమేజ్ అపెండ్
   if (form.image instanceof File) {
     const compressedImage = await compressImage(form.image);
     formData.append("image", compressedImage);
@@ -618,16 +631,20 @@ const handleSubmitItem = async (e) => {
       const res = await api.post("/items/add", formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      setItems(prev => [res.data, ...prev]);
-      console.log("New Category Added:", finalSub);
+      // కొత్త ఐటమ్ యాడ్ అవ్వగానే UI లో కనిపించడానికి
+      setItems(prev => [res.data, ...prev]); 
       alert("Item Added! 🚀");
     }
     
     // క్లీనప్
-    setIsAddingItem(false); setIsEditingItem(false); setEditItemId(null);
+    setIsAddingItem(false); 
+    setIsEditingItem(false); 
+    setEditItemId(null);
     setForm({ name: "", price: "", image: "", category: "Veg", subCategory: "Biryanis" });
-    setCustomSub(""); setIsOtherSub(false);
-    fetchData(owner._id); // 🔄 డేటా రిఫ్రెష్
+    setCustomSub(""); 
+    setIsOtherSub(false);
+    fetchData(owner._id); // డేటా రిఫ్రెష్
+
   } catch (err) {
     console.error(err);
     alert("Operation failed!");
@@ -792,18 +809,18 @@ const handleSubmitItem = async (e) => {
       link.click();
   };
 
-  const filteredItems = items.filter(i => {
-    // name సెర్చ్ (పక్కాగా)
+// నీ కోడ్‌లో ఉన్న ఫిల్టర్ లాజిక్ ని ఇలా మార్చు:
+const filteredItems = items.filter(i => {
     const s = i.name?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // కేటగిరీ ఫిల్టర్
+    // ఒకవేళ categoryFilter "All" కాకుండా ఏదైనా ఉంటే, అది మ్యాచ్ అవ్వాలి
     const c = categoryFilter === "All" || i.category === categoryFilter;
     
-    // సబ్-కేటగిరీ ఫిల్టర్ (null check added)
-    const sc = subCategoryFilter === "All" || (i.subCategory && i.subCategory === subCategoryFilter);
+    // సబ్-కేటగిరీ ఫిల్టర్ లో కూడా అలాగే చెక్ చెయ్
+    const sc = subCategoryFilter === "All" || i.subCategory === subCategoryFilter;
     
     return s && c && sc;
-  });
+});
 
 
     if (loading) return <div className="h-screen flex items-center justify-center text-blue-600 font-black animate-pulse">LOADING...</div>;
@@ -824,7 +841,7 @@ const dailyStats = {
   count: dailyData?.total_orders || 0,
   monthlyRevenue: monthlyData?.revenue || 0 
 };
-
+// console.log("Filtered Items for UI:", filteredItems);
 // console.log("Daily Stats Data:", dailyStats);
     return (
       <div className="min-h-screen bg-[#F8FAFC] text-slate-800 flex flex-col font-sans">
@@ -942,111 +959,88 @@ const dailyStats = {
 
         <main className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-8">
           
-  {activeTab === "dashboard" && (
-  <div className="space-y-8 animate-in fade-in duration-500 pb-20 relative">
+{activeTab === "dashboard" && (
+  <div className="flex flex-col h-[calc(100vh-80px)] overflow-y-auto pb-20 relative px-2">
     
-    {/* 1. స్టిక్కీ హెడర్ - ఇక్కడ "Add New Dish" బటన్ కూడా యాడ్ చేశాను */}
-    <section className="sticky top-[70px] z-50 bg-[#F8FAFC] pb-2 pt-2 border-b border-slate-100">
+    {/* 1. స్టిక్కీ హెడర్ (Add Dish & Search) */}
+    <section className="bg-[#F8FAFC] pb-4 pt-2 sticky top-0 z-50">
       <div className="flex justify-between items-end mb-4">
-        <h2 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-slate-900">
-          Kitchen 
-        </h2>
-        {/* పైన ఉండే బటన్ */}
+        <h2 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-slate-900">Kitchen</h2>
         <button onClick={() => setIsAddingItem(true)} className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase italic flex items-center gap-2 shadow-lg active:scale-95 transition-all">
           <Plus className="w-4 h-4" /> Add New Dish
         </button>
       </div>
-      
       <div className="relative w-full sm:w-80">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         <input type="text" placeholder="Search dish..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} className="w-full bg-white border border-slate-200 p-4 pl-11 rounded-2xl text-[11px] font-bold shadow-sm" />
       </div>
     </section>
-
-    {/* 2. కౌంటర్ కార్ట్ & అలర్ట్ (ఏదీ రిమూవ్ చేయలేదు) */}
-    {daysRemaining === 0 && (
-      <div className="bg-red-50 border-2 border-red-200 p-6 rounded-[2rem] text-center">
-         <h4 className="font-black text-red-700 uppercase">Subscription Expired!</h4>
-         <button onClick={() => setIsRenewalModalOpen(true)} className="bg-red-600 text-white px-8 py-3 rounded-xl font-black mt-2">Renew</button>
+{/* బిల్లు ప్రింట్ సెక్షన్ (ఇది ఇప్పుడు పైన ఉంటుంది) */}
+<div ref={counterPrintButtonRef} className="bg-white p-6 rounded-3xl shadow-md mb-6 border-2 border-emerald-100">
+  <h3 className="font-black uppercase italic mb-4 text-emerald-700">Counter Order Cart</h3>
+  <select id="counterPayMode" className="w-full p-3 border rounded-xl text-[10px] font-bold uppercase">
+    <option value="CASH">💵 CASH</option>
+    <option value="ONLINE/UPI">📱 ONLINE/UPI</option>
+  </select>
+  <button 
+    onClick={handleCounterPrint} 
+    className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black uppercase mt-4 active:scale-95 transition-all"
+  >
+    Print Bill & Reset
+  </button>
+</div>
+    {/* 2. ఫిల్టర్ బటన్స్ */}
+    <div className="space-y-4 mb-6">
+      {/* Category (Veg/Non-Veg) */}
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        {["All", "Veg", "Non-Veg"].map(cat => (
+          <button key={cat} onClick={() => setCategoryFilter(cat)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase whitespace-nowrap border transition-all ${categoryFilter === cat ? 'bg-slate-900 text-white' : 'bg-white'}`}>{cat}</button>
+        ))}
       </div>
-    )}
-  {/* 4. సౌండ్ అలర్ట్ యాక్టివేషన్ (ఇది పక్కాగా ఉంచాలి) */}
-{!isAlertActive && (
-  <div className="bg-orange-50 p-4 rounded-xl border border-orange-200 mt-4">
-    <p className="text-xs font-bold text-orange-700 mb-2">
-      ⚠️ ఆర్డర్ సౌండ్స్ రావాలంటే ఒక్కసారి యాక్టివేట్ చేయండి!
-    </p>
-    <button 
-      onClick={() => {
-        // ఇక్కడ ఆడియో క్రియేట్ చేసి ప్లే చేసి పర్మిషన్ తీసుకోవాలి
-        const a = new Audio("/order-beep.mp3");
-        a.play().then(() => {
-          a.pause(); // టెస్ట్ కోసం ప్లే చేసి ఆపేస్తున్నాం
-          setIsAlertActive(true);
-          localStorage.setItem("sudara_alert_status", "active");
-          alert("Alerts Activated! 🚀");
-        }).catch(() => alert("బ్రౌజర్ పర్మిషన్ ఇవ్వండి!"));
-      }}
-      className="bg-orange-600 text-white px-6 py-2 rounded-lg text-xs font-black"
-    >
-      ACTIVATE NOW
-    </button>
-  </div>
-)}
-    <div className="bg-white p-6 rounded-3xl shadow-md">
-      <h3 className="font-black uppercase italic mb-4">Counter Order Cart</h3>
-      <select id="counterPayMode" className="w-full p-3 border rounded-xl text-[10px] font-bold uppercase">
-        <option value="CASH">💵 CASH</option>
-        <option value="ONLINE/UPI">📱 ONLINE/UPI</option>
-      </select>
-      <button ref={counterPrintButtonRef} onClick={handleCounterPrint} className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black uppercase mt-4">Print Bill & Reset</button>
+      {/* Sub-Category (Biryani, Starters etc) */}
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        {["All", ...allCategories].map(sub => (
+          <button key={sub} onClick={() => setSubCategoryFilter(sub)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase whitespace-nowrap border transition-all ${subCategoryFilter === sub ? 'bg-blue-600 text-white' : 'bg-white'}`}>{sub}</button>
+        ))}
+      </div>
     </div>
 
     {/* 3. హారిజాంటల్ స్క్రోలింగ్ ఐటమ్స్ */}
-    {allCategories.map((cat) => {
-      const categoryItems = filteredItems.filter(i => i.subCategory === cat);
-      if (categoryItems.length === 0) return null;
+    <section className="space-y-6 pb-10">
+      {allCategories.map((cat) => {
+        // ఇక్కడ filteredItems ని వాడుతున్నాం, సో ఫిల్టర్స్ కచ్చితంగా పనిచేస్తాయి
+        const categoryItems = filteredItems.filter(i => (i.subCategory || "Biryanis") === cat);
+        if (categoryItems.length === 0) return null;
 
-      return (
-        <section key={cat} className="space-y-4">
-          <h3 className="text-sm font-black uppercase italic text-slate-800 pl-2">{cat}</h3>
-          <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
-            {categoryItems.map(i => (
-              <div key={i._id} className="min-w-[160px] bg-white p-3 rounded-[2rem] border shadow-sm">
-                 <div className="aspect-square rounded-[1.5rem] overflow-hidden mb-3 bg-slate-50">
-                   <img src={i.image} className="w-full h-full object-cover" alt={i.name} />
-                 </div>
-                 <h4 className="font-black text-[10px] uppercase truncate">{i.name}</h4>
-                 <p className="text-xs font-black text-slate-900 mt-1">₹{i.price}</p>
-                 
-                 <div className="flex flex-col gap-2 mt-3">
-                   <button onClick={() => setCounterCart(prev => ({ ...prev, [i._id]: (prev[i._id] || 0) + 1 }))} className="w-full bg-blue-600 text-white py-2 rounded-xl text-[9px] font-black uppercase">Add</button>
-                   <div className="flex gap-1">
-                     <button onClick={() => api.put(`/items/update-availability/${i._id}`, { isAvailable: !i.isAvailable }).then(res => setItems(items.map(it => it._id === i._id ? res.data : it)))} 
-                             className={`flex-1 py-2 rounded-xl text-[8px] font-black uppercase border ${i.isAvailable ? 'text-emerald-600 bg-emerald-50' : 'text-red-600 bg-red-50'}`}>
-                       {i.isAvailable ? 'Live' : 'Sold'}
-                     </button>
-                     <button onClick={() => { setForm({ ...i }); setEditItemId(i._id); setIsEditingItem(true); }} className="px-3 bg-slate-100 text-slate-600 rounded-xl text-[8px] font-black">Edit</button>
-                     <button onClick={async () => { if(window.confirm("Remove?")) { await api.delete(`/items/delete/${i._id}`); setItems(items.filter(it => it._id !== i._id)); } }} className="px-3 bg-red-100 text-red-500 rounded-xl text-[8px] font-black"><Trash2 className="w-3 h-3"/></button>
-                   </div>
-                 </div>
-              </div>
-            ))}
-            
-            <button onClick={() => setIsAddingItem(true)} className="min-w-[160px] aspect-[4/5] border-2 border-dashed border-slate-200 rounded-[2rem] flex flex-col items-center justify-center text-slate-400 hover:text-blue-600">
-               <Plus className="w-8 h-8"/><span className="font-black uppercase text-[9px]">Add Dish</span>
-            </button>
+        return (
+          <div key={cat} className="space-y-2">
+            <h3 className="text-sm font-black uppercase italic text-slate-800 pl-2">{cat}</h3>
+            <div className="flex gap-4 overflow-x-auto pb-4 px-2 scrollbar-hide">
+              {categoryItems.map(i => (
+                <div key={i._id} className="min-w-[160px] w-[160px] bg-white p-3 rounded-[2rem] border shadow-sm shrink-0 transition-transform hover:scale-[1.02]">
+                  <div className="aspect-square rounded-[1.5rem] overflow-hidden mb-3 bg-slate-50">
+                    <img src={i.image} className="w-full h-full object-cover" alt={i.name} />
+                  </div>
+                  <h4 className="font-black text-[10px] uppercase truncate">{i.name}</h4>
+                  <p className="text-[9px] text-blue-500 uppercase font-bold">{i.category}</p>
+                  <p className="text-xs font-black text-slate-900 mt-1">₹{i.price}</p>
+                  
+                  <div className="flex flex-col gap-2 mt-3">
+                    <button onClick={() => setCounterCart(prev => ({ ...prev, [i._id]: (prev[i._id] || 0) + 1 }))} className="w-full bg-blue-600 text-white py-2 rounded-xl text-[9px] font-black uppercase">Add</button>
+                    <div className="flex gap-1">
+                      <button onClick={() => api.put(`/items/update-availability/${i._id}`, { isAvailable: !i.isAvailable }).then(res => setItems(prev => prev.map(it => it._id === i._id ? res.data : it)))} className={`flex-1 py-2 rounded-xl text-[8px] font-black uppercase border ${i.isAvailable ? 'text-emerald-600 bg-emerald-50' : 'text-red-600 bg-red-50'}`}>{i.isAvailable ? 'Live' : 'Sold'}</button>
+                      <button onClick={() => { setForm({ ...i }); setEditItemId(i._id); setIsEditingItem(true); }} className="px-3 bg-slate-100 text-slate-600 rounded-xl text-[8px] font-black">Edit</button>
+                      <button onClick={async () => { if(window.confirm("Remove?")) { await api.delete(`/items/delete/${i._id}`); setItems(items.filter(it => it._id !== i._id)); } }} className="px-3 bg-red-100 text-red-500 rounded-xl text-[8px] font-black"><Trash2 className="w-3 h-3"/></button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        </section>
-      );
-    })}
-
-    {/* 4. ఫ్లోటింగ్ + బటన్ (ఇది స్క్రీన్ లోపల ఉండదు) */}
-    <div className="fixed bottom-24 right-6 md:bottom-8 md:right-8 z-[100]">
-      {/* <button onClick={() => setIsAddingItem(true)} className="w-14 h-14 bg-blue-600 text-white rounded-full shadow-2xl flex items-center justify-center">
-        <Plus className="w-7 h-7" />
-      </button> */}
-    </div>
+        );
+      })}
+    </section>
+    
   </div>
 )}
 
@@ -1121,7 +1115,7 @@ const dailyStats = {
                       </p>
                       {order.orderType === "Pre-book" && (
                         <p className="text-[10px] font-black text-orange-600 uppercase mt-1 italic">
-                          🚗 Coming in: {order.arrivalTime} Mins
+                          🚗 Coming at: {order.arrivalTime} 
                         </p>
                       )}
                       {/* 🎯 Sudara ID ఇక్కడ యాడ్ చేస్తున్నాం రాజు */}
@@ -1133,15 +1127,26 @@ const dailyStats = {
                         </div>
                       )}
                     </div>
-
-                    <div className="bg-blue-50 px-4 py-2 rounded-2xl text-center flex flex-col justify-center">
+{/* 🎯 ఇక్కడ People Count & Arrival Time యాడ్ చేశాను */}
+{order.orderType === "Pre-book" && (
+  <div className="flex gap-2 mt-2">
+    <span className="bg-amber-50 text-amber-700 text-[8px] font-black px-2 py-0.5 rounded-lg uppercase italic border border-amber-200">
+      👥 {order.peopleCount || 1}
+    </span>
+    {/* <span className="bg-blue-50 text-blue-700 text-[8px] font-black px-2 py-0.5 rounded-lg uppercase italic border border-blue-200">
+      ⏰ {order.arrivalTime || "N/A"}
+    </span> */}
+  </div>
+)}
+                    {/* 🎯 ఇక్కడ కండిషన్ పెట్టు: కేవలం 'Dining' ఆర్డర్స్ కి మాత్రమే ఈ టేబుల్ సెక్షన్ కనిపిస్తుంది */}
+{order.deliveryType === "Book at Restaurant" && (
+  <div className="bg-blue-50 px-4 py-2 rounded-2xl text-center flex flex-col justify-center">
     <p className="text-[8px] font-black text-blue-400 uppercase leading-none">Table</p>
     <p className="text-xl font-black text-blue-600 leading-none mt-1">
       # {order.tableNo !== "PRE" && order.tableNo ? order.tableNo : "?"}
     </p>
     
-    {/* 🎯 "PRE" అంటే ఇంకా టేబుల్ ఇవ్వలేదని అర్థం. అప్పుడు ఈ అసైన్ బటన్ కనిపిస్తుంది */}
-    {(!order.tableNo || order.tableNo === "PRE") && order.orderType === "Pre-book" && (
+    {(!order.tableNo || order.tableNo === "PRE") && (
       <button 
         onClick={() => handleAssignTable(order._id)}
         className="mt-2 text-[8px] bg-blue-600 text-white px-2 py-1 rounded-lg font-bold hover:bg-blue-700 transition-all"
@@ -1150,6 +1155,7 @@ const dailyStats = {
       </button>
     )}
   </div>
+)}
                   </div>
 
                   {/* Items List */}

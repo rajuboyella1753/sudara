@@ -10,6 +10,7 @@ const itemSchema = new mongoose.Schema({
     default: "General",
     enum: ["Veg", "Non-Veg", "General"] 
   },
+  subCategory: { type: String, required: true, default: "Biryanis" },
   image: { type: String, required: false },
   isAvailable: { type: Boolean, default: true }, 
   ownerId: { type: mongoose.Schema.Types.ObjectId, ref: "Owner", required: true },
