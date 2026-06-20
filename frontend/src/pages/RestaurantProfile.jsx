@@ -665,7 +665,7 @@ if (!owner || !owner.isApproved) {
       <div className="mb-4 p-5 bg-emerald-50 border-2 border-emerald-100 rounded-[2rem] text-center mt-4">
         <p className="text-[10px] font-black text-emerald-600 uppercase">Your Order ID</p>
         <p className="text-2xl font-black text-slate-900 mt-1">{placedOrderId}</p>
-        <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase">Copy this ID to Track Status below</p>
+        <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase">Copy this ID to Track Status Above</p>
       </div>
     )}
   {/* {placedOrderId && (

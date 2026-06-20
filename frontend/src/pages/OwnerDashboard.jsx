@@ -433,7 +433,7 @@ const handleServed = async (orderObj) => {
 };
 const handlePrintBill = async (orderObj, manualPaymentMethod = "CASH", ownerData = owner) => {
   try {
-    // 1. డేటా ప్రిపరేషన్
+    // 1. డేటా ప్రిపరేషన్ (నీ పాత కోడ్ - ఏదీ మారలేదు)
     const restaurantName = ownerData?.name?.toUpperCase() || "SUDARA PARTNER";
     const address = ownerData?.address || "Local Neighborhood";
     const phone = ownerData?.phone || "";
@@ -476,7 +476,6 @@ const handlePrintBill = async (orderObj, manualPaymentMethod = "CASH", ownerData
       `;
     });
 
-    // 🎯 QR కోడ్ జనరేషన్ (ఇక్కడ మార్పు చేశాను - ఇదే కచ్చితంగా వస్తుంది)
     const qrDataUrl = await QRCode.toDataURL(`https://sudara.in/restaurant/${ownerData._id}`, { width: 120, margin: 1, errorCorrectionLevel: 'H' });
 
     // 3. పూర్తి బిల్ HTML
@@ -542,8 +541,24 @@ const handlePrintBill = async (orderObj, manualPaymentMethod = "CASH", ownerData
     const img = iframeDoc.querySelector('img');
     img.onload = () => {
       iframe.contentWindow.focus();
+      
+      // ప్రింట్ కమాండ్ ఇచ్చే ముందు ఒక చిన్న ఫ్లాగ్ (Flag) పెట్టు
+      let isPrinted = false;
+
+      // ప్రింట్ విండో ప్రింట్ పూర్తయిన తర్వాత కాల్ అయ్యే ఈవెంట్ ఇది
+      iframe.contentWindow.onbeforeprint = () => { isPrinted = true; };
+
       iframe.contentWindow.print();
-      setTimeout(() => iframe.remove(), 1000);
+
+      // సెట్ టైమౌట్ లో అలర్ట్ ని రన్ చేయి
+      setTimeout(async () => {
+        if (!isPrinted) {
+           // ఒకవేళ ఆల్రెడీ అలర్ట్ చూపించకపోతే
+           alert("ఆర్డర్ కంప్లీట్ అయ్యింది & సేల్స్ రిపోర్ట్ అప్‌డేట్ అయ్యింది! ✅");
+           await fetchData(owner._id); 
+        }
+        iframe.remove();
+      }, 2000); 
     };
   } catch (err) {
     console.error("Bill Error:", err);
@@ -1027,6 +1042,12 @@ const dailyStats = {
                   
                   <div className="flex flex-col gap-2 mt-3">
                     <button onClick={() => setCounterCart(prev => ({ ...prev, [i._id]: (prev[i._id] || 0) + 1 }))} className="w-full bg-blue-600 text-white py-2 rounded-xl text-[9px] font-black uppercase">Add</button>
+                    <button onClick={() => setCounterCart(prev => {
+        const newCart = { ...prev };
+        if (newCart[i._id] > 0) newCart[i._id] -= 1;
+        if (newCart[i._id] === 0) delete newCart[i._id];
+        return newCart;
+    })} className="px-3 bg-red-100 text-red-600 rounded-xl text-[9px] font-black uppercase">Remove</button>
                     <div className="flex gap-1">
                       <button onClick={() => api.put(`/items/update-availability/${i._id}`, { isAvailable: !i.isAvailable }).then(res => setItems(prev => prev.map(it => it._id === i._id ? res.data : it)))} className={`flex-1 py-2 rounded-xl text-[8px] font-black uppercase border ${i.isAvailable ? 'text-emerald-600 bg-emerald-50' : 'text-red-600 bg-red-50'}`}>{i.isAvailable ? 'Live' : 'Sold'}</button>
                       <button onClick={() => { setForm({ ...i }); setEditItemId(i._id); setIsEditingItem(true); }} className="px-3 bg-slate-100 text-slate-600 rounded-xl text-[8px] font-black">Edit</button>
