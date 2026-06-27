@@ -220,7 +220,24 @@ router.put("/update-profile/:id", async (req, res) => {
     res.status(500).json({ message: "Server error during update", error: err.message });
   }
 });
-
+router.put("/update-prebook-status/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isPreBookEnabled } = req.body;
+    
+    const updatedOwner = await Owner.findByIdAndUpdate(
+      id, 
+      { isPreBookEnabled }, 
+      { new: true }
+    );
+    
+    if (!updatedOwner) return res.status(404).json({ message: "Owner not found" });
+    
+    res.status(200).json(updatedOwner);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 router.put("/add-interior-images/:id", async (req, res) => {
   try {
     const { images } = req.body; 

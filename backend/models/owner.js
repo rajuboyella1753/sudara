@@ -39,7 +39,7 @@ const ownerSchema = new mongoose.Schema(
     specialTimestamp: { type: Date, default: Date.now },
     tableCount: { type: Number, default: 0 },
     isApproved: { type: Boolean, default: false },
-
+    isPreBookEnabled: { type: Boolean, default: true },
     // 🔥 RANKING & USER COUNT
     numberOfReviews: { type: Number, default: 0 },
     totalRatings: { type: Number, default: 0 },

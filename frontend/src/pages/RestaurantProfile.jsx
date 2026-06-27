@@ -36,6 +36,7 @@ export default function RestaurantProfile() {
   const [orderData, setOrderData] = useState({ name: "", phone: "", txId: "", arrivalTime: "" ,peopleCount: 1});
   const [showPayWarning, setShowPayWarning] = useState(false); 
   const [selectedTable, setSelectedTable] = useState(""); 
+  const [showTracking, setShowTracking] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [showInstantModal, setShowInstantModal] = useState(false); 
   const [showCallPopup, setShowCallPopup] = useState(false); // 🚀 Call instruction popup state
@@ -45,6 +46,7 @@ export default function RestaurantProfile() {
   const [assignedTable, setAssignedTable] = useState(null);
   const [trackedOrderType, setTrackedOrderType] = useState(null);
   const [recentOrderItems, setRecentOrderItems] = useState([]);
+  const [restaurantOrders, setRestaurantOrders] = useState([]);
   const availableSubCats = useMemo(() => {
   const defaultCats = ["Biryanis", "Starters", "Soups", "Noodles", "Gravys", "Rice", "Breads", "Sea Food", "Tiffins"];
   // 🎯 రాజు చేంజ్: డ్రాప్‌డౌన్ వాల్యూ స్టోర్ చేయడానికి కొత్త స్టేట్
@@ -197,14 +199,16 @@ useEffect(() => {
       const month = String(d.getMonth() + 1).padStart(2, '0');
       const year = d.getFullYear();
       const todayDate = getUniversalDate();
-      api.put(`/owner/track-analytics/${id}`, { action: "kitchen_entry", date: todayDate });
+      // api.put(`/owner/track-analytics/${id}`, { action: "kitchen_entry", date: todayDate });
 
       const [oRes, iRes] = await Promise.all([
         api.get(`/owner/${id}`),
-        api.get(`/items/owner/${id}`) 
+        api.get(`/items/owner/${id}`),
+        api.get(`/orders/restaurant/${id}`)
       ]);
       setOwner(oRes.data);
       setItems(iRes.data);
+      setRestaurantOrders(orderRes.data || []);
 
       const favorites = JSON.parse(localStorage.getItem("favRestaurants") || "[]");
       setIsFavorite(favorites.includes(id));
@@ -228,6 +232,14 @@ useEffect(() => {
     const d = new Date();
     return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
   };
+  const restaurantRating = useMemo(() => {
+  const count = restaurantOrders.length;
+  if (count > 50) return { stars: 5, label: "Elite Hub" };
+  if (count > 20) return { stars: 4.5, label: "Popular" };
+  if (count > 5) return { stars: 4, label: "Trusted" };
+  return { stars: 3.5, label: "New Node" };
+}, [restaurantOrders]);
+
 // 🎯 రాజు, ఈ ఒక్క ఫంక్షన్ ని ఫైల్ పైన యాడ్ చెయ్
 const getTodayDate = () => {
   const d = new Date();
@@ -246,8 +258,23 @@ const getTodayDate = () => {
 
   const totalAmount = Object.values(cart).reduce((acc, curr) => acc + (curr.price * curr.qty), 0);
   const halfAmount = (totalAmount / 2).toFixed(2);
-
-// 🚀 రాజు పక్కా డైనమిక్ సబ్‌మిషన్ ఇంజన్
+const calculateTotal = useMemo(() => {
+  // 1. కేవలం ఐటమ్స్ ధరలు మాత్రమే కూడు
+  const itemsTotal = Object.values(cart).reduce((acc, item) => acc + (item.price * item.qty), 0);
+  
+  // 2. GST ని కేవలం ఒకసారి టోటల్ మీద లెక్కించు
+  const gstPercentage = owner?.gstPercentage || 0;
+  const gstAmount = (itemsTotal * gstPercentage) / 100;
+  
+  const extraCharges = (owner?.extraCharges || 0);
+  
+  return {
+    itemsTotal: itemsTotal,
+    gstAmount: gstAmount,
+    extraCharges: extraCharges,
+    finalTotal: itemsTotal + gstAmount + extraCharges
+  };
+}, [cart, owner]);
 const handleConfirmOrder = async () => {
   if (!orderData.name || !orderData.txId || !orderData.arrivalTime) {
     return alert("Please fill details! 📝");
@@ -256,50 +283,58 @@ const handleConfirmOrder = async () => {
   try {
     setLoading(true);
     
-    // 🎯 మ్యాన్యువల్ సేఫ్ ఐడి (బ్యాకెండ్ లో కూడా చెక్ ఉంది కాబట్టి ఇబ్బంది లేదు రాజు)
+    // 🎯 క్యాలిక్యులేషన్ ని ఇక్కడే ఫోర్స్ గా చేయి
+    const itemsTotal = Object.values(cart).reduce((acc, item) => acc + (item.price * item.qty), 0);
+    const gstAmount = (itemsTotal * (owner?.gstPercentage || 0)) / 100;
+    const extraCharges = (owner?.extraCharges || 0);
+    const finalAmount = itemsTotal + gstAmount + extraCharges;
+    const halfAmount = (finalAmount / 2).toFixed(2);
+
     const sudaraId = "SDR" + Math.floor(100 + Math.random() * 900);
     const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name}`);
-    
-    // 🎯 మ్యాన్యువల్ డేట్ కాలిక్యులేషన్ (Ex: 2/6/2026 - నో లూప్స్, నో షార్ట్‌కట్స్)
-    const d = new Date();
-    const todayDate = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`; 
+    const todayDate = getUniversalDate();
 
     const payload = {
       restaurantId: id,
       customerName: orderData.name,
-      customerPhone: orderData.phone || "Pre-booked Customer",
       items: itemList,
-      totalAmount: totalAmount,
-      advancePaid: halfAmount,
+      totalAmount: Number(finalAmount.toFixed(2)), // 🎯 ఇక్కడ కచ్చితంగా నంబర్ ఫార్మాట్ లో పంపు
+      advancePaid: Number(halfAmount),            // 🎯 నంబర్ ఫార్మాట్ లో పంపు
       txnId: orderData.txId,
       arrivalTime: orderData.arrivalTime,
-      peopleCount: deliveryType === "Book at Restaurant" ? Number(orderData.peopleCount) : 1,
       orderType: "Pre-book",
       sudaraId: sudaraId,
-      travelDuration: parseInt(orderData.arrivalTime),
       status: "Pending",
-      deliveryType: deliveryType // 🚀 డ్రాప్‌డౌన్ వాల్యూ (Take Away లేదా Book at Restaurant) పక్కాగా వెళ్తుంది రాజు!
+      deliveryType: deliveryType
     };
 
-    // 🤝 ఏకకాలంలో ఆర్డర్ క్రియేట్ చేసి, ఓనర్ అనలిటిక్స్ లో ఒక క్లిక్ పెంచుతున్నాం రాజు మచ్చా
-    await Promise.all([
-      api.post("/orders/add", payload),
-      api.put(`/owner/track-analytics/${id}`, { 
+    console.log("SENDING PAYLOAD:", payload); // 🔍 ఇది నీ కన్సోల్ లో అమౌంట్ కరెక్ట్ గా ఉందో లేదో చూడు
+
+    const orderRes = await api.post("/orders/add", payload);
+
+    if (orderRes.data) {
+      // 2. ట్రాకింగ్...
+      await api.put(`/owner/track-analytics/${id}`, { 
         action: "pre_order_click", 
         date: todayDate 
-      })
-    ]);
+      });
 
-    alert(`ORDER SYNCED! ✅\n\nYour Unique ID: ${sudaraId}`);
-    
-    // 🎉 స్టేట్స్ అన్నీ క్లీన్ గా రీసెట్
-    setCart({});
-    setShowOrderForm(false);
-    setOrderData({ name: "", phone: "", txId: "", arrivalTime: "" });
-    if (typeof setDeliveryType === "function") setDeliveryType("Take Away"); 
+      // 3. సేల్స్ రిపోర్ట్ (ఇక్కడ కూడా అప్‌డేటెడ్ అడ్వాన్స్ పంపు)
+      await api.put(`/owner/track-sales/${id}`, {
+        date: todayDate,
+        amount: Number(halfAmount), 
+        items: itemList,
+        paymentMode: "ONLINE/UPI"
+      });
 
+      alert(`ORDER SYNCED! ✅\n\nYour Unique ID: ${sudaraId}`);
+      setPlacedOrderId(sudaraId);
+      setShowTracking(true);
+      setCart({});
+      setShowOrderForm(false);
+    }
   } catch (err) {
-    console.error("Pre-order Error ❌:", err);
+    console.error("Order Sync Error:", err);
     alert("Order Sync Failed! ❌");
   } finally {
     setLoading(false);
@@ -550,15 +585,25 @@ if (!owner || !owner.isApproved) {
   {owner?.name}
 </motion.h1>
         
-        <motion.p 
-          initial={{ opacity: 0 }} 
-          animate={{ opacity: 1 }} 
-          transition={{ delay: 0.2 }}
-          className="text-white/95 font-black uppercase tracking-widest text-[8px] sm:text-[10px] md:text-xs mt-4 bg-blue-600/40 backdrop-blur-lg px-4 py-1.5 rounded-full border border-white/20 inline-block shadow-xl"
-        >
-          {owner?.collegeName} • Exclusive Menu
-        </motion.p>
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+  {/* College Name Badge */}
+  <motion.p 
+    initial={{ opacity: 0 }} 
+    animate={{ opacity: 1 }} 
+    transition={{ delay: 0.2 }}
+    className="text-white/95 font-black uppercase tracking-widest text-[8px] sm:text-[10px] bg-blue-600/40 backdrop-blur-lg px-4 py-1.5 rounded-full border border-white/20 shadow-xl"
+  >
+    {owner?.collegeName} • Exclusive Menu
+  </motion.p>
 
+  {/* Rating Badge */}
+  <div className="flex items-center gap-1.5 bg-amber-50/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-amber-100 shadow-sm">
+    <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
+    <span className="text-[8px] sm:text-[9px] font-black uppercase text-amber-800 tracking-widest italic">
+      {restaurantRating.label} ({restaurantRating.stars}⭐)
+    </span>
+  </div>
+</div>
        {/* 📍 Route & Action Buttons - Side by Side Alignment */}
 <div className="mt-8 md:mt-12 flex items-center justify-center gap-3 sm:gap-4">
   {/* 1. Get Campus Route Button */}
@@ -625,7 +670,38 @@ if (!owner || !owner.isApproved) {
         }
         return null;
       })()}
+{/* 🚀 Updated Professional Rush Level Badge */}
+<div className="flex justify-center mt-3">
+  <motion.div 
+    initial={{ opacity: 0, scale: 0.9 }}
+    animate={{ opacity: 1, scale: 1 }}
+    whileHover={{ scale: 1.05 }}
+    className={`group px-5 py-2 rounded-full text-[9px] font-black uppercase tracking-[0.2em] italic flex items-center gap-2.5 border backdrop-blur-md shadow-sm transition-all duration-500 ${
+      owner?.busyStatus === 'High' || owner?.busyStatus === 'Busy' 
+        ? 'bg-red-500/10 text-red-600 border-red-500/20' 
+        : owner?.busyStatus === 'Medium' 
+        ? 'bg-orange-500/10 text-orange-600 border-orange-500/20'
+        : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+    }`}
+  >
+    {/* Animated Status Indicator */}
+    <span className="relative flex h-2 w-2">
+      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+        owner?.busyStatus === 'High' || owner?.busyStatus === 'Busy' ? 'bg-red-500' : 
+        owner?.busyStatus === 'Medium' ? 'bg-orange-500' : 'bg-emerald-500'
+      }`}></span>
+      <span className={`relative inline-flex rounded-full h-2 w-2 ${
+        owner?.busyStatus === 'High' || owner?.busyStatus === 'Busy' ? 'bg-red-500' : 
+        owner?.busyStatus === 'Medium' ? 'bg-orange-500' : 'bg-emerald-500'
+      }`}></span>
+    </span>
 
+    <span className="opacity-90">Rush Level:</span>
+    <span className="text-[10px] tracking-tighter italic font-black">
+      {owner?.busyStatus || 'Normal'}
+    </span>
+  </motion.div>
+</div>
 {owner?.planType === "premium" && owner?.interiorImages?.length > 0 && (
   <div className="space-y-4">
     <div className="flex items-center gap-2 border-l-4 border-blue-600 pl-3">
@@ -639,27 +715,32 @@ if (!owner || !owner.isApproved) {
   </div>
 )}
 {/* 🔍 Order Tracking Section */}
-{owner?.planType === "premium" && (
+{owner?.planType === "premium" && showTracking && (
   <div className="mt-8 p-6 bg-white border-2 border-dashed border-slate-200 rounded-[2.5rem]">
     <p className="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest italic text-center">
       Track Your Order Status
     </p>
     
-    <div className="flex flex-col gap-3">
-      <input 
-        type="text" 
-        id="customerSdrId"
-        placeholder="Enter Your ID (e.g. SDR158)" 
-        className="bg-slate-50 p-4 rounded-2xl text-xs font-bold outline-none border focus:border-blue-400 uppercase"
-      />
-      
-      <button 
-        onClick={() => handleTrackOrder()}
-        className="bg-slate-900 text-white px-6 py-4 rounded-2xl text-[10px] font-black uppercase italic shadow-lg active:scale-95 transition-all"
-      >
-        Check Status 🔍
-      </button>
-    </div>
+    {/* 🔍 Order Tracking Section - చెక్ స్టేటస్ బటన్ */}
+<div className="flex flex-col gap-3">
+  <input 
+    type="text" 
+    id="customerSdrId"
+    placeholder="Enter Your ID (e.g. SDR158)" 
+    className="bg-slate-50 p-4 rounded-2xl text-xs font-bold outline-none border focus:border-blue-400 uppercase"
+  />
+  
+  {/* 🎯 అప్‌డేట్ చేసిన Check Status బటన్ */}
+  <button 
+    onClick={() => {
+      handleTrackOrder(); // ఇది పాత ఫంక్షన్
+      setShowTracking(true); // ఇది కొత్త స్టేట్ - ట్రాకింగ్ బాక్స్ ని చూపిస్తుంది
+    }}
+    className="bg-slate-900 text-white px-6 py-4 rounded-2xl text-[10px] font-black uppercase italic shadow-lg active:scale-95 transition-all"
+  >
+    Check Status 🔍
+  </button>
+</div>
 
     {placedOrderId && (
       <div className="mb-4 p-5 bg-emerald-50 border-2 border-emerald-100 rounded-[2rem] text-center mt-4">
@@ -668,30 +749,7 @@ if (!owner || !owner.isApproved) {
         <p className="text-[8px] font-bold text-slate-400 mt-1 uppercase">Copy this ID to Track Status Above</p>
       </div>
     )}
-  {/* {placedOrderId && (
-  <button 
-    onClick={() => {
-      // 🎯 లాజిక్: recentOrderItems లో డేటా ఉంటే అది కొత్త ఆర్డర్, లేకపోతే అది పాత ఆర్డర్
-      const isNewOrder = recentOrderItems.length > 0;
-      
-      const orderObj = {
-        customerName: customerName,
-        tableNo: selectedTable,
-        items: isNewOrder ? recentOrderItems.map(i => `${i.qty} x ${i.name}`) : [], 
-        totalAmount: isNewOrder ? finalPayable : 0, 
-        sudaraId: placedOrderId,
-        createdAt: new Date(),
-        orderType: "Post-book" 
-      };
-      
-      handlePrintBill(orderObj, "ONLINE", owner);
-    }}
-    className="bg-slate-900 text-white px-6 py-4 rounded-2xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-xl active:scale-95 transition-all w-full mb-4"
-  >
-    <Download className="w-4 h-4" /> 
-    Download Digital Bill {recentOrderItems.length > 0 ? `(₹${finalPayable.toFixed(2)})` : ""}
-  </button>
-)} */}
+
     {/* స్టేటస్ రిజల్ట్ ఇక్కడ చూపిస్తాం */}
     {orderStatus && (
       <div className="mt-4 p-4 bg-blue-50 rounded-2xl border border-blue-100 text-center">
@@ -726,6 +784,7 @@ if (!owner || !owner.isApproved) {
     )}
   </div>
 )}
+
             {/* Filter Section: Sticky with Responsive Spacing */}
             <div className="sticky top-16 sm:top-20 z-30 bg-white/95 py-2 border-b space-y-3 sm:space-y-4 backdrop-blur-md">
                 <div className="relative">
@@ -786,6 +845,7 @@ if (!owner || !owner.isApproved) {
                     ))}
                 </div>
             </div>
+            
 {/* ⚠️ IMAGES DISCLAIMER MESSAGE */}
 <div className="bg-slate-50 border-l-4 border-amber-500 p-4 rounded-2xl mb-6 flex items-start gap-3">
   <Camera className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
@@ -848,11 +908,20 @@ if (!owner || !owner.isApproved) {
               ))}
             </div>
             <div className="border-t border-blue-100 pt-3 space-y-1">
-              <div className="flex justify-between text-sm font-black italic text-blue-600">
-                <span>Pay Total:</span>
-                <span>₹{totalAmount}</span>
-              </div>
-            </div>
+  {/* ఆర్డర్ సమ్మరీ లో ఈ విధంగా మాత్రమే ఉండాలి */}
+<div className="flex justify-between text-[10px] font-bold text-slate-500">
+  <span>Subtotal:</span> <span>₹{calculateTotal.itemsTotal.toFixed(2)}</span>
+</div>
+<div className="flex justify-between text-[10px] font-bold text-slate-500">
+  <span>GST ({owner?.gstPercentage}%):</span> <span>₹{calculateTotal.gstAmount.toFixed(2)}</span>
+</div>
+<div className="flex justify-between text-[10px] font-bold text-slate-500">
+  <span>Extra:</span> <span>₹{calculateTotal.extraCharges.toFixed(2)}</span>
+</div>
+<div className="border-t border-blue-100 pt-3 flex justify-between text-sm font-black italic text-blue-600">
+  <span>Pay Total:</span> <span>₹{calculateTotal.finalTotal.toFixed(2)}</span>
+</div>
+</div>
           </div>
         )}
 
@@ -870,18 +939,29 @@ if (!owner || !owner.isApproved) {
             </button>
           )}
 
-          {owner?.name !== "Amaravathi Hotel" && owner?.name !== "Ruchi Hotel" && owner?.name !== "RR ROYAL RESTAURANT " && (
-            <button  
-              onClick={() => {
-                if (totalAmount > 0) { trackPreOrderClick(); setShowPayWarning(true); }  
-                else { alert("Select items!"); }
-              }}
-              className={`w-full py-3.5 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${totalAmount > 0 ? 'bg-slate-900 text-white shadow-lg active:scale-95' : 'bg-slate-100 text-slate-300'}`}
-            >
-              Pre-Book & Pay Advance
-            </button>
-          )}
-
+         {owner?.isPreBookEnabled && (
+  <button  
+    onClick={() => {
+      
+      if (totalAmount > 0) { 
+        trackPreOrderClick(); 
+       
+        setShowOrderForm(true); 
+      } else { 
+       
+        alert("Please select food items first! 🥘"); 
+      }
+    }}
+  
+    className={`w-full py-3.5 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${
+      totalAmount > 0 
+        ? 'bg-slate-900 text-white shadow-lg active:scale-95' 
+        : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+    }`}
+  >
+    {totalAmount > 0 ? "Pre-Book & Pay Advance" : "Select Items to Pre-Book"}
+  </button>
+)}
           <button  
             onClick={handleCallAction}  
             className="w-full py-3.5 rounded-xl font-black uppercase text-[10px] bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all"

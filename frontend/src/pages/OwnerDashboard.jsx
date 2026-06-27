@@ -398,42 +398,53 @@ const handleCounterPrint = async () => {
 const handleServed = async (orderObj) => {
   if (!window.confirm("Mark as Served?")) return;
 
-  // 1. పేమెంట్ మోడ్ ని డ్రాప్-డౌన్ నుండి తీసుకోవడం
+  // 1. డ్రాప్-డౌన్ నుండి పేమెంట్ మోడ్ తీసుకోవడం
   const selectEl = document.getElementById(`payMode-${orderObj._id}`);
   const selectedMode = selectEl ? selectEl.value : "CASH";
 
-  // 2. ముఖ్యమైన మార్పు: అడ్వాన్స్ పోను మిగిలిన అమౌంట్ మాత్రమే సేల్స్ లోకి వెళ్లాలి
+  const totalAmount = Number(orderObj.totalAmount || 0);
   const advancePaid = Number(orderObj.advancePaid || 0);
-  const remainingBalance = Number(orderObj.totalAmount) - advancePaid;
+  
+  // 2. మిగిలిన బ్యాలెన్స్ ని మాత్రమే ఇప్పుడు తీసుకోవాలి
+  const remainingBalance = totalAmount - advancePaid;
 
   const d = new Date();
   const dayKey = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
   
   try {
-    // 3. సేల్స్ ట్రాకింగ్ లో 'remainingBalance' మాత్రమే పంపడం
+    // 3. సేల్స్ ట్రాకింగ్ (Pre-book అయితే బ్యాలెన్స్ ని, లేదంటే టోటల్ ని పంపుతున్నాం)
     await api.put(`/owner/track-sales/${owner._id}`, {
       date: dayKey,
-      amount: remainingBalance, // అడ్వాన్స్ కాకుండా బ్యాలెన్స్ మాత్రమే
+      amount: remainingBalance, // బ్యాలెన్స్ అమౌంట్
       items: orderObj.items,
-      paymentMode: selectedMode
+      paymentMode: selectedMode, // నువ్వు సెలెక్ట్ చేసిన క్యాష్/ఆన్‌లైన్
+      isPreBookingFinalized: true // ట్రాకింగ్ కోసం ఒక ఫ్లాగ్
     });
 
-    // 4. ఆర్డర్ స్టేటస్ అప్‌డేట్
     await api.put(`/orders/update-status/${orderObj._id}`, { status: "Served" });
     
-    // 5. UI అప్‌డేట్
     setOrders(prev => prev.filter(o => o._id !== orderObj._id));
     await fetchData(owner._id);
     
-    alert("Sales Logged Successfully! ✅");
+    alert("Balance Sales Logged Successfully! ✅");
   } catch (err) { 
     console.error(err);
     alert("Failed!"); 
   }
 };
+const togglePreBookStatus = async () => {
+  try {
+    const newStatus = !owner.isPreBookEnabled;
+    const res = await api.put(`/owner/update-prebook-status/${owner._id}`, { isPreBookEnabled: newStatus });
+    setOwner(res.data);
+    alert(`Pre-booking is now ${newStatus ? "ENABLED" : "DISABLED"}!`);
+  } catch (err) {
+    alert("Status update failed!");
+  }
+};
 const handlePrintBill = async (orderObj, manualPaymentMethod = "CASH", ownerData = owner) => {
   try {
-    // 1. డేటా ప్రిపరేషన్ (నీ పాత కోడ్ - ఏదీ మారలేదు)
+    // 1. డేటా ప్రిపరేషన్ (నీ పాత కోడ్ - ఏదీ మారలేదు) 
     const restaurantName = ownerData?.name?.toUpperCase() || "SUDARA PARTNER";
     const address = ownerData?.address || "Local Neighborhood";
     const phone = ownerData?.phone || "";
@@ -444,13 +455,17 @@ const handlePrintBill = async (orderObj, manualPaymentMethod = "CASH", ownerData
     const timeText = new Date(orderObj.createdAt || Date.now()).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
 
     const configGstPercent = Number(ownerData?.gstPercentage ?? 5);
+    const netAmount = Number((orderObj.totalAmount / (1 + (configGstPercent / 100))).toFixed(2));
     const configExtraCharges = Number(ownerData?.extraCharges ?? 0);
     const grandTotal = Number(orderObj.totalAmount || 0);
     const foodTotalInclusive = grandTotal - configExtraCharges;
+    const totalGSTValue = grandTotal - (grandTotal / (1 + (configGstPercent / 100)));
+    const basePrice = Number(orderObj.totalAmount) - configExtraCharges;
+    const subTotalValue = basePrice / (1 + (configGstPercent / 100));
     const subTotal = Number((foodTotalInclusive / (1 + (configGstPercent / 100))).toFixed(2));
-    const totalGst = Number((foodTotalInclusive - subTotal).toFixed(2));
-    const cgstAmount = Number((totalGst / 2).toFixed(2));
-    const sgstAmount = Number((totalGst / 2).toFixed(2));
+    const totalGst = (grandTotal - configExtraCharges) - subTotalValue;
+    const cgstAmount = totalGst / 2;
+    const sgstAmount = totalGst / 2;
     const halfGstPercent = (configGstPercent / 2);
     const advancePaid = Number(orderObj.advancePaid || 0);
     const remainingBalance = grandTotal - advancePaid;
@@ -458,7 +473,11 @@ const handlePrintBill = async (orderObj, manualPaymentMethod = "CASH", ownerData
     const finalPaymentMethod = isAppOnline ? "ONLINE/UPI" : manualPaymentMethod.toUpperCase();
 
     // 2. టేబుల్ రోస్
-    let tableRowsHTML = "";
+   let tableRowsHTML = "";
+    const itemsCount = orderObj.items.length || 1;
+    // ఒక్కో ఐటమ్ కి టాక్స్ లేని ధర (Sub-total నుండి)
+    const unitPrice = subTotalValue / (orderObj.items.length || 1);
+
     orderObj.items.forEach((itemString) => {
       let qty = 1; let itemName = itemString;
       if (itemString.includes(' x ')) {
@@ -466,12 +485,13 @@ const handlePrintBill = async (orderObj, manualPaymentMethod = "CASH", ownerData
         qty = Number(parts[0]) || 1;
         itemName = parts[1];
       }
-      const itemAmount = Number(((grandTotal - configExtraCharges) / (orderObj.items.length || 1)).toFixed(0));
+      
+      // ఐటమ్ ధర (GST లేకుండా)
       tableRowsHTML += `
         <tr>
-          <td style="text-align: left; padding: 3px 0; font-size: 10.5px; max-width: 24mm; word-wrap: break-word;">${itemName.toUpperCase()}</td>
+          <td style="text-align: left; padding: 3px 0; font-size: 10.5px;">${itemName.toUpperCase()}</td>
           <td style="text-align: center; padding: 3px 0; font-size: 10.5px;">${qty}</td>
-          <td style="text-align: right; padding: 3px 0; font-size: 10.5px;">${itemAmount}</td>
+          <td style="text-align: right; padding: 3px 0; font-size: 10.5px;">${(unitPrice * qty).toFixed(0)}</td>
         </tr>
       `;
     });
@@ -1083,6 +1103,22 @@ const dailyStats = {
             className="w-full bg-white border border-slate-200 p-4 pl-11 rounded-2xl text-xs font-bold outline-none shadow-sm focus:border-orange-400 transition-all"
           />
         </div>
+        <button 
+  onClick={togglePreBookStatus} 
+  className={`group relative flex items-center justify-center gap-3 w-full sm:w-auto px-6 py-3.5 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all active:scale-95 shadow-lg ${
+    owner?.isPreBookEnabled 
+      ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20' 
+      : 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/20'
+  }`}
+>
+  {/* స్టేటస్ ని బట్టి ఒక చిన్న లైవ్ డాట్ */}
+  <span className={`relative flex h-2 w-2`}>
+    <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${owner?.isPreBookEnabled ? 'bg-white' : 'bg-white'}`}></span>
+    <span className={`relative inline-flex rounded-full h-2 w-2 bg-white`}></span>
+  </span>
+  
+  {owner?.isPreBookEnabled ? "Pre-Booking Enabled" : "Pre-Booking Disabled"}
+</button>
   {/* 🚀 రాజు స్మార్ట్ ఆర్డర్ టైప్ స్విచ్ బటన్స్ */}
         <div className="flex bg-white p-1 rounded-2xl border border-slate-200 shadow-sm w-fit mt-3">
           {[
@@ -1223,22 +1259,56 @@ const dailyStats = {
                 {/* 🎯 అమౌంట్ మరియు యాక్షన్ బటన్స్ సెక్షన్ */}
                 <div className="pt-4 border-t border-slate-50 flex flex-col gap-4">
                   <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-[10px] font-black text-slate-400 uppercase leading-none">Total Amount</p>
-                      <p className="text-2xl font-black text-slate-900 mt-1 tracking-tighter">₹{order.totalAmount}</p>
-                      
-                      {/* 🚀 డైనమిక్ డెలివరీ టైప్ బ్యాడ్జ్ */}
-                      {order.deliveryType && order.deliveryType !== "None" && (
-                        <div className={`mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase italic tracking-wide border ${
-                          order.deliveryType === 'Take Away' 
-                            ? 'bg-purple-50 border-purple-100 text-purple-600' 
-                            : 'bg-blue-50 border-blue-100 text-blue-600'
-                        }`}>
-                          <span>{order.deliveryType === 'Take Away' ? '📦 Parcel' : '🪑 Dining'}</span>
-                          <span>{order.deliveryType}</span>
-                        </div>
-                      )}
-                    </div>
+{/* 🎯 క్లీన్ అమౌంట్ & స్టేటస్ సెక్షన్ */}
+<div className="pt-4 border-t border-slate-100 mt-2 space-y-4">
+  
+  {/* టోటల్, పెయిడ్, బ్యాలెన్స్ ఒకే లైన్ లో */}
+  <div className="grid grid-cols-3 gap-2 text-center">
+    <div>
+      <p className="text-[8px] font-black text-slate-400 uppercase">Total</p>
+      <p className="text-sm font-black text-slate-900">₹{order.totalAmount}</p>
+    </div>
+    
+    {order.advancePaid > 0 && (
+      <div>
+        <p className="text-[8px] font-black text-orange-500 uppercase">Paid</p>
+        <p className="text-sm font-black text-orange-600">₹{order.advancePaid}</p>
+      </div>
+    )}
+
+    {order.advancePaid > 0 && (
+      <div>
+        <p className="text-[8px] font-black text-emerald-600 uppercase">Pending</p>
+        <p className="text-sm font-black text-emerald-800">₹{order.totalAmount - order.advancePaid}</p>
+      </div>
+    )}
+  </div>
+
+  {/* 🎯 బ్యాలెన్స్ పేమెంట్ మోడ్ సెలక్షన్ (కేవలం బ్యాలెన్స్ ఉంటేనే కనిపిస్తుంది) */}
+  {order.advancePaid > 0 && (
+    <div className="bg-slate-50 p-2 rounded-xl border border-slate-200 flex items-center justify-between px-3">
+      <span className="text-[8px] font-black text-slate-500 uppercase">Balance Mode:</span>
+      <select 
+        id={`payMode-${order._id}`} 
+        className="bg-transparent text-[9px] font-black uppercase text-slate-700 outline-none cursor-pointer"
+      >
+        <option value="CASH">💵 CASH</option>
+        <option value="ONLINE/UPI">📱 ONLINE / UPI</option>
+      </select>
+    </div>
+  )}
+
+  {/* స్టేటస్ బ్యాడ్జ్
+  <div className="w-full">
+    <div className={`text-center py-2 rounded-xl text-[9px] font-black uppercase italic tracking-widest ${
+      order.status === 'Preparing' ? 'bg-orange-50 text-orange-600 border border-orange-100' : 
+      order.status === 'Accepted' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
+      'bg-slate-100 text-slate-600 border border-slate-200'
+    }`}>
+      {order.status || 'Pending'}
+    </div>
+  </div> */}
+</div>
 
                     {/* స్టేటస్ ని బట్టి రంగు మారుతుంది */}
                     <div className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase italic ${order.status === 'Preparing' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
@@ -1300,6 +1370,14 @@ const dailyStats = {
                       >
                         Served ✅
                       </button>
+                      {/* Pre-book ఆర్డర్ కి కూడా ప్రింట్ బటన్ */}
+{/* <button 
+  type="button"
+  onClick={() => handlePrintBill(order, "ONLINE/UPI")}
+  className="w-full py-3 bg-purple-600 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-sm active:scale-95 transition-all flex items-center justify-center gap-1.5"
+>
+  Print Pre-Bill 🖨️
+</button> */}
                     </div>
                   </div>
 
@@ -1744,12 +1822,19 @@ const dailyStats = {
 
           {/* ⚡ STATUS & QUICK ACTIONS */}
           <div className="grid grid-cols-2 gap-4 bg-slate-50 p-6 rounded-[2rem]">
-            <div className="space-y-2">
-              <label className="text-[9px] font-black uppercase text-slate-400">Hub Occupancy</label>
-              <select value={profileForm.busyStatus} onChange={e=>setProfileForm({...profileForm, busyStatus: e.target.value})} className="w-full bg-white p-3 rounded-xl text-xs font-bold border outline-none">
-                {['Low', 'Medium', 'High', 'Free', 'Normal', 'Busy'].map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
+            {/* ఓనర్ డ్యాష్‌బోర్డ్ లోని Settings Modal లో ఈ కోడ్ యాడ్ చెయ్ */}
+<div className="space-y-2">
+  <label className="text-[9px] font-black uppercase text-slate-400">Hub Occupancy (Rush Level)</label>
+  <select 
+    value={profileForm.busyStatus} 
+    onChange={e => setProfileForm({...profileForm, busyStatus: e.target.value})} 
+    className="w-full bg-white p-4 rounded-2xl text-xs font-bold border outline-none focus:border-blue-500 transition-all"
+  >
+    {['Low', 'Medium', 'High', 'Busy'].map(s => (
+      <option key={s} value={s}>{s}</option>
+    ))}
+  </select>
+</div>
             <div className="space-y-2">
               <label className="text-[9px] font-black uppercase text-slate-400">Total Tables</label>
               <input type="number" value={profileForm.tableCount} onChange={e=>setProfileForm({...profileForm, tableCount: e.target.value})} className="w-full bg-white p-3 rounded-xl text-xs font-bold border outline-none" />

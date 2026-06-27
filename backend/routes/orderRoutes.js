@@ -27,6 +27,8 @@ router.post("/add", async (req, res) => {
 
     // 3. ఆర్డర్ ని డేటాబేస్ లో సేవ్ చేయడం (ఇందులో deliveryType ఆటోమేటిక్ గా సేవ్ అవుతుంది రాజు!)
     const newOrder = new Order(orderData);
+    console.log("💾 డేటాబేస్ కి వెళ్తున్న అమౌంట్:", newOrder.totalAmount);
+    await newOrder.save();
     const savedOrder = await newOrder.save();
     
     // 4. సాకెట్ నోటిఫికేషన్ - ఓనర్ కి రియల్ టైమ్ లో సౌండ్ సిగ్నల్ వెళ్తుంది
