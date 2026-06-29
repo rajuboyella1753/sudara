@@ -145,13 +145,13 @@ const handleTrackOrder = async () => {
   if (!sdrId) return alert("Please enter a valid ID!");
   
   try {
+    setLoading(true);
     const res = await api.get(`/orders/status/${sdrId}`);
     setOrderStatus(res.data.status);
     setAssignedTable(res.data.tableNo); 
     setTrackedOrderType(res.data.orderType);
-    
-    // 🎯 ఇక్కడ చిన్న మార్పు: ట్రాక్ చేసిన ఐడిని placedOrderId స్టేట్ కి సెట్ చెయ్
     setPlacedOrderId(sdrId); 
+    setShowTracking(true);
   } catch (err) {
     alert("Order not found!");
   }
@@ -201,7 +201,7 @@ useEffect(() => {
       const todayDate = getUniversalDate();
       // api.put(`/owner/track-analytics/${id}`, { action: "kitchen_entry", date: todayDate });
 
-      const [oRes, iRes] = await Promise.all([
+      const [oRes, iRes,orderRes] = await Promise.all([
         api.get(`/owner/${id}`),
         api.get(`/items/owner/${id}`),
         api.get(`/orders/restaurant/${id}`)
@@ -499,6 +499,8 @@ const handleInstantOrder = async () => {
 
     if (res.data && res.data.sudaraId) {
       setPlacedOrderId(res.data.sudaraId);
+      setShowTracking(true);
+      setTrackedOrderType("Post-book");
       alert(`ORDER PLACED! 🍲\nSir/Madam, Your Tracking ID: ${res.data.sudaraId}`);
     } else {
       alert("ORDER PLACED! 🍲 Sir/Madam your order has been sent to owner.");
@@ -722,25 +724,24 @@ if (!owner || !owner.isApproved) {
     </p>
     
     {/* 🔍 Order Tracking Section - చెక్ స్టేటస్ బటన్ */}
-<div className="flex flex-col gap-3">
-  <input 
-    type="text" 
-    id="customerSdrId"
-    placeholder="Enter Your ID (e.g. SDR158)" 
-    className="bg-slate-50 p-4 rounded-2xl text-xs font-bold outline-none border focus:border-blue-400 uppercase"
-  />
-  
-  {/* 🎯 అప్‌డేట్ చేసిన Check Status బటన్ */}
-  <button 
-    onClick={() => {
-      handleTrackOrder(); // ఇది పాత ఫంక్షన్
-      setShowTracking(true); // ఇది కొత్త స్టేట్ - ట్రాకింగ్ బాక్స్ ని చూపిస్తుంది
-    }}
-    className="bg-slate-900 text-white px-6 py-4 rounded-2xl text-[10px] font-black uppercase italic shadow-lg active:scale-95 transition-all"
-  >
-    Check Status 🔍
-  </button>
-</div>
+    <div className="flex flex-col gap-3">
+      <input 
+        type="text" 
+        id="customerSdrId"
+        placeholder="Enter Your ID (e.g. SDR158)" 
+        className="bg-slate-50 p-4 rounded-2xl text-xs font-bold outline-none border focus:border-blue-400 uppercase"
+      />
+      
+      <button 
+        onClick={() => {
+          handleTrackOrder();
+          setShowTracking(true);
+        }}
+        className="bg-slate-900 text-white px-6 py-4 rounded-2xl text-[10px] font-black uppercase italic shadow-lg active:scale-95 transition-all"
+      >
+        Check Status 🔍
+      </button>
+    </div>
 
     {placedOrderId && (
       <div className="mb-4 p-5 bg-emerald-50 border-2 border-emerald-100 rounded-[2rem] text-center mt-4">
@@ -760,8 +761,8 @@ if (!owner || !owner.isApproved) {
       </div>
     )}
 
-    {/* 🎯 రాజు మాస్టర్ లాక్: టేబుల్ నంబర్ ఉండి, అది "PRE" కాకుండా ఉండి, మరియు ఆర్డర్ టైప్ ఖచ్చితంగా "Pre-book" అయితేనే ఈ రాయల్ కార్డ్ కనిపిస్తుంది! */}
-    {assignedTable && assignedTable !== "PRE" && trackedOrderType === "Pre-book" && (
+    {/* 🎯 రాజు మాస్టర్ లాక్: ఆర్డర్ టైప్ తో సంబంధం లేకుండా టేబుల్ నంబర్ ఉంటే చాలు, ఇక ఏ రిస్ట్రిక్షన్ లేదు! */}
+    {assignedTable && assignedTable !== "PRE" && (
       <motion.div 
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
