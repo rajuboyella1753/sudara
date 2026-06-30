@@ -7,6 +7,7 @@ const router = express.Router();
 // 🚀 రాజు అల్టిమేట్ ఆల్-ఇన్-వన్ ఆర్డర్ క్రియేషన్ API
 router.post("/add", async (req, res) => {
   try {
+    console.log("RECEIVED PAYLOAD:", req.body);
     const orderData = { ...req.body };
 
     // 1. ఎక్స్‌ప్రెస్ రూట్ కి ఐడి & టైమ్ కాలిక్యులేషన్ లాజిక్

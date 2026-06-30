@@ -45,6 +45,7 @@ export default function RestaurantProfile() {
   const [placedOrderId, setPlacedOrderId] = useState(null);
   const [assignedTable, setAssignedTable] = useState(null);
   const [trackedOrderType, setTrackedOrderType] = useState(null);
+  const [isTrackingLoading, setIsTrackingLoading] = useState(false);
   const [recentOrderItems, setRecentOrderItems] = useState([]);
   const [restaurantOrders, setRestaurantOrders] = useState([]);
   const availableSubCats = useMemo(() => {
@@ -145,7 +146,7 @@ const handleTrackOrder = async () => {
   if (!sdrId) return alert("Please enter a valid ID!");
   
   try {
-    setLoading(true);
+    setIsTrackingLoading(true); // గ్లోబల్ setLoading కాకుండా దీన్ని మాత్రమే వాడు
     const res = await api.get(`/orders/status/${sdrId}`);
     setOrderStatus(res.data.status);
     setAssignedTable(res.data.tableNo); 
@@ -154,6 +155,8 @@ const handleTrackOrder = async () => {
     setShowTracking(true);
   } catch (err) {
     alert("Order not found!");
+  } finally {
+    setIsTrackingLoading(false); // ఇక్కడ కూడా దీన్నే ఆపు
   }
 };
 const openGoogleMaps = () => {
@@ -298,6 +301,9 @@ const handleConfirmOrder = async () => {
       restaurantId: id,
       customerName: orderData.name,
       items: itemList,
+       subTotal: Number(itemsTotal.toFixed(2)), // 👈 ఇది కొత్తగా యాడ్ చెయ్
+        gstAmount: Number(gstAmount.toFixed(2)), // 👈 GST విడిగా పంపు
+        extraCharges: Number(extraCharges),
       totalAmount: Number(finalAmount.toFixed(2)), // 🎯 ఇక్కడ కచ్చితంగా నంబర్ ఫార్మాట్ లో పంపు
       advancePaid: Number(halfAmount),            // 🎯 నంబర్ ఫార్మాట్ లో పంపు
       txnId: orderData.txId,
@@ -482,6 +488,16 @@ const handleInstantOrder = async () => {
   if (!customerName.trim() || !selectedTable) return alert("Please fill all details! 📝");
 
   try {
+    // 1. కార్ట్ లో ఉన్న ఐటమ్స్ ధరలు (ఓనర్ సెట్ చేసినవి)
+    const itemsTotal = Object.values(cart).reduce((acc, item) => acc + (item.price * item.qty), 0);
+    
+    // 2. ఓనర్ సెట్ చేసిన పర్సంటేజ్ & ఎక్స్‌ట్రా చార్జెస్ (owner ఆబ్జెక్ట్ నుండి)
+    const gstPercent = Number(owner?.gstPercentage) || 0; 
+    const extra = Number(owner?.extraCharges) || 0;
+    
+    const gstAmount = (itemsTotal * gstPercent) / 100;
+    const finalTotal = itemsTotal + gstAmount + extra;
+
     const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name}`);
     
     const payload = {
@@ -489,11 +505,19 @@ const handleInstantOrder = async () => {
       customerName: customerName,
       tableNo: selectedTable,
       items: itemList,
-      totalAmount: totalAmount,
+      
+      // ఓనర్ డేటా ప్రకారం డైనమిక్ గా వెళ్తాయి
+      totalAmount: Number(finalTotal.toFixed(2)),
+      subTotal: Number(itemsTotal.toFixed(2)),
+      gstAmount: Number(gstAmount.toFixed(2)),
+      extraCharges: extra,
+      
       orderType: "Post-book",
       arrivalTime: "Immediate",
       status: "Pending"
     };
+
+    console.log("SENDING PAYLOAD:", payload);
 
     const res = await api.post("/orders/add", payload);
 
@@ -501,14 +525,15 @@ const handleInstantOrder = async () => {
       setPlacedOrderId(res.data.sudaraId);
       setShowTracking(true);
       setTrackedOrderType("Post-book");
-      alert(`ORDER PLACED! 🍲\nSir/Madam, Your Tracking ID: ${res.data.sudaraId}`);
+      alert(`ORDER PLACED! 🍲\nYour Tracking ID: ${res.data.sudaraId}`);
     } else {
-      alert("ORDER PLACED! 🍲 Sir/Madam your order has been sent to owner.");
+      alert("ORDER PLACED! 🍲");
     }
 
-    setCart({}); // కార్ట్ క్లీన్ అవుతుంది
+    setCart({}); 
     setShowInstantModal(false);
   } catch (err) {
+    console.error("Order Error:", err);
     alert("Order Failed! ❌");
   }
 };
@@ -524,7 +549,13 @@ const handleInstantOrder = async () => {
 
   const availableItems = searchFiltered.filter(item => item.isAvailable);
 
-  if (loading) return <div className="h-screen bg-white flex items-center justify-center font-black animate-pulse text-blue-600 uppercase tracking-widest text-[10px]">Scanning Menu...</div>;
+  if (loading && items.length === 0) {
+  return (
+    <div className="h-screen bg-white flex items-center justify-center font-black animate-pulse text-blue-600 uppercase tracking-widest text-[10px]">
+      Scanning Menu...
+    </div>
+  );
+}
 // 🚀 రాజు అడ్మిన్ కంట్రోల్ రూల్: ఓనర్ కి యాక్సెస్ లేకపోతే మెయిన్ పేజీని అస్సలు ఓపెన్ చేయనివ్వద్దు!
 if (!owner || !owner.isApproved) {
   return (
@@ -733,14 +764,12 @@ if (!owner || !owner.isApproved) {
       />
       
       <button 
-        onClick={() => {
-          handleTrackOrder();
-          setShowTracking(true);
-        }}
-        className="bg-slate-900 text-white px-6 py-4 rounded-2xl text-[10px] font-black uppercase italic shadow-lg active:scale-95 transition-all"
-      >
-        Check Status 🔍
-      </button>
+  onClick={handleTrackOrder}
+  disabled={isTrackingLoading} // 👈 క్లిక్ చేసినప్పుడు మళ్ళీ క్లిక్ అవ్వకుండా
+  className="bg-slate-900 text-white px-6 py-4 rounded-2xl text-[10px] font-black uppercase italic shadow-lg active:scale-95 transition-all"
+>
+  {isTrackingLoading ? "Scanning Status..." : "Check Status 🔍"} 
+</button>
     </div>
 
     {placedOrderId && (
@@ -761,28 +790,30 @@ if (!owner || !owner.isApproved) {
       </div>
     )}
 
-    {/* 🎯 రాజు మాస్టర్ లాక్: ఆర్డర్ టైప్ తో సంబంధం లేకుండా టేబుల్ నంబర్ ఉంటే చాలు, ఇక ఏ రిస్ట్రిక్షన్ లేదు! */}
-    {assignedTable && assignedTable !== "PRE" && (
-      <motion.div 
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="mt-4 p-6 bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-[2rem] text-center shadow-xl border-2 border-amber-400/40 relative overflow-hidden"
-      >
-        {/* Background Ambient Glow */}
-        <div className="absolute -right-6 -bottom-6 w-20 h-20 bg-amber-400/10 rounded-full blur-xl pointer-events-none"></div>
-        
-        <p className="text-[8px] font-black uppercase tracking-[0.2em] text-amber-400 italic leading-none mb-1">Sudara Premium Protocol</p>
-        <h4 className="text-[11px] font-black text-slate-300 uppercase tracking-wider">YOUR TABLE IS READY 🪑</h4>
-        
-        <p className="text-4xl font-black text-amber-400 tracking-tighter italic mt-3 animate-bounce">
-          TABLE # {assignedTable}
-        </p>
-        
-        <p className="text-[9px] font-bold text-slate-400 mt-2 uppercase tracking-wide">
-          Please walk in and take your seat directly if any doubt call to owner!
-        </p>
-      </motion.div>
-    )}
+    {/* 🎯 రాజు మాస్టర్ లాక్: ఇప్పుడు కేవలం Pre-book ఆర్డర్ కి మరియు డైనింగ్ అయితేనే కనిపిస్తుంది */}
+{assignedTable && 
+ assignedTable !== "PRE" && 
+ trackedOrderType === "Pre-book" && (
+  <motion.div 
+    initial={{ scale: 0.9, opacity: 0 }}
+    animate={{ scale: 1, opacity: 1 }}
+    className="mt-4 p-6 bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-[2rem] text-center shadow-xl border-2 border-amber-400/40 relative overflow-hidden"
+  >
+    {/* Background Ambient Glow */}
+    <div className="absolute -right-6 -bottom-6 w-20 h-20 bg-amber-400/10 rounded-full blur-xl pointer-events-none"></div>
+    
+    <p className="text-[8px] font-black uppercase tracking-[0.2em] text-amber-400 italic leading-none mb-1">Sudara Premium Protocol</p>
+    <h4 className="text-[11px] font-black text-slate-300 uppercase tracking-wider">YOUR TABLE IS READY 🪑</h4>
+    
+    <p className="text-4xl font-black text-amber-400 tracking-tighter italic mt-3 animate-bounce">
+      TABLE # {assignedTable}
+    </p>
+    
+    <p className="text-[9px] font-bold text-slate-400 mt-2 uppercase tracking-wide">
+      Please walk in and take your seat directly if any doubt call to owner!
+    </p>
+  </motion.div>
+)}
   </div>
 )}
 
