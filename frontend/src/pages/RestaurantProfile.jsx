@@ -816,7 +816,13 @@ if (!owner || !owner.isApproved) {
 )}
   </div>
 )}
-
+{/* ⚠️ IMAGES DISCLAIMER MESSAGE */}
+<div className="bg-slate-50 border-l-4 border-amber-500 p-4 rounded-2xl mb-6 flex items-start gap-3">
+  <Camera className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+  <p className="text-[9px] sm:text-[10px] font-bold text-slate-500 leading-relaxed uppercase italic">
+    <span className="text-amber-600 font-black">Note:</span> These images are for representation only (sourced from Google). Also sudara is not responsible for any food related issues in this restaurant full responsibility taken by Restaurant only,we are just Connectors.
+  </p>
+</div>
             {/* Filter Section: Sticky with Responsive Spacing */}
             <div className="sticky top-16 sm:top-20 z-30 bg-white/95 py-2 border-b space-y-3 sm:space-y-4 backdrop-blur-md">
                 <div className="relative">
@@ -878,13 +884,7 @@ if (!owner || !owner.isApproved) {
                 </div>
             </div>
             
-{/* ⚠️ IMAGES DISCLAIMER MESSAGE */}
-<div className="bg-slate-50 border-l-4 border-amber-500 p-4 rounded-2xl mb-6 flex items-start gap-3">
-  <Camera className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-  <p className="text-[9px] sm:text-[10px] font-bold text-slate-500 leading-relaxed uppercase italic">
-    <span className="text-amber-600 font-black">Note:</span> These images are for representation only (sourced from Google). Please do not select food based solely on the image appearance. Check dish names and descriptions.
-  </p>
-</div>
+
 {/* <VoiceAssistant 
   menuItems={items} 
   onOrderDetected={(detectedItems) => {
