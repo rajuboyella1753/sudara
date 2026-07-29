@@ -5,8 +5,8 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   const socialLinks = {
-    instagram: "https://www.instagram.com/sudara_1753",
-    youtube: "https://www.youtube.com/@BOYELLA-B21", 
+    instagram: "https://www.instagram.com/sudara_business_tool?igsh=MWY2c3liNjZsaGNhbw==",
+    youtube: "https://youtube.com/@sudaraofficial-z6u?si=1K3q2-DouYVPCNzL", 
     email: "mailto:sudaraofficial703@gmail.com"
   };
 

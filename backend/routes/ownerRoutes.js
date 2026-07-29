@@ -34,19 +34,40 @@ router.get("/all-owners", async (req, res) => {
 
 router.post("/register", async (req, res) => {
   try {
-    const { name, email, password, phone, whatsappNumber, upiNumber, state, district, collegeName } = req.body;
+    const { 
+      name, 
+      ownerName, 
+      email, 
+      password, 
+      phone, 
+      whatsappNumber, 
+      upiNumber, 
+      state, 
+      district, 
+      collegeName,
+      fssaiNumber,
+      gstNumber    
+    } = req.body;
+
     const existing = await Owner.findOne({ email });
     if (existing) return res.status(400).json({ message: "Owner already exists" });
 
     const owner = await Owner.create({ 
-      name, email, password, phone, 
+      name, 
+      ownerName: ownerName || name,
+      email, 
+      password, 
+      phone, 
       whatsappNumber: whatsappNumber || phone, 
       upiNumber: upiNumber || phone,
       state: state || "Andhra Pradesh",
       district: district || "Tirupati", 
       collegeName: collegeName || "General",
+      fssaiNumber: fssaiNumber || "",
+      gstNumber: gstNumber || "",       
       isApproved: false 
     });
+
     res.status(201).json({ success: true, owner });
   } catch (err) {
     res.status(500).json({ message: err.message });

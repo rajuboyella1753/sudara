@@ -17,17 +17,20 @@ import {
 
 export default function OwnerRegister() {
   const [form, setForm] = useState({
+    ownerName: "",
     name: "",
     email: "",
     password: "",
     category: "food",
-    phone: "", // Calling Number
+    phone: "",
     whatsappNumber: "", 
     upiNumber: "",      
     state: "Andhra Pradesh", 
     district: "Tirupati",    
     collegeName: "MBU",      
-    customCollege: ""   
+    customCollege: "",
+    fssaiNumber: "",
+    gstNumber: ""
   });
 
   const collegesList = ["MBU", "Others"];
@@ -89,21 +92,38 @@ export default function OwnerRegister() {
           <form onSubmit={handleSubmit} className="space-y-8">
             
             {/* 🏢 Basic Identity Section */}
+            {/* 🏢 Basic Identity Section */}
             <div className="space-y-5">
               <div className="flex items-center gap-2 mb-2 text-indigo-600">
                 <Building2 className="w-4 h-4" />
-                <span className="text-[10px] font-black uppercase tracking-widest">Business Identity</span>
+                <span className="text-[10px] font-black uppercase tracking-widest">Business & Owner Identity</span>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="relative">
+                  <label className="text-[9px] font-black uppercase text-slate-400 mb-1.5 ml-1 block">Owner Full Name</label>
+                  <input type="text" name="ownerName" required placeholder="e.g. Ramesh Kumar" value={form.ownerName} onChange={handleChange} className="w-full bg-slate-50 border-2 border-slate-50 px-4 py-3.5 rounded-2xl focus:border-indigo-100 focus:bg-white focus:outline-none font-bold text-sm transition-all shadow-sm" />
+                </div>
+                <div className="relative">
                   <label className="text-[9px] font-black uppercase text-slate-400 mb-1.5 ml-1 block">Restaurant Name</label>
                   <input type="text" name="name" required placeholder="e.g. Sudara Kitchen" value={form.name} onChange={handleChange} className="w-full bg-slate-50 border-2 border-slate-50 px-4 py-3.5 rounded-2xl focus:border-indigo-100 focus:bg-white focus:outline-none font-bold text-sm transition-all shadow-sm" />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="relative">
                   <label className="text-[9px] font-black uppercase text-slate-400 mb-1.5 ml-1 block">Official Email</label>
                   <input type="email" name="email" required placeholder="owner@sudara.in" value={form.email} onChange={handleChange} className="w-full bg-slate-50 border-2 border-slate-50 px-4 py-3.5 rounded-2xl focus:border-indigo-100 focus:bg-white focus:outline-none font-bold text-sm transition-all shadow-sm" />
                 </div>
+                <div className="relative">
+                  <label className="text-[9px] font-black uppercase text-slate-400 mb-1.5 ml-1 block">FSSAI License Number</label>
+                  <input type="text" name="fssaiNumber" placeholder="14-digit FSSAI No." value={form.fssaiNumber} onChange={handleChange} className="w-full bg-slate-50 border-2 border-slate-50 px-4 py-3.5 rounded-2xl focus:border-indigo-100 focus:bg-white focus:outline-none font-bold text-sm transition-all shadow-sm" />
+                </div>
+              </div>
+
+              <div className="relative">
+                <label className="text-[9px] font-black uppercase text-slate-400 mb-1.5 ml-1 block">GST Number</label>
+                <input type="text" name="gstNumber" placeholder="Enter GST Number" value={form.gstNumber} onChange={handleChange} className="w-full bg-slate-50 border-2 border-slate-50 px-4 py-3.5 rounded-2xl focus:border-indigo-100 focus:bg-white focus:outline-none font-bold text-sm transition-all shadow-sm" />
               </div>
             </div>
 

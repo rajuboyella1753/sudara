@@ -3,10 +3,13 @@ import mongoose from "mongoose";
 const ownerSchema = new mongoose.Schema(
   {
     name: String,
+    ownerName: { type: String, required: true },
     email: { type: String, unique: true },
     password: String,
     category: String,
     profileImage: { type: String, default: "" },
+    fssaiNumber: { type: String, default: "" }, // FSSAI లైసెన్స్ నంబర్
+    gstNumber: { type: String, default: "" },
     phone: String, // Calling Number
     whatsappNumber: { type: String, default: "" }, // 🆕 WhatsApp
     upiNumber: { type: String, default: "" }, // 🆕 PhonePe/GPay Number

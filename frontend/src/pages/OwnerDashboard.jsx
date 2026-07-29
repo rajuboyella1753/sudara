@@ -359,12 +359,13 @@ const handleCounterPrint = async () => {
     if (selectedItems.length === 0) return alert("కార్ట్ ఖాళీగా ఉంది!");
 
     const payMode = document.getElementById("counterPayMode")?.value || "CASH";
+    const totalCalculatedAmount = selectedItems.reduce((acc, i) => acc + (i.price * counterCart[i._id]), 0);
 
     const orderObj = {
         customerName: "COUNTER GUEST",
         tableNo: "COUNTER",
         items: selectedItems.map(i => `${counterCart[i._id]} x ${i.name}`),
-        totalAmount: selectedItems.reduce((acc, i) => acc + (i.price * counterCart[i._id]), 0),
+        totalAmount: totalCalculatedAmount,
         sudaraId: "CT-" + Math.floor(1000 + Math.random() * 9000),
         createdAt: new Date(),
         orderType: "Counter-Sale",
@@ -376,18 +377,14 @@ const handleCounterPrint = async () => {
         const d = new Date();
         const dayKey = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
         
-        // 1. సేల్స్ అప్‌డేట్
         await api.put(`/owner/track-sales/${owner._id}`, {
             date: dayKey,
-            amount: Number(orderData.totalAmount),
+            amount: Number(orderObj.totalAmount),
             items: orderObj.items,
             paymentMode: payMode
         });
 
-        // 2. 🎯 బిల్లు ప్రింట్
         await handlePrintBill(orderObj, payMode, owner);
-        
-        // 3. 🎯 ఇక్కడ ముఖ్యమైన మార్పు: కొత్త డేటాను సర్వర్ నుండి మళ్ళీ ఫెచ్ చేస్తున్నాం
         await fetchData(owner._id); 
         
         setCounterCart({});
@@ -398,44 +395,41 @@ const handleCounterPrint = async () => {
     } finally {
         setSending(false);
     }
-};
-const handleServed = async (orderObj) => {
-  if (!window.confirm("Mark as Served?")) return;
+  };
 
-  // 1. డ్రాప్-డౌన్ నుండి పేమెంట్ మోడ్ తీసుకోవడం
-  const selectEl = document.getElementById(`payMode-${orderObj._id}`);
-  const selectedMode = selectEl ? selectEl.value : "CASH";
+  const handleServed = async (orderObj) => {
+    if (!window.confirm("Mark as Served?")) return;
 
-  const totalAmount = Number(orderObj.totalAmount || 0);
-  const advancePaid = Number(orderObj.advancePaid || 0);
-  
-  // 2. మిగిలిన బ్యాలెన్స్ ని మాత్రమే ఇప్పుడు తీసుకోవాలి
-  const remainingBalance = totalAmount - advancePaid;
+    const selectEl = document.getElementById(`payMode-${orderObj._id}`);
+    const selectedMode = selectEl ? selectEl.value : "CASH";
 
-  const d = new Date();
-  const dayKey = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-  
-  try {
-    // 3. సేల్స్ ట్రాకింగ్ (Pre-book అయితే బ్యాలెన్స్ ని, లేదంటే టోటల్ ని పంపుతున్నాం)
-    await api.put(`/owner/track-sales/${owner._id}`, {
-      date: dayKey,
-      amount: Number(orderData.totalAmount),
-      items: orderObj.items,
-      paymentMode: selectedMode, // నువ్వు సెలెక్ట్ చేసిన క్యాష్/ఆన్‌లైన్
-      isPreBookingFinalized: true // ట్రాకింగ్ కోసం ఒక ఫ్లాగ్
-    });
+    const totalAmount = Number(orderObj.totalAmount || 0);
+    const advancePaid = Number(orderObj.advancePaid || 0);
+    const remainingBalance = totalAmount - advancePaid;
 
-    await api.put(`/orders/update-status/${orderObj._id}`, { status: "Served" });
+    const d = new Date();
+    const dayKey = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
     
-    setOrders(prev => prev.filter(o => o._id !== orderObj._id));
-    await fetchData(owner._id);
-    
-    alert("Balance Sales Logged Successfully! ✅");
-  } catch (err) { 
-    console.error(err);
-    alert("Failed!"); 
-  }
-};
+    try {
+      await api.put(`/owner/track-sales/${owner._id}`, {
+        date: dayKey,
+        amount: remainingBalance, 
+        items: orderObj.items,
+        paymentMode: selectedMode,
+        isPreBookingFinalized: true
+      });
+
+      await api.put(`/orders/update-status/${orderObj._id}`, { status: "Served" });
+      
+      setOrders(prev => prev.filter(o => o._id !== orderObj._id));
+      await fetchData(owner._id);
+      
+      alert("Balance Sales Logged Successfully! ✅");
+    } catch (err) { 
+      console.error(err);
+      alert("Failed!"); 
+    }
+  };
 const togglePreBookStatus = async () => {
   try {
     const newStatus = !owner.isPreBookEnabled;

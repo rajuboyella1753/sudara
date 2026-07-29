@@ -917,6 +917,40 @@ if (!owner || !owner.isApproved) {
                     ))}
                 </div>
             </div>
+            {/* 🏢 Owner & Legal Compliance Details Section */}
+<div className="bg-slate-50 border border-slate-200 rounded-[2rem] p-5 sm:p-6 my-6 shadow-sm">
+  <div className="flex items-center gap-2 border-l-4 border-blue-600 pl-3 mb-4">
+    <h3 className="text-[10px] sm:text-xs font-black uppercase text-slate-800 tracking-widest italic">
+      Restaurant & Legal Details
+    </h3>
+  </div>
+  
+  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    {/* 1. Owner Name */}
+    <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+      <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">Owner Name</p>
+      <p className="text-xs font-black uppercase italic text-slate-800 truncate">
+        {owner?.ownerName || owner?.name || "Not Available"}
+      </p>
+    </div>
+
+    {/* 2. FSSAI License Number */}
+    <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+      <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">FSSAI License No</p>
+      <p className="text-xs font-black uppercase tracking-wider text-blue-600 truncate">
+        {owner?.fssaiNumber || "Not Provided"}
+      </p>
+    </div>
+
+    {/* 3. GST Number */}
+    <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+      <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">GST Number</p>
+      <p className="text-xs font-black uppercase tracking-wider text-slate-800 truncate">
+        {owner?.gstNumber || "Not Provided"}
+      </p>
+    </div>
+  </div>
+</div>
         </div>
 
 
@@ -971,20 +1005,17 @@ if (!owner || !owner.isApproved) {
             </button>
           )}
 
-         {owner?.isPreBookEnabled && (
+  {owner?.isPreBookEnabled && (
   <button  
     onClick={() => {
-      
       if (totalAmount > 0) { 
         trackPreOrderClick(); 
-       
-        setShowOrderForm(true); 
+        setShowPayWarning(true); // 🚀 కేవలం వార్నింగ్ మోడల్ మాత్రమే ఓపెన్ అవ్వాలి
+        // setShowOrderForm(true); // ❌ దీన్ని తీసేయ్! ఇది ఇక్కడ ఉండకూడదు.
       } else { 
-       
         alert("Please select food items first! 🥘"); 
       }
     }}
-  
     className={`w-full py-3.5 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${
       totalAmount > 0 
         ? 'bg-slate-900 text-white shadow-lg active:scale-95' 
@@ -998,7 +1029,7 @@ if (!owner || !owner.isApproved) {
             onClick={handleCallAction}  
             className="w-full py-3.5 rounded-xl font-black uppercase text-[10px] bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all"
           >
-            <PhoneCall className="w-4 h-4" /> Call to Owner
+            <PhoneCall className="w-4 h-4" /> Call to Owner & order
           </button>
         </div>
       </>
@@ -1026,6 +1057,12 @@ if (!owner || !owner.isApproved) {
 
   </div>
 </div>
+
+
+
+
+
+
 
       </main>
 
@@ -1574,6 +1611,7 @@ if (!owner || !owner.isApproved) {
     </button>
   </motion.div>
 )}
+
     </div>
   );
 }
