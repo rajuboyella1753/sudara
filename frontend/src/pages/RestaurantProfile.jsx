@@ -917,7 +917,7 @@ if (!owner || !owner.isApproved) {
                     ))}
                 </div>
             </div>
-            {/* 🏢 Owner & Legal Compliance Details Section */}
+    {/* 🏢 Owner & Legal Compliance Details Section */}
 <div className="bg-slate-50 border border-slate-200 rounded-[2rem] p-5 sm:p-6 my-6 shadow-sm">
   <div className="flex items-center gap-2 border-l-4 border-blue-600 pl-3 mb-4">
     <h3 className="text-[10px] sm:text-xs font-black uppercase text-slate-800 tracking-widest italic">
@@ -930,7 +930,7 @@ if (!owner || !owner.isApproved) {
     <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
       <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">Owner Name</p>
       <p className="text-xs font-black uppercase italic text-slate-800 truncate">
-        {owner?.ownerName || owner?.name || "Not Available"}
+        {owner?.ownerName || owner?.name || "Sudara Partner"}
       </p>
     </div>
 
@@ -938,7 +938,7 @@ if (!owner || !owner.isApproved) {
     <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
       <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">FSSAI License No</p>
       <p className="text-xs font-black uppercase tracking-wider text-blue-600 truncate">
-        {owner?.fssaiNumber || "Not Provided"}
+        {owner?.fssaiNumber && owner.fssaiNumber.trim() !== "" ? owner.fssaiNumber : "Not Provided"}
       </p>
     </div>
 
@@ -946,7 +946,7 @@ if (!owner || !owner.isApproved) {
     <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
       <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">GST Number</p>
       <p className="text-xs font-black uppercase tracking-wider text-slate-800 truncate">
-        {owner?.gstNumber || "Not Provided"}
+        {owner?.gstNumber && owner.gstNumber.trim() !== "" ? owner.gstNumber : "Not Provided"}
       </p>
     </div>
   </div>
