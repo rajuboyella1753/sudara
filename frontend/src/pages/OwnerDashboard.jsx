@@ -32,7 +32,8 @@
     const [isAddingItem, setIsAddingItem] = useState(false);     
     const [isEditingItem, setIsEditingItem] = useState(false);
     const [isEditingProfile, setIsEditingProfile] = useState(false); 
-    const [isShowingMatrix, setIsShowingMatrix] = useState(false); 
+    const [isShowingMatrix, setIsShowingMatrix] = useState(false);
+     
     const [sending, setSending] = useState(false);
     const [todayMsg, setTodayMsg] = useState(""); 
     const [activeCategory, setActiveCategory] = useState("All");
@@ -324,20 +325,20 @@ const handleProfileImage = async (e) => {
       }
     };
 
-  const updateOrderStatus = async (orderId, newStatus) => {
-    // 🎯 ఒకవేళ పొరపాటున ఇక్కడ Served అని వస్తే, దాన్ని handleServed కి పంపేయాలి
-    if (newStatus === "Served") {
-      const order = orders.find(o => o._id === orderId);
-      return handleServed(order);
-    }
+ const updateOrderStatus = async (orderId, newStatus) => {
+  // 🎯 ఒకవేళ "Delivered" లేదా "Served" అని క్లిక్ చేస్తే అది నేరుగా సేల్స్ లాగింగ్ ఫంక్షన్‌కి వెళ్ళాలి
+  if (newStatus === "Delivered" || newStatus === "Served") {
+    const order = orders.find(o => o._id === orderId);
+    return handleServed(order);
+  }
 
-    try {
-      await api.put(`/orders/update-status/${orderId}`, { status: newStatus });
-      setOrders(prev => prev.map(o => o._id === orderId ? { ...o, status: newStatus } : o));
-    } catch (err) {
-      alert("Status update failed! ❌");
-    }
-  };
+  try {
+    await api.put(`/orders/update-status/${orderId}`, { status: newStatus });
+    setOrders(prev => prev.map(o => o._id === orderId ? { ...o, status: newStatus } : o));
+  } catch (err) {
+    alert("Status update failed! ❌");
+  }
+};
   const handleAssignTable = async (orderId) => {
     // సింపుల్ గా పాపప్ లో అడుగుతున్నాం (లేదా నువ్వు ప్రత్యేకంగా ఇన్‌పుట్ బాక్స్ అయినా పెట్టుకోవచ్చు)
     const tableNum = window.prompt("Enter Table Number for this Pre-booking:");
@@ -1145,7 +1146,8 @@ const dailyStats = {
           {[
             { id: "All", label: "All Feeds" },
             { id: "Pre-book", label: "Pre-Bookings 🚗" },
-            { id: "Post-book", label: "Post-Orders 🪑" }
+            { id: "Post-book", label: "Post-Orders 🪑" },
+            { id: "Online-Order", label: "Online Orders 📦" }
           ].map(tab => (
             <button 
               key={tab.id} 
@@ -1172,94 +1174,104 @@ const dailyStats = {
                 </div>
 
                 <div>
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <p className="font-black uppercase italic text-lg text-slate-900 leading-tight">
-                        {order.customerName}
-                      </p>
-                      {/* 🎯 ఇక్కడ అప్‌డేట్ చెయ్: పోస్ట్-బుకింగ్ కి టేబుల్ నంబర్ కనిపిస్తుంది */}
-                      {(order.orderType?.toLowerCase() === "post-book") && (
-                        <div className="bg-blue-50 px-4 py-2 rounded-2xl text-center flex flex-col justify-center border border-blue-100 shadow-sm mt-2">
-                          <p className="text-[8px] font-black text-blue-400 uppercase leading-none">Table No</p>
-                          <p className="text-xl font-black text-blue-600 leading-none mt-1">
-                            # {order.tableNo ? order.tableNo : "?"}
-                          </p>
-                        </div>
-                      )}
-                      {order.sudaraId && (
-                        <div className="mt-1 flex gap-2 items-center">
-                          <span className="bg-blue-100 text-blue-800 text-[9px] font-black px-2 py-0.5 rounded border border-blue-200 uppercase italic">
-                            ID: {order.sudaraId}
-                          </span>
-                          
-                        </div>
-                      )}
-                     
-                      {order.orderType === "Pre-book" && (
-                        <p className="text-[10px] font-black text-orange-600 uppercase mt-1 italic">
-                          🚗 Coming at: {order.arrivalTime} 
-                        </p>
-                      )}
-                    </div>
-                  {/* 🎯 ఇక్కడ People Count & Arrival Time యాడ్ చేశాను */}
-                  {order.orderType === "Pre-book" && (
-                    <div className="flex gap-2 mt-2">
-                      <span className="bg-amber-50 text-amber-700 text-[8px] font-black px-2 py-0.5 rounded-lg uppercase italic border border-amber-200">
-                        👥 {order.peopleCount || 1}
-                      </span>
-                    </div>
-                  )}
-                                      {/* 🎯 ఇక్కడ కండిషన్ పెట్టు: కేవలం 'Dining' ఆర్డర్స్ కి మాత్రమే ఈ టేబుల్ సెక్షన్ కనిపిస్తుంది */}
-                  {order.deliveryType === "Book at Restaurant" && (
-                    <div className="bg-blue-50 px-4 py-2 rounded-2xl text-center flex flex-col justify-center">
-                      <p className="text-[8px] font-black text-blue-400 uppercase leading-none">Table</p>
-                      <p className="text-xl font-black text-blue-600 leading-none mt-1">
-                        # {order.tableNo !== "PRE" && order.tableNo ? order.tableNo : "?"}
-                      </p>
-                      
-                      {(!order.tableNo || order.tableNo === "PRE") && (
-                        <button 
-                          onClick={() => handleAssignTable(order._id)}
-                          className="mt-2 text-[8px] bg-blue-600 text-white px-2 py-1 rounded-lg font-bold hover:bg-blue-700 transition-all"
-                        >
-                          Assign Table
-                        </button>
-                      )}
-                    </div>
-                  )}
-                  </div>
+  <div className="flex justify-between items-start mb-4">
+    <div>
+      <p className="font-black uppercase italic text-lg text-slate-900 leading-tight">
+        {order.customerName}
+      </p>
 
-                  {/* Items List */}
-                  <div className="flex flex-wrap gap-2 mb-4 max-h-24 overflow-y-auto scrollbar-hide p-1">
-                    {order.items.map((it, idx) => (
-                      <span key={idx} className="bg-slate-50 text-slate-700 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase border border-slate-100 italic shrink-0">
-                        {it}
-                      </span>
-                    ))}
-                  </div>
+      {/* 📍 ఆన్‌లైన్ ఆర్డర్‌ల కోసం అడ్రస్ మరియు ఫోన్ నంబర్ డిస్‌ప్లే */}
+      {order.customerAddress && (
+        <p className="text-[10px] font-bold text-slate-600 mt-1 uppercase">
+          📍 Address: {order.customerAddress}
+        </p>
+      )}
+      {order.customerPhone && (
+        <p className="text-[10px] font-bold text-blue-600 mt-0.5 uppercase">
+          📞 Phone: {order.customerPhone}
+        </p>
+      )}
 
-                  {/* 🕒 EXPRESS ROUTE TIMER & DELAY ALERT */}
-                  {order.orderType === 'Express-Route' && (
-                    <div className={`mt-3 p-3 rounded-2xl border ${order.isDelayed ? 'bg-red-50 border-red-200 animate-pulse' : 'bg-blue-50 border-blue-100'}`}>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${order.isDelayed ? 'bg-red-500' : 'bg-blue-500'}`}></div>
-                        <p className="text-[9px] font-black uppercase text-slate-500">
-                          {order.isDelayed ? '⚠️ CUSTOMER DELAYED' : '🕒 EXPRESS START TIME'}
-                        </p>
-                      </div>
-                      <p className="text-sm font-black text-slate-900 mt-1 tracking-tight">
-                        {new Date(order.scheduledStartTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                      </p>
-                    </div>
-                  )}
+      {/* 🎯 పోస్ట్-బుకింగ్ కి టేబుల్ నంబర్ కనిపిస్తుంది */}
+      {(order.orderType?.toLowerCase() === "post-book") && (
+        <div className="bg-blue-50 px-4 py-2 rounded-2xl text-center flex flex-col justify-center border border-blue-100 shadow-sm mt-2">
+          <p className="text-[8px] font-black text-blue-400 uppercase leading-none">Table No</p>
+          <p className="text-xl font-black text-blue-600 leading-none mt-1">
+            # {order.tableNo ? order.tableNo : "?"}
+          </p>
+        </div>
+      )}
+      {order.sudaraId && (
+        <div className="mt-1 flex gap-2 items-center">
+          <span className="bg-blue-100 text-blue-800 text-[9px] font-black px-2 py-0.5 rounded border border-blue-200 uppercase italic">
+            ID: {order.sudaraId}
+          </span>
+        </div>
+      )}
+     
+      {order.orderType === "Pre-book" && (
+        <p className="text-[10px] font-black text-orange-600 uppercase mt-1 italic">
+          🚗 Coming at: {order.arrivalTime} 
+        </p>
+      )}
+    </div>
+  {order.orderType === "Pre-book" && (
+    <div className="flex gap-2 mt-2">
+      <span className="bg-amber-50 text-amber-700 text-[8px] font-black px-2 py-0.5 rounded-lg uppercase italic border border-amber-200">
+        👥 {order.peopleCount || 1}
+      </span>
+    </div>
+  )}
+  {order.deliveryType === "Book at Restaurant" && (
+    <div className="bg-blue-50 px-4 py-2 rounded-2xl text-center flex flex-col justify-center">
+      <p className="text-[8px] font-black text-blue-400 uppercase leading-none">Table</p>
+      <p className="text-xl font-black text-blue-600 leading-none mt-1">
+        # {order.tableNo !== "PRE" && order.tableNo ? order.tableNo : "?"}
+      </p>
+      
+      {(!order.tableNo || order.tableNo === "PRE") && (
+        <button 
+          onClick={() => handleAssignTable(order._id)}
+          className="mt-2 text-[8px] bg-blue-600 text-white px-2 py-1 rounded-lg font-bold hover:bg-blue-700 transition-all"
+        >
+          Assign Table
+        </button>
+      )}
+    </div>
+  )}
+  </div>
 
-                  {order.txnId && (
-                    <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-100 mb-4 mt-4">
-                      <p className="text-[8px] font-black text-emerald-400 uppercase">Transaction ID</p>
-                      <p className="text-[10px] font-bold text-emerald-700 break-all">{order.txnId}</p>
-                    </div>
-                  )}
-                </div>
+  {/* Items List */}
+  <div className="flex flex-wrap gap-2 mb-4 max-h-24 overflow-y-auto scrollbar-hide p-1">
+    {order.items.map((it, idx) => (
+      <span key={idx} className="bg-slate-50 text-slate-700 px-3 py-1.5 rounded-2xl text-[10px] font-black uppercase border border-slate-100 italic shrink-0">
+        {it}
+      </span>
+    ))}
+  </div>
+
+  {/* 🕒 EXPRESS ROUTE TIMER & DELAY ALERT */}
+  {order.orderType === 'Express-Route' && (
+    <div className={`mt-3 p-3 rounded-2xl border ${order.isDelayed ? 'bg-red-50 border-red-200 animate-pulse' : 'bg-blue-50 border-blue-100'}`}>
+      <div className="flex items-center gap-2">
+        <div className={`w-2 h-2 rounded-full ${order.isDelayed ? 'bg-red-500' : 'bg-blue-500'}`}></div>
+        <p className="text-[9px] font-black uppercase text-slate-500">
+          {order.isDelayed ? '⚠️ CUSTOMER DELAYED' : '🕒 EXPRESS START TIME'}
+        </p>
+      </div>
+      <p className="text-sm font-black text-slate-900 mt-1 tracking-tight">
+        {new Date(order.scheduledStartTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+      </p>
+    </div>
+  )}
+
+  {order.txnId && (
+    <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-100 mb-4 mt-4">
+      <p className="text-[8px] font-black text-emerald-400 uppercase">Transaction ID</p>
+      <p className="text-[10px] font-bold text-emerald-700 break-all">{order.txnId}</p>
+    </div>
+  )}
+</div>
 
                 {/* 🎯 అమౌంట్ మరియు యాక్షన్ బటన్స్ సెక్షన్ */}
                 <div className="pt-4 border-t border-slate-50 flex flex-col gap-4">
@@ -1311,61 +1323,81 @@ const dailyStats = {
                   </div>
 
         <div className="flex flex-col gap-2 w-full pt-2">
-                    {/* టాప్ యాక్షన్ రో */}
-                    <div className="flex gap-2 w-full">
-                      <button 
-                        onClick={() => updateOrderStatus(order._id, "Accepted")}
-                        className="flex-1 py-3 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-sm active:scale-95 transition-all"
-                      >
-                        Accept
-                      </button>
+  {/* టాప్ యాక్షన్ రో: Accepted & Preparing */}
+  <div className="flex gap-2 w-full">
+    <button 
+      onClick={() => updateOrderStatus(order._id, "Accepted")}
+      className="flex-1 py-3 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-sm active:scale-95 transition-all"
+    >
+      Accepted
+    </button>
 
-                      <button 
-                        onClick={() => updateOrderStatus(order._id, "Preparing")}
-                        className="flex-1 py-3 bg-orange-500 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-sm active:scale-95 transition-all"
-                      >
-                        Preparing
-                      </button>
-                    </div>
+    <button 
+      onClick={() => updateOrderStatus(order._id, "Preparing")}
+      className="flex-1 py-3 bg-orange-500 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-sm active:scale-95 transition-all"
+    >
+      Preparing
+    </button>
+  </div>
 
-                    {/* 🎯 రాజు మ్యాజిక్: కౌంటర్ దగ్గర ఫోన్‌పే/UPI లేదా క్యాష్ అని సెలెక్ట్ చేసుకునే క్విక్ గేట్‌వే (Only for counter orders) */}
-                    {!order.txnId && order.orderType === "Post-book" && (
-                      <div className="flex items-center justify-between bg-slate-50 p-2 rounded-xl border border-slate-200 gap-2 mt-1">
-                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider pl-1">Counter Pay Mode:</span>
-                        <select 
-                          id={`payMode-${order._id}`}
-                          className="p-1.5 bg-white border border-slate-300 rounded-lg text-[9px] font-black text-slate-700 uppercase outline-none focus:border-blue-500"
-                          defaultValue="CASH"
-                        >
-                          <option value="CASH">💵 CASH</option>
-                          <option value="ONLINE/UPI">📱 PHONEPE / UPI</option>
-                        </select>
-                      </div>
-                    )}
+{/* Online-Order aithe matrame Delivery status buttons chupinchali */}
+{order.orderType === 'Online-Order' && (
+  <div className="flex gap-2 w-full mt-1">
+    <button 
+      onClick={() => updateOrderStatus(order._id, "Out for Delivery")}
+      className="flex-1 py-3 bg-purple-600 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-sm active:scale-95 transition-all"
+    >
+      Out for Delivery 🛵
+    </button>
+    <button 
+      onClick={() => updateOrderStatus(order._id, "Delivered")}
+      className="flex-1 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-lg active:scale-95 transition-all"
+    >
+      Delivered ✅
+    </button>
+  </div>
+)}
 
-                    {/* బాటమ్ యాక్షన్ రో */}
-                    <div className="flex gap-2 w-full mt-1">
-                      <button 
-                        type="button"
-                        onClick={() => {
-                          // ડ્રોપડાઉન సెలెక్షన్ వాల్యూ ని రీడ్ చేసి ఫంక్షన్ కి పంపుతున్నాం రాజు!
-                          const selectEl = document.getElementById(`payMode-${order._id}`);
-                          const chosenMode = selectEl ? selectEl.value : "CASH";
-                          handlePrintBill(order, chosenMode);
-                        }}
-                        className="flex-1 py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5 border border-slate-950"
-                      >
-                        <span>Print Bill</span> <span>🖨️</span>
-                      </button>
+  {/* 🎯 రాజు మ్యాజిక్: కౌంటర్ దగ్గర ఫోన్‌పే/UPI లేదా క్యాష్ అని సెలెక్ట్ చేసుకునే క్విక్ గేట్‌వే (Only for counter orders) */}
+  {!order.txnId && order.orderType === "Post-book" && (
+    <div className="flex items-center justify-between bg-slate-50 p-2 rounded-xl border border-slate-200 gap-2 mt-1">
+      <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider pl-1">Counter Pay Mode:</span>
+      <select 
+        id={`payMode-${order._id}`}
+        className="p-1.5 bg-white border border-slate-300 rounded-lg text-[9px] font-black text-slate-700 uppercase outline-none focus:border-blue-500"
+        defaultValue="CASH"
+      >
+        <option value="CASH">💵 CASH</option>
+        <option value="ONLINE/UPI">📱 PHONEPE / UPI</option>
+      </select>
+    </div>
+  )}
 
-                      <button 
-                        onClick={() => handleServed(order)}
-                        className="flex-1 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-lg active:scale-95 transition-all"
-                      >
-                        Served ✅
-                      </button>
-                    </div>
-                  </div>
+  {/* బాటమ్ యాక్షన్ రో: Print Bill & Served */}
+  <div className="flex gap-2 w-full mt-1">
+    <button 
+      type="button"
+      onClick={() => {
+        const selectEl = document.getElementById(`payMode-${order._id}`);
+        const chosenMode = selectEl ? selectEl.value : "CASH";
+        handlePrintBill(order, chosenMode);
+      }}
+      className="flex-1 py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5 border border-slate-950"
+    >
+      <span>Print Bill</span> <span>🖨️</span>
+    </button>
+
+   {/* Kevalam Pre-book mariyu Post-book order types aithe matrame 'Served' button chupinchali */}
+{(order.orderType === 'Pre-book' || order.orderType === 'Post-book') && (
+  <button 
+    onClick={() => handleServed(order)}
+    className="flex-1 py-3 bg-emerald-700 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-lg active:scale-95 transition-all"
+  >
+    Served ✅
+  </button>
+)}
+  </div>
+</div>
                 </div>
               </div>
               

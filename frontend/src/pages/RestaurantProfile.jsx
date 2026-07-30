@@ -34,9 +34,13 @@ export default function RestaurantProfile() {
   const [deliveryType, setDeliveryType] = useState("Take Away");
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [orderData, setOrderData] = useState({ name: "", phone: "", txId: "", arrivalTime: "" ,peopleCount: 1});
+  const [showOnlineOrderModal, setShowOnlineOrderModal] = useState(false);
+  const [onlineOrderData, setOnlineOrderData] = useState({ name: "", phone: "", address: "" });
   const [showPayWarning, setShowPayWarning] = useState(false); 
   const [selectedTable, setSelectedTable] = useState(""); 
   const [showTracking, setShowTracking] = useState(false);
+  const [showMenuPopup, setShowMenuPopup] = useState(true);
+
   const [customerName, setCustomerName] = useState("");
   const [showInstantModal, setShowInstantModal] = useState(false); 
   const [showCallPopup, setShowCallPopup] = useState(false); // 🚀 Call instruction popup state
@@ -48,17 +52,11 @@ export default function RestaurantProfile() {
   const [isTrackingLoading, setIsTrackingLoading] = useState(false);
   const [recentOrderItems, setRecentOrderItems] = useState([]);
   const [restaurantOrders, setRestaurantOrders] = useState([]);
+  const [isClickLocked, setIsClickLocked] = useState(false);
   const availableSubCats = useMemo(() => {
   const defaultCats = ["Biryanis", "Starters", "Soups", "Noodles", "Gravys", "Rice", "Breads", "Sea Food", "Tiffins"];
-  // 🎯 రాజు చేంజ్: డ్రాప్‌డౌన్ వాల్యూ స్టోర్ చేయడానికి కొత్త స్టేట్
-
-  // 2. ప్రస్తుతం మెనూలో ఉన్న అన్ని కేటగిరీలను తీసుకుంటున్నాం (ఓనర్ కొత్తగా యాడ్ చేసినవి కూడా ఇందులో ఉంటాయి) 
   const catsInMenu = items.map(item => item.subCategory);
-  
-  // 3. డిఫాల్ట్ కేటగిరీలు + మెనూలో ఉన్న కేటగిరీలను కలిపి ఒక Set లో పెడుతున్నాం (దీనివల్ల డూప్లికేట్స్ రావు) 
   const combined = new Set([...defaultCats, ...catsInMenu]);
-  
-  // 4. సెట్ లో ఉన్న వాటిలో ఏ కేటగిరీకైనా కనీసం ఒక ఐటమ్ ఉంటేనే దాన్ని లిస్ట్‌లో చూపిస్తాం 
   return Array.from(combined).filter(cat => 
     catsInMenu.includes(cat)
   );
@@ -94,14 +92,9 @@ const handleDirectPay = () => {
   const upiId = owner?.upiID || owner?.phone;
   if (!upiId) return alert("Owner details not found!");
 
-  // కాపీ చేయడం
   navigator.clipboard.writeText(upiId);
   
-  // యూజర్ కి ఇన్స్ట్రక్షన్ ఇవ్వడం
   alert(`UPI ID Copied: ${upiId}\n\nSteps:\n1. Open PhonePe/GPay\n2. Go to 'Pay to UPI ID'\n3. Paste this ID and pay ₹${halfAmount}`);
-
-  // ఐఫోన్ లేదా ఆండ్రాయిడ్ అయితే యాప్ ఓపెన్ చేయడానికి ట్రై చేస్తుంది (కానీ లింక్ పని చేయకపోవచ్చు)
-  // కాబట్టి బెస్ట్ ఏంటంటే కాపీ చేసి యూజర్ ని మాన్యువల్ గా వెళ్ళమనడం.
 };
 const handleCallAction = () => {
   trackCallInterest();
@@ -110,7 +103,7 @@ const handleCallAction = () => {
 // 🚀 PRE-BOOK క్లిక్ ట్రాకింగ్
 const trackPreOrderClick = async () => {
   try {
-    const today = getUniversalDate(); // ✅ సున్నా లేని డేట్
+    const today = getUniversalDate(); 
     await api.put(`/owner/track-analytics/${id}`, { 
       action: "pre_order_click", 
       date: today 
@@ -121,7 +114,7 @@ const trackPreOrderClick = async () => {
 // 🚀 POST-BOOK (Instant) క్లిక్ ట్రాకింగ్
 const trackPostOrderClick = async () => {
   try {
-    const today = getUniversalDate(); // ✅ సున్నా లేని డేట్
+    const today = getUniversalDate(); 
     await api.put(`/owner/track-analytics/${id}`, { 
       action: "post_order_click", 
       date: today 
@@ -130,7 +123,7 @@ const trackPostOrderClick = async () => {
 };
 const proceedToCall = async () => {
   try {
-    const todayDate = getUniversalDate(); // ✅ సున్నా లేని డేట్
+    const todayDate = getUniversalDate();
     await api.put(`/owner/track-analytics/${id}`, { 
       action: "call_click", 
       date: todayDate 
@@ -146,7 +139,7 @@ const handleTrackOrder = async () => {
   if (!sdrId) return alert("Please enter a valid ID!");
   
   try {
-    setIsTrackingLoading(true); // గ్లోబల్ setLoading కాకుండా దీన్ని మాత్రమే వాడు
+    setIsTrackingLoading(true); 
     const res = await api.get(`/orders/status/${sdrId}`);
     setOrderStatus(res.data.status);
     setAssignedTable(res.data.tableNo); 
@@ -156,7 +149,7 @@ const handleTrackOrder = async () => {
   } catch (err) {
     alert("Order not found!");
   } finally {
-    setIsTrackingLoading(false); // ఇక్కడ కూడా దీన్నే ఆపు
+    setIsTrackingLoading(false);
   }
 };
 const openGoogleMaps = () => {
@@ -202,7 +195,7 @@ useEffect(() => {
       const month = String(d.getMonth() + 1).padStart(2, '0');
       const year = d.getFullYear();
       const todayDate = getUniversalDate();
-      // api.put(`/owner/track-analytics/${id}`, { action: "kitchen_entry", date: todayDate });
+      
 
       const [oRes, iRes,orderRes] = await Promise.all([
         api.get(`/owner/${id}`),
@@ -224,13 +217,28 @@ useEffect(() => {
   if (id) fetchData();
 }, [id]);
 
+  // const addToCart = (item) => {
+  //   trackFoodInterest(item.name); 
+  //   setCart(prev => ({
+  //     ...prev,
+  //     [item._id]: { ...item, qty: (prev[item._id]?.qty || 0) + 1 }
+  //   }));
+  // };
   const addToCart = (item) => {
+    if (isClickLocked) return; 
+    setIsClickLocked(true);
+
     trackFoodInterest(item.name); 
     setCart(prev => ({
       ...prev,
       [item._id]: { ...item, qty: (prev[item._id]?.qty || 0) + 1 }
     }));
+
+    setTimeout(() => {
+      setIsClickLocked(false);
+    }, 300);
   };
+
   const getUniversalDate = () => {
     const d = new Date();
     return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
@@ -301,8 +309,8 @@ const handleConfirmOrder = async () => {
       restaurantId: id,
       customerName: orderData.name,
       items: itemList,
-       subTotal: Number(itemsTotal.toFixed(2)), // 👈 ఇది కొత్తగా యాడ్ చెయ్
-        gstAmount: Number(gstAmount.toFixed(2)), // 👈 GST విడిగా పంపు
+       subTotal: Number(itemsTotal.toFixed(2)), 
+        gstAmount: Number(gstAmount.toFixed(2)), 
         extraCharges: Number(extraCharges),
       totalAmount: Number(finalAmount.toFixed(2)), // 🎯 ఇక్కడ కచ్చితంగా నంబర్ ఫార్మాట్ లో పంపు
       advancePaid: Number(halfAmount),            // 🎯 నంబర్ ఫార్మాట్ లో పంపు
@@ -342,6 +350,47 @@ const handleConfirmOrder = async () => {
   } catch (err) {
     console.error("Order Sync Error:", err);
     alert("Order Sync Failed! ❌");
+  } finally {
+    setLoading(false);
+  }
+};
+const handleDirectOnlineOrder = async () => {
+  if (!onlineOrderData.name || !onlineOrderData.phone || !onlineOrderData.address) {
+    return alert("Please fill Name, Phone and Address! 📝");
+  }
+
+  try {
+    setLoading(true);
+    const itemsTotal = Object.values(cart).reduce((acc, item) => acc + (item.price * item.qty), 0);
+    const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name}`);
+    const generatedSdrId = "SDR" + Math.floor(100 + Math.random() * 900);
+
+    const payload = {
+      restaurantId: id,
+      customerName: onlineOrderData.name,
+      customerPhone: onlineOrderData.phone,
+      customerAddress: onlineOrderData.address,
+      items: itemList,
+      subTotal: Number(itemsTotal.toFixed(2)),
+      totalAmount: Number(itemsTotal.toFixed(2)),
+      orderType: "Online-Order", // 👈 ఇది బ్యాకెండ్ స్కీమాలో ఉండాలి
+      sudaraId: generatedSdrId,
+      status: "Pending",
+      paymentMode: "PENDING"
+    };
+
+    const res = await api.post("/orders/add", payload);
+
+    if (res.data) {
+      alert(`ONLINE ORDER PLACED! ✅\nYour Tracking ID: ${generatedSdrId}`);
+      setPlacedOrderId(generatedSdrId);
+      setShowTracking(true);
+      setCart({});
+      setShowOnlineOrderModal(false);
+    }
+  } catch (err) {
+    console.error("Online Order Error:", err);
+    alert("Order Failed! ❌");
   } finally {
     setLoading(false);
   }
@@ -488,10 +537,9 @@ const handleInstantOrder = async () => {
   if (!customerName.trim() || !selectedTable) return alert("Please fill all details! 📝");
 
   try {
-    // 1. కార్ట్ లో ఉన్న ఐటమ్స్ ధరలు (ఓనర్ సెట్ చేసినవి)
+  
     const itemsTotal = Object.values(cart).reduce((acc, item) => acc + (item.price * item.qty), 0);
-    
-    // 2. ఓనర్ సెట్ చేసిన పర్సంటేజ్ & ఎక్స్‌ట్రా చార్జెస్ (owner ఆబ్జెక్ట్ నుండి)
+
     const gstPercent = Number(owner?.gstPercentage) || 0; 
     const extra = Number(owner?.extraCharges) || 0;
     
@@ -505,8 +553,7 @@ const handleInstantOrder = async () => {
       customerName: customerName,
       tableNo: selectedTable,
       items: itemList,
-      
-      // ఓనర్ డేటా ప్రకారం డైనమిక్ గా వెళ్తాయి
+
       totalAmount: Number(finalTotal.toFixed(2)),
       subTotal: Number(itemsTotal.toFixed(2)),
       gstAmount: Number(gstAmount.toFixed(2)),
@@ -537,6 +584,7 @@ const handleInstantOrder = async () => {
     alert("Order Failed! ❌");
   }
 };
+
  const searchFiltered = useMemo(() => {
   return items.filter(item => {
     // 'All' అయితే అన్ని ఐటమ్స్ చూపిస్తుంది
@@ -556,7 +604,7 @@ const handleInstantOrder = async () => {
     </div>
   );
 }
-// 🚀 రాజు అడ్మిన్ కంట్రోల్ రూల్: ఓనర్ కి యాక్సెస్ లేకపోతే మెయిన్ పేజీని అస్సలు ఓపెన్ చేయనివ్వద్దు!
+
 if (!owner || !owner.isApproved) {
   return (
     <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-950 text-white p-6 text-center select-none animate-fade-in">
@@ -783,6 +831,7 @@ if (!owner || !owner.isApproved) {
     {/* స్టేటస్ రిజల్ట్ ఇక్కడ చూపిస్తాం */}
     {orderStatus && (
       <div className="mt-4 p-4 bg-blue-50 rounded-2xl border border-blue-100 text-center">
+        
         <p className="text-[9px] font-black text-blue-400 uppercase">Current Status</p>
         <p className="text-lg font-black text-blue-600 uppercase italic mt-1 animate-pulse">
           {orderStatus}
@@ -958,103 +1007,157 @@ if (!owner || !owner.isApproved) {
 <div className="order-1 lg:order-2 lg:col-span-4">
   <div ref={orderSectionRef} className="bg-white p-4 rounded-2xl lg:sticky lg:top-32 shadow-lg border border-slate-100 scroll-mt-24">
     
-    {/* 🎯 రాజు మాస్టర్ ลాక్ కండిషన్ */}
-    {owner?.planType === "premium" ? (
-      <>
-        {/* 🚀 1. Order Summary (Premium Only) */}
-        {owner?.name !== "Amaravathi Hotel" && owner?.name !== "Ruchi Hotel" && owner?.name !== "RR ROYAL RESTAURANT " && (
-          <div className="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-100">
-            <span className="text-[9px] font-black uppercase text-blue-600 italic tracking-widest">Order Summary</span>
-            <div className="space-y-1.5 my-3 max-h-40 overflow-y-auto scrollbar-hide">
-              {Object.values(cart).map((i) => (
-                <div key={i._id || i.name} className="flex justify-between text-[10px] font-bold italic text-slate-600">
-                  <span>{i.qty} x {i.name}</span>
-                  <span>₹{i.price * i.qty}</span>
-                </div>
-              ))}
+{/* 🎯 రాజు మాస్టర్ లాక్ కండిషన్ */}
+{owner?.planType === "premium" ? (
+  <>
+    {/* 🚀 1. Order Summary (Premium Only) - కేవలం ఐటమ్స్ సెలెక్ట్ చేస్తేనే డిస్ప్లే అవుతుంది */}
+    {Object.values(cart).length > 0 && (
+      <div className="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-100">
+        <span className="text-[9px] font-black uppercase text-blue-600 italic tracking-widest">Order Summary</span>
+        <div className="space-y-1.5 my-3 max-h-40 overflow-y-auto scrollbar-hide">
+          {Object.values(cart).map((i) => (
+            <div key={i._id || i.name} className="flex justify-between text-[10px] font-bold italic text-slate-600">
+              <span>{i.qty} x {i.name}</span>
+              <span>₹{i.price * i.qty}</span>
             </div>
-            <div className="border-t border-blue-100 pt-3 space-y-1">
-  {/* ఆర్డర్ సమ్మరీ లో ఈ విధంగా మాత్రమే ఉండాలి */}
-<div className="flex justify-between text-[10px] font-bold text-slate-500">
-  <span>Subtotal:</span> <span>₹{calculateTotal.itemsTotal.toFixed(2)}</span>
-</div>
-<div className="flex justify-between text-[10px] font-bold text-slate-500">
-  <span>GST ({owner?.gstPercentage}%):</span> <span>₹{calculateTotal.gstAmount.toFixed(2)}</span>
-</div>
-<div className="flex justify-between text-[10px] font-bold text-slate-500">
-  <span>Extra:</span> <span>₹{calculateTotal.extraCharges.toFixed(2)}</span>
-</div>
-<div className="border-t border-blue-100 pt-3 flex justify-between text-sm font-black italic text-blue-600">
-  <span>Pay Total:</span> <span>₹{calculateTotal.finalTotal.toFixed(2)}</span>
-</div>
-</div>
+          ))}
+        </div>
+        <div className="border-t border-blue-100 pt-3 space-y-1">
+          {/* ఆర్డర్ సమ్మరీ లో ఈ విధంగా మాత్రమే ఉండాలి */}
+          <div className="flex justify-between text-[10px] font-bold text-slate-500">
+            <span>Subtotal:</span> <span>₹{calculateTotal.itemsTotal.toFixed(2)}</span>
           </div>
-        )}
-
-        {/* 🚀 ACTION BUTTONS SECTION (Premium Only) */}
-        <div className="flex flex-col gap-2.5">
-          {owner?.tableCount > 0 && (
-            <button  
-              onClick={() => {
-                if (totalAmount > 0) { trackPostOrderClick(); setShowInstantModal(true); }  
-                else { alert("Select items first! 🍲"); }
-              }}
-              className={`w-full py-4 rounded-xl font-black uppercase text-[10px] flex items-center justify-center gap-2 shadow-lg transition-all active:scale-95 border-b-4 ${totalAmount > 0 ? 'bg-emerald-600 text-white border-emerald-800' : 'bg-slate-100 text-slate-300 border-slate-200'}`}
-            >
-              <MessageSquare className="w-4 h-4" /> Post-Book (At Restaurant)
-            </button>
-          )}
-
-  {owner?.isPreBookEnabled && (
-  <button  
-    onClick={() => {
-      if (totalAmount > 0) { 
-        trackPreOrderClick(); 
-        setShowPayWarning(true); // 🚀 కేవలం వార్నింగ్ మోడల్ మాత్రమే ఓపెన్ అవ్వాలి
-        // setShowOrderForm(true); // ❌ దీన్ని తీసేయ్! ఇది ఇక్కడ ఉండకూడదు.
-      } else { 
-        alert("Please select food items first! 🥘"); 
-      }
-    }}
-    className={`w-full py-3.5 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all ${
-      totalAmount > 0 
-        ? 'bg-slate-900 text-white shadow-lg active:scale-95' 
-        : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-    }`}
-  >
-    {totalAmount > 0 ? "Pre-Book & Pay Advance" : "Select Items to Pre-Book"}
-  </button>
-)}
-          <button  
-            onClick={handleCallAction}  
-            className="w-full py-3.5 rounded-xl font-black uppercase text-[10px] bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all"
-          >
-            <PhoneCall className="w-4 h-4" /> Call to Owner & order
-          </button>
+          <div className="flex justify-between text-[10px] font-bold text-slate-500">
+            <span>GST ({owner?.gstPercentage}%):</span> <span>₹{calculateTotal.gstAmount.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between text-[10px] font-bold text-slate-500">
+            <span>Extra:</span> <span>₹{calculateTotal.extraCharges.toFixed(2)}</span>
+          </div>
+          <div className="border-t border-blue-100 pt-3 flex justify-between text-sm font-black italic text-blue-600">
+            <span>Pay Total:</span> <span>₹{calculateTotal.finalTotal.toFixed(2)}</span>
+          </div>
         </div>
-      </>
-    ) : (
-      /* 🟢 రాజు బేసిక్ ప్లాన్ డిజైన్: ఆన్లైన్ ఆర్డర్స్ కనిపించవు, కేవలం కాల్ అండ్ డైరెక్ట్ ఆర్డర్ メసేజ్! */
-      <div className="text-center py-6">
-        <div className="bg-amber-50 text-amber-800 p-5 rounded-[2rem] border border-amber-200/60 mb-5">
-          <UtensilsCrossed className="w-8 h-8 text-amber-600 mx-auto mb-3 animate-pulse" />
-          <p className="text-[11px] font-black uppercase tracking-wider leading-relaxed">
-            Digital Menu Active ✅
-          </p>
-          <p className="text-[9px] font-bold text-slate-500 uppercase mt-2 leading-relaxed">
-            Online ordering via phone is restricted for this node. Please look at the prices and order directly to server.
-          </p>
-        </div>
-         
-        <button  
-          onClick={handleCallAction}  
-          className="w-full py-4 rounded-xl font-black uppercase text-[10px] bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all"
-        >
-          <PhoneCall className="w-4 h-4" /> Call for Inquiries
-        </button>
       </div>
     )}
 
+    <div className="flex flex-col gap-2.5">
+      
+      {/* 1. Post-Book (At Restaurant) - 🍊 Soft Decent Amber/Orange */}
+      {owner?.tableCount > 0 && (
+        <motion.button  
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => {
+            if (totalAmount > 0) { trackPostOrderClick(); setShowInstantModal(true); }  
+            else { alert("Select items first! 🍲"); }
+          }}
+          className={`w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] flex items-center justify-between transition-all border ${
+            totalAmount > 0 
+              ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-200/80 shadow-sm'  
+              : 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 bg-amber-100/60 rounded-lg">
+              <MessageSquare className="w-3.5 h-3.5 text-amber-700" />
+            </div>
+            <span>Post-Book (At Restaurant)</span>
+          </div>
+          <span className="text-[9px] font-medium text-amber-700 bg-amber-100/50 px-2 py-0.5 rounded-md">Dine-in</span>
+        </motion.button>
+      )}
+
+      {/* 2. Order Online (Direct) - 🍃 Soft Decent Emerald/Green */}
+      <motion.button  
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={() => {
+          if (totalAmount > 0) {  
+            setShowOnlineOrderModal(true); 
+          } else {  
+            alert("Please select items first! 🥘");  
+          }
+        }}
+        className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200/80 shadow-sm flex items-center justify-between transition-all"
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="p-1.5 bg-emerald-100/60 rounded-lg">
+            <ShoppingBag className="w-3.5 h-3.5 text-emerald-700" />
+          </div>
+          <span>Order Online (Direct)</span>
+        </div>
+        <span className="text-[9px] font-medium text-emerald-700 bg-emerald-100/50 px-2 py-0.5 rounded-md">Instant</span>
+      </motion.button>
+
+      {/* 3. Pre-Book & Pay Advance - 🍇 Soft Decent Purple */}
+      {owner?.isPreBookEnabled && (
+        <motion.button  
+          whileHover={totalAmount > 0 ? { scale: 1.01 } : {}}
+          whileTap={totalAmount > 0 ? { scale: 0.98 } : {}}
+          onClick={() => {
+            if (totalAmount > 0) {  
+              trackPreOrderClick();  
+              setShowPayWarning(true); 
+            } else {  
+              alert("Select items first! 🥘");  
+            }
+          }}
+          className={`w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] flex items-center justify-between transition-all border ${
+            totalAmount > 0  
+              ? 'bg-purple-50 hover:bg-purple-100 text-purple-900 border-purple-200/80 shadow-sm'  
+              : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 bg-purple-100/60 rounded-lg">
+              <CreditCard className="w-3.5 h-3.5 text-purple-700" />
+            </div>
+            <span>{totalAmount > 0 ? "Pre-Book & Pay Advance" : "Select Items to Pre-Book"}</span>
+          </div>
+          {totalAmount > 0 && <span className="text-[9px] font-medium text-purple-700 bg-purple-100/50 px-2 py-0.5 rounded-md">Secure</span>}
+        </motion.button>
+      )}
+
+      {/* 4. Call to Owner - 🔵 Professional Trust Blue */}
+      <motion.button  
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={handleCallAction}  
+        className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200/80 shadow-sm flex items-center justify-between transition-all"
+      >
+        <div className="flex items-center gap-2.5">
+          <div className="p-1.5 bg-blue-100/60 rounded-lg">
+            <PhoneCall className="w-3.5 h-3.5 text-blue-700" />
+          </div>
+          <span>Call to Owner</span>
+        </div>
+        <span className="text-[9px] font-medium text-blue-700 bg-blue-100/50 px-2 py-0.5 rounded-md">Direct</span>
+      </motion.button>
+
+    </div>
+
+  </>
+) : (
+  /* 🟢 రాజు బేసిక్ ప్లాన్ డిజైన్: ఆన్లైన్ ఆర్డర్స్ కనిపించవు, కేవలం కాల్ అండ్ డైరెక్ట్ ఆర్డర్ మెసేజ్! */
+  <div className="text-center py-6">
+    <div className="bg-amber-50 text-amber-800 p-5 rounded-[2rem] border border-amber-200/60 mb-5">
+      <UtensilsCrossed className="w-8 h-8 text-amber-600 mx-auto mb-3 animate-pulse" />
+      <p className="text-[11px] font-black uppercase tracking-wider leading-relaxed">
+        Digital Menu Active ✅
+      </p>
+      <p className="text-[9px] font-bold text-slate-500 uppercase mt-2 leading-relaxed">
+        Online ordering via phone is restricted for this node. Please look at the prices and order directly to server.
+      </p>
+    </div>
+     
+    <button  
+      onClick={handleCallAction}  
+      className="w-full py-4 rounded-xl font-black uppercase text-[10px] bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all"
+    >
+      <PhoneCall className="w-4 h-4" /> Call for Inquiries
+    </button>
+  </div>
+)}
   </div>
 </div>
 
@@ -1075,7 +1178,40 @@ if (!owner || !owner.isApproved) {
           </motion.div>
         )}
       </AnimatePresence>
-
+<AnimatePresence>
+  {showMenuPopup && (
+    <motion.div 
+      initial={{ opacity: 0, y: 50 }} 
+      animate={{ opacity: 1, y: 0 }} 
+      exit={{ opacity: 0, y: 50 }}
+      className="fixed bottom-24 right-4 z-[200] bg-slate-900 text-white p-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/20"
+    >
+      <div>
+        <p className="text-xs font-black uppercase italic">Hungry? 🍔</p>
+        <p className="text-[9px] text-slate-400 uppercase">Check out our dishes</p>
+      </div>
+      <button  
+  onClick={() => {
+    setShowMenuPopup(false);
+    
+    {/* 🎯 నేరుగా ఫుడ్ ఐటమ్స్ గ్రిడ్ / మెనూ సెక్షన్ దగ్గరకు స్మూత్‌గా స్క్రోల్ అవ్వడానికి */}
+    const menuGridElement = document.querySelector('.grid.grid-cols-1.sm\\:grid-cols-2'); 
+    if (menuGridElement) {
+      menuGridElement.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      window.scrollTo({ top: 500, behavior: "smooth" });
+    }
+  }}
+  className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-xl text-[10px] font-black uppercase italic tracking-wider shadow-lg active:scale-95 transition-all"
+>
+  Show Menu 👇
+</button>
+      <button onClick={() => setShowMenuPopup(false)} className="text-slate-400 hover:text-white p-1">
+        <X className="w-4 h-4" />
+      </button>
+    </motion.div>
+  )}
+</AnimatePresence>
 {/* 💎 Ultra-Premium & Responsive Checkout Modal */}
 <AnimatePresence>
   {showOrderForm && (
@@ -1295,7 +1431,6 @@ if (!owner || !owner.isApproved) {
                     <PhoneCall className="w-4 h-4" /> Call Owner
                   </button>
                 </div>
-
                 <div className="w-full h-px bg-slate-100 my-6 relative">
                   <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-3 text-[8px] sm:text-[10px] font-black text-slate-300 uppercase italic">And Then</span>
                 </div>
@@ -1436,16 +1571,17 @@ if (!owner || !owner.isApproved) {
           {/* 📝 Details Form - Icon Integrated */}
           <div className="space-y-5">
             {/* Name Input */}
-            <div className="relative group">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
-              <input 
-                type="text" 
-                placeholder="Enter Your Name" 
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-xs font-black outline-none focus:bg-white focus:border-blue-500 transition-all shadow-inner"
-              />
-            </div>
+            {/* 📍 Delivery Address Input */}
+<div className="relative group">
+  <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+  <input 
+    type="text" 
+    placeholder="Hostel / Room / Delivery Address" 
+    value={orderData.address} 
+    onChange={(e) => setOrderData({...orderData, address: e.target.value})} 
+    className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-[11px] font-bold outline-none focus:bg-white focus:border-blue-500 transition-all shadow-inner" 
+  />
+</div>
 
             {/* Table Selection */}
 {/* Table Selection - Custom Smart Dropdown */}
@@ -1495,6 +1631,61 @@ if (!owner || !owner.isApproved) {
           </div>
         </div>
       </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
+{/* 🚀 ONLINE ORDER MODAL (Strictly for Direct Online Ordering) */}
+<AnimatePresence>
+  {showOnlineOrderModal && (
+    <motion.div 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      exit={{ opacity: 0 }} 
+      className="fixed inset-0 z-[300] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4"
+    >
+      <div className="bg-white w-full max-w-[400px] rounded-[2.5rem] p-6 shadow-2xl relative">
+        <h3 className="text-xl font-black uppercase italic mb-1 text-slate-900">Direct Online Order</h3>
+        <p className="text-[9px] font-bold text-slate-400 uppercase mb-4 tracking-wider">No advance payment required</p>
+        
+        <div className="space-y-4">
+          <input 
+            type="text" 
+            placeholder="Full Name" 
+            value={onlineOrderData.name} 
+            onChange={(e) => setOnlineOrderData({...onlineOrderData, name: e.target.value})} 
+            className="w-full bg-slate-50 border-2 border-slate-100 p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-blue-500"
+          />
+          <input 
+            type="text" 
+            placeholder="Mobile Number" 
+            value={onlineOrderData.phone} 
+            onChange={(e) => setOnlineOrderData({...onlineOrderData, phone: e.target.value})} 
+            className="w-full bg-slate-50 border-2 border-slate-100 p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-blue-500"
+          />
+          <input 
+            type="text" 
+            placeholder="Room / Hostel Address" 
+            value={onlineOrderData.address} 
+            onChange={(e) => setOnlineOrderData({...onlineOrderData, address: e.target.value})} 
+            className="w-full bg-slate-50 border-2 border-slate-100 p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-blue-500"
+          />
+
+          <button 
+            onClick={handleDirectOnlineOrder}
+            className="w-full py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl transition-all active:scale-95"
+          >
+            Submit Order to Owner 🚀
+          </button>
+
+          <button 
+            type="button"
+            onClick={() => setShowOnlineOrderModal(false)}
+            className="w-full text-center text-[10px] font-black text-slate-400 hover:text-red-500 uppercase pt-1 tracking-widest"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
     </motion.div>
   )}
 </AnimatePresence>
