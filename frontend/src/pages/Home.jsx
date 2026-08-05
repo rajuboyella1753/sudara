@@ -29,18 +29,22 @@ export default function Home() {
   const [selectedFoodType, setSelectedFoodType] = useState("All");
   const [isTravelMode, setIsTravelMode] = useState(false);
   const [travelDuration, setTravelDuration] = useState(0);
-
+  const [selectedHubType, setSelectedHubType] = useState("Restaurant");
   // 🚀 RAJU NEW STATE: Route-Foodi Planner
   const [source, setSource] = useState("");
   const [destination, setDestination] = useState("");
 
 const availableDistricts = useMemo(() => {
-  if (selectedState === "All") return dbDistricts;
-  const districtsInState = restaurants
-    .filter(r => r.state === selectedState)
-    .map(r => r.district);
-  return [...new Set(districtsInState)].filter(Boolean);
-}, [selectedState, dbDistricts, restaurants]);
+    let filtered = restaurants;
+    if (selectedHubType !== "All") {
+      filtered = filtered.filter(r => r.category?.toLowerCase() === selectedHubType.toLowerCase());
+    }
+    if (selectedState !== "All") {
+      filtered = filtered.filter(r => r.state?.toLowerCase() === selectedState.toLowerCase());
+    }
+    const districts = filtered.map(r => r.district).filter(d => d && d !== "Other" && d !== "Not Specified");
+    return [...new Set(districts)];
+  }, [selectedState, selectedHubType, restaurants]);
 
   const navigate = useNavigate();
 
@@ -53,7 +57,8 @@ const fetchOwners = async () => {
       ...res,
       state: res.state ? res.state.trim() : "Other",
       district: res.district ? res.district.trim() : "Other",
-      foodType: res.foodType ? res.foodType.trim() : "Both" 
+      foodType: res.foodType ? res.foodType.trim() : "Both",
+      category: res.category ? res.category.trim() : "Restaurant"
     }));
 
     setRestaurants(sanitizedData); 
@@ -109,7 +114,6 @@ const fetchOwners = async () => {
       localStorage.setItem("app_version", APP_VERSION);
       window.location.reload(true); 
     }
-
     setLoading(true);
     fetchOwners();
     getLocation();
@@ -123,9 +127,18 @@ useEffect(() => {
     return;
   }
 
+  // 🛑 ఇక్కడ `result` డిఫైన్ చేయాలి (ఇదే మిస్ అయింది!)
   let result = restaurants;
 
-  // 2. 🚀 రాజు కొత్త రూట్ ప్లానర్ లాజిక్ (Highway Mode)
+  // 2. Hub Type Filter (Restaurant, Electronics, Clothing, etc.)
+  if (selectedHubType !== "All") {
+    result = result.filter(r => {
+      const cat = r.category?.toLowerCase() || "";
+      return cat === selectedHubType.toLowerCase();
+    });
+  }
+
+  // 3. Highway Mode / Travel Mode Filter
   if (isTravelMode && destination.trim() !== "") {
     const destQuery = destination.trim().toLowerCase(); 
     const srcQuery = source.trim().toLowerCase();
@@ -133,32 +146,22 @@ useEffect(() => {
     result = result.filter(r => {
         const dist = r.district?.toLowerCase() || "";
         const addr = r.address?.toLowerCase() || "";
-        const stateName = r.state?.toLowerCase() || "";
-        
-        // ఇది రూట్‌లో ఉన్న డిస్ట్రిక్ట్, అడ్రస్ లేదా స్టేట్ మ్యాచ్ అయినా హోటల్స్ చూపిస్తుంది
-        return dist.includes(destQuery) || 
-               dist.includes(srcQuery) ||
-               addr.includes(destQuery) ||
-               addr.includes(srcQuery);
+        return dist.includes(destQuery) || dist.includes(srcQuery) || addr.includes(destQuery) || addr.includes(srcQuery);
     });
   }
 
-  // 3. 🚀 ఇక్కడ ట్విస్ట్: రూట్ మోడ్ ఆఫ్‌లో ఉన్నప్పుడు మాత్రమే స్టేట్, డిస్ట్రిక్ట్ ఫిల్టర్లు పని చేయాలి!
+  // 4. State & District Filter
   if (!isTravelMode) {
     if (selectedState !== "All") {
-      result = result.filter(r => 
-        r.state && r.state.toLowerCase() === selectedState.toLowerCase()
-      );
+      result = result.filter(r => r.state && r.state.toLowerCase() === selectedState.toLowerCase());
     }
 
     if (selectedDistrict !== "Select" && selectedDistrict !== "All") {
-      result = result.filter(r => 
-        r.district && r.district.toLowerCase() === selectedDistrict.toLowerCase()
-      );
+      result = result.filter(r => r.district && r.district.toLowerCase() === selectedDistrict.toLowerCase());
     }
   }
 
-  // 4. ఫుడ్ టైప్ ఫిల్టర్ (వెజ్ / నాన్-వెజ్) - ఇది రెండింటికీ కామన్
+  // 5. Food Type Filter
   if (selectedFoodType !== "All") {
     result = result.filter(r => {
       const resType = r.foodType;
@@ -169,49 +172,14 @@ useEffect(() => {
     });
   }
 
-  // 5. సెర్చ్ బార్ లాజిక్
+  // 6. Search Bar Filter
   if (searchTerm.trim() !== "") {
     const query = searchTerm.toLowerCase();
     result = result.filter(r => r.name.toLowerCase().includes(query));
   }
 
-  // 6. 🚀 రాజు అల్టిమేట్ హైబ్రిడ్ సార్టింగ్ (Current Location + Route Match)
-  if (isTravelMode) {
-    result = [...result].sort((a, b) => {
-      // ఒకవేళ యూజర్ GPS లొకేషన్ ఆన్ లో ఉంటే, కరెంట్ లొకేషన్ కి దగ్గర్లో ఉన్న వాటికి ఫస్ట్ ప్రయారిటీ ఇవ్వు
-      if (userCoords && a.latitude && b.latitude) {
-        const distToUserA = getDistanceRaw(userCoords.lat, userCoords.lng, a.latitude, a.longitude);
-        const distToUserB = getDistanceRaw(userCoords.lat, userCoords.lng, b.latitude, b.longitude);
-        
-        // రెండు హోటల్స్ మధ్య దూరం డిఫరెన్స్ ఉంటే, దగ్గరగా ఉన్నదాన్ని పైకి పంపు
-        return distToUserA - distToUserB;
-      }
-
-      // ఒకవేళ GPS సిగ్నల్ లేకపోతే... నార్మల్ గా సోర్స్ సిటీ బట్టి ఆర్డర్ అవుతుంది
-      const srcQuery = source.trim().toLowerCase();
-      const aAddr = a.address?.toLowerCase() || "";
-      const aDist = a.district?.toLowerCase() || "";
-      const bAddr = b.address?.toLowerCase() || "";
-      const bDist = b.district?.toLowerCase() || "";
-
-      const aIsSource = aAddr.includes(srcQuery) || aDist.includes(srcQuery);
-      const bIsSource = bAddr.includes(srcQuery) || bDist.includes(srcQuery);
-
-      if (aIsSource && !bIsSource) return -1;
-      if (!aIsSource && bIsSource) return 1;
-      return 0;
-    });
-  } else if (userCoords) {
-    // నార్మల్ మోడ్ లో కరెంట్ లొకేషన్ సార్టింగ్ యథావిధిగా పనిచేస్తుంది
-    result = [...result].sort((a, b) => {
-      const distA = a.latitude ? getDistanceRaw(userCoords.lat, userCoords.lng, a.latitude, a.longitude) : 999;
-      const distB = b.latitude ? getDistanceRaw(userCoords.lat, userCoords.lng, b.latitude, b.longitude) : 999;
-      return distA - distB;
-    });
-  }
-
   setFilteredRestaurants(result);
-}, [searchTerm, restaurants, userCoords, selectedState, selectedDistrict, selectedFoodType, isTravelMode, source, destination]);
+}, [searchTerm, restaurants, userCoords, selectedState, selectedDistrict, selectedFoodType, selectedHubType, isTravelMode, source, destination]);
 
   const getDistance = (lat1, lon1, lat2, lon2) => {
     if (!lat1 || !lon1 || !lat2 || !lon2) return "---";
@@ -265,120 +233,165 @@ useEffect(() => {
         })()}
       </AnimatePresence>
 
-      <section className="relative pt-24 pb-12 md:pt-40 md:pb-24 overflow-hidden">
-        <div className="absolute top-20 -left-20 w-64 h-64 bg-blue-400/10 blur-[100px] rounded-full"></div>
-        <div className="absolute top-40 -right-20 w-64 h-64 bg-orange-400/10 blur-[100px] rounded-full"></div>
+    <section className="relative pt-20 pb-10 md:pt-32 md:pb-20 overflow-hidden">
+  <div className="absolute top-20 -left-20 w-64 h-64 bg-blue-400/10 blur-[100px] rounded-full pointer-events-none"></div>
+  <div className="absolute top-40 -right-20 w-64 h-64 bg-orange-400/10 blur-[100px] rounded-full pointer-events-none"></div>
 
-        <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <div className="flex flex-col items-center text-center mb-16">
-            <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-5xl md:text-8xl font-black italic tracking-tighter mb-4 uppercase leading-none drop-shadow-sm">
-              <span className="text-blue-600">SUDARA</span> <span className="text-orange-600">HUB</span>
-            </motion.h1>
-            <div className="h-2 w-32 bg-gradient-to-r from-blue-600 via-blue-500 to-orange-500 rounded-full mb-6"></div>
-            <p className="text-slate-400 font-bold uppercase tracking-[0.4em] text-[9px] md:text-xs">Integrated Dining Network Protocol</p>
-          </div>
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
+    {/* Heading */}
+    <div className="flex flex-col items-center text-center mb-10 md:mb-14">
+      <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-4xl sm:text-6xl md:text-8xl font-black italic tracking-tighter mb-3 uppercase leading-none drop-shadow-sm">
+        <span className="text-blue-600">SUDARA</span> <span className="text-orange-600">HUB</span>
+      </motion.h1>
+      <div className="h-2 w-24 sm:w-32 bg-gradient-to-r from-blue-600 via-blue-500 to-orange-500 rounded-full mb-4"></div>
+      <p className="text-slate-400 font-bold uppercase tracking-[0.3em] sm:tracking-[0.4em] text-[8px] sm:text-[10px] md:text-xs">Integrated Network Protocol</p>
+    </div>
 
-          <div className="max-w-6xl mx-auto flex flex-col gap-6">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-              <div className="md:col-span-6 relative group">
-                <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-blue-600 transition-all" />
-                <input type="text" placeholder="Search restaurant name..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-white border border-slate-200 py-5 pl-14 pr-6 rounded-[2rem] text-sm font-bold outline-none focus:border-blue-400 transition-all shadow-xl shadow-blue-900/5 placeholder:text-slate-300" />
-              </div>
+    <div className="max-w-6xl mx-auto flex flex-col gap-5">
+      
+      {/* 🚀 Hub Type Responsive Tabs Bar */}
+      <div className="w-full">
+  <div className="relative group">
+    <Compass className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-blue-600 pointer-events-none" />
+    <select 
+      value={selectedHubType} 
+      onChange={(e) => {
+        setSelectedHubType(e.target.value);
+        setSelectedState("All");      
+        setSelectedDistrict("Select"); 
+      }}
+      className="w-full bg-white border border-slate-200 py-4 sm:py-5 pl-12 sm:pl-14 pr-10 rounded-[1.75rem] sm:rounded-[2rem] text-[10px] sm:text-xs font-black uppercase tracking-widest outline-none appearance-none cursor-pointer focus:border-blue-400 shadow-xl shadow-blue-900/5 text-slate-700"
+    >
+      <option value="All">All Categories</option>
+      <option value="Restaurant">Restaurant</option>
+      <option value="Electronics">Electronics</option>
+      <option value="Clothing">Clothing</option>
+      <option value="Grocery">Grocery</option>
+      <option value="Services">Services</option>
+      <option value="General">General</option>
+    </select>
+    <ChevronDown className="absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+  </div>
+</div>
 
-              <div className="md:col-span-3 relative group">
-                <Compass className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-orange-500" />
-                <select 
-                value={selectedState} 
-                onChange={(e) => {
-                  setSelectedState(e.target.value);
-                  setSelectedDistrict("All"); 
-                }}
-                className="w-full bg-white border border-slate-200 py-5 pl-14 pr-10 rounded-[2rem] text-[10px] font-black uppercase tracking-widest outline-none appearance-none cursor-pointer focus:border-orange-400 shadow-xl shadow-orange-900/5 text-slate-600"
-              >
-                  <option value="All">All States</option>
-                  {dbStates.map((s, idx) => <option key={idx} value={s}>{s}</option>)}
-                </select>
-                <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              </div>
+      {/* Main Search & Dropdown Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 sm:gap-4">
+        
+        {/* Search Bar */}
+        
 
-              <div className="md:col-span-3 relative group">
-                <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-600" />
-                 <select value={selectedDistrict} onChange={(e) => setSelectedDistrict(e.target.value)} className="w-full bg-white border border-slate-200 py-5 pl-14 pr-10 rounded-[2rem] text-[10px] font-black uppercase tracking-widest outline-none appearance-none cursor-pointer focus:border-blue-400 shadow-xl shadow-blue-900/5 text-slate-600">
-                  <option value="Select">❌ Please Select District</option>
-                  <option value="All">All Districts</option>
-                  {availableDistricts.map((d, idx) => (
-                    <option key={idx} value={d}>{d}</option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 w-full mt-6">
-                <div className="flex gap-3 w-full sm:w-auto">
-                    {["Veg", "Non-Veg"].map((type) => (
-                        <button 
-                        key={type} 
-                        onClick={() => setSelectedFoodType(selectedFoodType === type ? "All" : type)}
-                        className={`flex-1 sm:min-w-[150px] px-6 py-4 rounded-xl sm:rounded-[1.5rem] text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all duration-500 border-2 active:scale-95 ${selectedFoodType === type ? "bg-blue-600 text-white border-blue-500 shadow-xl scale-105" : "bg-white text-slate-600 border-slate-100 hover:border-orange-300"}`}
-                        >
-                        <div className="flex items-center justify-center gap-2">
-                            <div className={`w-1.5 h-1.5 rounded-full ${type === 'Veg' ? 'bg-emerald-500' : 'bg-rose-500'} ${selectedFoodType === type ? 'animate-pulse' : ''}`} />
-                            <span className="whitespace-nowrap">{type}</span>
-                        </div>
-                        </button>
-                    ))}
-                </div>
-
-                {/* 🚀 RAJU NEW FEATURE: Route Mode Toggle Button */}
-                <button 
-                onClick={() => setIsTravelMode(!isTravelMode)}
-                className={`w-full sm:w-auto px-8 py-4 rounded-xl sm:rounded-[1.5rem] font-black uppercase text-[10px] sm:text-xs tracking-widest transition-all duration-500 border-2 flex items-center justify-center gap-3 active:scale-95 ${isTravelMode ? "bg-orange-600 text-white border-orange-500 shadow-xl" : "bg-white text-slate-600 border-slate-100 hover:border-blue-400"}`}
-                >
-                <Compass className={`w-5 h-5 ${isTravelMode ? 'animate-spin' : ''}`} />
-                <span>{isTravelMode ? "Highway Mode Active" : "Route-Foodi Planner"}</span>
-                </button>
-            </div>
-
-            {/* 🚀 RAJU NEW FEATURE: Responsive Route Planner Input Box */}
-            <AnimatePresence>
-                {isTravelMode && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-4 bg-white p-6 rounded-[2.5rem] border-2 border-orange-100 shadow-2xl shadow-orange-900/5">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="relative">
-                            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
-                            <input 
-                                type="text" 
-                                placeholder="Starting From (e.g., Khammam)" 
-                                value={source}
-                                onChange={(e) => setSource(e.target.value)}
-                                className="w-full bg-slate-50 border border-slate-100 py-4 pl-12 pr-4 rounded-2xl text-xs font-bold outline-none focus:border-blue-400 transition-all"
-                            />
-                        </div>
-                        <div className="relative">
-                            <Compass className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-500" />
-                            <input 
-                                type="text" 
-                                placeholder="Going To (e.g., Vijayawada)" 
-                                value={destination}
-                                onChange={(e) => setDestination(e.target.value)}
-                                className="w-full bg-slate-50 border border-slate-100 py-4 pl-12 pr-4 rounded-2xl text-xs font-bold outline-none focus:border-orange-400 transition-all"
-                            />
-                        </div>
-                    </div>
-                    <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3 bg-orange-50/50 p-4 rounded-2xl border border-orange-100">
-                        <p className="text-[10px] font-black uppercase text-orange-600 italic tracking-wider">🛣️ Showing Sudara Hubs along your highway route</p>
-                        <div className="flex items-center gap-3">
-                            <span className="text-[9px] font-bold text-slate-400">ETA Sync: ON</span>
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        </div>
-                    </div>
-                </motion.div>
-                )}
-            </AnimatePresence>
-          </div>
+        {/* State Select Dropdown */}
+        <div className="md:col-span-3 relative group">
+          <Compass className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-orange-500" />
+          <select 
+            value={selectedState} 
+            onChange={(e) => {
+              setSelectedState(e.target.value);
+              setSelectedDistrict("All"); 
+            }}
+            className="w-full bg-white border border-slate-200 py-4 sm:py-5 pl-12 sm:pl-14 pr-10 rounded-[1.75rem] sm:rounded-[2rem] text-[9px] sm:text-[10px] font-black uppercase tracking-widest outline-none appearance-none cursor-pointer focus:border-orange-400 shadow-xl shadow-orange-900/5 text-slate-600"
+          >
+            <option value="All">All States</option>
+            {dbStates.map((s, idx) => <option key={idx} value={s}>{s}</option>)}
+          </select>
+          <ChevronDown className="absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
         </div>
-      </section>
+
+        {/* District Select Dropdown */}
+        <div className="md:col-span-3 relative group">
+          <MapPin className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-blue-600" />
+          <select 
+            value={selectedDistrict} 
+            onChange={(e) => setSelectedDistrict(e.target.value)} 
+            className="w-full bg-white border border-slate-200 py-4 sm:py-5 pl-12 sm:pl-14 pr-10 rounded-[1.75rem] sm:rounded-[2rem] text-[9px] sm:text-[10px] font-black uppercase tracking-widest outline-none appearance-none cursor-pointer focus:border-blue-400 shadow-xl shadow-blue-900/5 text-slate-600"
+          >
+            <option value="Select">❌ Select District</option>
+            <option value="All">All Districts</option>
+            {availableDistricts.map((d, idx) => (
+              <option key={idx} value={d}>{d}</option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+        </div>
+            <div className="md:col-span-6 relative group">
+          <Search className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-slate-300 group-focus-within:text-blue-600 transition-all" />
+          <input 
+            type="text" 
+            placeholder="Search hub name..." 
+            value={searchTerm} 
+            onChange={(e) => setSearchTerm(e.target.value)} 
+            className="w-full bg-white border border-slate-200 py-4 sm:py-5 pl-12 sm:pl-14 pr-6 rounded-[1.75rem] sm:rounded-[2rem] text-xs sm:text-sm font-bold outline-none focus:border-blue-400 transition-all shadow-xl shadow-blue-900/5 placeholder:text-slate-300" 
+          />
+        </div>
+      </div>
+
+      {/* Veg/Non-Veg & Route Planner Action Row */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 w-full mt-2">
+        <div className="flex gap-2.5 w-full sm:w-auto">
+          {["Veg", "Non-Veg"].map((type) => (
+            <button 
+              key={type} 
+              onClick={() => setSelectedFoodType(selectedFoodType === type ? "All" : type)}
+              className={`flex-1 sm:min-w-[140px] px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-[1.5rem] text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all duration-300 border-2 active:scale-95 ${selectedFoodType === type ? "bg-blue-600 text-white border-blue-500 shadow-lg scale-105" : "bg-white text-slate-600 border-slate-100 hover:border-orange-300"}`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                <div className={`w-1.5 h-1.5 rounded-full ${type === 'Veg' ? 'bg-emerald-500' : 'bg-rose-500'} ${selectedFoodType === type ? 'animate-pulse' : ''}`} />
+                <span className="whitespace-nowrap">{type}</span>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {/* Route Planner Toggle Button */}
+        {/* <button 
+          onClick={() => setIsTravelMode(!isTravelMode)}
+          className={`w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl sm:rounded-[1.5rem] font-black uppercase text-[10px] sm:text-xs tracking-widest transition-all duration-300 border-2 flex items-center justify-center gap-2.5 active:scale-95 ${isTravelMode ? "bg-orange-600 text-white border-orange-500 shadow-lg" : "bg-white text-slate-600 border-slate-100 hover:border-blue-400"}`}
+        >
+          <Compass className={`w-4 h-4 sm:w-5 sm:h-5 ${isTravelMode ? 'animate-spin' : ''}`} />
+          <span>{isTravelMode ? "Highway Mode Active" : "Route-Foodi Planner"}</span>
+        </button> */}
+      </div>
+
+      {/* Route Planner Input Box (Collapsible) */}
+      <AnimatePresence>
+        {isTravelMode && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-2 bg-white p-4 sm:p-6 rounded-[2rem] sm:rounded-[2.5rem] border-2 border-orange-100 shadow-2xl shadow-orange-900/5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+              <div className="relative">
+                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500" />
+                <input 
+                  type="text" 
+                  placeholder="Starting From (e.g., Khammam)" 
+                  value={source}
+                  onChange={(e) => setSource(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-100 py-3.5 sm:py-4 pl-12 pr-4 rounded-2xl text-xs font-bold outline-none focus:border-blue-400 transition-all"
+                />
+              </div>
+              <div className="relative">
+                <Compass className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-500" />
+                <input 
+                  type="text" 
+                  placeholder="Going To (e.g., Vijayawada)" 
+                  value={destination}
+                  onChange={(e) => setDestination(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-100 py-3.5 sm:py-4 pl-12 pr-4 rounded-2xl text-xs font-bold outline-none focus:border-orange-400 transition-all"
+                />
+              </div>
+            </div>
+            <div className="mt-3.5 flex flex-col sm:flex-row items-center justify-between gap-2 bg-orange-50/50 p-3.5 rounded-2xl border border-orange-100">
+              <p className="text-[9px] sm:text-[10px] font-black uppercase text-orange-600 italic tracking-wider">🛣️ Showing Sudara Hubs along your highway route</p>
+              <div className="flex items-center gap-2">
+                <span className="text-[8px] sm:text-[9px] font-bold text-slate-400">ETA Sync: ON</span>
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+    </div>
+  </div>
+</section>
 
       <main className="max-w-7xl mx-auto px-6 py-20 min-h-[600px] relative">
         <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-orange-100/30 blur-[120px] rounded-full -z-10"></div>

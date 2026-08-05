@@ -46,7 +46,8 @@ router.post("/register", async (req, res) => {
       district, 
       collegeName,
       fssaiNumber,
-      gstNumber    
+      gstNumber,
+      category 
     } = req.body;
 
     const existing = await Owner.findOne({ email });
@@ -64,7 +65,8 @@ router.post("/register", async (req, res) => {
       district: district || "Tirupati", 
       collegeName: collegeName || "General",
       fssaiNumber: fssaiNumber || "",
-      gstNumber: gstNumber || "",       
+      gstNumber: gstNumber || "", 
+      category: category || "Restaurant", 
       isApproved: false 
     });
 
@@ -110,32 +112,23 @@ router.get("/districts", async (req, res) => {
 
 router.post("/login", async (req, res) => {
   try {
-
     const { email, password } = req.body;
-
     // 🎯 Admin Login Check
     if (email === "telugubiblequiz959@gmail.com" && password === "Raju1753@s") {
       return res.json({ 
         success: true, 
         isAdmin: true, 
-        message: "Welcome Admin BSR!" 
+        message: "Welcome Supreme BSR!" 
       });
-    }
-
-    
+    } 
     const owner = await Owner.findOne({ email, password }).lean();
-
     if (!owner) {
       return res.status(401).json({ message: "Invalid Email or Password ❌" });
     }
-
-
-
- 
     if (owner.isApproved === false) {
       return res.status(403).json({ message: "Account pending admin approval... ⏳" });
     }
-
+    console.log(`✅ Owner Logged In: ${owner.name} (${owner.category || 'Restaurant'})`);
     res.json({ success: true, owner });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -181,6 +174,51 @@ router.delete("/delete-owner/:id", async (req, res) => {
   } catch (err) {
     console.error("DANGER DELETE ERROR:", err); 
     res.status(500).json({ success: false, message: "Delete failed completely" });
+  }
+});
+// ⚙️ Owner Profile & Image Update Route (Fixed)
+router.put("/update/:id", upload.single('image'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    let updatePayload = { ...req.body };
+
+    // ఒకవేళ కొత్త ఇమేజ్ ఫైల్ అప్‌లోడ్ చేసి ఉంటే, క్లౌడినరీకి పంపి URL తెచ్చుకోవడం
+    if (req.file) {
+      const imageUrl = await uploadImage(req.file.path);
+      updatePayload.hotelImage = imageUrl; // లేదా మీ మోడల్ ప్రాపర్టీకి తగినట్లు (image / hotelImage)
+    }
+
+    if (updatePayload.todaySpecial) {
+      updatePayload.specialTimestamp = new Date();
+    }
+
+    const updatedOwner = await Owner.findByIdAndUpdate(
+      id,
+      { $set: updatePayload },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedOwner) {
+      return res.status(404).json({ success: false, message: "Owner not found" });
+    }
+
+    console.log(`✅ Owner ${id} Profile Updated Successfully!`);
+    res.status(200).json({ success: true, message: "Updated successfully", owner: updatedOwner });  
+  } catch (err) {
+    console.error("Update Error ❌:", err);
+    res.status(500).json({ success: false, message: "Server error during update", error: err.message });
+  }
+});
+router.get("/owners-by-category/:category", async (req, res) => {
+  try {
+    const { category } = req.params;
+    const owners = await Owner.find({ isApproved: true, category: category })
+      .select("name hotelImage collegeName isStoreOpen latitude longitude category averageRating foodType state district")
+      .lean();
+    
+    res.status(200).json(owners);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch category owners" });
   }
 });
 

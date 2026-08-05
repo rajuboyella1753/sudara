@@ -3,6 +3,9 @@ import Home from "./pages/Home";
 import OwnerLogin from "./pages/OwnerLogin";
 import OwnerRegister from "./pages/OwnerRegister";
 import OwnerDashboard from "./pages/OwnerDashboard";
+import ElectronicsDashboard from "./pages/ElectronicsDashboard";
+import ClothingDashboard from "./pages/ClothingDashboard";
+import GroceryDashboard from "./pages/GroceryDashboard";
 import RestaurantProfile from "./pages/RestaurantProfile";
 import About from "./pages/AboutUs"; 
 import Contact from "./pages/Contact";
@@ -21,6 +24,10 @@ function App() {
         <Route path="/owner/register" element={<OwnerRegister />} />
         <Route path="/owner/dashboard" element={<OwnerDashboard />} />
         <Route path="/restaurant/:id" element={<RestaurantProfile />} />
+        <Route path="/store/:id" element={<RestaurantProfile />} />
+        <Route path="/owner/electronics-dashboard" element={<ElectronicsDashboard />} />
+        <Route path="/owner/clothing-dashboard" element={<ClothingDashboard />} />
+        <Route path="/owner/grocery-dashboard" element={<GroceryDashboard />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/terms" element={<Terms />} />

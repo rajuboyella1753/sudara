@@ -21,7 +21,7 @@ export default function OwnerRegister() {
     name: "",
     email: "",
     password: "",
-    category: "food",
+    category: "Restaurant",
     phone: "",
     whatsappNumber: "", 
     upiNumber: "",      
@@ -34,6 +34,13 @@ export default function OwnerRegister() {
   });
 
   const collegesList = ["MBU", "Others"];
+  const categoriesList = [
+    { label: "🍔 Restaurants & Food", value: "Restaurant" },
+    { label: "📱 Electronics & Mobiles", value: "Electronics" },
+    { label: "👗 Clothing & Fashion", value: "Clothing" },
+    { label: "🛒 Groceries & Supermarket", value: "Grocery" },
+    { label: "🛠️ Local Services & Repair", value: "Services" }
+  ];
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -82,7 +89,7 @@ export default function OwnerRegister() {
 
           <div className="text-center mb-12">
             <h2 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-slate-900">
-              DEPLOY <span className="text-indigo-600">HUB</span>
+              SUDARA <span className="text-indigo-600">HUB</span>
             </h2>
             <p className="text-slate-400 text-[9px] font-black uppercase tracking-[0.3em] mt-4">
               Enter In-Detailed Business Intelligence
@@ -92,21 +99,32 @@ export default function OwnerRegister() {
           <form onSubmit={handleSubmit} className="space-y-8">
             
             {/* 🏢 Basic Identity Section */}
-            {/* 🏢 Basic Identity Section */}
             <div className="space-y-5">
               <div className="flex items-center gap-2 mb-2 text-indigo-600">
                 <Building2 className="w-4 h-4" />
                 <span className="text-[10px] font-black uppercase tracking-widest">Business & Owner Identity</span>
               </div>
-              
+              <div className="space-y-2">
+                <label className="text-[9px] font-black uppercase text-slate-400 ml-1 block">Business Category</label>
+                <select 
+                  name="category" 
+                  value={form.category} 
+                  onChange={handleChange} 
+                  className="w-full bg-slate-50 border-2 border-slate-50 px-4 py-3.5 rounded-2xl font-bold text-sm outline-none focus:border-indigo-100 focus:bg-white cursor-pointer shadow-sm"
+                >
+                  {categoriesList.map((cat) => (
+                    <option key={cat.value} value={cat.value}>{cat.label}</option>
+                  ))}
+                </select>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="relative">
                   <label className="text-[9px] font-black uppercase text-slate-400 mb-1.5 ml-1 block">Owner Full Name</label>
                   <input type="text" name="ownerName" required placeholder="e.g. Ramesh Kumar" value={form.ownerName} onChange={handleChange} className="w-full bg-slate-50 border-2 border-slate-50 px-4 py-3.5 rounded-2xl focus:border-indigo-100 focus:bg-white focus:outline-none font-bold text-sm transition-all shadow-sm" />
                 </div>
                 <div className="relative">
-                  <label className="text-[9px] font-black uppercase text-slate-400 mb-1.5 ml-1 block">Restaurant Name</label>
-                  <input type="text" name="name" required placeholder="e.g. Sudara Kitchen" value={form.name} onChange={handleChange} className="w-full bg-slate-50 border-2 border-slate-50 px-4 py-3.5 rounded-2xl focus:border-indigo-100 focus:bg-white focus:outline-none font-bold text-sm transition-all shadow-sm" />
+                  <label className="text-[9px] font-black uppercase text-slate-400 mb-1.5 ml-1 block">Store / Business Name</label> {/* 🎯 ఇక్కడ మార్చావు */}
+                  <input type="text" name="name" required placeholder="e.g. Sudara Hub" value={form.name} onChange={handleChange} className="w-full bg-slate-50 border-2 border-slate-50 px-4 py-3.5 rounded-2xl focus:border-indigo-100 focus:bg-white focus:outline-none font-bold text-sm transition-all shadow-sm" />
                 </div>
               </div>
 
@@ -115,10 +133,16 @@ export default function OwnerRegister() {
                   <label className="text-[9px] font-black uppercase text-slate-400 mb-1.5 ml-1 block">Official Email</label>
                   <input type="email" name="email" required placeholder="owner@sudara.in" value={form.email} onChange={handleChange} className="w-full bg-slate-50 border-2 border-slate-50 px-4 py-3.5 rounded-2xl focus:border-indigo-100 focus:bg-white focus:outline-none font-bold text-sm transition-all shadow-sm" />
                 </div>
-                <div className="relative">
+                {(form.category === "Restaurant" || form.category === "Grocery") && (
+                  <div className="relative">
+                    <label className="text-[9px] font-black uppercase text-slate-400 mb-1.5 ml-1 block">FSSAI License Number</label>
+                    <input type="text" name="fssaiNumber" placeholder="14-digit FSSAI No." value={form.fssaiNumber} onChange={handleChange} className="w-full bg-slate-50 border-2 border-slate-50 px-4 py-3.5 rounded-2xl focus:border-indigo-100 focus:bg-white focus:outline-none font-bold text-sm transition-all shadow-sm" />
+                  </div>
+                )}
+                {/* <div className="relative">
                   <label className="text-[9px] font-black uppercase text-slate-400 mb-1.5 ml-1 block">FSSAI License Number</label>
                   <input type="text" name="fssaiNumber" placeholder="14-digit FSSAI No." value={form.fssaiNumber} onChange={handleChange} className="w-full bg-slate-50 border-2 border-slate-50 px-4 py-3.5 rounded-2xl focus:border-indigo-100 focus:bg-white focus:outline-none font-bold text-sm transition-all shadow-sm" />
-                </div>
+                </div> */}
               </div>
 
               <div className="relative">

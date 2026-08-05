@@ -28,6 +28,7 @@ export default function AdminDashboard() {
   const [availableColleges, setAvailableColleges] = useState([]);
   const [selectedState, setSelectedState] = useState("All");
   const [selectedDistrict, setSelectedDistrict] = useState("All");
+  const [selectedCategory, setSelectedCategory] = useState("All");
   const [availableStates, setAvailableStates] = useState([]);
   const [availableDistricts, setAvailableDistricts] = useState([]);
   const [viewMode, setViewMode] = useState("daily");
@@ -266,11 +267,14 @@ const filteredList = owners.filter(owner => {
   const matchesState = selectedState === "All" || owner.state === selectedState;
   const matchesDistrict = selectedDistrict === "All" || owner.district === selectedDistrict;
 
-  // 3. Search Filter
+  // 🚀 3. RAJU ADDED: Category Filter (డిఫాల్ట్‌గా అన్నిటికీ, లేదా ఎంచుకున్న కేటగిరీకి మాత్రమే)
+  const matchesCategory = selectedCategory === "All" || (owner.category || "Restaurant") === selectedCategory;
+
+  // 4. Search Filter
   const matchesSearch = (owner.name || "").toLowerCase().includes(searchTerm.toLowerCase());
 
-  // ✅ Ikkada 'isNotGeneral' ni return condition lo add chesa
-  return isNotGeneral && matchesTab && matchesState && matchesDistrict && matchesSearch;
+  // ✅ ఇక్కడ matchesCategory ని కూడా రిటర్న్‌లో యాడ్ చేశాం
+  return isNotGeneral && matchesTab && matchesState && matchesDistrict && matchesCategory && matchesSearch;
 });
 // Daily totals calculate చేయడం
 const dailyTotals = filteredList.reduce((acc, res) => {
@@ -495,7 +499,22 @@ const dailyTotals = filteredList.reduce((acc, res) => {
         </select>
         <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 rotate-90 pointer-events-none" />
       </div>
-
+<div className="md:col-span-3 relative group">
+        <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-500 z-10 transition-transform group-hover:scale-110" />
+        <select 
+          value={selectedCategory} 
+          onChange={(e) => setSelectedCategory(e.target.value)} 
+          className="w-full pl-11 pr-8 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest outline-none focus:bg-white focus:border-orange-500 transition-all appearance-none cursor-pointer shadow-inner"
+        >
+          <option value="All">All Categories 🌐</option>
+          <option value="Restaurant">🍔 Restaurants</option>
+          <option value="Electronics">📱 Electronics</option>
+          <option value="Clothing">👗 Clothing</option>
+          <option value="Grocery">🛒 Groceries</option>
+          <option value="Services">🛠️ Services</option>
+        </select>
+        <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 rotate-90 pointer-events-none" />
+      </div>
       {/* Modern Search Bar */}
       <div className="md:col-span-6 relative group">
          <div className="absolute left-5 top-1/2 -translate-y-1/2 flex items-center gap-2">
@@ -519,7 +538,7 @@ const dailyTotals = filteredList.reduce((acc, res) => {
   </div>
 </header>
 {/* 🚀 GLOBAL DAILY COUNTS (Static Display) */}
-<div className="max-w-7xl mx-auto px-4 lg:px-10 mt-6 grid grid-cols-2 gap-4">
+{/* <div className="max-w-7xl mx-auto px-4 lg:px-10 mt-6 grid grid-cols-2 gap-4">
     <div className="bg-blue-600 p-6 rounded-[2rem] shadow-lg text-white">
       <p className="text-[8px] font-black uppercase tracking-widest opacity-70 mb-1">Global Pre-Bookings</p>
       <p className="text-3xl font-black">{globalStats.pre}</p>
@@ -528,7 +547,7 @@ const dailyTotals = filteredList.reduce((acc, res) => {
       <p className="text-[8px] font-black uppercase tracking-widest opacity-70 mb-1">Global Post-Bookings</p>
       <p className="text-3xl font-black">{globalStats.post}</p>
     </div>
-  </div>
+  </div> */}
         <div className="p-4 lg:p-10 max-w-7xl mx-auto w-full pb-20">
           {activeTab === "analytics" && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">

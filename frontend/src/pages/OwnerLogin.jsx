@@ -76,7 +76,27 @@ export default function OwnerLogin() {
 
       if (res.data.owner.isApproved) {
         localStorage.setItem("owner", JSON.stringify(res.data.owner));
-        navigate("/owner/dashboard");
+        
+        const ownerCategory = res.data.owner.category;
+        
+        // 🎯 పాత రెస్టారెంట్ ఓనర్లందరూ పాత డాష్‌బోర్డ్‌కే వెళ్తారు
+        if (!ownerCategory || ownerCategory === "Restaurant") {
+          navigate("/owner/dashboard");
+        } 
+        // 🎯 కొత్త కేటగిరీల ఓనర్లు వాళ్ళ వాళ్ళ సపరేట్ పేజీలకు వెళ్తారు
+        else if (ownerCategory === "Electronics") {
+          navigate("/owner/electronics-dashboard");
+        } 
+        else if (ownerCategory === "Clothing") {
+          navigate("/owner/clothing-dashboard");
+        } 
+        else if (ownerCategory === "Grocery") {
+          navigate("/owner/grocery-dashboard");
+        } 
+        else {
+          navigate("/owner/dashboard"); // ఒకవేళ మిగతావి ఏవైనా ఉంటే డిఫాల్ట్ డాష్‌బోర్డ్
+        }
+
       } else {
         setVerificationMessage("Account pending admin approval! ⏳");
       }

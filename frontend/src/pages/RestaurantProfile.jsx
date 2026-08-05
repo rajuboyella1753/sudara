@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Heart, Share2, Clock, MapPin, Search, Camera, CreditCard, X, 
   PhoneCall, Plus, Minus, ShoppingBag, ShieldCheck, Copy, 
-  UtensilsCrossed, MessageSquare, Star, Send, Navigation,
+  UtensilsCrossed, MessageSquare, Star, Send, Navigation,ShieldAlert,
   User, CheckCircle2 ,Download
 } from "lucide-react";
 import VoiceAssistant from "../components/VoiceAssistant";
@@ -17,11 +17,18 @@ export default function RestaurantProfile() {
   const [owner, setOwner] = useState(null);
   const [items, setItems] = useState([]);
   const [filter, setFilter] = useState("All");
+  const isRestaurant = !owner?.category || owner.category.toLowerCase() === "restaurant";
   const filterOptions = useMemo(() => {
-    const cats = ["All", "Veg", "Non-Veg", "General"];
-    const itemCats = [...new Set(items.map(i => i.category))].filter(Boolean);
-    return [...new Set([...cats, ...itemCats])];
-  }, [items]);
+    if (isRestaurant) {
+      const cats = ["All", "Veg", "Non-Veg", "General"];
+      const itemCats = [...new Set(items.map(i => i.category))].filter(Boolean);
+      return [...new Set([...cats, ...itemCats])];
+    } else {
+      // ఎలక్ట్రానిక్స్ / క్లాతింగ్ / గ్రోసరీ వంటి వాటికి కేవలం 'All' మరియు ఆ ఐటమ్స్ యొక్క కేటగిరీలు మాత్రమే వస్తాయి
+      const itemCats = [...new Set(items.map(i => i.category || i.subCategory))].filter(Boolean);
+      return ["All", ...itemCats];
+    }
+  }, [items, isRestaurant]);
   const orderSectionRef = useRef(null); // 🎯 రాజు న్యూ చేంజ్: స్క్రోలింగ్ కోసం రిఫరెన్స్
   const counterPrintButtonRef = useRef(null);
   const [activeSubCat, setActiveSubCat] = useState("All"); 
@@ -40,7 +47,6 @@ export default function RestaurantProfile() {
   const [selectedTable, setSelectedTable] = useState(""); 
   const [showTracking, setShowTracking] = useState(false);
   const [showMenuPopup, setShowMenuPopup] = useState(true);
-
   const [customerName, setCustomerName] = useState("");
   const [showInstantModal, setShowInstantModal] = useState(false); 
   const [showCallPopup, setShowCallPopup] = useState(false); // 🚀 Call instruction popup state
@@ -665,7 +671,7 @@ if (!owner || !owner.isApproved) {
 >
   {owner?.name}
 </motion.h1>
-        
+      
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
   {/* College Name Badge */}
   <motion.p 
@@ -689,13 +695,17 @@ if (!owner || !owner.isApproved) {
 <div className="mt-8 md:mt-12 flex items-center justify-center gap-3 sm:gap-4">
   {/* 1. Get Campus Route Button */}
   <motion.button 
-    whileTap={{ scale: 0.95 }}
-    onClick={openGoogleMaps}
-    className="flex items-center gap-2 sm:gap-3 bg-white px-6 py-3 md:px-10 md:py-5 rounded-full shadow-2xl hover:bg-blue-600 hover:text-white transition-all duration-300 group border border-white/30 shrink-0"
-  >
-    <Navigation className="w-3.5 h-3.5 md:w-5 md:h-5 text-blue-600 group-hover:text-white animate-pulse" />
-    <span className="text-[9px] md:text-xs font-black uppercase tracking-widest italic">Get Restaurant Route</span>
-  </motion.button>
+      whileTap={{ scale: 0.95 }}
+      onClick={openGoogleMaps}
+      className="flex items-center gap-2 sm:gap-3 bg-white px-6 py-3 md:px-10 md:py-5 rounded-full shadow-2xl hover:bg-blue-600 hover:text-white transition-all duration-300 group border border-white/30 shrink-0"
+    >
+      <Navigation className="w-3.5 h-3.5 md:w-5 md:h-5 text-blue-600 group-hover:text-white animate-pulse" />
+      <span className="text-[9px] md:text-xs font-black uppercase tracking-widest italic">
+        {isRestaurant 
+          ? "Get Restaurant Route" 
+          : `Get ${owner?.category || "Store"} Route`}
+      </span>
+    </motion.button>
 
   {/* 📢 Share Button */}
   <motion.button 
@@ -869,7 +879,7 @@ if (!owner || !owner.isApproved) {
 <div className="bg-slate-50 border-l-4 border-amber-500 p-4 rounded-2xl mb-6 flex items-start gap-3">
   <Camera className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
   <p className="text-[9px] sm:text-[10px] font-bold text-slate-500 leading-relaxed uppercase italic">
-    <span className="text-amber-600 font-black">Note:</span> These images are for representation only (sourced from Google). Also sudara is not responsible for any food related issues in this restaurant full responsibility taken by Restaurant only,we are just Connectors.
+    <span className="text-amber-600 font-black">Note:</span> These images are for representation only. Also Sudara is not responsible for any {isRestaurant ? "food" : "product"} related issues in this {isRestaurant ? "restaurant" : "store"}; full responsibility is taken by the {isRestaurant ? "Restaurant" : "Store"} owner only, we are just connectors.
   </p>
 </div>
             {/* Filter Section: Sticky with Responsive Spacing */}
@@ -926,7 +936,16 @@ if (!owner || !owner.isApproved) {
 </div>
 
                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                    <button onClick={() => setActiveSubCat("All")} className={`px-3 sm:px-4 py-1.5 rounded-xl text-[8px] sm:text-[9px] font-black uppercase border shrink-0 transition-all ${activeSubCat === "All" ? "bg-blue-600 text-white shadow-md" : "bg-slate-50 text-slate-400 border-slate-100"}`}>All Menu</button>
+                    <button 
+  onClick={() => setActiveSubCat("All")} 
+  className={`px-3 sm:px-4 py-1.5 rounded-xl text-[8px] sm:text-[9px] font-black uppercase border shrink-0 transition-all ${
+    activeSubCat === "All" 
+      ? "bg-blue-600 text-white shadow-md" 
+      : "bg-slate-50 text-slate-400 border-slate-100"
+  }`}
+>
+  {isRestaurant ? "All Menu" : "All Items"}
+</button>
                     {availableSubCats.map(sub => (
                       <button key={sub} onClick={() => setActiveSubCat(sub)} className={`px-3 sm:px-4 py-1.5 rounded-xl text-[8px] sm:text-[9px] font-black uppercase border shrink-0 transition-all ${activeSubCat === sub ? "bg-blue-600 text-white shadow-md" : "bg-slate-50 text-slate-400 border-slate-100"}`}>{sub}</button>
                     ))}
@@ -942,35 +961,89 @@ if (!owner || !owner.isApproved) {
   }} 
 /> */}
             {/* Items Grid: Responsive Column Count */}
-            <div className="max-h-screen lg:max-h-[800px] overflow-y-auto pr-1 scrollbar-custom">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 pb-10">
-                    {availableItems.map((item) => (
-                        <div key={item._id} className="bg-white p-2.5 sm:p-3 rounded-[1.5rem] sm:rounded-3xl border border-slate-100 flex items-center justify-between gap-3 shadow-sm">
-                            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                                <div className="relative shrink-0">
-                                    <img src={item.image || `https://ui-avatars.com/api/?name=${item.name}`} loading="lazy" className="w-14 h-14 sm:w-16 h-16 rounded-xl sm:rounded-2xl object-cover border shadow-sm" alt="" />
-                                    <div className={`absolute -top-1 -left-1 w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border-2 border-white ${item.category === 'Veg' ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <span className="text-[6px] sm:text-[7px] font-black text-blue-500 uppercase tracking-tighter bg-blue-50 px-1.5 py-0.5 rounded-md mb-1 inline-block">{item.subCategory}</span>
-                                    <h4 className="font-black uppercase text-[10px] sm:text-[11px] italic text-slate-800 leading-tight truncate">{item.name}</h4>
-                                    <p className="text-base sm:text-lg font-black text-blue-600 italic mt-0.5">₹{item.price}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border shrink-0">
-                                <button onClick={() => removeFromCart(item)} className="p-1"><Minus className="w-3 h-3 sm:w-3.5 h-3.5 text-slate-400" /></button>
-                                <span className="text-[10px] sm:text-[11px] font-black min-w-[12px] text-center">{cart[item._id]?.qty || 0}</span>
-                                <button onClick={() => addToCart(item)} className="p-1"><Plus className="w-3 h-3 sm:w-3.5 h-3.5 text-slate-400" /></button>
-                            </div>
+{/* Items Grid: Responsive Column Count */}
+<div className="max-h-screen lg:max-h-[800px] overflow-y-auto pr-1 scrollbar-custom">
+    <div className={`grid pb-10 gap-3.5 sm:gap-5 ${
+        isRestaurant 
+            ? "grid-cols-1 sm:grid-cols-2" 
+            : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-3"
+    }`}>
+        {availableItems.map((item) => (
+            isRestaurant ? (
+                /* --- 🍔 రెస్టారెంట్ ఐటమ్స్ కోసం పాత డిజైన్ --- */
+                <div key={item._id} className="bg-white p-2.5 sm:p-3 rounded-[1.5rem] sm:rounded-3xl border border-slate-100 flex items-center justify-between gap-3 shadow-sm">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                        <div className="relative shrink-0">
+                            <img src={item.image || `https://ui-avatars.com/api/?name=${item.name}`} loading="lazy" className="w-14 h-14 sm:w-16 h-16 rounded-xl sm:rounded-2xl object-cover border shadow-sm" alt="" />
+                            <div className={`absolute -top-1 -left-1 w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border-2 border-white ${item.category === 'Veg' ? 'bg-green-500' : 'bg-red-500'}`}></div>
                         </div>
-                    ))}
+                        <div className="min-w-0 flex-1">
+                            <span className="text-[6px] sm:text-[7px] font-black text-blue-500 uppercase tracking-tighter bg-blue-50 px-1.5 py-0.5 rounded-md mb-1 inline-block">{item.subCategory}</span>
+                            <h4 className="font-black uppercase text-[10px] sm:text-[11px] italic text-slate-800 leading-tight truncate">{item.name}</h4>
+                            <p className="text-base sm:text-lg font-black text-blue-600 italic mt-0.5">₹{item.price}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border shrink-0">
+                        <button onClick={() => removeFromCart(item)} className="p-1"><Minus className="w-3 h-3 sm:w-3.5 h-3.5 text-slate-400" /></button>
+                        <span className="text-[10px] sm:text-[11px] font-black min-w-[12px] text-center">{cart[item._id]?.qty || 0}</span>
+                        <button onClick={() => addToCart(item)} className="p-1"><Plus className="w-3 h-3 sm:w-3.5 h-3.5 text-slate-400" /></button>
+                    </div>
                 </div>
-            </div>
+            ) : (
+                /* --- 🛒 ఎలక్ట్రానిక్స్/షాప్స్ కోసం అమెజాన్/ఫ్లిప్‌కార్ట్ లాంటి రియల్ కార్డ్ డిజైన్ --- */
+                <div key={item._id} className="bg-white p-3 sm:p-4 rounded-[2rem] border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
+                    <div>
+                        <div className="relative w-full h-36 sm:h-44 bg-slate-50 rounded-2xl overflow-hidden mb-3 border border-slate-100">
+                            <img 
+                                src={item.image || `https://ui-avatars.com/api/?name=${item.name}`} 
+                                loading="lazy" 
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                                alt={item.name} 
+                            />
+                            <span className="absolute top-2.5 left-2.5 text-[7px] sm:text-[8px] font-black text-white bg-slate-900/80 backdrop-blur-md px-2 py-1 rounded-lg uppercase tracking-wider">
+                                {item.subCategory || owner?.category}
+                            </span>
+                        </div>
+                        {item.description && (
+                        <div className="max-h-12 overflow-y-auto scrollbar-none my-1.5 pr-1">
+                            <p className="text-[10px] font-medium text-slate-500 leading-relaxed">
+                                {item.description}
+                            </p>
+                        </div>
+                    )}
+                        <h4 className="font-black uppercase text-xs sm:text-sm text-slate-800 line-clamp-2 leading-snug mb-1">
+                            {item.name}
+                        </h4>
+                        <p className="text-sm sm:text-base font-black text-blue-600 italic">
+                            ₹{item.price}
+                        </p>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase">In Stock</span>
+                        <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border">
+                            <button onClick={() => removeFromCart(item)} className="p-1.5 bg-white rounded-lg shadow-sm hover:bg-slate-50">
+                                <Minus className="w-3 h-3 text-slate-600" />
+                            </button>
+                            <span className="text-xs font-black min-w-[16px] text-center text-slate-800">
+                                {cart[item._id]?.qty || 0}
+                            </span>
+                            <button onClick={() => addToCart(item)} className="p-1.5 bg-slate-900 text-white rounded-lg shadow-sm hover:bg-black">
+                                <Plus className="w-3 h-3" />
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            )
+        ))}
+    </div>
+</div>
     {/* 🏢 Owner & Legal Compliance Details Section */}
 <div className="bg-slate-50 border border-slate-200 rounded-[2rem] p-5 sm:p-6 my-6 shadow-sm">
   <div className="flex items-center gap-2 border-l-4 border-blue-600 pl-3 mb-4">
     <h3 className="text-[10px] sm:text-xs font-black uppercase text-slate-800 tracking-widest italic">
-      Restaurant & Legal Details
+      {isRestaurant ? "Restaurant & Legal Details" : "Store & Legal Details"}
     </h3>
   </div>
   
@@ -983,9 +1056,11 @@ if (!owner || !owner.isApproved) {
       </p>
     </div>
 
-    {/* 2. FSSAI License Number */}
+    {/* 2. License Number (FSSAI for Restaurant, Business License for Others) */}
     <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-      <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">FSSAI License No</p>
+      <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">
+        {isRestaurant ? "FSSAI License No" : "Business License No"}
+      </p>
       <p className="text-xs font-black uppercase tracking-wider text-blue-600 truncate">
         {owner?.fssaiNumber && owner.fssaiNumber.trim() !== "" ? owner.fssaiNumber : "Not Provided"}
       </p>
@@ -1007,166 +1082,183 @@ if (!owner || !owner.isApproved) {
 <div className="order-1 lg:order-2 lg:col-span-4">
   <div ref={orderSectionRef} className="bg-white p-4 rounded-2xl lg:sticky lg:top-32 shadow-lg border border-slate-100 scroll-mt-24">
     
-{/* 🎯 రాజు మాస్టర్ లాక్ కండిషన్ */}
-{owner?.planType === "premium" ? (
-  <>
-    {/* 🚀 1. Order Summary (Premium Only) - కేవలం ఐటమ్స్ సెలెక్ట్ చేస్తేనే డిస్ప్లే అవుతుంది */}
-    {Object.values(cart).length > 0 && (
-      <div className="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-100">
-        <span className="text-[9px] font-black uppercase text-blue-600 italic tracking-widest">Order Summary</span>
-        <div className="space-y-1.5 my-3 max-h-40 overflow-y-auto scrollbar-hide">
-          {Object.values(cart).map((i) => (
-            <div key={i._id || i.name} className="flex justify-between text-[10px] font-bold italic text-slate-600">
-              <span>{i.qty} x {i.name}</span>
-              <span>₹{i.price * i.qty}</span>
+    {isRestaurant ? (
+      /* --- రెస్టారెంట్ అయితే ఈ కింది లాజిక్ రన్ అవుతుంది --- */
+      owner?.planType === "premium" ? (
+        <>
+          {Object.values(cart).length > 0 && (
+            <div className="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-100">
+              <span className="text-[9px] font-black uppercase text-blue-600 italic tracking-widest">Order Summary</span>
+              <div className="space-y-1.5 my-3 max-h-40 overflow-y-auto scrollbar-hide">
+                {Object.values(cart).map((i) => (
+                  <div key={i._id || i.name} className="flex justify-between text-[10px] font-bold italic text-slate-600">
+                    <span>{i.qty} x {i.name}</span>
+                    <span>₹{i.price * i.qty}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="border-t border-blue-100 pt-3 space-y-1">
+                <div className="flex justify-between text-[10px] font-bold text-slate-500">
+                  <span>Subtotal:</span> <span>₹{calculateTotal.itemsTotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-[10px] font-bold text-slate-500">
+                  <span>GST ({owner?.gstPercentage}%):</span> <span>₹{calculateTotal.gstAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-[10px] font-bold text-slate-500">
+                  <span>Extra:</span> <span>₹{calculateTotal.extraCharges.toFixed(2)}</span>
+                </div>
+                <div className="border-t border-blue-100 pt-3 flex justify-between text-sm font-black italic text-blue-600">
+                  <span>Pay Total:</span> <span>₹{calculateTotal.finalTotal.toFixed(2)}</span>
+                </div>
+              </div>
             </div>
-          ))}
+          )}
+
+          <div className="flex flex-col gap-2.5">
+            {owner?.tableCount > 0 && (
+              <motion.button  
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  if (totalAmount > 0) { trackPostOrderClick(); setShowInstantModal(true); } 
+                  else { alert("Select items first! 🍲"); }
+                }}
+                className={`w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] flex items-center justify-between transition-all border ${
+                  totalAmount > 0 
+                    ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-200/80 shadow-sm'  
+                    : 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 bg-amber-100/60 rounded-lg">
+                    <MessageSquare className="w-3.5 h-3.5 text-amber-700" />
+                  </div>
+                  <span>Post-Book (At Restaurant)</span>
+                </div>
+                <span className="text-[9px] font-medium text-amber-700 bg-amber-100/50 px-2 py-0.5 rounded-md">Dine-in</span>
+              </motion.button>
+            )}
+
+            <motion.button  
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
+                if (totalAmount > 0) {  
+                  setShowOnlineOrderModal(true); 
+                } else {  
+                  alert("Please select items first! 🥘");  
+                }
+              }}
+              className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200/80 shadow-sm flex items-center justify-between transition-all"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 bg-emerald-100/60 rounded-lg">
+                  <ShoppingBag className="w-3.5 h-3.5 text-emerald-700" />
+                </div>
+                <span>Order Online (Direct)</span>
+              </div>
+              <span className="text-[9px] font-medium text-emerald-700 bg-emerald-100/50 px-2 py-0.5 rounded-md">Instant</span>
+            </motion.button>
+
+            {owner?.isPreBookEnabled && (
+              <motion.button  
+                whileHover={totalAmount > 0 ? { scale: 1.01 } : {}}
+                whileTap={totalAmount > 0 ? { scale: 0.98 } : {}}
+                onClick={() => {
+                  if (totalAmount > 0) {  
+                    trackPreOrderClick();  
+                    setShowPayWarning(true); 
+                  } else {  
+                    alert("Select items first! 🥘");  
+                  }
+                }}
+                className={`w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] flex items-center justify-between transition-all border ${
+                  totalAmount > 0  
+                    ? 'bg-purple-50 hover:bg-purple-100 text-purple-900 border-purple-200/80 shadow-sm'  
+                    : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 bg-purple-100/60 rounded-lg">
+                    <CreditCard className="w-3.5 h-3.5 text-purple-700" />
+                  </div>
+                  <span>{totalAmount > 0 ? "Pre-Book & Pay Advance" : "Select Items to Pre-Book"}</span>
+                </div>
+                {totalAmount > 0 && <span className="text-[9px] font-medium text-purple-700 bg-purple-100/50 px-2 py-0.5 rounded-md">Secure</span>}
+              </motion.button>
+            )}
+
+            <motion.button  
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleCallAction}  
+              className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200/80 shadow-sm flex items-center justify-between transition-all"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 bg-blue-100/60 rounded-lg">
+                  <PhoneCall className="w-3.5 h-3.5 text-blue-700" />
+                </div>
+                <span>Call to Owner</span>
+              </div>
+              <span className="text-[9px] font-medium text-blue-700 bg-blue-100/50 px-2 py-0.5 rounded-md">Direct</span>
+            </motion.button>
+          </div>
+        </>
+      ) : (
+        <div className="text-center py-6">
+          <div className="bg-amber-50 text-amber-800 p-5 rounded-[2rem] border border-amber-200/60 mb-5">
+            <UtensilsCrossed className="w-8 h-8 text-amber-600 mx-auto mb-3 animate-pulse" />
+            <p className="text-[11px] font-black uppercase tracking-wider leading-relaxed">
+              Digital Menu Active ✅
+            </p>
+            <p className="text-[9px] font-bold text-slate-500 uppercase mt-2 leading-relaxed">
+              Online ordering via phone is restricted for this node. Please look at the prices and order directly to server.
+            </p>
+          </div>
+          <button  
+            onClick={handleCallAction}  
+            className="w-full py-4 rounded-xl font-black uppercase text-[10px] bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all"
+          >
+            <PhoneCall className="w-4 h-4" /> Call for Inquiries
+          </button>
         </div>
-        <div className="border-t border-blue-100 pt-3 space-y-1">
-          {/* ఆర్డర్ సమ్మరీ లో ఈ విధంగా మాత్రమే ఉండాలి */}
-          <div className="flex justify-between text-[10px] font-bold text-slate-500">
-            <span>Subtotal:</span> <span>₹{calculateTotal.itemsTotal.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-[10px] font-bold text-slate-500">
-            <span>GST ({owner?.gstPercentage}%):</span> <span>₹{calculateTotal.gstAmount.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-[10px] font-bold text-slate-500">
-            <span>Extra:</span> <span>₹{calculateTotal.extraCharges.toFixed(2)}</span>
+      )
+    ) : (
+      /* --- 🚀 ఎలక్ట్రానిక్స్ / క్లాతింగ్ / గ్రోసరీ హబ్స్ కోసం సపరేట్ లేఅవుట్ --- */
+      <div>
+        <div className="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-100">
+          <span className="text-[9px] font-black uppercase text-blue-600 italic tracking-widest">Cart Summary ({owner?.category})</span>
+          <div className="space-y-1.5 my-3 max-h-40 overflow-y-auto scrollbar-hide">
+            {Object.values(cart).length === 0 ? (
+              <p className="text-[10px] text-slate-400 italic">No items selected yet.</p>
+            ) : (
+              Object.values(cart).map((i) => (
+                <div key={i._id || i.name} className="flex justify-between text-[10px] font-bold italic text-slate-600">
+                  <span>{i.qty} x {i.name}</span>
+                  <span>₹{i.price * i.qty}</span>
+                </div>
+              ))
+            )}
           </div>
           <div className="border-t border-blue-100 pt-3 flex justify-between text-sm font-black italic text-blue-600">
-            <span>Pay Total:</span> <span>₹{calculateTotal.finalTotal.toFixed(2)}</span>
+            <span>Total:</span> <span>₹{totalAmount}</span>
           </div>
         </div>
+
+        <button 
+  onClick={() => {
+    trackCallInterest();
+    window.location.href = `tel:${owner?.phone}`;
+  }}
+  className="w-full mt-3 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black uppercase text-[11px] tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+>
+  <PhoneCall className="w-4 h-4" /> Call to Owner 📞
+</button>
       </div>
     )}
 
-    <div className="flex flex-col gap-2.5">
-      
-      {/* 1. Post-Book (At Restaurant) - 🍊 Soft Decent Amber/Orange */}
-      {owner?.tableCount > 0 && (
-        <motion.button  
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => {
-            if (totalAmount > 0) { trackPostOrderClick(); setShowInstantModal(true); }  
-            else { alert("Select items first! 🍲"); }
-          }}
-          className={`w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] flex items-center justify-between transition-all border ${
-            totalAmount > 0 
-              ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-200/80 shadow-sm'  
-              : 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
-          }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <div className="p-1.5 bg-amber-100/60 rounded-lg">
-              <MessageSquare className="w-3.5 h-3.5 text-amber-700" />
-            </div>
-            <span>Post-Book (At Restaurant)</span>
-          </div>
-          <span className="text-[9px] font-medium text-amber-700 bg-amber-100/50 px-2 py-0.5 rounded-md">Dine-in</span>
-        </motion.button>
-      )}
-
-      {/* 2. Order Online (Direct) - 🍃 Soft Decent Emerald/Green */}
-      <motion.button  
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={() => {
-          if (totalAmount > 0) {  
-            setShowOnlineOrderModal(true); 
-          } else {  
-            alert("Please select items first! 🥘");  
-          }
-        }}
-        className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200/80 shadow-sm flex items-center justify-between transition-all"
-      >
-        <div className="flex items-center gap-2.5">
-          <div className="p-1.5 bg-emerald-100/60 rounded-lg">
-            <ShoppingBag className="w-3.5 h-3.5 text-emerald-700" />
-          </div>
-          <span>Order Online (Direct)</span>
-        </div>
-        <span className="text-[9px] font-medium text-emerald-700 bg-emerald-100/50 px-2 py-0.5 rounded-md">Instant</span>
-      </motion.button>
-
-      {/* 3. Pre-Book & Pay Advance - 🍇 Soft Decent Purple */}
-      {owner?.isPreBookEnabled && (
-        <motion.button  
-          whileHover={totalAmount > 0 ? { scale: 1.01 } : {}}
-          whileTap={totalAmount > 0 ? { scale: 0.98 } : {}}
-          onClick={() => {
-            if (totalAmount > 0) {  
-              trackPreOrderClick();  
-              setShowPayWarning(true); 
-            } else {  
-              alert("Select items first! 🥘");  
-            }
-          }}
-          className={`w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] flex items-center justify-between transition-all border ${
-            totalAmount > 0  
-              ? 'bg-purple-50 hover:bg-purple-100 text-purple-900 border-purple-200/80 shadow-sm'  
-              : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
-          }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <div className="p-1.5 bg-purple-100/60 rounded-lg">
-              <CreditCard className="w-3.5 h-3.5 text-purple-700" />
-            </div>
-            <span>{totalAmount > 0 ? "Pre-Book & Pay Advance" : "Select Items to Pre-Book"}</span>
-          </div>
-          {totalAmount > 0 && <span className="text-[9px] font-medium text-purple-700 bg-purple-100/50 px-2 py-0.5 rounded-md">Secure</span>}
-        </motion.button>
-      )}
-
-      {/* 4. Call to Owner - 🔵 Professional Trust Blue */}
-      <motion.button  
-        whileHover={{ scale: 1.01 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={handleCallAction}  
-        className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200/80 shadow-sm flex items-center justify-between transition-all"
-      >
-        <div className="flex items-center gap-2.5">
-          <div className="p-1.5 bg-blue-100/60 rounded-lg">
-            <PhoneCall className="w-3.5 h-3.5 text-blue-700" />
-          </div>
-          <span>Call to Owner</span>
-        </div>
-        <span className="text-[9px] font-medium text-blue-700 bg-blue-100/50 px-2 py-0.5 rounded-md">Direct</span>
-      </motion.button>
-
-    </div>
-
-  </>
-) : (
-  /* 🟢 రాజు బేసిక్ ప్లాన్ డిజైన్: ఆన్లైన్ ఆర్డర్స్ కనిపించవు, కేవలం కాల్ అండ్ డైరెక్ట్ ఆర్డర్ మెసేజ్! */
-  <div className="text-center py-6">
-    <div className="bg-amber-50 text-amber-800 p-5 rounded-[2rem] border border-amber-200/60 mb-5">
-      <UtensilsCrossed className="w-8 h-8 text-amber-600 mx-auto mb-3 animate-pulse" />
-      <p className="text-[11px] font-black uppercase tracking-wider leading-relaxed">
-        Digital Menu Active ✅
-      </p>
-      <p className="text-[9px] font-bold text-slate-500 uppercase mt-2 leading-relaxed">
-        Online ordering via phone is restricted for this node. Please look at the prices and order directly to server.
-      </p>
-    </div>
-     
-    <button  
-      onClick={handleCallAction}  
-      className="w-full py-4 rounded-xl font-black uppercase text-[10px] bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all"
-    >
-      <PhoneCall className="w-4 h-4" /> Call for Inquiries
-    </button>
-  </div>
-)}
   </div>
 </div>
-
-
-
-
-
-
-
       </main>
 
       {/* Responsive Modals */}
@@ -1179,7 +1271,7 @@ if (!owner || !owner.isApproved) {
         )}
       </AnimatePresence>
 <AnimatePresence>
-  {showMenuPopup && (
+  {showMenuPopup && isRestaurant && (
     <motion.div 
       initial={{ opacity: 0, y: 50 }} 
       animate={{ opacity: 1, y: 0 }} 
@@ -1187,25 +1279,29 @@ if (!owner || !owner.isApproved) {
       className="fixed bottom-24 right-4 z-[200] bg-slate-900 text-white p-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/20"
     >
       <div>
-        <p className="text-xs font-black uppercase italic">Hungry? 🍔</p>
-        <p className="text-[9px] text-slate-400 uppercase">Check out our dishes</p>
+        <p className="text-xs font-black uppercase italic">
+          {isRestaurant ? "Hungry? 🍔" : `Need ${owner?.category || "Items"}? ⚡`}
+        </p>
+        <p className="text-[9px] text-slate-400 uppercase">
+          {isRestaurant ? "Check out our dishes" : "Check out available stock"}
+        </p>
       </div>
+      
       <button  
-  onClick={() => {
-    setShowMenuPopup(false);
-    
-    {/* 🎯 నేరుగా ఫుడ్ ఐటమ్స్ గ్రిడ్ / మెనూ సెక్షన్ దగ్గరకు స్మూత్‌గా స్క్రోల్ అవ్వడానికి */}
-    const menuGridElement = document.querySelector('.grid.grid-cols-1.sm\\:grid-cols-2'); 
-    if (menuGridElement) {
-      menuGridElement.scrollIntoView({ behavior: "smooth", block: "start" });
-    } else {
-      window.scrollTo({ top: 500, behavior: "smooth" });
-    }
-  }}
-  className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-xl text-[10px] font-black uppercase italic tracking-wider shadow-lg active:scale-95 transition-all"
->
-  Show Menu 👇
-</button>
+        onClick={() => {
+          setShowMenuPopup(false);
+          const menuGridElement = document.querySelector('.grid.grid-cols-1.sm\\:grid-cols-2'); 
+          if (menuGridElement) {
+            menuGridElement.scrollIntoView({ behavior: "smooth", block: "start" });
+          } else {
+            window.scrollTo({ top: 500, behavior: "smooth" });
+          }
+        }}
+        className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-xl text-[10px] font-black uppercase italic tracking-wider shadow-lg active:scale-95 transition-all"
+      >
+        {isRestaurant ? "Show Menu 👇" : "View Stock 👇"}
+      </button>
+
       <button onClick={() => setShowMenuPopup(false)} className="text-slate-400 hover:text-white p-1">
         <X className="w-4 h-4" />
       </button>

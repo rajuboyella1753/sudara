@@ -6,38 +6,45 @@ const router = express.Router();
 
 router.post("/add", upload.single('image'), async (req, res) => {
   try {
-    console.log("📥 Item Add Request Received!");
-    
-    // 1. డేటాను విడివిడిగా తీసుకో (ఇది సేఫ్ మెథడ్)
-    const { name, price, subCategory, ownerId } = req.body;
-    let { category } = req.body;
+    console.log("📥 --- ITEM ADD API HIT ---");
+    console.log("📦 Request Body Data:", req.body);
+    console.log("📸 Request File:", req.file);
 
-    // 2. ఒకవేళ కేటగిరీ రాకపోతే లేదా ఖాళీగా ఉంటే 'General' సెట్ చెయ్
-    if (!category || category === "") {
-        category = "General";
+    const { name, price, subCategory, ownerId, category, description, isAvailable } = req.body;
+
+    if (!ownerId) {
+      return res.status(400).json({ message: "Owner ID is missing!" });
     }
 
-    // 3. క్లౌడినరీ లింక్ (Image Upload)
-    const imageUrl = req.file ? req.file.path : ""; 
-    
-    // 4. ఐటమ్ క్రియేషన్ (ఇప్పుడు పక్కాగా డేటా వెళ్తుంది)
-    const newItem = await Item.create({ 
-      name, 
-      price, 
-      category, 
-      subCategory, 
+    if (!name || !price) {
+      return res.status(400).json({ message: "Name and Price are required!" });
+    }
+
+    const imageUrl = req.file ? req.file.path : "";
+
+    // boolean విలువను సరిగ్గా పార్స్ చేయడం
+    const parsedAvailability = isAvailable === 'true' || isAvailable === true;
+
+    const newItem = await Item.create({
+      name,
+      price: Number(price),
+      category: category || "Electronics",
+      subCategory: subCategory || "Mobiles",
+      description: description || "",
+      isAvailable: parsedAvailability,
       ownerId,
-      image: imageUrl 
+      image: imageUrl
     });
-    
-    console.log("✅ Item saved in DB:", newItem._id);
-    res.status(201).json(newItem);
+
+    console.log("✅ Item successfully saved with ID:", newItem._id);
+    return res.status(201).json(newItem);
+
   } catch (err) {
-    console.error("❌ SERVER-SIDE ERROR:", err); 
-    // ఎర్రర్ మెసేజ్ క్లియర్ గా పంపుతున్నాం
-    res.status(500).json({ 
-        message: "Server Error during creation", 
-        details: err.message 
+    console.error("❌ CRITICAL ERROR IN /items/add:", err.message);
+    console.error("Full Error Details:", err); // అసలైన ఎర్రర్ టెర్మినల్‌లో చూడటానికి
+    return res.status(500).json({ 
+      message: "Internal Server Error", 
+      error: err.message 
     });
   }
 });
@@ -55,30 +62,27 @@ router.get("/all", async (req, res) => {
 /* 3. UPDATE FULL ITEM 🔥 */
 router.put("/update/:id", upload.single('image'), async (req, res) => {
   try {
-    // 1. ఫామ్ నుండి డేటాను తీసుకుంటున్నాం
-    const { name, price, category, subCategory } = req.body; 
+    const { name, price, category, subCategory, description, isAvailable } = req.body; 
     
-    // 2. అప్‌డేట్ చేయాల్సిన డేటాను ఒక ఆబ్జెక్ట్ లో పెట్టుకుంటున్నాం
     let updateData = { 
       name, 
-      price, 
+      price: Number(price), 
       category, 
-      subCategory 
+      subCategory,
+      description: description || "",
+      isAvailable: isAvailable === 'true' || isAvailable === true
     };
     
-    // 3. ఒకవేళ కొత్త ఇమేజ్ ఫైల్ అప్‌లోడ్ అయితేనే, దాన్ని `updateData` కి యాడ్ చేస్తున్నాం
     if (req.file) {
       updateData.image = req.file.path; 
     }
     
-    // 4. డేటాబేస్ అప్‌డేట్ (new: true అంటే అప్‌డేట్ అయిన లేటెస్ట్ డేటాను రిటర్న్ చేస్తుంది)
     const updatedItem = await Item.findByIdAndUpdate(
       req.params.id,
       updateData,
       { new: true }
     );
     
-    // 5. ఐటమ్ దొరక్కపోతే ఎర్రర్
     if (!updatedItem) return res.status(404).json({ message: "Item not found" });
     
     console.log("✅ Item updated successfully:", updatedItem._id);
@@ -122,12 +126,11 @@ router.get("/owner/:ownerId", async (req, res) => {
   try {
     const { ownerId } = req.params;
     
-    // ఇక్కడ సెలెక్ట్ చేసేటప్పుడు అన్ని ఫీల్డ్స్ పక్కాగా ఉంచు
     const items = await Item.find({ ownerId })
-      .select("name price category subCategory image isAvailable ownerId") 
+      .select("name price category subCategory description image isAvailable ownerId") // 👈 ఇక్కడ 'description' యాడ్ చెయ్యి
       .lean();
       
-    console.log("Fetched Items for Owner:", items.length); // ఎన్ని ఐటమ్స్ వస్తున్నాయో ఇక్కడ టెర్మినల్ లో చూడు
+    console.log("Fetched Items for Owner:", items.length);
     res.json(items);
   } catch (err) {
     res.status(500).json({ error: "Database Error" });

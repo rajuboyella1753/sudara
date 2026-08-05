@@ -6,7 +6,11 @@ const ownerSchema = new mongoose.Schema(
     ownerName: { type: String, required: true },
     email: { type: String, unique: true },
     password: String,
-    category: String,
+    category: { 
+    type: String, 
+    enum: ['Restaurant', 'Electronics', 'Clothing', 'Grocery', 'Services', 'General'], 
+    default: 'Restaurant' 
+},
     profileImage: { type: String, default: "" },
     fssaiNumber: { type: String, default: "" }, // FSSAI లైసెన్స్ నంబర్
     gstNumber: { type: String, default: "" },
@@ -72,18 +76,32 @@ const ownerSchema = new mongoose.Schema(
     post_order_click: { type: Number, default: 0 },
     call_click: { type: Number, default: 0 },
     daily_revenue: { type: Number, default: 0 },
-    cash_sales: { type: Number, default: 0 },  // 🎯 ఇవి కొత్తగా యాడ్ చెయ్
-    upi_sales: { type: Number, default: 0 },   // 🎯 ఇవి కొత్తగా యాడ్ చెయ్
+    cash_sales: { type: Number, default: 0 }, 
+    upi_sales: { type: Number, default: 0 },  
     total_orders: { type: Number, default: 0 },
     food_clicks: { type: Map, of: Number },
-    daily: { type: Map, of: Object },   // ఇది 15 రోజులు మాత్రమే ఉంటుంది
+    daily: { type: Map, of: Object },  
     monthly: { type: Map, of: Object }
-  }, { _id: false }), // ఇక్కడ _id: false పెడితే ప్రతి డేట్ కి ఐడి రాకుండా క్లీన్ గా ఉంటుంది
+  }, { _id: false }), 
   default: {}
 },
     fcmTokens: { type: [String], default: [] },
   },
   { timestamps: true }
 );
+const productSchema = new mongoose.Schema({
+    owner: { type: mongoose.Schema.Types.ObjectId, ref: "Owner", required: true },
+    name: { type: String, required: true },
+    category: { type: String, required: true }, 
+    subCategory: { type: String }, 
+    price: { type: Number, required: true },
+    discountPrice: { type: Number, default: 0 },
+    description: { type: String },
+    image: { type: String },
+    inStock: { type: Boolean, default: true },
+    sizes: { type: [String], default: [] }, 
+    specifications: { type: Map, of: String }, 
+}, { timestamps: true });
+
 const Owner = mongoose.models.Owner || mongoose.model("Owner", ownerSchema);
 export default Owner;
