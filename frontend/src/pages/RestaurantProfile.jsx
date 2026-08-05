@@ -1018,10 +1018,10 @@ if (!owner || !owner.isApproved) {
 
                         {/* 📜 డిస్క్రిప్షన్ (స్క్రోలబుల్ & క్లీన్) */}
                         <div className="max-h-12 overflow-y-auto scrollbar-none my-1.5 pr-1">
-                              <p className="text-[10px] font-medium text-slate-500 leading-relaxed">
-                                  {item?.description && item.description.trim() !== "" ? item.description : "No specifications available"}
-                              </p>
-                          </div>
+    <p className="text-[10px] font-medium text-slate-500 leading-relaxed">
+        {item.description ? item.description : (item.desc ? item.desc : "No specifications available")}
+    </p>
+</div>
 
                         {/* 💰 ప్రైస్ */}
                         <p className="text-base sm:text-lg font-black text-blue-600 italic mt-2">
