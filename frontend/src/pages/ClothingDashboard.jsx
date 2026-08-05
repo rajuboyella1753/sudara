@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../api/api-base";
 import { motion, AnimatePresence } from "framer-motion";
 import { QRCodeCanvas } from "qrcode.react";
+import QRCode from 'qrcode';
 import { 
   Shirt, Scissors, ShoppingBag, Watch, Plus, Trash2, Edit3, Download, Menu,
   Power, LogOut, Package, X, UploadCloud, Settings, Image as ImageIcon
@@ -190,105 +191,117 @@ export default function ClothingDashboard() {
     }
   };
 
-  const downloadQRCode = () => {
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    const qrCanvas = document.getElementById("qr-gen");
-    
-    if (!qrCanvas) {
+  const downloadQRCode = async () => {
+    try {
+      // 1. డైరెక్ట్ గా కోడ్ ద్వారానే QR ఇమేజ్ డేటా URL ని క్రియేట్ చేస్తున్నాం (ఇక DOM డిపెండెన్సీ ఉండదు)
+      const qrDataUrl = await QRCode.toDataURL(`https://sudara.in/restaurant/${owner?._id}`, {
+        width: 550,
+        margin: 1,
+        errorCorrectionLevel: 'H'
+      });
+
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      canvas.width = 1200;
+      canvas.height = 1900; 
+
+      // బ్యాక్‌గ్రౌండ్ కలర్స్
+      ctx.fillStyle = "#0F172A"; 
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+      gradient.addColorStop(0, "#4C1D95");
+      gradient.addColorStop(1, "#7C3AED");
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(canvas.width, 0);
+      ctx.lineTo(canvas.width, 400);
+      ctx.quadraticCurveTo(canvas.width / 2, 480, 0, 400);
+      ctx.fill();
+
+      const storeName = owner?.name?.toUpperCase() || "SUDARA STORE";
+      let fontSize = 90;
+      if (storeName.length > 15) fontSize = 70;
+      if (storeName.length > 20) fontSize = 55;
+      if (storeName.length > 25) fontSize = 45;
+
+      ctx.textAlign = "center";
+      ctx.fillStyle = "#FFFFFF";
+      ctx.font = `bold ${fontSize}px sans-serif`;
+      ctx.fillText(storeName, canvas.width / 2, 230, 1000);
+
+      ctx.fillStyle = "#F472B6";
+      ctx.font = "bold 40px sans-serif";
+      ctx.fillText("APPAREL & FASHION CATALOG", canvas.width / 2, 320);
+
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.5)";
+      ctx.shadowBlur = 60;
+      ctx.fillStyle = "#FFFFFF";
+      ctx.beginPath();
+      ctx.roundRect(250, 480, 700, 700, 60); 
+      ctx.fill();
+      ctx.restore();
+
+      // 2. క్యూఆర్ ఇమేజ్ ని లోడ్ చేసి కాన్వాస్ పై డ్రా చేయడం
+      const qrImg = new Image();
+      qrImg.src = qrDataUrl;
+      qrImg.onload = () => {
+        ctx.drawImage(qrImg, 325, 555, 550, 550);
+
+        ctx.fillStyle = "#F472B6";
+        ctx.font = "bold 45px sans-serif";
+        ctx.fillText("HOW TO SHOP / EXPLORE", canvas.width / 2, 1260); 
+
+        const pathText = "SCAN ➔ BROWSE APPAREL ➔ CHAT/CALL ➔ ORDER";
+        ctx.font = "bold 28px sans-serif";
+        ctx.fillStyle = "#CBD5E1";
+        ctx.fillText(pathText, canvas.width / 2, 1330);
+
+        const steps = [
+            "1. Open Camera and scan QR code",
+            "2. Browse latest outfits, ethnic & casual wear",
+            "3. Connect directly for pricing & sizes"
+        ];
+        ctx.font = "600 36px sans-serif";
+        steps.forEach((text, i) => {
+            const barY = 1400 + (i * 90);
+            ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+            ctx.beginPath();
+            ctx.roundRect(200, barY, 800, 70, 15);
+            ctx.fill();
+            ctx.fillStyle = "#FFFFFF";
+            ctx.fillText(text, canvas.width / 2, barY + 45);
+        });
+
+        ctx.fillStyle = "#FACC15"; 
+        ctx.font = "italic bold 30px sans-serif";
+        ctx.fillText("💡 Visit store for trial or check online collection anytime!", canvas.width / 2, 1725);
+
+        ctx.textAlign = "center";
+        ctx.font = "bold 30px sans-serif";
+        ctx.fillStyle = "#475569"; 
+        ctx.fillText("POWERED BY ", canvas.width / 2 - 190, 1830);
+             
+        ctx.fillStyle = "#FACC15"; 
+        ctx.fillText("SUDARA HUB", canvas.width / 2 + 30, 1830);
+             
+        ctx.fillStyle = "#475569";
+        ctx.fillText(" • sudara.in", canvas.width / 2 + 220, 1830);
+
+        const link = document.createElement("a");
+        link.href = canvas.toDataURL("image/png", 1.0);
+        link.download = `${owner?.name || "Clothing_Store"}_Poster.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      };
+    } catch (err) {
+      console.error("QR Generation Error:", err);
       alert("QR Code loading error. Please try again.");
-      return;
     }
-
-    canvas.width = 1200;
-    canvas.height = 1900; 
-
-    ctx.fillStyle = "#0F172A"; 
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-    gradient.addColorStop(0, "#4C1D95");
-    gradient.addColorStop(1, "#7C3AED");
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.moveTo(0, 0);
-    ctx.lineTo(canvas.width, 0);
-    ctx.lineTo(canvas.width, 400);
-    ctx.quadraticCurveTo(canvas.width / 2, 480, 0, 400);
-    ctx.fill();
-
-    const storeName = owner?.name?.toUpperCase() || "SUDARA FASHION HUB";
-    let fontSize = 90;
-    if (storeName.length > 15) fontSize = 70;
-    if (storeName.length > 20) fontSize = 55;
-    if (storeName.length > 25) fontSize = 45;
-
-    ctx.textAlign = "center";
-    ctx.fillStyle = "#FFFFFF";
-    ctx.font = `bold ${fontSize}px sans-serif`;
-    ctx.fillText(storeName, canvas.width / 2, 230, 1000);
-
-    ctx.fillStyle = "#F472B6";
-    ctx.font = "bold 40px sans-serif";
-    ctx.fillText("APPAREL & FASHION CATALOG", canvas.width / 2, 320);
-
-    ctx.save();
-    ctx.shadowColor = "rgba(0,0,0,0.5)";
-    ctx.shadowBlur = 60;
-    ctx.fillStyle = "#FFFFFF";
-    ctx.beginPath();
-    ctx.roundRect(250, 480, 700, 700, 60); 
-    ctx.fill();
-    ctx.restore();
-
-    ctx.drawImage(qrCanvas, 325, 555, 550, 550);
-
-    ctx.fillStyle = "#F472B6";
-    ctx.font = "bold 45px sans-serif";
-    ctx.fillText("HOW TO SHOP / EXPLORE", canvas.width / 2, 1260); 
-
-    const pathText = "SCAN ➔ BROWSE APPAREL ➔ CHAT/CALL ➔ ORDER";
-    ctx.font = "bold 28px sans-serif";
-    ctx.fillStyle = "#CBD5E1";
-    ctx.fillText(pathText, canvas.width / 2, 1330);
-
-    const steps = [
-        "1. Open Camera and scan QR code",
-        "2. Browse latest outfits, ethnic & casual wear",
-        "3. Connect directly for pricing & sizes"
-    ];
-    ctx.font = "600 36px sans-serif";
-    steps.forEach((text, i) => {
-        const barY = 1400 + (i * 90);
-        ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
-        ctx.beginPath();
-        ctx.roundRect(200, barY, 800, 70, 15);
-        ctx.fill();
-        ctx.fillStyle = "#FFFFFF";
-        ctx.fillText(text, canvas.width / 2, barY + 45);
-    });
-
-    ctx.fillStyle = "#FACC15"; 
-    ctx.font = "italic bold 30px sans-serif";
-    ctx.fillText("💡 Visit store for trial or check online collection anytime!", canvas.width / 2, 1725);
-
-    ctx.textAlign = "center";
-    ctx.font = "bold 30px sans-serif";
-    ctx.fillStyle = "#475569"; 
-    ctx.fillText("POWERED BY ", canvas.width / 2 - 190, 1830);
-         
-    ctx.fillStyle = "#FACC15"; 
-    ctx.fillText("SUDARA HUB", canvas.width / 2 + 30, 1830);
-         
-    ctx.fillStyle = "#475569";
-    ctx.fillText(" • sudara.in", canvas.width / 2 + 220, 1830);
-
-    const link = document.createElement("a");
-    link.href = canvas.toDataURL("image/png", 1.0);
-    link.download = `${owner?.name || "Clothing_Store"}_Poster.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   const handleToggleAvailability = async (item) => {
@@ -323,7 +336,7 @@ export default function ClothingDashboard() {
       
       {/* 🤫 HIDDEN QR CANVAS FOR POSTER DOWNLOAD */}
       <div style={{ display: "none" }}>
-        <QRCodeCanvas id="qr-gen" value={`https://sudara.in/hub/${owner?._id}`} size={180} level="H" />
+        <QRCodeCanvas id="qr-gen" value={`https://sudara.in/restaurant/${owner?._id}`} size={180} level="H" />
       </div>
 
       {/* 👑 CLEAN & RESPONSIVE NAVBAR */}
