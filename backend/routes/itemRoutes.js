@@ -129,7 +129,7 @@ router.get("/owner/:ownerId", async (req, res) => {
     const items = await Item.find({ ownerId })
       .select("name price category subCategory description image isAvailable ownerId") // 👈 ఇక్కడ 'description' యాడ్ చెయ్యి
       .lean();
-      
+      console.log("🔍 Backend Sending Items with Description:", items.map(i => ({ name: i.name, desc: i.description })));
     console.log("Fetched Items for Owner:", items.length);
     res.json(items);
   } catch (err) {

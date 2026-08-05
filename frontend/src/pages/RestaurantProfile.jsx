@@ -761,38 +761,41 @@ if (!owner || !owner.isApproved) {
         }
         return null;
       })()}
-{/* 🚀 Updated Professional Rush Level Badge */}
-<div className="flex justify-center mt-3">
-  <motion.div 
-    initial={{ opacity: 0, scale: 0.9 }}
-    animate={{ opacity: 1, scale: 1 }}
-    whileHover={{ scale: 1.05 }}
-    className={`group px-5 py-2 rounded-full text-[9px] font-black uppercase tracking-[0.2em] italic flex items-center gap-2.5 border backdrop-blur-md shadow-sm transition-all duration-500 ${
-      owner?.busyStatus === 'High' || owner?.busyStatus === 'Busy' 
-        ? 'bg-red-500/10 text-red-600 border-red-500/20' 
-        : owner?.busyStatus === 'Medium' 
-        ? 'bg-orange-500/10 text-orange-600 border-orange-500/20'
-        : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
-    }`}
-  >
-    {/* Animated Status Indicator */}
-    <span className="relative flex h-2 w-2">
-      <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-        owner?.busyStatus === 'High' || owner?.busyStatus === 'Busy' ? 'bg-red-500' : 
-        owner?.busyStatus === 'Medium' ? 'bg-orange-500' : 'bg-emerald-500'
-      }`}></span>
-      <span className={`relative inline-flex rounded-full h-2 w-2 ${
-        owner?.busyStatus === 'High' || owner?.busyStatus === 'Busy' ? 'bg-red-500' : 
-        owner?.busyStatus === 'Medium' ? 'bg-orange-500' : 'bg-emerald-500'
-      }`}></span>
-    </span>
+{/* 🚀 Updated Professional Rush Level Badge (Only for Restaurants) */}
+{isRestaurant && (
+  <div className="flex justify-center mt-3">
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      whileHover={{ scale: 1.05 }}
+      className={`group px-5 py-2 rounded-full text-[9px] font-black uppercase tracking-[0.2em] italic flex items-center gap-2.5 border backdrop-blur-md shadow-sm transition-all duration-500 ${
+        owner?.busyStatus === 'High' || owner?.busyStatus === 'Busy' 
+          ? 'bg-red-500/10 text-red-600 border-red-500/20' 
+          : owner?.busyStatus === 'Medium' 
+          ? 'bg-orange-500/10 text-orange-600 border-orange-500/20'
+          : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+      }`}
+    >
+      {/* Animated Status Indicator */}
+      <span className="relative flex h-2 w-2">
+        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+          owner?.busyStatus === 'High' || owner?.busyStatus === 'Busy' ? 'bg-red-500' : 
+          owner?.busyStatus === 'Medium' ? 'bg-orange-500' : 'bg-emerald-500'
+        }`}></span>
+        <span className={`relative inline-flex rounded-full h-2 w-2 ${
+          owner?.busyStatus === 'High' || owner?.busyStatus === 'Busy' ? 'bg-red-500' : 
+          owner?.busyStatus === 'Medium' ? 'bg-orange-500' : 'bg-emerald-500'
+        }`}></span>
+      </span>
 
-    <span className="opacity-90">Rush Level:</span>
-    <span className="text-[10px] tracking-tighter italic font-black">
-      {owner?.busyStatus || 'Normal'}
-    </span>
-  </motion.div>
-</div>
+      <span className="opacity-90">Rush Level:</span>
+      <span className="text-[10px] tracking-tighter italic font-black">
+        {owner?.busyStatus || 'Normal'}
+      </span>
+    </motion.div>
+  </div>
+)}
+
 {owner?.planType === "premium" && owner?.interiorImages?.length > 0 && (
   <div className="space-y-4">
     <div className="flex items-center gap-2 border-l-4 border-blue-600 pl-3">
@@ -969,6 +972,7 @@ if (!owner || !owner.isApproved) {
             : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-3"
     }`}>
         {availableItems.map((item) => (
+          
             isRestaurant ? (
                 /* --- 🍔 రెస్టారెంట్ ఐటమ్స్ కోసం పాత డిజైన్ --- */
                 <div key={item._id} className="bg-white p-2.5 sm:p-3 rounded-[1.5rem] sm:rounded-3xl border border-slate-100 flex items-center justify-between gap-3 shadow-sm">
@@ -990,50 +994,56 @@ if (!owner || !owner.isApproved) {
                     </div>
                 </div>
             ) : (
-                /* --- 🛒 ఎలక్ట్రానిక్స్/షాప్స్ కోసం అమెజాన్/ఫ్లిప్‌కార్ట్ లాంటి రియల్ కార్డ్ డిజైన్ --- */
-                <div key={item._id} className="bg-white p-3 sm:p-4 rounded-[2rem] border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between group">
+                /* --- 🛒 అమెజాన్ / ఫ్లిప్‌కార్ట్ లాంటి రియల్ కార్డ్ డిజైన్ (మోడ్రన్ & ప్రొఫెషనల్) --- */
+                <div key={item._id} className="bg-white p-3.5 sm:p-4 rounded-[2rem] border border-slate-200/80 shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col justify-between group">
+                  {console.log("🔍 Checking Single Item:", item, "📜 Desc:", item?.description)}
                     <div>
-                        <div className="relative w-full h-36 sm:h-44 bg-slate-50 rounded-2xl overflow-hidden mb-3 border border-slate-100">
+                        {/* 🖼️ రియల్-టైమ్ క్లియర్ ఇమేజ్ కంటైనర్ */}
+                        <div className="relative w-full h-36 sm:h-44 bg-slate-50/80 rounded-2xl overflow-hidden mb-3.5 border border-slate-100 flex items-center justify-center p-2">
                             <img 
                                 src={item.image || `https://ui-avatars.com/api/?name=${item.name}`} 
                                 loading="lazy" 
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                                className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500 drop-shadow-xs" 
                                 alt={item.name} 
                             />
-                            <span className="absolute top-2.5 left-2.5 text-[7px] sm:text-[8px] font-black text-white bg-slate-900/80 backdrop-blur-md px-2 py-1 rounded-lg uppercase tracking-wider">
+                            <span className="absolute top-2.5 left-2.5 text-[7px] sm:text-[8px] font-black text-white bg-slate-900/80 backdrop-blur-md px-2.5 py-1 rounded-lg uppercase tracking-wider shadow-xs">
                                 {item.subCategory || owner?.category}
                             </span>
                         </div>
-                        {item.description && (
-                        <div className="max-h-12 overflow-y-auto scrollbar-none my-1.5 pr-1">
-                            <p className="text-[10px] font-medium text-slate-500 leading-relaxed">
-                                {item.description}
-                            </p>
-                        </div>
-                    )}
-                        <h4 className="font-black uppercase text-xs sm:text-sm text-slate-800 line-clamp-2 leading-snug mb-1">
+
+                        {/* 🏷️ ఐటమ్ నేమ్ */}
+                        <h4 className="font-black uppercase text-xs sm:text-sm text-slate-900 line-clamp-2 leading-snug mb-1">
                             {item.name}
                         </h4>
-                        <p className="text-sm sm:text-base font-black text-blue-600 italic">
+
+                        {/* 📜 డిస్క్రిప్షన్ (స్క్రోలబుల్ & క్లీన్) */}
+                        <div className="max-h-12 overflow-y-auto scrollbar-none my-1.5 pr-1">
+                              <p className="text-[10px] font-medium text-slate-500 leading-relaxed">
+                                  {item?.description && item.description.trim() !== "" ? item.description : "No specifications available"}
+                              </p>
+                          </div>
+
+                        {/* 💰 ప్రైస్ */}
+                        <p className="text-base sm:text-lg font-black text-blue-600 italic mt-2">
                             ₹{item.price}
                         </p>
                     </div>
 
+                    {/* 🛒 ఇన్-స్టాక్ అండ్ కార్ట్ కంట్రోల్స్ */}
                     <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase">In Stock</span>
-                        <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border">
-                            <button onClick={() => removeFromCart(item)} className="p-1.5 bg-white rounded-lg shadow-sm hover:bg-slate-50">
+                        <span className="text-[9px] font-bold text-emerald-600 uppercase bg-emerald-50 px-2 py-0.5 rounded-md">In Stock</span>
+                        <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200/60">
+                            <button onClick={() => removeFromCart(item)} className="p-1.5 bg-white rounded-lg shadow-2xs hover:bg-slate-50 transition-all active:scale-95">
                                 <Minus className="w-3 h-3 text-slate-600" />
                             </button>
-                            <span className="text-xs font-black min-w-[16px] text-center text-slate-800">
+                            <span className="text-xs font-black min-w-[18px] text-center text-slate-900">
                                 {cart[item._id]?.qty || 0}
                             </span>
-                            <button onClick={() => addToCart(item)} className="p-1.5 bg-slate-900 text-white rounded-lg shadow-sm hover:bg-black">
+                            <button onClick={() => addToCart(item)} className="p-1.5 bg-slate-900 text-white rounded-lg shadow-2xs hover:bg-black transition-all active:scale-95">
                                 <Plus className="w-3 h-3" />
                             </button>
                         </div>
                     </div>
-
                 </div>
             )
         ))}
