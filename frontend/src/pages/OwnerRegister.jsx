@@ -38,8 +38,8 @@ export default function OwnerRegister() {
     { label: "🍔 Restaurants & Food", value: "Restaurant" },
     { label: "📱 Electronics & Mobiles", value: "Electronics" },
     { label: "👗 Clothing & Fashion", value: "Clothing" },
-    { label: "🛒 Groceries & Supermarket", value: "Grocery" },
-    { label: "🛠️ Local Services & Repair", value: "Services" }
+    // { label: "🛒 Groceries & Supermarket", value: "Grocery" },
+    // { label: "🛠️ Local Services & Repair", value: "Services" }
   ];
 
   const handleChange = (e) => {

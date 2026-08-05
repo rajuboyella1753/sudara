@@ -510,8 +510,8 @@ const dailyTotals = filteredList.reduce((acc, res) => {
           <option value="Restaurant">🍔 Restaurants</option>
           <option value="Electronics">📱 Electronics</option>
           <option value="Clothing">👗 Clothing</option>
-          <option value="Grocery">🛒 Groceries</option>
-          <option value="Services">🛠️ Services</option>
+          {/* <option value="Grocery">🛒 Groceries</option>
+          <option value="Services">🛠️ Services</option> */}
         </select>
         <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 rotate-90 pointer-events-none" />
       </div>

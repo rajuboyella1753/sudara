@@ -684,12 +684,14 @@ if (!owner || !owner.isApproved) {
   </motion.p>
 
   {/* Rating Badge */}
+  {owner?.category === 'Restaurant' && (
   <div className="flex items-center gap-1.5 bg-amber-50/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-amber-100 shadow-sm">
     <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
     <span className="text-[8px] sm:text-[9px] font-black uppercase text-amber-800 tracking-widest italic">
       {restaurantRating.label} ({restaurantRating.stars}⭐)
     </span>
   </div>
+)}
 </div>
        {/* 📍 Route & Action Buttons - Side by Side Alignment */}
 <div className="mt-8 md:mt-12 flex items-center justify-center gap-3 sm:gap-4">
@@ -999,17 +1001,24 @@ if (!owner || !owner.isApproved) {
                   {console.log("🔍 Checking Single Item:", item, "📜 Desc:", item?.description)}
                     <div>
                         {/* 🖼️ రియల్-టైమ్ క్లియర్ ఇమేజ్ కంటైనర్ */}
-                        <div className="relative w-full h-36 sm:h-44 bg-slate-50/80 rounded-2xl overflow-hidden mb-3.5 border border-slate-100 flex items-center justify-center p-2">
-                            <img 
-                                src={item.image || `https://ui-avatars.com/api/?name=${item.name}`} 
-                                loading="lazy" 
-                                className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500 drop-shadow-xs" 
-                                alt={item.name} 
-                            />
-                            <span className="absolute top-2.5 left-2.5 text-[7px] sm:text-[8px] font-black text-white bg-slate-900/80 backdrop-blur-md px-2.5 py-1 rounded-lg uppercase tracking-wider shadow-xs">
-                                {item.subCategory || owner?.category}
-                            </span>
-                        </div>
+                        <div className="flex flex-col gap-2">
+    {/* కేటగిరీ బ్యాడ్జ్ ఇమేజ్ పైన ఓవర్ రైడ్ అవకుండా కరెక్ట్ టాపర్ సైడ్‌లో ఉంటుంది */}
+    <div className="flex items-center justify-between px-1">
+        <span className="text-[8px] sm:text-[9px] font-black text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md uppercase tracking-wider shadow-2xs">
+            {item.subCategory || owner?.category}
+        </span>
+    </div>
+
+    {/* ఇమేజ్ కంటైనర్ */}
+    <div className="relative w-full h-36 sm:h-44 bg-slate-50/80 rounded-2xl overflow-hidden mb-3.5 border border-slate-100 flex items-center justify-center p-2">
+        <img 
+            src={item.image || `https://ui-avatars.com/api/?name=${item.name}`} 
+            loading="lazy" 
+            className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500 drop-shadow-xs" 
+            alt={item.name} 
+        />
+    </div>
+</div>
 
                         {/* 🏷️ ఐటమ్ నేమ్ */}
                         <h4 className="font-black uppercase text-xs sm:text-sm text-slate-900 line-clamp-2 leading-snug mb-1">
