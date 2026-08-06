@@ -401,6 +401,8 @@ const handleDirectOnlineOrder = async () => {
     setLoading(false);
   }
 };
+
+
 const handlePrintBill = async (orderObj, manualPaymentMethod = "CASH", ownerData = owner) => {
   try {
     // 1. డేటా ప్రిపరేషన్
@@ -602,7 +604,16 @@ const handleInstantOrder = async () => {
 }, [items, filter, activeSubCat, itemSearch]);
 
   const availableItems = searchFiltered.filter(item => item.isAvailable);
-
+// availableItems ని కేటగిరీల వారీగా గ్రూప్ చేయడం
+const groupedItems = useMemo(() => {
+  const groups = {};
+  availableItems.forEach(item => {
+    const cat = item.subCategory || item.category || "General";
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(item);
+  });
+  return groups;
+}, [availableItems]);
   if (loading && items.length === 0) {
   return (
     <div className="h-screen bg-white flex items-center justify-center font-black animate-pulse text-blue-600 uppercase tracking-widest text-[10px]">
@@ -675,13 +686,13 @@ if (!owner || !owner.isApproved) {
         <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
   {/* College Name Badge */}
   <motion.p 
-    initial={{ opacity: 0 }} 
-    animate={{ opacity: 1 }} 
-    transition={{ delay: 0.2 }}
-    className="text-white/95 font-black uppercase tracking-widest text-[8px] sm:text-[10px] bg-blue-600/40 backdrop-blur-lg px-4 py-1.5 rounded-full border border-white/20 shadow-xl"
-  >
-    {owner?.collegeName} • Exclusive Menu
-  </motion.p>
+  initial={{ opacity: 0 }} 
+  animate={{ opacity: 1 }} 
+  transition={{ delay: 0.2 }}
+  className="text-white/95 font-black uppercase tracking-widest text-[8px] sm:text-[10px] bg-blue-600/40 backdrop-blur-lg px-4 py-1.5 rounded-full border border-white/20 shadow-xl"
+>
+  {owner?.collegeName} • {owner?.category === "Restaurant" ? "Exclusive Menu" : "Exclusive Products"}
+</motion.p>
 
   {/* Rating Badge */}
   {owner?.category === 'Restaurant' && (
@@ -966,97 +977,122 @@ if (!owner || !owner.isApproved) {
   }} 
 /> */}
             {/* Items Grid: Responsive Column Count */}
-{/* Items Grid: Responsive Column Count */}
-<div className="max-h-screen lg:max-h-[800px] overflow-y-auto pr-1 scrollbar-custom">
-    <div className={`grid pb-10 gap-3.5 sm:gap-5 ${
-        isRestaurant 
-            ? "grid-cols-1 sm:grid-cols-2" 
-            : "grid-cols-2 sm:grid-cols-3 lg:grid-cols-3"
-    }`}>
-        {availableItems.map((item) => (
-          
+{/* 🚀 కేటగిరీల వారీగా లెఫ్ట్-టూ-రైట్ హారిజాంటల్ స్క్రోల్ లేఅవుట్ */}
+<div className="max-h-[800px] overflow-y-auto pr-1 space-y-8 scrollbar-custom pb-12">
+  {Object.keys(groupedItems).length === 0 ? (
+    <div className="text-center py-12 text-slate-400 font-bold uppercase text-xs">
+      No items found
+    </div>
+  ) : (
+    Object.entries(groupedItems).map(([categoryName, catItems]) => (
+      <div key={categoryName} className="space-y-3">
+        
+        {/* 🏷️ కేటగిరీ హెడ్డింగ్ */}
+        <div className="flex items-center justify-between border-l-4 border-blue-600 pl-3">
+          <h3 className="text-xs sm:text-sm font-black uppercase text-slate-900 tracking-wider italic">
+            {categoryName}
+          </h3>
+          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+            {catItems.length} Items
+          </span>
+        </div>
+
+        {/* ↔️ లెఫ్ట్-టూ-రైట్ హారిజాంటల్ స్క్రోల్ రో (Row) */}
+        <div className="flex gap-4 overflow-x-auto pb-3 pt-1 scrollbar-hide snap-x">
+          {catItems.map((item) => (
             isRestaurant ? (
-                /* --- 🍔 రెస్టారెంట్ ఐటమ్స్ కోసం పాత డిజైన్ --- */
-                <div key={item._id} className="bg-white p-2.5 sm:p-3 rounded-[1.5rem] sm:rounded-3xl border border-slate-100 flex items-center justify-between gap-3 shadow-sm">
-                    <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                        <div className="relative shrink-0">
-                            <img src={item.image || `https://ui-avatars.com/api/?name=${item.name}`} loading="lazy" className="w-14 h-14 sm:w-16 h-16 rounded-xl sm:rounded-2xl object-cover border shadow-sm" alt="" />
-                            <div className={`absolute -top-1 -left-1 w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border-2 border-white ${item.category === 'Veg' ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                            <span className="text-[6px] sm:text-[7px] font-black text-blue-500 uppercase tracking-tighter bg-blue-50 px-1.5 py-0.5 rounded-md mb-1 inline-block">{item.subCategory}</span>
-                            <h4 className="font-black uppercase text-[10px] sm:text-[11px] italic text-slate-800 leading-tight truncate">{item.name}</h4>
-                            <p className="text-base sm:text-lg font-black text-blue-600 italic mt-0.5">₹{item.price}</p>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-1 bg-slate-50 p-1 rounded-xl border shrink-0">
-                        <button onClick={() => removeFromCart(item)} className="p-1"><Minus className="w-3 h-3 sm:w-3.5 h-3.5 text-slate-400" /></button>
-                        <span className="text-[10px] sm:text-[11px] font-black min-w-[12px] text-center">{cart[item._id]?.qty || 0}</span>
-                        <button onClick={() => addToCart(item)} className="p-1"><Plus className="w-3 h-3 sm:w-3.5 h-3.5 text-slate-400" /></button>
-                    </div>
+              /* --- 🍔 రెస్టారెంట్ హారిజాంటల్ కార్డ్ --- */
+              <div 
+                key={item._id} 
+                className="min-w-[260px] sm:min-w-[280px] max-w-[280px] bg-white p-3 rounded-[1.5rem] border border-slate-100 flex items-center justify-between gap-3 shadow-sm shrink-0 snap-start"
+              >
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="relative shrink-0">
+                    <img src={item.image || `https://ui-avatars.com/api/?name=${item.name}`} loading="lazy" className="w-14 h-14 rounded-xl object-cover border shadow-2xs" alt="" />
+                    <div className={`absolute -top-1 -left-1 w-2.5 h-2.5 rounded-full border-2 border-white ${item.category === 'Veg' ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-black uppercase text-[10px] sm:text-[11px] italic text-slate-800 leading-tight truncate">{item.name}</h4>
+                    <p className="text-sm font-black text-blue-600 italic mt-0.5">₹{item.price}</p>
+                  </div>
                 </div>
+                <div className="flex flex-col items-center gap-1 bg-slate-50 p-1 rounded-xl border shrink-0">
+                  <button onClick={() => addToCart(item)} className="p-1"><Plus className="w-3.5 h-3.5 text-slate-700" /></button>
+                  <span className="text-[10px] font-black min-w-[12px] text-center">{cart[item._id]?.qty || 0}</span>
+                  <button onClick={() => removeFromCart(item)} className="p-1"><Minus className="w-3.5 h-3.5 text-slate-400" /></button>
+                </div>
+              </div>
             ) : (
-                /* --- 🛒 అమెజాన్ / ఫ్లిప్‌కార్ట్ లాంటి రియల్ కార్డ్ డిజైన్ (మోడ్రన్ & ప్రొఫెషనల్) --- */
-                <div key={item._id} className="bg-white p-3.5 sm:p-4 rounded-[2rem] border border-slate-200/80 shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col justify-between group">
-                  {console.log("🔍 Checking Single Item:", item, "📜 Desc:", item?.description)}
-                    <div>
-                        {/* 🖼️ రియల్-టైమ్ క్లియర్ ఇమేజ్ కంటైనర్ */}
-                        <div className="flex flex-col gap-2">
-    {/* కేటగిరీ బ్యాడ్జ్ ఇమేజ్ పైన ఓవర్ రైడ్ అవకుండా కరెక్ట్ టాపర్ సైడ్‌లో ఉంటుంది */}
-    <div className="flex items-center justify-between px-1">
-        <span className="text-[8px] sm:text-[9px] font-black text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md uppercase tracking-wider shadow-2xs">
-            {item.subCategory || owner?.category}
-        </span>
-    </div>
+              /* --- 🚗 ఆటోమొబైల్ / ఎలక్ట్రానిక్స్ / ఇతర హారిజాంటల్ కార్డ్ --- */
+              <div 
+                key={item._id} 
+                className="min-w-[220px] sm:min-w-[240px] max-w-[240px] bg-white p-4 rounded-[2rem] border border-slate-200/80 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between shrink-0 snap-start"
+              >
+                <div>
+                  <div className="relative w-full h-32 bg-slate-50 rounded-2xl overflow-hidden mb-3 border border-slate-100 flex items-center justify-center p-2">
+                    <img 
+                      src={item.image || `https://ui-avatars.com/api/?name=${item.name}`} 
+                      loading="lazy" 
+                      className="max-h-full max-w-full object-contain" 
+                      alt={item.name} 
+                    />
+                    <span className="absolute top-2 right-2 bg-slate-900 text-white text-[7px] font-black uppercase px-2 py-0.5 rounded-md">
+                      {item.subCategory || "Hub"}
+                    </span>
+                  </div>
 
-    {/* ఇమేజ్ కంటైనర్ */}
-    <div className="relative w-full h-36 sm:h-44 bg-slate-50/80 rounded-2xl overflow-hidden mb-3.5 border border-slate-100 flex items-center justify-center p-2">
-        <img 
-            src={item.image || `https://ui-avatars.com/api/?name=${item.name}`} 
-            loading="lazy" 
-            className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-500 drop-shadow-xs" 
-            alt={item.name} 
-        />
-    </div>
-</div>
+                  <h4 className="font-black uppercase text-xs text-slate-900 truncate mb-1">
+                    {item.name}
+                  </h4>
 
-                        {/* 🏷️ ఐటమ్ నేమ్ */}
-                        <h4 className="font-black uppercase text-xs sm:text-sm text-slate-900 line-clamp-2 leading-snug mb-1">
-                            {item.name}
-                        </h4>
-
-                        {/* 📜 డిస్క్రిప్షన్ (స్క్రోలబుల్ & క్లీన్) */}
-                        <div className="max-h-12 overflow-y-auto scrollbar-none my-1.5 pr-1">
-    <p className="text-[10px] font-medium text-slate-500 leading-relaxed">
-        {item.description ? item.description : (item.desc ? item.desc : "No specifications available")}
-    </p>
-</div>
-
-                        {/* 💰 ప్రైస్ */}
-                        <p className="text-base sm:text-lg font-black text-blue-600 italic mt-2">
-                            ₹{item.price}
-                        </p>
+                  {/* 🚗 ఆటోమొబైల్ అయితే మైలేజ్ మరియు ఫ్యూయల్ టైప్ చూపించడానికి */}
+                  {item.category === "Automobile" && (
+                    <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                      {item.mileageOrRange && (
+                        <span className="text-[8px] font-bold bg-amber-50 text-amber-800 px-2 py-0.5 rounded border border-amber-200">
+                          ⚡ {item.mileageOrRange}
+                        </span>
+                      )}
+                      {item.fuelType && (
+                        <span className="text-[8px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
+                          ⛽ {item.fuelType}
+                        </span>
+                      )}
                     </div>
+                  )}
 
-                    {/* 🛒 ఇన్-స్టాక్ అండ్ కార్ట్ కంట్రోల్స్ */}
-                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-                        <span className="text-[9px] font-bold text-emerald-600 uppercase bg-emerald-50 px-2 py-0.5 rounded-md">In Stock</span>
-                        <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200/60">
-                            <button onClick={() => removeFromCart(item)} className="p-1.5 bg-white rounded-lg shadow-2xs hover:bg-slate-50 transition-all active:scale-95">
-                                <Minus className="w-3 h-3 text-slate-600" />
-                            </button>
-                            <span className="text-xs font-black min-w-[18px] text-center text-slate-900">
-                                {cart[item._id]?.qty || 0}
-                            </span>
-                            <button onClick={() => addToCart(item)} className="p-1.5 bg-slate-900 text-white rounded-lg shadow-2xs hover:bg-black transition-all active:scale-95">
-                                <Plus className="w-3 h-3" />
-                            </button>
-                        </div>
+                  {/* 📜 డిస్క్రిప్షన్ బాక్స్ (స్క్రోల్ అయ్యేలా) */}
+                  {item.description && (
+                    <div className="max-h-12 overflow-y-auto scrollbar-none my-1 pr-1">
+                      <p className="text-[9px] font-medium text-slate-500 leading-snug">
+                        {item.description}
+                      </p>
                     </div>
+                  )}
+
+                  <div className="mt-2">
+                    <p className="text-[8px] font-black uppercase text-slate-400 tracking-wider">On-Road Price</p>
+                    <p className="text-sm font-black text-blue-600 italic">
+                      ₹{item.price}
+                    </p>
+                  </div>
                 </div>
+
+                <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-[8px] font-bold text-emerald-600 uppercase bg-emerald-50 px-2 py-0.5 rounded-md">In Stock</span>
+                  <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border">
+                    <button onClick={() => removeFromCart(item)} className="p-1 bg-white rounded-lg"><Minus className="w-2.5 h-2.5 text-slate-600" /></button>
+                    <span className="text-[11px] font-black min-w-[14px] text-center">{cart[item._id]?.qty || 0}</span>
+                    <button onClick={() => addToCart(item)} className="p-1 bg-slate-900 text-white rounded-lg"><Plus className="w-2.5 h-2.5" /></button>
+                  </div>
+                </div>
+              </div>
             )
-        ))}
-    </div>
+          ))}
+        </div>
+      </div>
+    ))
+  )}
 </div>
     {/* 🏢 Owner & Legal Compliance Details Section */}
 <div className="bg-slate-50 border border-slate-200 rounded-[2rem] p-5 sm:p-6 my-6 shadow-sm">

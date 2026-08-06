@@ -79,11 +79,10 @@ export default function OwnerLogin() {
         
         const ownerCategory = res.data.owner.category;
         
-        // 🎯 పాత రెస్టారెంట్ ఓనర్లందరూ పాత డాష్‌బోర్డ్‌కే వెళ్తారు
+        // 🎯 కేటగిరీని బట్టి కరెక్ట్ డాష్‌బోర్డ్‌కి రీడైరెక్ట్ చేసే లాజిక్
         if (!ownerCategory || ownerCategory === "Restaurant") {
           navigate("/owner/dashboard");
         } 
-        // 🎯 కొత్త కేటగిరీల ఓనర్లు వాళ్ళ వాళ్ళ సపరేట్ పేజీలకు వెళ్తారు
         else if (ownerCategory === "Electronics") {
           navigate("/owner/electronics-dashboard");
         } 
@@ -93,8 +92,14 @@ export default function OwnerLogin() {
         else if (ownerCategory === "Grocery") {
           navigate("/owner/grocery-dashboard");
         } 
+        else if (ownerCategory === "Automobile") {
+          navigate("/automobile/dashboard"); // 🚗 ఆటోమొబైల్ షోరూమ్ డాష్‌బోర్డ్
+        } 
+        else if (ownerCategory === "Furniture") {
+          navigate("/furniture/dashboard"); // 🛋️ ఫర్నిచర్ హబ్ డాష్‌బోర్డ్
+        } 
         else {
-          navigate("/owner/dashboard"); // ఒకవేళ మిగతావి ఏవైనా ఉంటే డిఫాల్ట్ డాష్‌బోర్డ్
+          navigate("/owner/dashboard"); 
         }
 
       } else {

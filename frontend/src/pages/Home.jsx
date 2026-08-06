@@ -266,8 +266,10 @@ useEffect(() => {
       <option value="Restaurant">Restaurant</option>
       <option value="Electronics">Electronics</option>
       <option value="Clothing">Clothing</option>
-      {/* <option value="Grocery">Grocery</option>
-      <option value="Services">Services</option>
+       <option value="Grocery">Grocery</option>
+       <option value="Automobile">Automobile Showroom</option>
+       <option value="Furniture">Furniture & Living</option>
+      {/*<option value="Services">Services</option>
       <option value="General">General</option> */}
     </select>
     <ChevronDown className="absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
@@ -478,17 +480,21 @@ useEffect(() => {
                   <div className="absolute inset-0 bg-white/10 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
                   <span className="relative z-10">
                     {res.isStoreOpen ? (
-                      /* 🎯 కేటగిరీని బట్టి బటన్ టెక్స్ట్ మారే లాజిక్ ఇక్కడ ఉంది రా! */
-                      res.category?.toLowerCase() === 'restaurant' 
-                        ? 'Enter Restaurant' 
-                        : res.category?.toLowerCase() === 'clothing' 
-                        ? 'Enter Clothing Store' 
-                        : res.category?.toLowerCase() === 'electronics' 
-                        ? 'Enter Electronics Store' 
-                        : `Enter ${res.category || 'Store'}`
-                    ) : (
-                      'CURRENTLY CLOSED'
-                    )}
+  /* 🎯 కేటగిరీని బట్టి బటన్ టెక్స్ట్ మారే లాజిక్ ఇక్కడ ఉంది రా! */
+  res.category?.toLowerCase() === 'restaurant' 
+    ? 'Enter Restaurant' 
+    : res.category?.toLowerCase() === 'clothing' 
+    ? 'Enter Clothing Store' 
+    : res.category?.toLowerCase() === 'electronics' 
+    ? 'Enter Electronics Store' 
+    : res.category?.toLowerCase() === 'automobile' 
+    ? 'Enter Automobile Showroom' 
+    : res.category?.toLowerCase() === 'furniture' 
+    ? 'Enter Furniture Hub'  
+    : `Enter ${res.category || 'Store'}`
+) : (
+  'CURRENTLY CLOSED'
+)}
                   </span>
                   {res.isStoreOpen && <ArrowUpRight className="relative z-10 w-4 h-4 transition-transform group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1" />}
                 </button>

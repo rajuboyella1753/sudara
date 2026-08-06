@@ -8,7 +8,7 @@ const ownerSchema = new mongoose.Schema(
     password: String,
     category: { 
     type: String, 
-    enum: ['Restaurant', 'Electronics', 'Clothing', 'Grocery', 'Services', 'General'], 
+    enum: ['Restaurant', 'Electronics', 'Clothing', 'Grocery', 'Services', 'Automobile', 'Furniture', 'General'], 
     default: 'Restaurant' 
 },
     profileImage: { type: String, default: "" },

@@ -47,13 +47,17 @@ router.post("/register", async (req, res) => {
       collegeName,
       fssaiNumber,
       gstNumber,
-      category 
+      category,
+      foodType,
+      tableCount,
+      todaySpecial
     } = req.body;
 
     const existing = await Owner.findOne({ email });
     if (existing) return res.status(400).json({ message: "Owner already exists" });
 
-    const owner = await Owner.create({ 
+    // 💡 కేటగిరీని బట్టి రెస్టారెంట్ డేటాని వేరుగా, మిగతా వాటికి వేరుగా హ్యాండ్ చేస్తున్నాం
+    const ownerData = {
       name, 
       ownerName: ownerName || name,
       email, 
@@ -68,7 +72,16 @@ router.post("/register", async (req, res) => {
       gstNumber: gstNumber || "", 
       category: category || "Restaurant", 
       isApproved: false 
-    });
+    };
+
+    // ఒకవేళ కేటగిరీ "Restaurant" అయితేనే ఈ ఎక్స్ట్రా ఫీల్డ్స్ యాడ్ అవుతాయి
+    if (category === "Restaurant") {
+      ownerData.foodType = foodType || "Both";
+      ownerData.tableCount = tableCount || 0;
+      ownerData.todaySpecial = todaySpecial || "";
+    }
+
+    const owner = await Owner.create(ownerData);
 
     res.status(201).json({ success: true, owner });
   } catch (err) {
@@ -126,7 +139,7 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ message: "Invalid Email or Password ❌" });
     }
     if (owner.isApproved === false) {
-      return res.status(403).json({ message: "Account pending admin approval... ⏳" });
+      return res.status(403).json({ message: "Account pending waiting for admin approval * మీ అకౌంట్ అప్రూవల్ కోసం పెండింగ్‌లో ఉంది... ⏳" });
     }
     console.log(`✅ Owner Logged In: ${owner.name} (${owner.category || 'Restaurant'})`);
     res.json({ success: true, owner });

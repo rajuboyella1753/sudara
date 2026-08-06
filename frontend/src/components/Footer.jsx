@@ -29,9 +29,9 @@ export default function Footer() {
               <span className="text-blue-600">SUDARA</span> <span className="text-orange-600">HUB</span>
             </Link>
             <p className="mt-8 text-slate-500 font-medium leading-relaxed max-w-sm text-sm">
-  Empowering users with seamless access to nearby urban food hubs. 
-  Integrated Dining Network Protocol built for speed and reliability in every city.
-</p>
+        Empowering users with seamless access to nearby local businesses. 
+        One platform for Every local business — built for speed, transparency, and trust in every community - By BSR .
+      </p>
             
             <div className="flex items-center gap-4 mt-10">
               <a 

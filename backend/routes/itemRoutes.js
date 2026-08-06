@@ -10,7 +10,19 @@ router.post("/add", upload.single('image'), async (req, res) => {
     console.log("📦 Request Body Data:", req.body);
     console.log("📸 Request File:", req.file);
 
-    const { name, price, subCategory, ownerId, category, description, isAvailable } = req.body;
+    // 💡 ఇక్కడ mileageOrRange, fuelType, material లను కూడా రిసీవ్ చేసుకోవాలి
+    const { 
+      name, 
+      price, 
+      subCategory, 
+      ownerId, 
+      category, 
+      description, 
+      isAvailable, 
+      mileageOrRange, 
+      fuelType, 
+      material 
+    } = req.body;
 
     if (!ownerId) {
       return res.status(400).json({ message: "Owner ID is missing!" });
@@ -21,19 +33,21 @@ router.post("/add", upload.single('image'), async (req, res) => {
     }
 
     const imageUrl = req.file ? req.file.path : "";
-
-    // boolean విలువను సరిగ్గా పార్స్ చేయడం
     const parsedAvailability = isAvailable === 'true' || isAvailable === true;
 
     const newItem = await Item.create({
       name,
       price: Number(price),
-      category: category || "Electronics",
-      subCategory: subCategory || "Mobiles",
+      category: category || "General",
+      subCategory: subCategory || "General",
       description: description || "",
       isAvailable: parsedAvailability,
       ownerId,
-      image: imageUrl
+      image: imageUrl,
+      // 🎯 డేటాబేస్ లో పర్ఫెక్ట్ గా సేవ్ అయ్యేలా ఇక్కడ యాడ్ చేయాలి
+      mileageOrRange: mileageOrRange || "",
+      fuelType: fuelType || "",
+      material: material || ""
     });
 
     console.log("✅ Item successfully saved with ID:", newItem._id);
@@ -41,7 +55,6 @@ router.post("/add", upload.single('image'), async (req, res) => {
 
   } catch (err) {
     console.error("❌ CRITICAL ERROR IN /items/add:", err.message);
-    console.error("Full Error Details:", err); // అసలైన ఎర్రర్ టెర్మినల్‌లో చూడటానికి
     return res.status(500).json({ 
       message: "Internal Server Error", 
       error: err.message 
@@ -62,7 +75,17 @@ router.get("/all", async (req, res) => {
 /* 3. UPDATE FULL ITEM 🔥 */
 router.put("/update/:id", upload.single('image'), async (req, res) => {
   try {
-    const { name, price, category, subCategory, description, isAvailable } = req.body; 
+    const { 
+      name, 
+      price, 
+      category, 
+      subCategory, 
+      description, 
+      isAvailable, 
+      mileageOrRange, 
+      fuelType, 
+      material 
+    } = req.body; 
     
     let updateData = { 
       name, 
@@ -70,7 +93,10 @@ router.put("/update/:id", upload.single('image'), async (req, res) => {
       category, 
       subCategory,
       description: description || "",
-      isAvailable: isAvailable === 'true' || isAvailable === true
+      isAvailable: isAvailable === 'true' || isAvailable === true,
+      mileageOrRange: mileageOrRange || "",
+      fuelType: fuelType || "",
+      material: material || ""
     };
     
     if (req.file) {
@@ -127,7 +153,7 @@ router.get("/owner/:ownerId", async (req, res) => {
     const { ownerId } = req.params;
     
     const items = await Item.find({ ownerId })
-      .select("name price category subCategory description image isAvailable ownerId") // 👈 ఇక్కడ 'description' యాడ్ చెయ్యి
+      .select("name price category subCategory description image isAvailable ownerId mileageOrRange fuelType material") // 👈 ఇక్కడ 'description' యాడ్ చెయ్యి
       .lean();
       console.log("🔍 Backend Sending Items with Description:", items.map(i => ({ name: i.name, desc: i.description })));
     console.log("Fetched Items for Owner:", items.length);
@@ -163,6 +189,16 @@ router.get("/sales-report/:ownerId", async (req, res) => {
     res.json(report);
   } catch (err) {
     res.status(500).json({ error: "Report generation failed" });
+  }
+});
+// గ్లోబల్ మాస్టర్ క్యాటలాగ్ కోసం బ్యాక్‌ఎండ్ రౌట్
+router.get("/master-catalog", async (req, res) => {
+  try {
+    // మాస్టర్ కలెక్షన్ నుండి యూనిక్ ప్రొడక్ట్స్ ఫెచ్ చేయడం
+    const masterItems = await Item.find({}); // లేదా మీ మాస్టర్ మోడల్
+    res.status(200).json(masterItems);
+  } catch (err) {
+    res.status(500).json({ message: "Master catalog fetch failed" });
   }
 });
 export default router;
