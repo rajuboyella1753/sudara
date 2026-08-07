@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api-base";
 import { motion, AnimatePresence } from "framer-motion";
@@ -78,10 +78,19 @@ export default function GroceryDashboard() {
       console.error("Failed to fetch grocery items");
     }
   };
-
-  const fetchMasterCatalog = async () => {
+// ⏳ రోజుల కౌంట్‌డౌన్ లాజిక్
+  const daysRemaining = useMemo(() => {
+    if (!owner?.nextBillingDate) return 0;
+    const today = new Date();
+    const expiry = new Date(owner.nextBillingDate);
+    const differenceInTime = expiry.getTime() - today.getTime();
+    const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
+    return differenceInDays < 0 ? 0 : differenceInDays;
+  }, [owner]);
+const fetchMasterCatalog = async () => {
     try {
-      const res = await api.get(`/items/master-catalog`);
+      // 💡 కేవలం గ్రాసరీ ఐటమ్స్ మాత్రమే వచ్చేలా కేటగిరీ పంపిస్తున్నాం
+      const res = await api.get(`/items/master-catalog?category=Grocery`);
       setMasterCatalog(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.log("Master catalog fetch fallback");
@@ -169,7 +178,7 @@ export default function GroceryDashboard() {
     }
   };
 
-  const handleAddGrocery = async (e) => {
+const handleAddGrocery = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
@@ -178,9 +187,9 @@ export default function GroceryDashboard() {
       formData.append("name", newGrocery.name);
       formData.append("category", "Grocery");
       formData.append("subCategory", newGrocery.subCategory);
-      formData.append("price", newGrocery.price);
-      formData.append("description", newGrocery.description);
-      formData.append("isAvailable", newGrocery.isAvailable);
+      formData.append("price", Number(newGrocery.price));
+      formData.append("description", newGrocery.description || "");
+      formData.append("isAvailable", String(newGrocery.isAvailable));
       
       if (imageFile) {
         formData.append("image", imageFile);
@@ -211,7 +220,7 @@ export default function GroceryDashboard() {
         name: masterItem.name,
         category: "Grocery",
         subCategory: masterItem.subCategory || "Daily Essentials",
-        price: masterItem.price || 50,
+        price: Number(masterItem.price) || 50,
         description: masterItem.description || "Fresh Essential",
         image: masterItem.image || "",
         isAvailable: true
@@ -513,10 +522,26 @@ export default function GroceryDashboard() {
                 <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
               )}
             </div>
-            <div className="min-w-0">
-              <h1 className="text-[11px] sm:text-sm font-black uppercase tracking-wider text-slate-900 truncate max-w-[100px] xs:max-w-[130px] sm:max-w-xs">{owner.name}</h1>
-              <p className="text-[8px] sm:text-[10px] font-extrabold uppercase text-emerald-600 tracking-widest truncate">గ్రోసరీ & ఎసెన్షియల్స్ హబ్</p>
-            </div>
+            <div className="min-w-0 flex flex-col justify-center">
+  <h1 className="text-[11px] sm:text-sm font-black uppercase tracking-wider text-slate-900 truncate max-w-[100px] xs:max-w-[130px] sm:max-w-xs leading-tight">
+    {owner.name}
+  </h1>
+  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+    <p className="text-[7px] sm:text-[8px] font-extrabold uppercase text-purple-600 tracking-widest truncate">గ్రోసరీ & ఎసెన్షియల్స్ హబ్</p>
+    {daysRemaining > 0 ? (
+      <span className="bg-emerald-50 text-emerald-600 border border-emerald-200/60 text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0">
+        ⏳ {daysRemaining}D Left
+      </span>
+    ) : (
+      <button 
+        onClick={() => alert("Admin కి సంప్రదించండి!")} 
+        className="bg-red-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase animate-bounce shrink-0"
+      >
+        ⚠️ Renew
+      </button>
+    )}
+  </div>
+</div>
           </div>
         </div>
 

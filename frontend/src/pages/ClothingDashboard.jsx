@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api-base";
 import { motion, AnimatePresence } from "framer-motion";
@@ -79,10 +79,10 @@ export default function ClothingDashboard() {
     }
   };
 
-  // 🌍 గ్లోబల్ మాస్టర్ కేటలాగ్ ఫెచ్ చేయడం
-  const fetchMasterCatalog = async () => {
+const fetchMasterCatalog = async () => {
     try {
-      const res = await api.get(`/items/master-catalog`);
+      // 💡 కేవలం క్లాతింగ్ (Clothing) ఐటమ్స్ మాత్రమే వచ్చేలా కేటగిరీ పంపిస్తున్నాం
+      const res = await api.get(`/items/master-catalog?category=Clothing`);
       setMasterCatalog(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.log("Master catalog fetch fallback");
@@ -115,7 +115,15 @@ export default function ClothingDashboard() {
       setStoreImagePreview(URL.createObjectURL(file));
     }
   };
-
+// ⏳ రోజుల కౌంట్‌డౌన్ లాజిక్
+  const daysRemaining = useMemo(() => {
+    if (!owner?.nextBillingDate) return 0;
+    const today = new Date();
+    const expiry = new Date(owner.nextBillingDate);
+    const differenceInTime = expiry.getTime() - today.getTime();
+    const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
+    return differenceInDays < 0 ? 0 : differenceInDays;
+  }, [owner]);
   const handleUpdateSettings = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -150,7 +158,7 @@ export default function ClothingDashboard() {
     }
   };
 
-  const handleAddApparel = async (e) => {
+const handleAddApparel = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
@@ -159,9 +167,9 @@ export default function ClothingDashboard() {
       formData.append("name", newApparel.name);
       formData.append("category", "Clothing");
       formData.append("subCategory", newApparel.subCategory);
-      formData.append("price", newApparel.price);
-      formData.append("description", newApparel.description);
-      formData.append("isAvailable", newApparel.isAvailable);
+      formData.append("price", Number(newApparel.price));
+      formData.append("description", newApparel.description || "");
+      formData.append("isAvailable", String(newApparel.isAvailable));
       
       if (imageFile) {
         formData.append("image", imageFile);
@@ -193,7 +201,7 @@ export default function ClothingDashboard() {
         name: masterItem.name,
         category: "Clothing",
         subCategory: masterItem.subCategory || "Men",
-        price: masterItem.price || 999,
+        price: Number(masterItem.price) || 999,
         description: masterItem.description || "Verified Apparel Item",
         image: masterItem.image || "",
         isAvailable: true
@@ -408,10 +416,26 @@ export default function ClothingDashboard() {
               )}
             </div>
 
-            <div className="min-w-0">
-              <h1 className="text-[11px] sm:text-sm font-black uppercase tracking-wider text-slate-900 truncate max-w-[100px] xs:max-w-[130px] sm:max-w-xs">{owner.name}</h1>
-              <p className="text-[8px] sm:text-[10px] font-extrabold uppercase text-purple-600 tracking-widest truncate">క్లాతింగ్ & అప్పారెల్ హబ్</p>
-            </div>
+            <div className="min-w-0 flex flex-col justify-center">
+  <h1 className="text-[11px] sm:text-sm font-black uppercase tracking-wider text-slate-900 truncate max-w-[100px] xs:max-w-[130px] sm:max-w-xs leading-tight">
+    {owner.name}
+  </h1>
+  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+    <p className="text-[7px] sm:text-[8px] font-extrabold uppercase text-purple-600 tracking-widest truncate">క్లాతింగ్ & అప్పారెల్ హబ్</p>
+    {daysRemaining > 0 ? (
+      <span className="bg-emerald-50 text-emerald-600 border border-emerald-200/60 text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0">
+        ⏳ {daysRemaining}D Left
+      </span>
+    ) : (
+      <button 
+        onClick={() => alert("Admin కి సంప్రదించండి!")} 
+        className="bg-red-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase animate-bounce shrink-0"
+      >
+        ⚠️ Renew
+      </button>
+    )}
+  </div>
+</div>
           </div>
         </div>
 

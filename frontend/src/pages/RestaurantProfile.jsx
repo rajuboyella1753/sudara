@@ -59,6 +59,9 @@ export default function RestaurantProfile() {
   const [recentOrderItems, setRecentOrderItems] = useState([]);
   const [restaurantOrders, setRestaurantOrders] = useState([]);
   const [isClickLocked, setIsClickLocked] = useState(false);
+  const [showTestDriveModal, setShowTestDriveModal] = useState(false);
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [testDriveData, setTestDriveData] = useState({ name: "", phone: "", date: "" });
   const availableSubCats = useMemo(() => {
   const defaultCats = ["Biryanis", "Starters", "Soups", "Noodles", "Gravys", "Rice", "Breads", "Sea Food", "Tiffins"];
   const catsInMenu = items.map(item => item.subCategory);
@@ -116,7 +119,16 @@ const trackPreOrderClick = async () => {
     });
   } catch (err) { console.log("Pre-order track failed"); }
 };
-
+// 🚗 ఆటోమొబైల్ టెస్ట్ డ్రైవ్ క్లిక్ ట్రాకింగ్
+const trackTestDriveClick = async () => {
+  try {
+    const today = getUniversalDate(); 
+    await api.put(`/owner/track-analytics/${id}`, { 
+      action: "pre_order_click",
+      date: today 
+    });
+  } catch (err) { console.log("Test drive track failed"); }
+};
 // 🚀 POST-BOOK (Instant) క్లిక్ ట్రాకింగ్
 const trackPostOrderClick = async () => {
   try {
@@ -592,7 +604,41 @@ const handleInstantOrder = async () => {
     alert("Order Failed! ❌");
   }
 };
+const handleBookTestDrive = async () => {
+    if (!testDriveData.name || !testDriveData.phone || !testDriveData.date) {
+      return alert("దయచేసి అన్ని వివరాలు నింపండి! 📝");
+    }
 
+    try {
+      setLoading(true);
+      
+      // 🚀 1. అడ్మిన్ అనలిటిక్స్ కోసం టెస్ట్ డ్రైవ్ క్లిక్/ಬುకింగ్ కౌంట్ ట్రాక్ చేయడం
+      const todayDate = getUniversalDate();
+      await api.put(`/owner/track-analytics/${id}`, { 
+        action: "pre_order_click", // ఆటోమొబైల్స్ కి ఇది టెస్ట్ డ్రైవ్ కౌంట్ కింద లెక్కలోకి వస్తుంది
+        date: todayDate 
+      });
+
+      // 2. అసలు బుకింగ్ పేలోడ్ సర్వర్‌కి పంపడం
+      const payload = {
+        restaurantId: id,
+        customerName: testDriveData.name,
+        customerPhone: testDriveData.phone,
+        vehicleName: selectedVehicle?.name,
+        testDriveDate: testDriveData.date
+      };
+
+      await api.post("/orders/test-drive/add", payload);
+      alert(`బుక్ చేయబడింది! 🚗\nVehicle: ${selectedVehicle?.name}`);
+      setShowTestDriveModal(false);
+      setTestDriveData({ name: "", phone: "", date: "" });
+    } catch (err) {
+      console.error("Test Drive Error:", err);
+      alert("టెస్ట్ డ్రైవ్ బుకింగ్ విఫలమైంది. ❌");
+    } finally {
+      setLoading(false);
+    }
+  };
  const searchFiltered = useMemo(() => {
   return items.filter(item => {
     // 'All' అయితే అన్ని ఐటమ్స్ చూపిస్తుంది
@@ -1049,10 +1095,10 @@ if (!owner || !owner.isApproved) {
                   {item.category === "Automobile" && (
                     <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
                       {item.mileageOrRange && (
-                        <span className="text-[8px] font-bold bg-amber-50 text-amber-800 px-2 py-0.5 rounded border border-amber-200">
-                          ⚡ {item.mileageOrRange}
-                        </span>
-                      )}
+  <span className="text-[8px] font-bold bg-amber-50 text-amber-800 px-2 py-0.5 rounded border border-amber-200">
+    ⚡ మైలేజ్/liter: {item.mileageOrRange}
+  </span>
+)}
                       {item.fuelType && (
                         <span className="text-[8px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
                           ⛽ {item.fuelType}
@@ -1071,21 +1117,40 @@ if (!owner || !owner.isApproved) {
                   )}
 
                   <div className="mt-2">
-                    <p className="text-[8px] font-black uppercase text-slate-400 tracking-wider">On-Road Price</p>
-                    <p className="text-sm font-black text-blue-600 italic">
-                      ₹{item.price}
-                    </p>
-                  </div>
+  <p className="text-[8px] font-black uppercase text-slate-400 tracking-wider">
+    {item.category === "Automobile" ? "On-Road Price" : "Price"}
+  </p>
+  <p className="text-sm font-black text-blue-600 italic">
+    ₹{item.price}
+  </p>
+</div>
                 </div>
 
-                <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-[8px] font-bold text-emerald-600 uppercase bg-emerald-50 px-2 py-0.5 rounded-md">In Stock</span>
-                  <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border">
-                    <button onClick={() => removeFromCart(item)} className="p-1 bg-white rounded-lg"><Minus className="w-2.5 h-2.5 text-slate-600" /></button>
-                    <span className="text-[11px] font-black min-w-[14px] text-center">{cart[item._id]?.qty || 0}</span>
-                    <button onClick={() => addToCart(item)} className="p-1 bg-slate-900 text-white rounded-lg"><Plus className="w-2.5 h-2.5" /></button>
-                  </div>
-                </div>
+                {/* 🚗 ఆటోమొబైల్ అయితే Book Test Drive బటన్ */}
+{item.category === "Automobile" ? (
+  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
+    <span className="text-[8px] font-bold text-emerald-600 uppercase bg-emerald-50 px-2 py-0.5 rounded-md">In Stock</span>
+    <button 
+      onClick={() => {
+        setSelectedVehicle(item);
+        setShowTestDriveModal(true);
+      }}
+      className="bg-slate-900 hover:bg-amber-600 text-white px-3.5 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all shadow-sm active:scale-95"
+    >
+      🚗 Book Test Drive
+    </button>
+  </div>
+) : (
+  /* మిగతా వాటికి పాత కార్ట్ కౌంటర్ అలాగే ఉంటుంది */
+  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
+    <span className="text-[8px] font-bold text-emerald-600 uppercase bg-emerald-50 px-2 py-0.5 rounded-md">In Stock</span>
+    <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border">
+      <button onClick={() => removeFromCart(item)} className="p-1 bg-white rounded-lg"><Minus className="w-2.5 h-2.5 text-slate-600" /></button>
+      <span className="text-[11px] font-black min-w-[14px] text-center">{cart[item._id]?.qty || 0}</span>
+      <button onClick={() => addToCart(item)} className="p-1 bg-slate-900 text-white rounded-lg"><Plus className="w-2.5 h-2.5" /></button>
+    </div>
+  </div>
+)}
               </div>
             )
           ))}
@@ -1676,6 +1741,42 @@ if (!owner || !owner.isApproved) {
           </motion.div>
         )}
       </AnimatePresence>
+      {/* 🚗 TEST DRIVE BOOKING MODAL */}
+<AnimatePresence>
+  {showTestDriveModal && (
+    <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs">
+      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white w-full max-w-md p-6 sm:p-8 rounded-[2.5rem] shadow-2xl relative border border-slate-200">
+        <button onClick={() => setShowTestDriveModal(false)} className="absolute top-5 right-5 bg-slate-100 hover:bg-slate-200 text-slate-600 p-2 rounded-full transition-all"><X className="w-4 h-4"/></button>
+        
+        <div className="mb-6">
+          <h3 className="text-lg font-black uppercase text-slate-900 tracking-tight">టెస్ట్ డ్రైవ్ బుకింగ్ / Test Drive</h3>
+          <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest mt-0.5">{selectedVehicle?.name}</p>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">మీ పేరు / Full Name</label>
+            <input type="text" placeholder="e.g. Raju" value={testDriveData.name} onChange={(e)=>setTestDriveData({...testDriveData, name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-amber-600 text-slate-900" />
+          </div>
+
+          <div>
+            <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">ఫోన్ నంబర్ / Mobile Number</label>
+            <input type="text" placeholder="e.g. 9876543210" value={testDriveData.phone} onChange={(e)=>setTestDriveData({...testDriveData, phone: e.target.value})} className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-amber-600 text-slate-900" />
+          </div>
+
+          <div>
+            <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">టెస్ట్ డ్రైవ్ తేదీ / Date</label>
+            <input type="date" value={testDriveData.date} onChange={(e)=>setTestDriveData({...testDriveData, date: e.target.value})} className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-amber-600 text-slate-900" />
+          </div>
+
+          <button onClick={handleBookTestDrive} disabled={loading} className="w-full bg-slate-900 text-white py-4 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-amber-600 transition-all shadow-md active:scale-95">
+            {loading ? "బుక్ అవుతోంది..." : "టెస్ట్ డ్రైవ్ కన్ఫర్మ్ చేయి / Confirm Booking"}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  )}
+</AnimatePresence>
 {/* 🪑 INSTANT ORDER POPUP MODAL - Premium UI Update */}
 <AnimatePresence>
   {showInstantModal && (

@@ -191,14 +191,45 @@ router.get("/sales-report/:ownerId", async (req, res) => {
     res.status(500).json({ error: "Report generation failed" });
   }
 });
-// గ్లోబల్ మాస్టర్ క్యాటలాగ్ కోసం బ్యాక్‌ఎండ్ రౌట్
+// గ్లోబల్ మాస్టర్ క్యాటలాగ్ కోసం ఆప్టిమైజ్డ్ బ్యాక్‌ఎండ్ రౌต์
 router.get("/master-catalog", async (req, res) => {
   try {
-    // మాస్టర్ కలెక్షన్ నుండి యూనిక్ ప్రొడక్ట్స్ ఫెచ్ చేయడం
-    const masterItems = await Item.find({}); // లేదా మీ మాస్టర్ మోడల్
+    const { category } = req.query;
+    const filter = category ? { category } : {};  
+    const masterItems = await Item.find(filter); 
     res.status(200).json(masterItems);
   } catch (err) {
+    console.error("Master catalog fetch error:", err.message);
     res.status(500).json({ message: "Master catalog fetch failed" });
+  }
+});
+/* 7. ADD ITEM FROM MASTER CATALOG */
+router.post("/add-from-master", async (req, res) => {
+  try {
+    const { ownerId, name, category, subCategory, price, material, description, image, isAvailable } = req.body;
+
+    if (!ownerId || !name || !price) {
+      return res.status(400).json({ message: "Owner ID, Name and Price are required!" });
+    }
+
+    const newItem = await Item.create({
+      ownerId,
+      name,
+      category: category || "General",
+      subCategory: subCategory || "General",
+      price: Number(price),
+      material: material || "",
+      description: description || "",
+      image: image || "",
+      isAvailable: isAvailable !== undefined ? isAvailable : true
+    });
+
+    console.log("✅ Item added from master catalog with ID:", newItem._id);
+    return res.status(201).json(newItem);
+
+  } catch (err) {
+    console.error("❌ Error in /items/add-from-master:", err.message);
+    return res.status(500).json({ message: "Failed to add item from master catalog", details: err.message });
   }
 });
 export default router;

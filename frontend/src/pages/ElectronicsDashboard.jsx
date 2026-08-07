@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api-base";
 import { motion, AnimatePresence } from "framer-motion";
@@ -79,9 +79,10 @@ export default function ElectronicsDashboard() {
     }
   };
 
-  const fetchMasterCatalog = async () => {
+const fetchMasterCatalog = async () => {
     try {
-      const res = await api.get(`/items/master-catalog`);
+      // 💡 కేవలం ఎలక్ట్రానిక్స్ ఐటమ్స్ మాత్రమే వచ్చేలా కేటగిరీ పంపిస్తున్నాం
+      const res = await api.get(`/items/master-catalog?category=Electronics`);
       setMasterCatalog(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.log("Master catalog fetch fallback");
@@ -148,8 +149,16 @@ export default function ElectronicsDashboard() {
       setLoading(false);
     }
   };
-
-  const handleAddGadget = async (e) => {
+// ⏳ రోజుల కౌంట్‌డౌన్ లాజిక్
+  const daysRemaining = useMemo(() => {
+    if (!owner?.nextBillingDate) return 0;
+    const today = new Date();
+    const expiry = new Date(owner.nextBillingDate);
+    const differenceInTime = expiry.getTime() - today.getTime();
+    const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
+    return differenceInDays < 0 ? 0 : differenceInDays;
+  }, [owner]);
+const handleAddGadget = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
@@ -158,9 +167,9 @@ export default function ElectronicsDashboard() {
       formData.append("name", newGadget.name);
       formData.append("category", "Electronics");
       formData.append("subCategory", newGadget.subCategory);
-      formData.append("price", newGadget.price);
-      formData.append("description", newGadget.description);
-      formData.append("isAvailable", newGadget.isAvailable);
+      formData.append("price", Number(newGadget.price));
+      formData.append("description", newGadget.description || "");
+      formData.append("isAvailable", String(newGadget.isAvailable));
       
       if (imageFile) {
         formData.append("image", imageFile);
@@ -191,7 +200,7 @@ export default function ElectronicsDashboard() {
         name: masterItem.name,
         category: "Electronics",
         subCategory: masterItem.subCategory || "Mobiles",
-        price: masterItem.price || 9999,
+        price: Number(masterItem.price) || 9999,
         description: masterItem.description || "Verified Electronic Gadget",
         image: masterItem.image || "",
         isAvailable: true
@@ -406,10 +415,26 @@ export default function ElectronicsDashboard() {
               )}
             </div>
 
-            <div className="min-w-0">
-              <h1 className="text-[11px] sm:text-sm font-black uppercase tracking-wider text-slate-900 truncate max-w-[100px] xs:max-w-[130px] sm:max-w-xs">{owner.name}</h1>
-              <p className="text-[8px] sm:text-[10px] font-extrabold uppercase text-indigo-600 tracking-widest truncate">గ్యాజెట్స్ హబ్ / Gadgets Hub</p>
-            </div>
+            <div className="min-w-0 flex flex-col justify-center">
+  <h1 className="text-[11px] sm:text-sm font-black uppercase tracking-wider text-slate-900 truncate max-w-[100px] xs:max-w-[130px] sm:max-w-xs leading-tight">
+    {owner.name}
+  </h1>
+  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+    <p className="text-[7px] sm:text-[8px] font-extrabold uppercase text-purple-600 tracking-widest truncate">గ్యాజెట్స్ హబ్ / Gadgets Hub</p>
+    {daysRemaining > 0 ? (
+      <span className="bg-emerald-50 text-emerald-600 border border-emerald-200/60 text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0">
+        ⏳ {daysRemaining}D Left
+      </span>
+    ) : (
+      <button 
+        onClick={() => alert("Admin కి సంప్రదించండి!")} 
+        className="bg-red-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase animate-bounce shrink-0"
+      >
+        ⚠️ Renew
+      </button>
+    )}
+  </div>
+</div>
           </div>
         </div>
 

@@ -92,11 +92,28 @@ router.post("/register", async (req, res) => {
 router.get("/admin-all-owners", async (req, res) => {
   try {
     const owners = await Owner.find({}) 
-    
-    .select("name hotelImage collegeName isStoreOpen category averageRating isApproved phone upiID analytics state district createdAt nextBillingDate billingStatus pendingMonthsCount planType paymentReceipt requestedPlanDuration")
+    .select("name hotelImage collegeName isStoreOpen category averageRating isApproved phone upiID analytics state district createdAt nextBillingDate billingStatus pendingMonthsCount planType paymentReceipt requestedPlanDuration category")
     .lean();
     
-    res.status(200).json(owners);
+    const enrichedOwners = owners.map(owner => {
+      const cat = (owner.category || "").trim().toLowerCase();
+      const isResto = cat === "restaurant" || cat === "";
+      const plan = (owner.planType || "basic").toLowerCase();
+      
+      let calculatedFee = 299;
+      if (isResto) {
+        calculatedFee = plan === "premium" ? 999 : 499;
+      } else {
+        calculatedFee = plan === "premium" ? 499 : 299;
+      }
+
+      return {
+        ...owner,
+        calculatedFee
+      };
+    });
+
+    res.status(200).json(enrichedOwners);
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch owners for admin" });
   }
@@ -552,28 +569,37 @@ router.post("/send-broadcast/:ownerId", async (req, res) => {
 
 router.put("/update-billing/:id", async (req, res) => {
   try {
-    const owner = await Owner.findById(req.params.id);
-    if (!owner) return res.status(404).json({ success: false, message: "Owner not found" });
+    const ownerId = req.params.id;
 
-    // 🎯 రాజు ప్లాన్: పెయిడ్ కొట్టిన రోజు (ఈరోజు) నుండి కరెక్ట్ గా 30 రోజులు ముందుకు డేట్ లాక్!
+    // 1. ప్రస్తుత తేదీ నుండి కరెక్ట్‌గా 30 రోజులు ముందుకు లాక్ చేయడం
     let newBillingDate = new Date();
     newBillingDate.setDate(newBillingDate.getDate() + 30);
 
-    owner.nextBillingDate = newBillingDate;
-    owner.billingStatus = "Paid";
-    owner.pendingMonthsCount = 0; // ఎలాంటి పాత బాకీలు ఉండవు
+    // 2. డేటాబేస్‌లో కేవలం ఉన్న ఫీల్డ్స్ ని మాత్రమే డైరెక్ట్‌గా అప్‌డేట్ చేయడం (Schema Validation Error రాకుండా ఉంటుంది)
+    const updatedOwner = await Owner.findByIdAndUpdate(
+      ownerId,
+      { 
+        $set: { 
+          nextBillingDate: newBillingDate,
+          billingStatus: "Active" 
+        } 
+      },
+      { new: true, runValidators: false } // runValidators: false పెట్టడం వల్ల స్కీమా స్ట్రిక్ట్ చెకింగ్ బైపాస్ అవుతుంది
+    );
 
-    await owner.save();
+    if (!updatedOwner) {
+      return res.status(404).json({ success: false, message: "Owner not found in Matrix!" });
+    }
 
     console.log(`\n=====================================`);
     console.log(`🛡️ SUDARA FRESH BILLING RESTORED`);
-    console.log(`Hotel: ${owner.name}`);
+    console.log(`Hotel: ${updatedOwner.name}`);
     console.log(`New 30 Days Cycle Started From Today!`);
-    console.log(`Next Due Date: ${owner.nextBillingDate.toLocaleDateString('en-GB')}`);
     console.log(`=====================================\n`);
 
-    return res.json({ success: true, owner });
+    return res.status(200).json({ success: true, owner: updatedOwner });
   } catch (err) {
+    console.error("🔥 BILLING UPDATE CRASH ERROR:", err);
     return res.status(500).json({ success: false, message: err.message });
   }
 });

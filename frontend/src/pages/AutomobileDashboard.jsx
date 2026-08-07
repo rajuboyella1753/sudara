@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api-base";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,7 +23,13 @@ export default function AutomobileDashboard() {
   const [activeTab, setActiveTab] = useState("inventory");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-
+  const [testDrives, setTestDrives] = useState([]);
+  const [isRenewalModalOpen, setIsRenewalModalOpen] = useState(false);
+  const [selectedPlanType, setSelectedPlanType] = useState("premium");
+  const [planDuration, setPlanDuration] = useState(30);
+  const [uploadedReceipt, setUploadedReceipt] = useState(null);
+  const [isCopied, setIsCopied] = useState(false);
+  const SUDARA_UPI_ID = "boyella.r@ptyes";
   const [newVehicle, setNewVehicle] = useState({
     name: "",
     subCategory: "Bikes",
@@ -70,6 +76,7 @@ export default function AutomobileDashboard() {
     setStoreImagePreview(stored.image || "");
     fetchProducts(stored._id);
     fetchMasterCatalog();
+    fetchTestDrives(stored._id);
   }, [navigate]);
 
   const fetchProducts = async (ownerId) => {
@@ -80,10 +87,17 @@ export default function AutomobileDashboard() {
       console.error("Failed to fetch vehicles");
     }
   };
-
+const fetchTestDrives = async (ownerId) => {
+    try {
+      const res = await api.get(`/orders/test-drive/owner/${ownerId}`);
+      setTestDrives(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error("Failed to fetch test drives");
+    }
+  };
   const fetchMasterCatalog = async () => {
     try {
-      const res = await api.get(`/items/master-catalog`);
+      const res = await api.get(`/items/master-catalog?category=Automobile`);
       setMasterCatalog(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.log("Master catalog fetch fallback");
@@ -100,7 +114,21 @@ export default function AutomobileDashboard() {
       alert("స్టేటస్ అప్‌డేట్ కాలేదు / Status update failed");
     }
   };
+const calculatedAmount = useMemo(() => {
+    const baseRate = selectedPlanType === "premium" ? 499 : 299;
+    const months = planDuration === 90 ? 3 : 1;
+    return baseRate * months;
+  }, [selectedPlanType, planDuration]);
 
+  // రోజుల కౌంట్‌డౌన్ లాజిక్
+  const daysRemaining = useMemo(() => {
+    if (!owner?.nextBillingDate) return 0;
+    const today = new Date();
+    const expiry = new Date(owner.nextBillingDate);
+    const differenceInTime = expiry.getTime() - today.getTime();
+    const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
+    return differenceInDays < 0 ? 0 : differenceInDays;
+  }, [owner]);
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -151,36 +179,49 @@ export default function AutomobileDashboard() {
     }
   };
 
-  const handleAddVehicle = async (e) => {
+const handleAddVehicle = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
       const formData = new FormData();
       formData.append("ownerId", owner._id);
       formData.append("name", newVehicle.name);
-      formData.append("category", "Automobile");
+      formData.append("category", "Automobile"); // 👈 ఖచ్చితంగా "Automobile" ఉండాలి
       formData.append("subCategory", newVehicle.subCategory);
-      formData.append("price", newVehicle.price);
-      formData.append("mileageOrRange", newVehicle.mileageOrRange);
-      formData.append("fuelType", newVehicle.fuelType);
-      formData.append("description", newVehicle.description);
-      formData.append("isAvailable", newVehicle.isAvailable);
+      formData.append("price", Number(newVehicle.price)); // నంబర్‌గా మార్చడం మంచిది
+      formData.append("mileageOrRange", newVehicle.mileageOrRange || "");
+      formData.append("fuelType", newVehicle.fuelType || "Petrol");
+      formData.append("description", newVehicle.description || "");
+      formData.append("isAvailable", String(newVehicle.isAvailable)); // స్ట్రింగ్‌గా పంపిస్తే బ్యాక్‌ఎండ్‌లో ఈజీగా పార్സ് అవుతుంది
       
       if (imageFile) {
         formData.append("image", imageFile);
       }
 
-      await api.post("/items/add", formData, {
+      console.log("🚀 Sending Vehicle Payload...");
+
+      const response = await api.post("/items/add", formData, {
         headers: { "Content-Type": "multipart/form-data" }
       });
 
+      console.log("✅ Vehicle Added Successfully:", response.data);
+
       setIsAddModal(false);
-      setNewVehicle({ name: "", subCategory: "Bikes", price: "", mileageOrRange: "45 kmpl", fuelType: "Petrol", description: "", isAvailable: true });
+      setNewVehicle({ 
+        name: "", 
+        subCategory: "Bikes", 
+        price: "", 
+        mileageOrRange: "", 
+        fuelType: "Petrol", 
+        description: "", 
+        isAvailable: true 
+      });
       setImageFile(null);
       setImagePreview("");
       fetchProducts(owner._id);
       fetchMasterCatalog();
     } catch (err) {
+      console.error("❌ Add Vehicle Error:", err.response?.data || err.message);
       alert(err.response?.data?.message || "వెహికల్ యాడ్ అవ్వడం విఫలమైంది.");
     } finally {
       setLoading(false);
@@ -246,7 +287,34 @@ export default function AutomobileDashboard() {
       setLoading(false);
     }
   };
-
+const handleAcceptTestDrive = async (driveId) => {
+    try {
+      await api.put(`/orders/test-drive/accept/${driveId}`);
+      // లోకల్ స్టేట్ అప్‌డేట్ చేసి వెంటనే స్క్రీన్ మీద మారేలా చేయడం
+      setTestDrives(testDrives.map(d => d._id === driveId ? { ...d, status: "Accepted" } : d));
+      alert("టెస్ట్ డ్రైవ్ అంగీకరించబడింది! ✅ కస్టమర్‌కి కాల్ చేయండి.");
+    } catch (err) {
+      alert("స్టేటస్ అప్‌డేట్ చేయడం విఫలమైంది. ❌");
+    }
+  };
+  const handleDeleteTestDrive = async (driveId) => {
+    if (!window.confirm("ఈ టెస్ట్ డ్రైవ్ రికార్డును తొలగించాలనుకుంటున్నారా? / Delete this record?")) return;
+    try {
+      await api.delete(`/orders/test-drive/delete/${driveId}`);
+      // లోకల్ స్టేట్ నుండి కూడా ఆ ఐటమ్‌ని తీసేయడం
+      setTestDrives(testDrives.filter(d => d._id !== driveId));
+      alert("టెస్ట్ డ్రైవ్ విజయవంతంగా తొలగించబడింది! 🗑️");
+    } catch (err) {
+      alert("తొలగించడం విఫలమైంది. ❌");
+    }
+  };
+  const getUniversalDate = () => {
+  const d = new Date();
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+};
   const downloadQRCode = async () => {
     try {
       const qrDataUrl = await QRCode.toDataURL(`https://sudara.in/restaurant/${owner?._id}`, {
@@ -392,59 +460,79 @@ export default function AutomobileDashboard() {
       </div>
 
       {/* 👑 NAVBAR */}
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 px-3 sm:px-6 lg:px-12 py-3 flex justify-between items-center shadow-xs w-full">
-        <div className="flex items-center gap-3 min-w-0 pr-2">
-          <button 
-            onClick={() => setIsSidebarOpen(true)}
-            className="p-2 sm:p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all shrink-0"
-            title="Open Hub Menu"
-          >
-            <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
+<nav className="bg-white border-b border-slate-200 sticky top-0 z-50 px-3 sm:px-6 lg:px-12 py-3 flex justify-between items-center shadow-xs w-full">
+  
+  {/* 👈 లెఫ్ట్ సైక్షన్: మెనూ బటన్ మరియు లోగో/ఇమేజ్ */}
+  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 pr-1">
+    <button 
+      onClick={() => setIsSidebarOpen(true)}
+      className="p-2 sm:p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all shrink-0"
+      title="Open Hub Menu"
+    >
+      <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
+    </button>
 
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl overflow-hidden bg-amber-50 border border-slate-200 shadow-sm flex items-center justify-center shrink-0">
-              {(owner?.image || owner?.hotelImage) ? (
-                <img src={owner.image || owner.hotelImage} alt={owner.name} className="w-full h-full object-cover" />
-              ) : (
-                <Car className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
-              )}
-            </div>
+    <div className="flex items-center gap-2 min-w-0">
+      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl overflow-hidden bg-amber-50 border border-slate-200 shadow-sm flex items-center justify-center shrink-0">
+        {(owner?.image || owner?.hotelImage) ? (
+          <img src={owner.image || owner.hotelImage} alt={owner.name} className="w-full h-full object-cover" />
+        ) : (
+          <Car className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
+        )}
+      </div>
 
-            <div className="min-w-0">
-              <h1 className="text-[11px] sm:text-sm font-black uppercase tracking-wider text-slate-900 truncate max-w-[100px] xs:max-w-[130px] sm:max-w-xs">{owner.name}</h1>
-              <p className="text-[8px] sm:text-[10px] font-extrabold uppercase text-amber-600 tracking-widest truncate">ఆటోమొబైల్ షోరూమ్ / Automobile Hub</p>
-            </div>
-          </div>
+      {/* 🏷️ పేరు మరియు సబ్‌స్క్రిప్షన్ రోజులు (డబుల్ డిస్‌ప్లే పోయేలా సింగిల్ బ్లాక్ లో సెట్ చేశాం) */}
+      <div className="min-w-0 flex flex-col justify-center">
+        <h1 className="text-[10px] sm:text-xs md:text-sm font-black uppercase tracking-wider text-slate-900 truncate max-w-[110px] xs:max-w-[140px] sm:max-w-xs leading-tight">
+          {owner.name}
+        </h1>
+        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+          <p className="text-[7px] sm:text-[8px] font-extrabold uppercase text-amber-600 tracking-widest truncate">Automobile Hub</p>
+          {daysRemaining > 0 ? (
+            <span className="bg-emerald-50 text-emerald-600 border border-emerald-200/60 text-[7px] font-black px-1.5 py-0.2 rounded uppercase shrink-0">
+              ⏳ {daysRemaining}D Left
+            </span>
+          ) : (
+            <button 
+              onClick={() => setIsRenewalModalOpen(true)} 
+              className="bg-red-600 text-white text-[7px] font-black px-1.5 py-0.2 rounded uppercase animate-bounce shrink-0"
+            >
+              ⚠️ Renew
+            </button>
+          )}
         </div>
+      </div>
+    </div>
+  </div>
 
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          <button 
-            onClick={handleToggleStore}
-            className={`flex items-center gap-1 px-2.5 sm:px-3.5 py-2 rounded-xl text-[8px] sm:text-[10px] font-black uppercase tracking-wider transition-all shadow-xs ${owner.isStoreOpen ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'}`}
-          >
-            <Power className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
-            <span className="hidden xs:inline">{owner.isStoreOpen ? 'Online (తెరిచి ఉంది)' : 'Offline (మూసి ఉంది)'}</span>
-            <span className="xs:hidden">{owner.isStoreOpen ? 'Open' : 'Close'}</span>
-          </button>
+  {/* 👉 రైట్ సైక్షన్: ఆన్/ఆఫ్ బటన్, సెట్టింగ్స్ మరియు లాగౌట్ */}
+  <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+    <button 
+      onClick={handleToggleStore}
+      className={`flex items-center gap-1 px-2.5 sm:px-3.5 py-2 rounded-xl text-[8px] sm:text-[10px] font-black uppercase tracking-wider transition-all shadow-xs ${owner.isStoreOpen ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'}`}
+    >
+      <Power className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+      <span className="hidden xs:inline">{owner.isStoreOpen ? 'Online' : 'Offline'}</span>
+      <span className="xs:hidden">{owner.isStoreOpen ? 'Open' : 'Close'}</span>
+    </button>
 
-          <button 
-            onClick={() => setIsSettingsModal(true)}
-            className="p-2 sm:p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all shrink-0"
-            title="Showroom Settings"
-          >
-            <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          </button>
+    {/* <button 
+      onClick={() => setIsSettingsModal(true)}
+      className="p-2 sm:p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all shrink-0"
+      title="Showroom Settings"
+    >
+      <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+    </button> */}
 
-          <button 
-            onClick={() => { localStorage.removeItem("owner"); navigate("/owner"); }}
-            className="p-2 sm:p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all shrink-0"
-            title="Sign Out"
-          >
-            <LogOut className="w-3 h-3.5 sm:w-4 sm:h-4" />
-          </button>
-        </div>
-      </nav>
+    <button 
+      onClick={() => { localStorage.removeItem("owner"); navigate("/owner"); }}
+      className="p-2 sm:p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all shrink-0"
+      title="Sign Out"
+    >
+      <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+    </button>
+  </div>
+</nav>
 
       {/* 📦 MAIN CONTENT */}
       <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-12 py-6 sm:py-8 space-y-6 sm:space-y-8 flex-1">
@@ -570,7 +658,91 @@ export default function AutomobileDashboard() {
             )}
           </>
         )}
+      {activeTab === "testDrives" && (
+  <div className="space-y-6 animate-in fade-in zoom-in duration-500">
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/80 shadow-xs">
+      <div>
+        <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight text-slate-900">టెస్ట్ డ్రైవ్ బుకింగ్స్ / Test Drive Requests</h2>
+        <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">కస్టమర్లు బుక్ చేసిన వెహికల్ టెస్ట్ డ్రైవ్ వివరాలు</p>
+      </div>
+      <span className="bg-amber-50 text-amber-800 border border-amber-200 text-xs font-black px-4 py-2 rounded-xl">
+        Total Requests: {testDrives.length}
+      </span>
+    </div>
 
+    {testDrives.length === 0 ? (
+      <div className="bg-white border border-dashed border-slate-200 rounded-3xl p-12 sm:p-16 text-center space-y-3">
+        <Car className="w-10 h-10 text-slate-300 mx-auto" />
+        <h3 className="text-sm font-black uppercase text-slate-700 tracking-wider">టెస్ట్ డ్రైవ్ రిక్వెస్ట్స్ ఏవీ లేవు / No Test Drives Yet</h3>
+        <p className="text-[10px] font-bold text-slate-400 uppercase">కస్టమర్లు మీ వెహికల్స్‌కి టెస్ట్ డ్రైవ్ బుక్ చేసినప్పుడు ఇక్కడ కనిపిస్తాయి.</p>
+      </div>
+    ) : (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        {testDrives.map((drive) => (
+  <div key={drive._id} className="bg-white rounded-3xl border border-slate-200 p-5 shadow-2xs space-y-4 flex flex-col justify-between">
+    <div className="space-y-3">
+      <div className="flex justify-between items-start">
+        <span className="bg-amber-50 text-amber-800 border border-amber-200 text-[9px] font-black uppercase px-2.5 py-1 rounded-lg">
+          🚗 {drive.vehicleName}
+        </span>
+        <span className={`text-[9px] font-black uppercase px-2.5 py-1 rounded-lg ${drive.status === 'Accepted' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+          {drive.status || "Pending"}
+        </span>
+      </div>
+
+      <div className="space-y-1">
+        <h3 className="text-base font-black uppercase text-slate-900">{drive.customerName}</h3>
+        <p className="text-xs font-bold text-amber-600 flex items-center gap-1.5">
+          📞 <a href={`tel:${drive.customerPhone}`} className="underline">{drive.customerPhone}</a>
+        </p>
+      </div>
+
+      <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-1 text-xs font-bold text-slate-600">
+  <p className="flex justify-between">
+    <span className="text-slate-400 uppercase text-[9px]">టెస్ట్ డ్రైవ్ తేదీ:</span> 
+    <span className="text-slate-900">
+      {drive.testDriveDate ? drive.testDriveDate.split('-').reverse().join('/') : ''}
+    </span>
+  </p>
+</div>
+    </div>
+
+    <div className="pt-3 border-t border-slate-100 flex gap-2">
+      {/* Accept Button */}
+      {drive.status !== "Accepted" ? (
+        <button 
+          onClick={() => handleAcceptTestDrive(drive._id)}
+          className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl font-black uppercase text-[10px] tracking-wider text-center transition-all shadow-sm active:scale-95"
+        >
+          Accept ✅
+        </button>
+      ) : (
+        <span className="flex-1 bg-emerald-50 text-emerald-700 py-3 rounded-xl font-black uppercase text-[10px] tracking-wider text-center border border-emerald-200">
+          Accepted ✓
+        </span>
+      )}
+
+      {/* Call Button */}
+      <a 
+        href={`tel:${drive.customerPhone}`} 
+        className="flex-1 bg-slate-900 hover:bg-amber-600 text-white py-3 rounded-xl font-black uppercase text-[10px] tracking-wider text-center transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1"
+      >
+        Call 📞
+      </a>
+      <button 
+    onClick={() => handleDeleteTestDrive(drive._id)}
+    className="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-3.5 py-3 rounded-xl font-black uppercase text-[10px] tracking-wider text-center transition-all shadow-sm active:scale-95"
+    title="Complete & Delete"
+  >
+    🗑️
+  </button>
+    </div>
+  </div>
+))}
+      </div>
+    )}
+  </div>
+)}
         {activeTab === "profile" && (
           <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in zoom-in duration-500">
             <h2 className="text-4xl font-black italic uppercase text-slate-900">
@@ -1063,7 +1235,96 @@ export default function AutomobileDashboard() {
           </div>
         )}
       </AnimatePresence>
+{/* 👑 సబ్‌స్క్రిప్షన్ రెనెవల్ మోడల్ */}
+      <AnimatePresence>
+        {isRenewalModalOpen && (
+          <div className="fixed inset-0 z-[250] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white w-full max-w-4xl p-6 md:p-10 rounded-[3rem] shadow-2xl relative max-h-[90vh] overflow-y-auto">
+              
+              <button type="button" onClick={() => setIsRenewalModalOpen(false)} className="absolute top-6 right-6 p-2 bg-slate-100 rounded-full hover:bg-red-50 hover:text-red-500 transition-all"><X className="w-5 h-5"/></button>
+              
+              <h3 className="text-xl sm:text-3xl font-black italic uppercase tracking-tighter mb-2 border-l-8 border-orange-500 pl-6">
+                Sudara Node <span className="text-orange-600">Subscription Renewal</span>
+              </h3>
+              <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-8 pl-8">Direct Peer-to-Peer Settlement</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                <div className="space-y-6">
+                  <p className="text-xs font-black uppercase text-slate-500">1. ప్లాన్ సెలెక్షన్ & యూపీఐ కాపీ</p>
+                  
+                  <div className="flex bg-slate-100 p-1 rounded-xl border shadow-inner">
+                    <button type="button" onClick={() => setSelectedPlanType("basic")} className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase transition-all ${selectedPlanType === "basic" ? "bg-slate-900 text-white shadow-md" : "text-slate-500"}`}>Basic (₹299/Mo)</button>
+                    <button type="button" onClick={() => setSelectedPlanType("premium")} className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase transition-all ${selectedPlanType === "premium" ? "bg-blue-600 text-white shadow-md" : "text-slate-500"}`}>Premium (₹499/Mo)</button>
+                  </div>
 
+                  <div className="flex bg-slate-100 p-1 rounded-xl border shadow-inner">
+                    <button type="button" onClick={() => setPlanDuration(30)} className={`flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase transition-all ${planDuration === 30 ? "bg-white text-slate-900 shadow-sm font-black" : "text-slate-400"}`}>30 Days (1 Month)</button>
+                    <button type="button" onClick={() => setPlanDuration(90)} className={`flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase transition-all ${planDuration === 90 ? "bg-white text-slate-900 shadow-sm font-black" : "text-slate-400"}`}>90 Days (3 Months)</button>
+                  </div>
+
+                  <div className="bg-slate-50 p-4 rounded-xl border flex justify-between items-center shadow-sm">
+                    <div>
+                      <p className="text-[8px] font-black text-slate-400 uppercase leading-none">Official UPI ID</p>
+                      <p className="font-black text-slate-700 text-xs mt-1.5 tracking-wide">{SUDARA_UPI_ID}</p>
+                    </div>
+                    <button type="button" onClick={() => { navigator.clipboard.writeText(SUDARA_UPI_ID); alert("UPI ID Copied!"); }} className="p-2 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase px-4 py-1.5">
+                      Copy UPI ID
+                    </button>
+                  </div>
+
+                  <div className="bg-slate-900 text-white p-6 rounded-2xl flex justify-between items-center shadow-xl">
+                    <div>
+                      <p className="text-[8px] font-black uppercase opacity-50 tracking-widest leading-none">Total Payable Amount</p>
+                      <p className="text-3xl font-black italic tracking-tighter text-emerald-400 mt-2">₹{calculatedAmount}</p>
+                    </div>
+                    <a href={`upi://pay?pa=${SUDARA_UPI_ID}&pn=Sudara%20Hub&am=${calculatedAmount}&cu=INR`} className="bg-emerald-500 hover:bg-emerald-600 px-6 py-3 rounded-xl text-[10px] font-black uppercase italic tracking-widest text-white shadow-lg">
+                      Pay Now
+                    </a>
+                  </div>
+                </div>
+
+                <div className="space-y-6 bg-slate-50 p-6 rounded-[2rem] border">
+                  <p className="text-xs font-black uppercase text-slate-500">2. రసీదు సమర్పణ (Payment Verification)</p>
+                  
+                  <div className="border-2 border-dashed border-slate-300 bg-white p-6 rounded-2xl text-center relative">
+                    <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.readAsDataURL(file);
+                        reader.onload = (event) => setUploadedReceipt(event.target.result);
+                      }
+                    }} />
+                    {uploadedReceipt ? (
+                      <span className="text-[10px] font-black uppercase text-emerald-600">Screenshot Attached ✅</span>
+                    ) : (
+                      <span className="text-[9px] font-black uppercase text-slate-400">Upload Payment Screenshot</span>
+                    )}
+                  </div>
+
+                  <button 
+                    type="button" 
+                    onClick={async () => {
+                      if (!uploadedReceipt) return alert("దయచేసి స్క్రీన్‌షాట్ అప్‌లోడ్ చేయండి!");
+                      try {
+                        await api.put(`/owner/update-profile/${owner._id}`, {
+                          paymentReceipt: uploadedReceipt,
+                          billingStatus: "Pending Verification"
+                        });
+                        alert("Receipt Sent to Admin! ✅");
+                        setIsRenewalModalOpen(false);
+                      } catch (err) { alert("Failed"); }
+                    }}
+                    className="w-full bg-slate-900 text-white py-4 rounded-xl text-[10px] font-black uppercase italic tracking-widest shadow-lg"
+                  >
+                    I Have Paid
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
       {/* SIDEBAR DRAWER */}
       <AnimatePresence>
         {isSidebarOpen && (
@@ -1089,7 +1350,19 @@ export default function AutomobileDashboard() {
                   >
                     <Package className="w-4 h-4 text-amber-600" /> వెహికల్స్ ఇన్వెంటరీ / Inventory
                   </button>
-
+                  <button 
+  onClick={() => { setActiveTab("testDrives"); setIsSidebarOpen(false); }}
+  className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-amber-50 hover:text-amber-600 rounded-2xl font-black uppercase text-xs tracking-wider transition-all border border-slate-100 text-slate-700"
+>
+  <div className="flex items-center gap-3">
+    <Car className="w-4 h-4 text-amber-600" /> టెస్ట్ డ్రైవ్ రిక్వెస్ట్స్ / Test Drives
+  </div>
+  {testDrives.length > 0 && (
+    <span className="bg-amber-600 text-white text-[9px] px-2 py-0.5 rounded-full">
+      {testDrives.length}
+    </span>
+  )}
+</button>
                   <button 
                     onClick={() => { setActiveTab("profile"); setIsSidebarOpen(false); }}
                     className="w-full flex items-center gap-3 p-4 bg-slate-50 hover:bg-amber-50 hover:text-amber-600 rounded-2xl font-black uppercase text-xs tracking-wider transition-all border border-slate-100 text-slate-700"

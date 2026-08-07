@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/api-base";
 import { motion, AnimatePresence } from "framer-motion";
@@ -80,15 +80,24 @@ export default function FurnitureDashboard() {
     }
   };
 
-  const fetchMasterCatalog = async () => {
+const fetchMasterCatalog = async () => {
     try {
-      const res = await api.get(`/items/master-catalog`);
+      // 💡 కేవలం ఫర్నిచర్ ఐటమ్స్ మాత్రమే వచ్చేలా కేటగిరీ పంపిస్తున్నాం
+      const res = await api.get(`/items/master-catalog?category=Furniture`);
       setMasterCatalog(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.log("Master catalog fetch fallback");
     }
   };
-
+// ⏳ రోజుల కౌంట్‌డౌన్ లాజిక్
+  const daysRemaining = useMemo(() => {
+    if (!owner?.nextBillingDate) return 0;
+    const today = new Date();
+    const expiry = new Date(owner.nextBillingDate);
+    const differenceInTime = expiry.getTime() - today.getTime();
+    const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
+    return differenceInDays < 0 ? 0 : differenceInDays;
+  }, [owner]);
   const handleToggleStore = async () => {
     try {
       const updatedStatus = !owner.isStoreOpen;
@@ -149,8 +158,7 @@ export default function FurnitureDashboard() {
       setLoading(false);
     }
   };
-
-  const handleAddFurniture = async (e) => {
+const handleAddFurniture = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
@@ -159,10 +167,10 @@ export default function FurnitureDashboard() {
       formData.append("name", newFurniture.name);
       formData.append("category", "Furniture");
       formData.append("subCategory", newFurniture.subCategory);
-      formData.append("price", newFurniture.price);
-      formData.append("material", newFurniture.material);
-      formData.append("description", newFurniture.description);
-      formData.append("isAvailable", newFurniture.isAvailable);
+      formData.append("price", Number(newFurniture.price));
+      formData.append("material", newFurniture.material || "Teak Wood");
+      formData.append("description", newFurniture.description || "");
+      formData.append("isAvailable", String(newFurniture.isAvailable));
       
       if (imageFile) {
         formData.append("image", imageFile);
@@ -193,7 +201,7 @@ export default function FurnitureDashboard() {
         name: masterItem.name,
         category: "Furniture",
         subCategory: masterItem.subCategory || "Sofas",
-        price: masterItem.price || 12000,
+        price: Number(masterItem.price) || 12000,
         material: masterItem.material || "Teak Wood",
         description: masterItem.description || "Verified Furniture Item",
         image: masterItem.image || "",
@@ -406,10 +414,26 @@ export default function FurnitureDashboard() {
               )}
             </div>
 
-            <div className="min-w-0">
-              <h1 className="text-[11px] sm:text-sm font-black uppercase tracking-wider text-slate-900 truncate max-w-[100px] xs:max-w-[130px] sm:max-w-xs">{owner.name}</h1>
-              <p className="text-[8px] sm:text-[10px] font-extrabold uppercase text-orange-600 tracking-widest truncate">ఫర్నిచర్ & లివింగ్ / Furniture Hub</p>
-            </div>
+            <div className="min-w-0 flex flex-col justify-center">
+  <h1 className="text-[11px] sm:text-sm font-black uppercase tracking-wider text-slate-900 truncate max-w-[100px] xs:max-w-[130px] sm:max-w-xs leading-tight">
+    {owner.name}
+  </h1>
+  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+    <p className="text-[7px] sm:text-[8px] font-extrabold uppercase text-purple-600 tracking-widest truncate">ఫర్నిచర్ & లివింగ్ / Furniture Hub</p>
+    {daysRemaining > 0 ? (
+      <span className="bg-emerald-50 text-emerald-600 border border-emerald-200/60 text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0">
+        ⏳ {daysRemaining}D Left
+      </span>
+    ) : (
+      <button 
+        onClick={() => alert("Admin కి సంప్రదించండి!")} 
+        className="bg-red-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase animate-bounce shrink-0"
+      >
+        ⚠️ Renew
+      </button>
+    )}
+  </div>
+</div>
           </div>
         </div>
 
