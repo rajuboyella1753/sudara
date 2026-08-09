@@ -6,20 +6,29 @@ const itemSchema = new mongoose.Schema({
   category: { 
     type: String, 
     required: true, 
-    default: "General"
+    default: "General" 
   },
   subCategory: { type: String, default: "General" },
   description: { type: String, default: "" }, 
   image: { type: String, required: false },
   isAvailable: { type: Boolean, default: true }, 
   
-  // 🚗 ఆటోమొబైల్ & ఇతర కేటగిరీల కోసం ఎక్స్ట్రా ఫీల్డ్స్ డేటాబేస్ లో సేవ్ అవ్వడానికి:
+  // 🎯 ఇది చాలా ముఖ్యం: ఇది మాస్టర్ ఐటమ్స్ కాదా అని గుర్తించడానికి
+  isMaster: { type: Boolean, default: false },
+
   mileageOrRange: { type: String, default: "" },
   fuelType: { type: String, default: "" },
-  material: { type: String, default: "" }, // ఫర్నిచర్ కోసం
+  material: { type: String, default: "" }, 
 
-  ownerId: { type: mongoose.Schema.Types.ObjectId, ref: "Owner", required: true },
+  // ownerId ఇప్పుడు మాస్టర్ ఐటమ్స్ కోసం required కాకుండా ఉండాలి (required: false)
+  ownerId: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: "Owner", 
+    required: function() { return !this.isMaster; } // మాస్టర్ ఐటమ్ అయితే ownerId అవసరం లేదు
+  },
 }, { timestamps: true });
 
 itemSchema.index({ ownerId: 1 });
+itemSchema.index({ isMaster: 1, category: 1 }); // స్పీడ్ కోసం ఇండెక్సింగ్
+
 export default mongoose.model("Item", itemSchema);

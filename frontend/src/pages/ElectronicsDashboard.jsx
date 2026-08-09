@@ -27,6 +27,7 @@ export default function ElectronicsDashboard() {
   const [newGadget, setNewGadget] = useState({
     name: "",
     subCategory: "Mobiles",
+    customCategory: "",
     price: "",
     description: "",
     isAvailable: true
@@ -81,13 +82,15 @@ export default function ElectronicsDashboard() {
 
 const fetchMasterCatalog = async () => {
     try {
-      // 💡 కేవలం ఎలక్ట్రానిక్స్ ఐటమ్స్ మాత్రమే వచ్చేలా కేటగిరీ పంపిస్తున్నాం
-      const res = await api.get(`/items/master-catalog?category=Electronics`);
+      // owner.category లేదా కచ్చితంగా "Electronics" అని వెళ్తుందో లే지 చూసుకోండి
+      const cat = owner?.category || "Electronics";
+      const res = await api.get(`/items/master-catalog?category=${cat}`);
+      console.log("Electronics Master Items:", res.data); // కన్సోల్ లో చెక్ చేయడానికి
       setMasterCatalog(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.log("Master catalog fetch fallback");
     }
-  };
+};
 
   const handleToggleStore = async () => {
     try {
@@ -166,7 +169,13 @@ const handleAddGadget = async (e) => {
       formData.append("ownerId", owner._id);
       formData.append("name", newGadget.name);
       formData.append("category", "Electronics");
-      formData.append("subCategory", newGadget.subCategory);
+      
+      // 💡 'Other' అయితే కస్టమ్ కేటగిరీని పంపిస్తాం
+      const finalSubCategory = newGadget.subCategory === "Other" 
+        ? newGadget.customCategory.trim() 
+        : newGadget.subCategory;
+
+      formData.append("subCategory", finalSubCategory);
       formData.append("price", Number(newGadget.price));
       formData.append("description", newGadget.description || "");
       formData.append("isAvailable", String(newGadget.isAvailable));
@@ -180,7 +189,7 @@ const handleAddGadget = async (e) => {
       });
 
       setIsAddModal(false);
-      setNewGadget({ name: "", subCategory: "Mobiles", price: "", description: "", isAvailable: true });
+      setNewGadget({ name: "", subCategory: "Mobiles", customCategory: "", price: "", description: "", isAvailable: true });
       setImageFile(null);
       setImagePreview("");
       fetchProducts(owner._id);
@@ -496,28 +505,18 @@ const handleAddGadget = async (e) => {
               </div>
             </div>
 
-            {/* CATEGORY TABS */}
+            {/* CATEGORY TABS (Dynamic based on added products) */}
             <div className="w-full overflow-x-auto pb-2 scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
               <div className="flex items-center gap-2.5 w-max">
-                {[
-                  { label: "అన్నీ / All", icon: Package, key: "All" },
-                  { label: "మొబైల్స్ / Mobiles", icon: Smartphone, key: "Mobiles" },
-                  { label: "లాప్‌టాప్స్ / Laptops", icon: Laptop, key: "Laptops" },
-                  { label: "ఆడియో / Audio", icon: Headphones, key: "Audio" },
-                  { label: "యాక్ససరీస్ / Accessories", icon: Watch, key: "Accessories" }
-                ].map((tab) => {
-                  const Icon = tab.icon;
-                  return (
-                    <button
-                      key={tab.key}
-                      onClick={() => setSelectedCategoryTab(tab.key)}
-                      className={`flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-2xs shrink-0 ${selectedCategoryTab === tab.key ? 'bg-slate-900 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}`}
-                    >
-                      <Icon className="w-3.5 h-3.5" />
-                      {tab.label}
-                    </button>
-                  );
-                })}
+                {["All", ...new Set(products.map(item => item.subCategory || "Mobiles"))].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategoryTab(cat)}
+                    className={`px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-2xs shrink-0 ${selectedCategoryTab === cat ? 'bg-slate-900 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}`}
+                  >
+                    {cat}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -1009,18 +1008,40 @@ const handleAddGadget = async (e) => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">కేటగిరీ / Category</label>
-                  <select value={newGadget.subCategory} onChange={(e)=>setNewGadget({...newGadget, subCategory: e.target.value})} className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-indigo-600 cursor-pointer text-slate-900">
-                    <option value="Mobiles">మొబైల్స్</option>
-                    <option value="Laptops">లాప్‌టాప్స్</option>
-                    <option value="Audio">ఆడియో</option>
-                    <option value="Accessories">యాక్ససరీస్</option>
+                  <select 
+                    value={newGadget.subCategory} 
+                    onChange={(e)=>setNewGadget({...newGadget, subCategory: e.target.value})} 
+                    className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-indigo-600 cursor-pointer text-slate-900"
+                  >
+                    <option value="Mobiles">మొబైల్స్ / Mobiles</option>
+                    <option value="Laptops">లాప్‌టాప్స్ / Laptops</option>
+                    <option value="Audio">ఆడియో / Audio</option>
+                    <option value="Accessories">యాక్ససరీస్ / Accessories</option>
+                    <option value="Home Appliances">హోమ్ అప్లయన్సెస్ (AC, Fridges)</option>
+                    <option value="Other">➕ ఇతర కేటగిరీ (Other)</option>
                   </select>
                 </div>
+
                 <div>
                   <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">ధర (₹) / Price</label>
                   <input type="number" required placeholder="89990" value={newGadget.price} onChange={(e)=>setNewGadget({...newGadget, price: e.target.value})} className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-indigo-600 text-slate-900" />
                 </div>
               </div>
+
+              {/* 💡 'Other' సెలెక్ట్ చేస్తే ఈ బాక్స్ ఓపెన్ అవుతుంది */}
+              {newGadget.subCategory === "Other" && (
+                <div>
+                  <label className="text-[9px] font-black uppercase text-indigo-600 block mb-1">కొత్త కేటగిరీ పేరు రాయండి / Custom Category Name</label>
+                  <input 
+                    type="text" 
+                    required 
+                    placeholder="e.g. Refrigerators, Washing Machines" 
+                    value={newGadget.customCategory} 
+                    onChange={(e)=>setNewGadget({...newGadget, customCategory: e.target.value})} 
+                    className="w-full bg-indigo-50/50 border border-indigo-200 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-indigo-600 text-slate-900" 
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">ఫోటో / Product Image</label>

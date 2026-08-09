@@ -191,12 +191,17 @@ router.get("/sales-report/:ownerId", async (req, res) => {
     res.status(500).json({ error: "Report generation failed" });
   }
 });
-// గ్లోబల్ మాస్టర్ క్యాటలాగ్ కోసం ఆప్టిమైజ్డ్ బ్యాక్‌ఎండ్ రౌต์
 router.get("/master-catalog", async (req, res) => {
   try {
     const { category } = req.query;
-    const filter = category ? { category } : {};  
+    let filter = {}; // తాత్కాలికంగా isMaster ని తీసేయండి
+
+    if (category && category !== "All") {
+      filter.category = { $regex: new RegExp(`^${category}$`, 'i') };
+    }  
+
     const masterItems = await Item.find(filter); 
+    console.log(`🔍 Total items found for ${category}:`, masterItems.length);
     res.status(200).json(masterItems);
   } catch (err) {
     console.error("Master catalog fetch error:", err.message);
