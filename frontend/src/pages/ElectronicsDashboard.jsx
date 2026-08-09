@@ -4,6 +4,7 @@ import api from "../api/api-base";
 import { motion, AnimatePresence } from "framer-motion";
 import { QRCodeCanvas } from "qrcode.react";
 import QRCode from 'qrcode';
+import imageCompression from 'browser-image-compression';
 import { 
   Cpu, Smartphone, Laptop, Headphones, Watch, Plus, Trash2, Edit3, Download, Menu,
   Power, LogOut, Package, X, UploadCloud, Settings, Image as ImageIcon, Search, Key, MapPin
@@ -103,13 +104,31 @@ const fetchMasterCatalog = async () => {
     }
   };
 
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
-    }
-  };
+const handleImageChange = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  try {
+    // 💡 ఇక్కడ మనం కంప్రెషన్ చేస్తున్నాం
+    const options = {
+      maxSizeMB: 0.3, // మాక్సిమం 300KB వరకు
+      maxWidthOrHeight: 800, // వెడల్పు లేదా ఎత్తు 800px మించకుండా
+      useWebWorker: true,
+    };
+
+    const compressedFile = await imageCompression(file, options);
+    
+    // ఇప్పుడు కంప్రెస్ అయిన ఫైల్‌ని స్టేట్‌లో సెట్ చెయ్
+    setImageFile(compressedFile);
+    setImagePreview(URL.createObjectURL(compressedFile));
+    
+  } catch (error) {
+    console.error("Image compression error:", error);
+    // ఒకవేళ కంప్రెషన్ ఫెయిల్ అయితే ఒరిజినల్ ఫైల్ తీసుకుంటుంది
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  }
+};
 
   const handleStoreImageChange = (e) => {
     const file = e.target.files[0];
