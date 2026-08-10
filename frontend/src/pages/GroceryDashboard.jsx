@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api/api-base";
 import { motion, AnimatePresence } from "framer-motion";
 import { QRCodeCanvas } from "qrcode.react";
 import QRCode from 'qrcode';
 import imageCompression from 'browser-image-compression';
+import { io } from "socket.io-client";
+import api, { socket } from "../api/api-base";
 import { 
   ShoppingBag, Package, Plus, Trash2, Edit3, Download, Menu,
   Power, LogOut, X, UploadCloud, Settings, Image as ImageIcon, Search, Phone, MapPin, Key, User
@@ -20,6 +21,7 @@ export default function GroceryDashboard() {
   const [isEditModal, setIsEditModal] = useState(false);
   const [isSettingsModal, setIsSettingsModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [storeOrders, setStoreOrders] = useState([]); // 📦 కస్టమర్ ఆర్డర్స్ స్టేట్
   const [selectedCategoryTab, setSelectedCategoryTab] = useState("All");
   const [activeTab, setActiveTab] = useState("inventory");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -69,7 +71,63 @@ export default function GroceryDashboard() {
     setStoreImagePreview(stored.image || stored.hotelImage || "");
     fetchProducts(stored._id);
     fetchMasterCatalog();
+    fetchStoreOrders(stored._id); // 👈 ఆర్డర్స్ ఫెచ్ చేయడం
   }, [navigate]);
+
+  // 🚀 రియల్ టైమ్ సాకెట్ లిజనర్ (పేజీ రిఫ్రెష్ అవ్వకుండా ఆర్డర్స్ రావడానికి)
+  useEffect(() => {
+    if (!owner?._id) return;
+
+    if (!socket.connected) {
+      socket.connect();
+    }
+
+    const joinRoom = () => socket.emit("join_owner_room", owner._id);
+
+    const handleNewOrder = (newOrder) => {
+      console.log("🔔 కొత్త లైవ్ ఆర్డర్ వచ్చింది:", newOrder);
+      setStoreOrders(prev => [newOrder, ...prev]);
+      
+      if (localStorage.getItem("sudara_alert_status") === "active") {
+        new Audio("/order-beep.mp3").play().catch(e => console.log("Sound play error:", e));
+      }
+      alert(`కొత్త ఆర్డర్ వచ్చింది! ID: ${newOrder.sudaraId}`);
+    };
+
+    socket.on("connect", joinRoom);
+    socket.on("new_order_received", handleNewOrder);
+
+    if (socket.connected) joinRoom();
+
+    return () => {
+      socket.off("connect", joinRoom);
+      socket.off("new_order_received", handleNewOrder);
+    };
+  }, [owner]);
+
+  const fetchStoreOrders = async (ownerId) => {
+    try {
+      const res = await api.get(`/orders/restaurant/${ownerId}`);
+      setStoreOrders(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error("Failed to fetch store orders");
+    }
+  };
+
+  const handleUpdateOrderStatus = async (orderId, newStatus) => {
+    try {
+      await api.put(`/orders/update-status/${orderId}`, { status: newStatus });
+      if (newStatus === "Delivered" || newStatus === "Served") {
+        setStoreOrders(storeOrders.filter(o => o._id !== orderId));
+        alert("ఆర్డర్ విజయవంతంగా డెలివరీ అయింది & క్లియర్ చేయబడింది! ✅");
+      } else {
+        setStoreOrders(storeOrders.map(o => o._id === orderId ? { ...o, status: newStatus } : o));
+        alert(`స్టేటస్ "${newStatus}" కి మార్చబడింది! 🚚`);
+      }
+    } catch (err) {
+      alert("స్టేటస్ అప్‌డేట్ విఫలమైంది.");
+    }
+  };
 
   const fetchProducts = async (ownerId) => {
     try {
@@ -79,7 +137,8 @@ export default function GroceryDashboard() {
       console.error("Failed to fetch grocery items");
     }
   };
-// ⏳ రోజుల కౌంట్‌డౌన్ లాజిక్
+
+  // ⏳ రోజుల కౌంట్‌డౌన్ లాజిక్
   const daysRemaining = useMemo(() => {
     if (!owner?.nextBillingDate) return 0;
     const today = new Date();
@@ -88,9 +147,9 @@ export default function GroceryDashboard() {
     const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
     return differenceInDays < 0 ? 0 : differenceInDays;
   }, [owner]);
-const fetchMasterCatalog = async () => {
+
+  const fetchMasterCatalog = async () => {
     try {
-      // 💡 కేవలం గ్రాసరీ ఐటమ్స్ మాత్రమే వచ్చేలా కేటగిరీ పంపిస్తున్నాం
       const res = await api.get(`/items/master-catalog?category=Grocery`);
       setMasterCatalog(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
@@ -109,31 +168,26 @@ const fetchMasterCatalog = async () => {
     }
   };
 
-const handleImageChange = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  try {
-    // 💡 ఇక్కడ మనం కంప్రెషన్ చేస్తున్నాం
-    const options = {
-      maxSizeMB: 0.3, // మాక్సిమం 300KB వరకు
-      maxWidthOrHeight: 800, // వెడల్పు లేదా ఎత్తు 800px మించకుండా
-      useWebWorker: true,
-    };
+    try {
+      const options = {
+        maxSizeMB: 0.3,
+        maxWidthOrHeight: 800,
+        useWebWorker: true,
+      };
 
-    const compressedFile = await imageCompression(file, options);
-    
-    // ఇప్పుడు కంప్రెస్ అయిన ఫైల్‌ని స్టేట్‌లో సెట్ చెయ్
-    setImageFile(compressedFile);
-    setImagePreview(URL.createObjectURL(compressedFile));
-    
-  } catch (error) {
-    console.error("Image compression error:", error);
-    // ఒకవేళ కంప్రెషన్ ఫెయిల్ అయితే ఒరిజినల్ ఫైల్ తీసుకుంటుంది
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
-  }
-};
+      const compressedFile = await imageCompression(file, options);
+      setImageFile(compressedFile);
+      setImagePreview(URL.createObjectURL(compressedFile));
+    } catch (error) {
+      console.error("Image compression error:", error);
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
 
   const handleStoreImageChange = (e) => {
     const file = e.target.files[0];
@@ -197,7 +251,7 @@ const handleImageChange = async (e) => {
     }
   };
 
-const handleAddGrocery = async (e) => {
+  const handleAddGrocery = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
@@ -542,25 +596,25 @@ const handleAddGrocery = async (e) => {
               )}
             </div>
             <div className="min-w-0 flex flex-col justify-center">
-  <h1 className="text-[11px] sm:text-sm font-black uppercase tracking-wider text-slate-900 truncate max-w-[100px] xs:max-w-[130px] sm:max-w-xs leading-tight">
-    {owner.name}
-  </h1>
-  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-    <p className="text-[7px] sm:text-[8px] font-extrabold uppercase text-purple-600 tracking-widest truncate">గ్రోసరీ & ఎసెన్షియల్స్ హబ్</p>
-    {daysRemaining > 0 ? (
-      <span className="bg-emerald-50 text-emerald-600 border border-emerald-200/60 text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0">
-        ⏳ {daysRemaining}D Left
-      </span>
-    ) : (
-      <button 
-        onClick={() => alert("Admin కి సంప్రదించండి!")} 
-        className="bg-red-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase animate-bounce shrink-0"
-      >
-        ⚠️ Renew
-      </button>
-    )}
-  </div>
-</div>
+              <h1 className="text-[11px] sm:text-sm font-black uppercase tracking-wider text-slate-900 truncate max-w-[120px] sm:max-w-[200px] leading-tight">
+                {owner.name}
+              </h1>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <p className="text-[7px] sm:text-[8px] font-extrabold uppercase text-purple-600 tracking-widest truncate max-w-[90px] sm:max-w-none">గ్రోసరీ & ఎసెన్షియల్స్ హబ్</p>
+                {daysRemaining > 0 ? (
+                  <span className="bg-emerald-50 text-emerald-600 border border-emerald-200/60 text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0">
+                    ⏳ {daysRemaining}D Left
+                  </span>
+                ) : (
+                  <button 
+                    onClick={() => alert("Admin కి సంప్రదించండి!")} 
+                    className="bg-red-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase animate-bounce shrink-0"
+                  >
+                    ⚠️ Renew
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -709,6 +763,119 @@ const handleAddGrocery = async (e) => {
               </div>
             )}
           </>
+        )}
+
+        {/* 📦 CUSTOMER LIVE ORDERS TAB */}
+        {activeTab === "orders" && (
+          <div className="space-y-6">
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-black uppercase tracking-tight text-slate-900">కస్టమర్ ఆర్డర్స్ / Live Customer Orders</h2>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">ప్రత్యక్ష ఆర్డర్లు మరియు డెలివరీ ట్రాకింగ్</p>
+              </div>
+              <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-black px-4 py-2 rounded-xl">
+                Total Orders: {storeOrders.length}
+              </span>
+            </div>
+
+            {storeOrders.length === 0 ? (
+              <div className="bg-white border border-dashed border-slate-200 rounded-3xl p-16 text-center space-y-3">
+                <ShoppingBag className="w-10 h-10 text-slate-300 mx-auto" />
+                <h3 className="text-sm font-black uppercase text-slate-700">ఆర్డర్‌లు ఏవీ లేవు / No Orders Yet</h3>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {storeOrders.map((order) => (
+                  <div key={order._id} className="bg-white rounded-3xl border border-slate-200 p-5 shadow-sm space-y-4 flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-start">
+                        <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-black uppercase px-2.5 py-1 rounded-lg">
+                          📦 ID: {order.sudaraId}
+                        </span>
+                        <span className="text-[9px] font-black uppercase px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800">
+                          {order.status || "Pending"}
+                        </span>
+                      </div>
+
+                      {/* కస్టమర్ వివరాలు */}
+                      <div className="space-y-1">
+                        <h3 className="text-sm font-black uppercase text-slate-900">{order.customerName}</h3>
+                        <p className="text-xs font-bold text-emerald-600">
+                          📞 <a href={`tel:${order.customerPhone}`} className="underline">{order.customerPhone}</a>
+                        </p>
+                        <p className="text-[11px] font-bold text-slate-600">
+                          📍 అడ్రస్: <span className="text-slate-900">{order.customerAddress || "N/A"}</span>
+                        </p>
+                      </div>
+
+                      {/* ఆర్డర్ చేసిన ఐటమ్స్ & ప్రొడక్ట్ ఇమేజ్ */}
+                      <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-2">
+                        <p className="text-[9px] font-black text-slate-400 uppercase">Selected Items:</p>
+                        {order.items.map((itemStr, idx) => {
+                          let displayName = itemStr;
+                          let imageUrl = "";
+                          
+                          if (itemStr.includes("[Img: ")) {
+                            const parts = itemStr.split(" [Img: ");
+                            displayName = parts[0];
+                            imageUrl = parts[1] ? parts[1].replace("]", "") : "";
+                          }
+
+                          return (
+                            <div key={idx} className="flex items-center gap-3 bg-white p-2 rounded-xl border border-slate-100">
+                              {imageUrl && imageUrl !== 'N/A' ? (
+                                <img src={imageUrl} alt="" className="w-10 h-10 object-contain rounded-lg border bg-slate-50 shrink-0" />
+                              ) : (
+                                <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center shrink-0">
+                                  <Package className="w-5 h-5 text-slate-400" />
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <span className="text-xs font-black uppercase text-slate-800 block truncate">{displayName}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        <div className="pt-2 border-t border-slate-200 flex justify-between text-xs font-black text-slate-900">
+                          <span>Total Amount:</span>
+                          <span className="text-emerald-600">₹{order.totalAmount}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* మేనేజ్‌మెంట్ బటన్స్: Accept, Shipping, Out for Delivery, Delivered */}
+                    <div className="pt-3 border-t border-slate-100 grid grid-cols-2 gap-2">
+                      <button 
+                        onClick={() => handleUpdateOrderStatus(order._id, "Accepted")}
+                        className="bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-black uppercase text-[9px] tracking-wider transition-all"
+                      >
+                        Accept ✓
+                      </button>
+                      <button 
+                        onClick={() => handleUpdateOrderStatus(order._id, "Shipping")}
+                        className="bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-xl font-black uppercase text-[9px] tracking-wider transition-all"
+                      >
+                        Shipping 📦
+                      </button>
+                      <button 
+                        onClick={() => handleUpdateOrderStatus(order._id, "Out for Delivery")}
+                        className="bg-amber-600 hover:bg-amber-700 text-white py-2.5 rounded-xl font-black uppercase text-[9px] tracking-wider transition-all"
+                      >
+                        Out For Delivery 🛵
+                      </button>
+                      <button 
+                        onClick={() => handleUpdateOrderStatus(order._id, "Delivered")}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-black uppercase text-[9px] tracking-wider transition-all shadow-sm"
+                      >
+                        Delivered 🚀
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
 
         {activeTab === "profile" && (
@@ -935,7 +1102,7 @@ const handleAddGrocery = async (e) => {
               </form>
             </motion.div> 
           </div> 
-        )} 
+        )}
       </AnimatePresence>
 
       {/* 🚀 ADD CUSTOM ITEM MODAL */}
@@ -1029,6 +1196,21 @@ const handleAddGrocery = async (e) => {
                     className="w-full flex items-center gap-3 p-4 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-600 rounded-2xl font-black uppercase text-xs tracking-wider transition-all border border-slate-100 text-slate-700"
                   >
                     <Package className="w-4 h-4 text-emerald-600" /> ఇన్వెంటరీ కేటలాగ్ / Inventory
+                  </button>
+
+                  {/* 📦 న్యూ: కస్టమర్ ఆర్డర్స్ ట్యాబ్ */}
+                  <button 
+                    onClick={() => { setActiveTab("orders"); setIsSidebarOpen(false); }}
+                    className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-emerald-50 hover:text-emerald-600 rounded-2xl font-black uppercase text-xs tracking-wider transition-all border border-slate-100 text-slate-700"
+                  >
+                    <div className="flex items-center gap-3">
+                      <ShoppingBag className="w-4 h-4 text-emerald-600" /> కస్టమర్ ఆర్డర్స్ / Live Orders
+                    </div>
+                    {storeOrders.length > 0 && (
+                      <span className="bg-emerald-600 text-white text-[9px] px-2.5 py-0.5 rounded-full">
+                        {storeOrders.length}
+                      </span>
+                    )}
                   </button>
 
                   <button 

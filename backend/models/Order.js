@@ -22,14 +22,14 @@ const OrderSchema = new mongoose.Schema({
 },
   
   orderType: { 
-    type: String, 
-    enum: ['Pre-book', 'Post-book', 'Express-Route','Counter','Online-Order'],
-    required: true 
-  }, 
+  type: String, 
+  enum: ['Pre-book', 'Post-book', 'Express-Route', 'Counter', 'Online-Order', 'Store-Direct-Order'], 
+  required: true 
+},
   customerAddress: { type: String },
-  status: { 
+ status: { 
     type: String, 
-    enum: ["Pending", "Accepted", "Preparing", "Out for Delivery", "Delivered","Served"], 
+    enum: ["Pending", "Accepted", "Preparing", "Shipping", "Out for Delivery", "Delivered", "Served"], 
     default: "Pending" 
   },
  
@@ -49,7 +49,7 @@ const OrderSchema = new mongoose.Schema({
 
   paymentMode: { 
     type: String, 
-    enum: ['CASH', 'UPI', 'PENDING'], 
+    enum: ['CASH', 'UPI', 'PENDING', 'CASH ON DELIVERY / DIRECT'], 
     default: 'CASH' 
   },
 

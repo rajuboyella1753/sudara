@@ -1,12 +1,14 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api/api-base";
+// import api from "../api/api-base";
 import { motion, AnimatePresence } from "framer-motion";
 import { QRCodeCanvas } from "qrcode.react";
 import QRCode from 'qrcode';
 import imageCompression from 'browser-image-compression';
+import { io } from "socket.io-client";
+import api, { socket } from "../api/api-base";
 import { 
-  Cpu, Smartphone, Laptop, Headphones, Watch, Plus, Trash2, Edit3, Download, Menu,
+  Cpu, Smartphone, Laptop, Headphones, Watch, Plus, Trash2, Edit3, Download, Menu,ShoppingBag,
   Power, LogOut, Package, X, UploadCloud, Settings, Image as ImageIcon, Search, Key, MapPin
 } from "lucide-react";
 
@@ -20,6 +22,7 @@ export default function ElectronicsDashboard() {
   const [isEditModal, setIsEditModal] = useState(false);
   const [isSettingsModal, setIsSettingsModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [storeOrders, setStoreOrders] = useState([]);
   const [selectedCategoryTab, setSelectedCategoryTab] = useState("All");
   const [activeTab, setActiveTab] = useState("inventory");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -70,8 +73,61 @@ export default function ElectronicsDashboard() {
     setStoreImagePreview(stored.image || "");
     fetchProducts(stored._id);
     fetchMasterCatalog();
+    fetchStoreOrders(stored._id);
   }, [navigate]);
+// 🚀 రియల్ టైమ్ సాకెట్ లిజనర్ (పేజీ రిఫ్రెష్ అవ్వకుండా ఆర్డర్స్ రావడానికి)
+  useEffect(() => {
+    if (!owner?._id) return;
 
+    if (!socket.connected) {
+      socket.connect();
+    }
+
+    const joinRoom = () => socket.emit("join_owner_room", owner._id);
+
+    const handleNewOrder = (newOrder) => {
+      console.log("🔔 కొత్త లైవ్ ఆర్డర్ వచ్చింది:", newOrder);
+      setStoreOrders(prev => [newOrder, ...prev]);
+      
+      // ఒకవేళ అలర్ట్ సౌండ్ ఆన్ ఉంటే బీప్ ప్లే అవుతుంది
+      if (localStorage.getItem("sudara_alert_status") === "active") {
+        new Audio("/order-beep.mp3").play().catch(e => console.log("Sound play error:", e));
+      }
+      alert(`కొత్త ఆర్డర్ వచ్చింది! ID: ${newOrder.sudaraId}`);
+    };
+
+    socket.on("connect", joinRoom);
+    socket.on("new_order_received", handleNewOrder);
+
+    if (socket.connected) joinRoom();
+
+    return () => {
+      socket.off("connect", joinRoom);
+      socket.off("new_order_received", handleNewOrder);
+    };
+  }, [owner]);
+  const fetchStoreOrders = async (ownerId) => {
+    try {
+      const res = await api.get(`/orders/restaurant/${ownerId}`);
+      setStoreOrders(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error("Failed to fetch store orders");
+    }
+  };
+  const handleUpdateOrderStatus = async (orderId, newStatus) => {
+    try {
+      await api.put(`/orders/update-status/${orderId}`, { status: newStatus });
+      if (newStatus === "Delivered" || newStatus === "Served") {
+        setStoreOrders(storeOrders.filter(o => o._id !== orderId));
+        alert("ఆర్డర్ విజయవంతంగా డెలివరీ అయింది & క్లియర్ చేయబడింది! ✅");
+      } else {
+        setStoreOrders(storeOrders.map(o => o._id === orderId ? { ...o, status: newStatus } : o));
+        alert(`స్టేటస్ "${newStatus}" కి మార్చబడింది! 🚚`);
+      }
+    } catch (err) {
+      alert("స్టేటస్ అప్‌డేట్ విఫలమైంది.");
+    }
+  };
   const fetchProducts = async (ownerId) => {
     try {
       const res = await api.get(`/items/owner/${ownerId}`);
@@ -485,7 +541,7 @@ const handleAddGadget = async (e) => {
           >
             <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </button>
-
+          
           <button 
             onClick={() => { localStorage.removeItem("owner"); navigate("/owner"); }}
             className="p-2 sm:p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all shrink-0"
@@ -631,7 +687,7 @@ const handleAddGadget = async (e) => {
                     </p>
                   </div>
                 </div>
-
+                
                 <button
                   type="button"
                   onClick={() => {
@@ -733,6 +789,117 @@ const handleAddGadget = async (e) => {
                 </button>
               </div>
             </div>
+          </div>
+        )}
+        {activeTab === "orders" && (
+          <div className="space-y-6">
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-black uppercase tracking-tight text-slate-900">కస్టమర్ ఆర్డర్స్ / Live Customer Orders</h2>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">ప్రత్యక్ష ఆర్డర్లు మరియు డెలివరీ ట్రాకింగ్</p>
+              </div>
+              <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-black px-4 py-2 rounded-xl">
+                Total Orders: {storeOrders.length}
+              </span>
+            </div>
+
+            {storeOrders.length === 0 ? (
+              <div className="bg-white border border-dashed border-slate-200 rounded-3xl p-16 text-center space-y-3">
+                <ShoppingBag className="w-10 h-10 text-slate-300 mx-auto" />
+                <h3 className="text-sm font-black uppercase text-slate-700">ఆర్డర్‌లు ఏవీ లేవు / No Orders Yet</h3>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {storeOrders.map((order) => (
+                  <div key={order._id} className="bg-white rounded-3xl border border-slate-200 p-5 shadow-sm space-y-4 flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-start">
+                        <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 text-[9px] font-black uppercase px-2.5 py-1 rounded-lg">
+                          📦 ID: {order.sudaraId}
+                        </span>
+                        <span className="text-[9px] font-black uppercase px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800">
+                          {order.status || "Pending"}
+                        </span>
+                      </div>
+
+                      {/* కస్టమర్ వివరాలు */}
+                      <div className="space-y-1">
+                        <h3 className="text-sm font-black uppercase text-slate-900">{order.customerName}</h3>
+                        <p className="text-xs font-bold text-indigo-600">
+                          📞 <a href={`tel:${order.customerPhone}`} className="underline">{order.customerPhone}</a>
+                        </p>
+                        <p className="text-[11px] font-bold text-slate-600">
+                          📍 అడ్రస్: <span className="text-slate-900">{order.customerAddress || "N/A"}</span>
+                        </p>
+                      </div>
+
+                      {/* 🛒 ఆర్డర్ చేసిన ఐటమ్స్ & ప్రొడక్ట్ ఇమేజ్ */}
+                      <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-2">
+                        <p className="text-[9px] font-black text-slate-400 uppercase">Selected Items:</p>
+                        {order.items.map((itemStr, idx) => {
+                          let displayName = itemStr;
+                          let imageUrl = "";
+                          
+                          if (itemStr.includes("[Img: ")) {
+                            const parts = itemStr.split(" [Img: ");
+                            displayName = parts[0];
+                            imageUrl = parts[1] ? parts[1].replace("]", "") : "";
+                          }
+
+                          return (
+                            <div key={idx} className="flex items-center gap-3 bg-white p-2 rounded-xl border border-slate-100">
+                              {imageUrl && imageUrl !== 'N/A' ? (
+                                <img src={imageUrl} alt="" className="w-10 h-10 object-contain rounded-lg border bg-slate-50 shrink-0" />
+                              ) : (
+                                <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center shrink-0">
+                                  <Package className="w-5 h-5 text-slate-400" />
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <span className="text-xs font-black uppercase text-slate-800 block truncate">{displayName}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        <div className="pt-2 border-t border-slate-200 flex justify-between text-xs font-black text-slate-900">
+                          <span>Total Amount:</span>
+                          <span className="text-indigo-600">₹{order.totalAmount}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* మేనేజ్‌మెంట్ బటన్స్ */}
+                    <div className="pt-3 border-t border-slate-100 grid grid-cols-2 gap-2">
+                      <button 
+                        onClick={() => handleUpdateOrderStatus(order._id, "Accepted")}
+                        className="bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-black uppercase text-[9px] tracking-wider transition-all"
+                      >
+                        Accept ✓
+                      </button>
+                      <button 
+                        onClick={() => handleUpdateOrderStatus(order._id, "Shipping")}
+                        className="bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-xl font-black uppercase text-[9px] tracking-wider transition-all"
+                      >
+                        Shipping 📦
+                      </button>
+                      <button 
+                        onClick={() => handleUpdateOrderStatus(order._id, "Out for Delivery")}
+                        className="bg-amber-600 hover:bg-amber-700 text-white py-2.5 rounded-xl font-black uppercase text-[9px] tracking-wider transition-all"
+                      >
+                        Out For Delivery 🛵
+                      </button>
+                      <button 
+                        onClick={() => handleUpdateOrderStatus(order._id, "Delivered")}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-black uppercase text-[9px] tracking-wider transition-all shadow-sm"
+                      >
+                        Delivered 🚀
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </main>
@@ -1178,7 +1345,19 @@ const handleAddGadget = async (e) => {
                   >
                     <Package className="w-4 h-4 text-indigo-600" /> ఇన్వెంటరీ మేనేజ్‌మెంట్ / Inventory
                   </button>
-
+                  <button 
+  onClick={() => { setActiveTab("orders"); setIsSidebarOpen(false); }}
+  className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 rounded-2xl font-black uppercase text-xs tracking-wider transition-all border border-slate-100 text-slate-700"
+>
+  <div className="flex items-center gap-3">
+    <ShoppingBag className="w-4 h-4 text-indigo-600" /> కస్టమర్ ఆర్డర్స్ / Live Orders
+  </div>
+  {storeOrders.length > 0 && (
+    <span className="bg-indigo-600 text-white text-[9px] px-2.5 py-0.5 rounded-full">
+      {storeOrders.length}
+    </span>
+  )}
+</button>
                   <button 
                     onClick={() => { setActiveTab("profile"); setIsSidebarOpen(false); }}
                     className="w-full flex items-center gap-3 p-4 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 rounded-2xl font-black uppercase text-xs tracking-wider transition-all border border-slate-100 text-slate-700"
@@ -1209,6 +1388,7 @@ const handleAddGadget = async (e) => {
           </div>
         )}
       </AnimatePresence>
+  
     </div>
   );
 }

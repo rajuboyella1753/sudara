@@ -98,17 +98,16 @@ router.put("/update-status/:id", async (req, res) => {
     const order = await Order.findById(req.params.id);
     if (!order) return res.status(404).json({ error: "Order Not Found" });
 
-    // డేటా అప్‌డేట్ చెయ్
     order.status = status;
     await order.save();
 
-    // ఒకవేళ Served అయితే - డిలీట్ చెయ్
-    if (status === "Served") {
+    // 💡 ఒకవేళ Delivered లేదా Served అయితే డేటాబేస్ నుండి ఆర్డర్ డిలీట్ అయిపోతుంది
+    if (status === "Delivered" || status === "Served") {
        await Order.findByIdAndDelete(req.params.id);
-       return res.json({ message: "Order Served & Removed" });
+       return res.json({ message: "Order Completed & Removed from Database!" });
     }
 
-    res.json({ message: "Status Updated", order });
+    res.json({ message: "Status Updated Successfully", order });
   } catch (err) {
     console.error("Server Side Update Error:", err);
     res.status(500).json({ error: err.message });

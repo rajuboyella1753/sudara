@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api/api-base";
 import { motion, AnimatePresence } from "framer-motion";
 import { QRCodeCanvas } from "qrcode.react";
 import QRCode from 'qrcode';
 import imageCompression from 'browser-image-compression';
+import { io } from "socket.io-client";
+import api, { socket } from "../api/api-base";
 import { 
   Shirt, Scissors, ShoppingBag, Watch, Plus, Trash2, Edit3, Download, Menu,
   Power, LogOut, Package, X, UploadCloud, Settings, Image as ImageIcon, Search, Key, MapPin
@@ -20,6 +21,7 @@ export default function ClothingDashboard() {
   const [isEditModal, setIsEditModal] = useState(false);
   const [isSettingsModal, setIsSettingsModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [storeOrders, setStoreOrders] = useState([]); // 📦 కస్టమర్ ఆర్డర్స్ స్టేట్
   const [selectedCategoryTab, setSelectedCategoryTab] = useState("All");
   const [activeTab, setActiveTab] = useState("inventory");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -69,7 +71,63 @@ export default function ClothingDashboard() {
     setStoreImagePreview(stored.image || "");
     fetchProducts(stored._id);
     fetchMasterCatalog();
+    fetchStoreOrders(stored._id); // 👈 ఆర్డర్స్ ఫెచ్ చేయడం
   }, [navigate]);
+
+  // 🚀 రియల్ టైమ్ సాకెట్ లిజనర్ (పేజీ రిఫ్రెష్ అవ్వకుండా ఆర్డర్స్ రావడానికి)
+  useEffect(() => {
+    if (!owner?._id) return;
+
+    if (!socket.connected) {
+      socket.connect();
+    }
+
+    const joinRoom = () => socket.emit("join_owner_room", owner._id);
+
+    const handleNewOrder = (newOrder) => {
+      console.log("🔔 కొత్త లైవ్ ఆర్డర్ వచ్చింది:", newOrder);
+      setStoreOrders(prev => [newOrder, ...prev]);
+      
+      if (localStorage.getItem("sudara_alert_status") === "active") {
+        new Audio("/order-beep.mp3").play().catch(e => console.log("Sound play error:", e));
+      }
+      alert(`కొత్త ఆర్డర్ వచ్చింది! ID: ${newOrder.sudaraId}`);
+    };
+
+    socket.on("connect", joinRoom);
+    socket.on("new_order_received", handleNewOrder);
+
+    if (socket.connected) joinRoom();
+
+    return () => {
+      socket.off("connect", joinRoom);
+      socket.off("new_order_received", handleNewOrder);
+    };
+  }, [owner]);
+
+  const fetchStoreOrders = async (ownerId) => {
+    try {
+      const res = await api.get(`/orders/restaurant/${ownerId}`);
+      setStoreOrders(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error("Failed to fetch store orders");
+    }
+  };
+
+  const handleUpdateOrderStatus = async (orderId, newStatus) => {
+    try {
+      await api.put(`/orders/update-status/${orderId}`, { status: newStatus });
+      if (newStatus === "Delivered" || newStatus === "Served") {
+        setStoreOrders(storeOrders.filter(o => o._id !== orderId));
+        alert("ఆర్డర్ విజయవంతంగా డెలివరీ అయింది & క్లియర్ చేయబడింది! ✅");
+      } else {
+        setStoreOrders(storeOrders.map(o => o._id === orderId ? { ...o, status: newStatus } : o));
+        alert(`స్టేటస్ "${newStatus}" కి మార్చబడింది! 🚚`);
+      }
+    } catch (err) {
+      alert("స్టేటస్ అప్‌డేట్ విఫలమైంది.");
+    }
+  };
 
   const fetchProducts = async (ownerId) => {
     try {
@@ -80,9 +138,8 @@ export default function ClothingDashboard() {
     }
   };
 
-const fetchMasterCatalog = async () => {
+  const fetchMasterCatalog = async () => {
     try {
-      // 💡 కేవలం క్లాతింగ్ (Clothing) ఐటమ్స్ మాత్రమే వచ్చేలా కేటగిరీ పంపిస్తున్నాం
       const res = await api.get(`/items/master-catalog?category=Clothing`);
       setMasterCatalog(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
@@ -101,31 +158,26 @@ const fetchMasterCatalog = async () => {
     }
   };
 
-const handleImageChange = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  try {
-    // 💡 ఇక్కడ మనం కంప్రెషన్ చేస్తున్నాం
-    const options = {
-      maxSizeMB: 0.3, // మాక్సిమం 300KB వరకు
-      maxWidthOrHeight: 800, // వెడల్పు లేదా ఎత్తు 800px మించకుండా
-      useWebWorker: true,
-    };
+    try {
+      const options = {
+        maxSizeMB: 0.3,
+        maxWidthOrHeight: 800,
+        useWebWorker: true,
+      };
 
-    const compressedFile = await imageCompression(file, options);
-    
-    // ఇప్పుడు కంప్రెస్ అయిన ఫైల్‌ని స్టేట్‌లో సెట్ చెయ్
-    setImageFile(compressedFile);
-    setImagePreview(URL.createObjectURL(compressedFile));
-    
-  } catch (error) {
-    console.error("Image compression error:", error);
-    // ఒకవేళ కంప్రెషన్ ఫెయిల్ అయితే ఒరిజినల్ ఫైల్ తీసుకుంటుంది
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
-  }
-};
+      const compressedFile = await imageCompression(file, options);
+      setImageFile(compressedFile);
+      setImagePreview(URL.createObjectURL(compressedFile));
+    } catch (error) {
+      console.error("Image compression error:", error);
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
 
   const handleStoreImageChange = (e) => {
     const file = e.target.files[0];
@@ -134,7 +186,7 @@ const handleImageChange = async (e) => {
       setStoreImagePreview(URL.createObjectURL(file));
     }
   };
-// ⏳ రోజుల కౌంట్‌డౌన్ లాజిక్
+
   const daysRemaining = useMemo(() => {
     if (!owner?.nextBillingDate) return 0;
     const today = new Date();
@@ -143,6 +195,7 @@ const handleImageChange = async (e) => {
     const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
     return differenceInDays < 0 ? 0 : differenceInDays;
   }, [owner]);
+
   const handleUpdateSettings = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -177,7 +230,7 @@ const handleImageChange = async (e) => {
     }
   };
 
-const handleAddApparel = async (e) => {
+  const handleAddApparel = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
@@ -211,7 +264,6 @@ const handleAddApparel = async (e) => {
     }
   };
 
-  // ⚡ మాస్టర్ కేటలాగ్ నుండి వన్-క్లిక్‌తో ఐటమ్ యాడ్ చేసుకోవడం
   const handleAddFromMaster = async (masterItem) => {
     try {
       setLoading(true);
@@ -436,25 +488,25 @@ const handleAddApparel = async (e) => {
             </div>
 
             <div className="min-w-0 flex flex-col justify-center">
-  <h1 className="text-[11px] sm:text-sm font-black uppercase tracking-wider text-slate-900 truncate max-w-[100px] xs:max-w-[130px] sm:max-w-xs leading-tight">
-    {owner.name}
-  </h1>
-  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-    <p className="text-[7px] sm:text-[8px] font-extrabold uppercase text-purple-600 tracking-widest truncate">క్లాతింగ్ & అప్పారెల్ హబ్</p>
-    {daysRemaining > 0 ? (
-      <span className="bg-emerald-50 text-emerald-600 border border-emerald-200/60 text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0">
-        ⏳ {daysRemaining}D Left
-      </span>
-    ) : (
-      <button 
-        onClick={() => alert("Admin కి సంప్రదించండి!")} 
-        className="bg-red-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase animate-bounce shrink-0"
-      >
-        ⚠️ Renew
-      </button>
-    )}
-  </div>
-</div>
+              <h1 className="text-[11px] sm:text-sm font-black uppercase tracking-wider text-slate-900 truncate max-w-[100px] xs:max-w-[130px] sm:max-w-xs leading-tight">
+                {owner.name}
+              </h1>
+              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                <p className="text-[7px] sm:text-[8px] font-extrabold uppercase text-purple-600 tracking-widest truncate">క్లాతింగ్ & అప్పారెల్ హబ్</p>
+                {daysRemaining > 0 ? (
+                  <span className="bg-emerald-50 text-emerald-600 border border-emerald-200/60 text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0">
+                    ⏳ {daysRemaining}D Left
+                  </span>
+                ) : (
+                  <button 
+                    onClick={() => alert("Admin కి సంప్రదించండి!")} 
+                    className="bg-red-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase animate-bounce shrink-0"
+                  >
+                    ⚠️ Renew
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -612,6 +664,119 @@ const handleAddApparel = async (e) => {
           </>
         )}
 
+        {/* 📦 CUSTOMER LIVE ORDERS TAB */}
+        {activeTab === "orders" && (
+          <div className="space-y-6">
+            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-black uppercase tracking-tight text-slate-900">కస్టమర్ ఆర్డర్స్ / Live Customer Orders</h2>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">ప్రత్యక్ష ఆర్డర్లు మరియు డెలివరీ ట్రాకింగ్</p>
+              </div>
+              <span className="bg-purple-50 text-purple-700 border border-purple-200 text-xs font-black px-4 py-2 rounded-xl">
+                Total Orders: {storeOrders.length}
+              </span>
+            </div>
+
+            {storeOrders.length === 0 ? (
+              <div className="bg-white border border-dashed border-slate-200 rounded-3xl p-16 text-center space-y-3">
+                <ShoppingBag className="w-10 h-10 text-slate-300 mx-auto" />
+                <h3 className="text-sm font-black uppercase text-slate-700">ఆర్డర్‌లు ఏవీ లేవు / No Orders Yet</h3>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {storeOrders.map((order) => (
+                  <div key={order._id} className="bg-white rounded-3xl border border-slate-200 p-5 shadow-sm space-y-4 flex flex-col justify-between">
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-start">
+                        <span className="bg-purple-50 text-purple-700 border border-purple-200 text-[9px] font-black uppercase px-2.5 py-1 rounded-lg">
+                          📦 ID: {order.sudaraId}
+                        </span>
+                        <span className="text-[9px] font-black uppercase px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800">
+                          {order.status || "Pending"}
+                        </span>
+                      </div>
+
+                      {/* కస్టమర్ వివరాలు */}
+                      <div className="space-y-1">
+                        <h3 className="text-sm font-black uppercase text-slate-900">{order.customerName}</h3>
+                        <p className="text-xs font-bold text-purple-600">
+                          📞 <a href={`tel:${order.customerPhone}`} className="underline">{order.customerPhone}</a>
+                        </p>
+                        <p className="text-[11px] font-bold text-slate-600">
+                          📍 అడ్రస్: <span className="text-slate-900">{order.customerAddress || "N/A"}</span>
+                        </p>
+                      </div>
+
+                      {/* ఆర్డర్ చేసిన ఐటమ్స్ & ప్రొడక్ట్ ఇమేజ్ */}
+                      <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-2">
+                        <p className="text-[9px] font-black text-slate-400 uppercase">Selected Items:</p>
+                        {order.items.map((itemStr, idx) => {
+                          let displayName = itemStr;
+                          let imageUrl = "";
+                          
+                          if (itemStr.includes("[Img: ")) {
+                            const parts = itemStr.split(" [Img: ");
+                            displayName = parts[0];
+                            imageUrl = parts[1] ? parts[1].replace("]", "") : "";
+                          }
+
+                          return (
+                            <div key={idx} className="flex items-center gap-3 bg-white p-2 rounded-xl border border-slate-100">
+                              {imageUrl && imageUrl !== 'N/A' ? (
+                                <img src={imageUrl} alt="" className="w-10 h-10 object-contain rounded-lg border bg-slate-50 shrink-0" />
+                              ) : (
+                                <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center shrink-0">
+                                  <Package className="w-5 h-5 text-slate-400" />
+                                </div>
+                              )}
+                              <div className="min-w-0 flex-1">
+                                <span className="text-xs font-black uppercase text-slate-800 block truncate">{displayName}</span>
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        <div className="pt-2 border-t border-slate-200 flex justify-between text-xs font-black text-slate-900">
+                          <span>Total Amount:</span>
+                          <span className="text-purple-600">₹{order.totalAmount}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* మేనేజ్‌మెంట్ బటన్స్: Accept, Shipping, Out for Delivery, Delivered */}
+                    <div className="pt-3 border-t border-slate-100 grid grid-cols-2 gap-2">
+                      <button 
+                        onClick={() => handleUpdateOrderStatus(order._id, "Accepted")}
+                        className="bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-black uppercase text-[9px] tracking-wider transition-all"
+                      >
+                        Accept ✓
+                      </button>
+                      <button 
+                        onClick={() => handleUpdateOrderStatus(order._id, "Shipping")}
+                        className="bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-xl font-black uppercase text-[9px] tracking-wider transition-all"
+                      >
+                        Shipping 📦
+                      </button>
+                      <button 
+                        onClick={() => handleUpdateOrderStatus(order._id, "Out for Delivery")}
+                        className="bg-amber-600 hover:bg-amber-700 text-white py-2.5 rounded-xl font-black uppercase text-[9px] tracking-wider transition-all"
+                      >
+                        Out For Delivery 🛵
+                      </button>
+                      <button 
+                        onClick={() => handleUpdateOrderStatus(order._id, "Delivered")}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-black uppercase text-[9px] tracking-wider transition-all shadow-sm"
+                      >
+                        Delivered 🚀
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === "profile" && (
           <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in zoom-in duration-500">
             <h2 className="text-4xl font-black italic uppercase text-slate-900">
@@ -753,7 +918,7 @@ const handleAddApparel = async (e) => {
         </div>
       </footer>
 
-      {/* 🔍 MASTER CATALOG IMPORT MODAL (ఇతర ఓనర్లు యాడ్ చేసిన ఐటమ్స్ కోసం) */}
+      {/* 🔍 MASTER CATALOG IMPORT MODAL */}
       <AnimatePresence>
         {isMasterModal && (
           <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs">
@@ -817,7 +982,6 @@ const handleAddApparel = async (e) => {
               </div>
 
               <form onSubmit={handleUpdateSettings} className="space-y-4">
-                {/* 🔑 LOGIN CREDENTIALS SECTION */}
                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
                   <h4 className="text-[10px] font-black uppercase tracking-widest text-purple-600 flex items-center gap-1.5">
                     <Key className="w-3.5 h-3.5" /> లాగిన్ వివరాలు / Login Credentials
@@ -866,7 +1030,6 @@ const handleAddApparel = async (e) => {
                   <input type="text" value={storeSettings.address} onChange={(e)=>setStoreSettings({...storeSettings, address: e.target.value})} className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-purple-600" />
                 </div>
 
-                {/* 🖼️ STORE MAIN BANNER IMAGE */}
                 <div>
                   <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">స్టోర్ ఫోటో / Store Banner Image</label>
                   <div className="relative border border-dashed border-slate-300 rounded-xl p-4 text-center bg-slate-50 hover:bg-slate-100/50 transition-all cursor-pointer">
@@ -885,7 +1048,6 @@ const handleAddApparel = async (e) => {
                   </div>
                 </div>
 
-                {/* 📍 STORE LOCATION COORDINATES (GPS SYNC) */}
                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
                   <div className="flex items-center justify-between">
                     <h4 className="text-[10px] font-black uppercase tracking-widest text-purple-600 flex items-center gap-1.5">
@@ -939,64 +1101,6 @@ const handleAddApparel = async (e) => {
                         className="w-full bg-white border border-slate-200 px-3 py-2 rounded-xl font-bold text-xs text-slate-700 outline-none focus:border-purple-600" 
                       />
                     </div>
-                  </div>
-                </div>
-
-                {/* 🏢 INTERIOR / STORE GALLERY IMAGES */}
-                <div>
-                  <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">స్టోర్ ఇంటీరియర్ / Showcase Images</label>
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {owner.interiorImages && owner.interiorImages.map((imgUrl, idx) => (
-                      <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden border">
-                        <img src={imgUrl} alt="Interior" className="w-full h-full object-cover" />
-                        <button 
-                          type="button"
-                          onClick={async () => {
-                            try {
-                              const res = await api.put(`/owner/remove-interior-image/${owner._id}`, { imageUrl: imgUrl });
-                              setOwner(res.data);
-                              localStorage.setItem("owner", JSON.stringify(res.data));
-                            } catch (err) { alert("Failed to remove image"); }
-                          }}
-                          className="absolute top-1 right-1 bg-rose-600 text-white rounded-full p-0.5 text-[8px]"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="relative border border-dashed border-slate-300 rounded-xl p-3 text-center bg-slate-50 cursor-pointer">
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      multiple 
-                      onChange={async (e) => {
-                        const files = Array.from(e.target.files);
-                        if (files.length === 0) return;
-                        setLoading(true);
-                        try {
-                          const uploadedUrls = [];
-                          for (let file of files) {
-                            const data = new FormData();
-                            data.append("image", file);
-                            const uploadRes = await api.post(`/owner/update-profile-pic/${owner._id}`, data);
-                            if (uploadRes.data.url) uploadedUrls.push(uploadRes.data.url);
-                          }
-                          if (uploadedUrls.length > 0) {
-                            const res = await api.put(`/owner/add-interior-images/${owner._id}`, { images: uploadedUrls });
-                            setOwner(res.data);
-                            localStorage.setItem("owner", JSON.stringify(res.data));
-                            alert("ఫోటోలు విజయవంతంగా అప్‌లోడ్ అయ్యాయి!");
-                          }
-                        } catch (err) {
-                          alert("ఫోటోల అప్‌లోడ్ విఫలమైంది");
-                        } finally {
-                          setLoading(false);
-                        }
-                      }} 
-                      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" 
-                    />
-                    <span className="text-[10px] font-black text-purple-600 uppercase">+ ఇంటీరియర్ ఫోటోలు అప్‌లోడ్ చేయండి</span>
                   </div>
                 </div>
 
@@ -1163,6 +1267,20 @@ const handleAddApparel = async (e) => {
                   </button>
 
                   <button 
+                    onClick={() => { setActiveTab("orders"); setIsSidebarOpen(false); }}
+                    className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-purple-50 hover:text-purple-600 rounded-2xl font-black uppercase text-xs tracking-wider transition-all border border-slate-100 text-slate-700"
+                  >
+                    <div className="flex items-center gap-3">
+                      <ShoppingBag className="w-4 h-4 text-purple-600" /> కస్టమర్ ఆర్డర్స్ / Live Orders
+                    </div>
+                    {storeOrders.length > 0 && (
+                      <span className="bg-purple-600 text-white text-[9px] px-2.5 py-0.5 rounded-full">
+                        {storeOrders.length}
+                      </span>
+                    )}
+                  </button>
+
+                  <button 
                     onClick={() => { setActiveTab("profile"); setIsSidebarOpen(false); }}
                     className="w-full flex items-center gap-3 p-4 bg-slate-50 hover:bg-purple-50 hover:text-purple-600 rounded-2xl font-black uppercase text-xs tracking-wider transition-all border border-slate-100 text-slate-700"
                   >
@@ -1192,6 +1310,7 @@ const handleAddApparel = async (e) => {
           </div>
         )}
       </AnimatePresence>
+  
     </div>
   );
 }
