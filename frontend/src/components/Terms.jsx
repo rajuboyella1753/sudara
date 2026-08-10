@@ -6,13 +6,13 @@ import Footer from "../components/Footer";
 
 export default function Terms() {
   return (
-    /* 🚀 RAJU FIX: Indigo Blue & Orange Theme */
-    <div className="min-h-screen bg-[#FDFDFD] text-slate-900 font-sans selection:bg-orange-100 overflow-x-hidden">
+    /* 🚀 Blue & Orange Theme */
+    <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-orange-100 overflow-x-hidden">
       <Navbar />
       
       <div className="max-w-4xl mx-auto px-6 pt-32 pb-20 relative">
         {/* Background Mesh Glows */}
-        <div className="absolute top-40 -left-20 w-72 h-72 bg-indigo-500/5 blur-[100px] rounded-full -z-10"></div>
+        <div className="absolute top-40 -left-20 w-72 h-72 bg-blue-500/5 blur-[100px] rounded-full -z-10"></div>
         <div className="absolute bottom-20 -right-20 w-72 h-72 bg-orange-500/5 blur-[100px] rounded-full -z-10"></div>
 
         {/* Header Section */}
@@ -21,8 +21,8 @@ export default function Terms() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-16"
         >
-          <div className="inline-block px-5 py-2 bg-indigo-50 border border-indigo-100 rounded-full mb-6">
-            <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600">Protocol Documentation</p>
+          <div className="inline-block px-5 py-2 bg-blue-50 border border-blue-100 rounded-full mb-6">
+            <p className="text-[10px] font-black uppercase tracking-widest text-blue-600">Protocol Documentation & Legal Disclaimer</p>
           </div>
           <h1 className="text-5xl md:text-7xl font-black italic uppercase tracking-tighter mb-4 leading-none text-slate-900">
             Terms of <span className="text-orange-600">Service</span>
@@ -34,84 +34,96 @@ export default function Terms() {
 
         <div className="space-y-8">
           
-          {/* 1. Platform Nature */}
-          <section className="bg-white p-8 rounded-[2.5rem] border border-slate-100 hover:border-indigo-200 transition-all shadow-sm">
+          {/* 1. Vision, Mission & Platform Nature */}
+          <section className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-200/80 hover:border-blue-200 transition-all shadow-sm">
             <div className="flex items-center gap-4 mb-6">
-              <div className="p-3 bg-indigo-50 rounded-2xl text-indigo-600">
+              <div className="p-3 bg-blue-100/70 rounded-2xl text-blue-600">
                 <ShieldCheck className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-black uppercase italic text-slate-900 tracking-tight">1. Nature of Protocol</h3>
+              <h3 className="text-xl font-black uppercase italic text-slate-900 tracking-tight">1. Our Vision, Mission & Nature of Protocol</h3>
             </div>
-            <p className="text-sm leading-relaxed text-slate-600">
-              SUDARA HUB is a <b>Hyper-Local Discovery Matrix</b> designed to connect students with campus food vendors. We act strictly as an <b>Information Bridge</b>. We do not prepare food, manage staff, or control the physical operations of any listed restaurant.
-            </p>
+            <div className="space-y-4 text-sm leading-relaxed text-slate-600">
+              <p>
+                <b>SUDARA HUB</b> is a <b>Hyper-Local Discovery & Digital Matrix</b> created with the vision of empowering local economies, civilians, and merchants. Our mission is to bridge the gap between consumers and regional businesses across all sectors—including <b>Restaurants, Clothing & Fashion Stores, Electronics & Appliances, Groceries, and Automobile Showrooms</b>.
+              </p>
+              <p>
+                <b>Strictly as Connectors:</b> SUDARA HUB acts solely as a digital bridge and information directory. We do not manufacture products, run physical storefronts, manage inventories, or control the operations of any listed business. Every listed entity operates independently.
+              </p>
+            </div>
           </section>
 
-          {/* 2. 🚨 THE CORE PAYMENT DISCLAIMER - CRUCIAL FIX */}
-          <section className="bg-orange-50/50 p-8 rounded-[2.5rem] border-2 border-orange-100 hover:border-orange-300 transition-all shadow-md">
+          {/* 2. 🚨 THE CORE PAYMENT DISCLAIMER - CRUCIAL PROTECTION */}
+          <section className="bg-orange-50/70 p-8 rounded-[2.5rem] border-2 border-orange-200 hover:border-orange-300 transition-all shadow-md">
             <div className="flex items-center gap-4 mb-6">
               <div className="p-3 bg-orange-100 rounded-2xl text-orange-600">
                 <Banknote className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-black uppercase italic text-slate-900 tracking-tight">2. Payment & Transaction Policy</h3>
+              <h3 className="text-xl font-black uppercase italic text-slate-900 tracking-tight">2. Payment & Financial Policy (Zero Financial Liability)</h3>
             </div>
             <div className="space-y-4 text-sm leading-relaxed text-slate-700">
               <p className="font-bold text-orange-700 uppercase tracking-tight text-xs">
-                ⚠️ IMPORTANT: SUDARA HUB IS NOT A PAYMENT GATEWAY.
+                ⚠️ IMPORTANT: SUDARA HUB IS NOT A PAYMENT GATEWAY OR FINANCIAL INSTITUTION.
               </p>
               <ul className="space-y-5">
                 <li className="flex gap-4">
                   <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-1.5 shrink-0" />
                   <span>
-                    <b>Direct Transfers:</b> All payments made via the platform (PhonePe, GPay, UPI) go <b>DIRECTLY</b> to the Restaurant Owner's bank account. SUDARA HUB never touches, holds, or processes your money.
+                    <b>Direct Owner Transfers:</b> All financial transactions, advances, or payments made via the platform (PhonePe, GPay, UPI, or cash) are transferred <b>DIRECTLY</b> to the respective business owner's personal or commercial bank account. SUDARA HUB never touches, holds, processes, or intercepts any user funds.
                   </span>
                 </li>
                 <li className="flex gap-4">
                   <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-1.5 shrink-0" />
                   <span>
-                    <b>QR Code Responsibility:</b> The QR codes and UPI numbers provided are managed by the respective owners. You must verify the recipient's name before confirming any transaction.
+                    <b>QR Code & UPI Accountability:</b> The QR codes and UPI numbers displayed belong entirely to individual store owners. Users must independently verify the recipient business/owner name before authorizing any payment.
                   </span>
                 </li>
                 <li className="flex gap-4">
                   <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mt-1.5 shrink-0" />
                   <span>
-                    <b>Liability Waiver:</b> We are <b>NOT RESPONSIBLE</b> for failed transactions, double debits, money sent to wrong numbers, or disputes regarding refunds. All financial issues must be resolved between the <b>User and the Restaurant Owner</b>.
+                    <b>Complete Liability Waiver:</b> SUDARA HUB holds <b>ZERO FINANCIAL LIABILITY</b> for failed transfers, double debits, misdirected funds, service cancellations, or refund disputes. All commercial settlements, returns, or refunds must be resolved directly between the <b>User and the Business Owner</b>.
                   </span>
                 </li>
               </ul>
             </div>
           </section>
 
-          {/* 3. Operational Liability */}
-          <section className="bg-white p-8 rounded-[2.5rem] border border-slate-100 hover:border-indigo-200 transition-all shadow-sm">
+          {/* 3. Operational & Product Liability */}
+          <section className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-200/80 hover:border-blue-200 transition-all shadow-sm">
             <div className="flex items-center gap-4 mb-6">
-              <div className="p-3 bg-indigo-50 rounded-2xl text-indigo-600">
+              <div className="p-3 bg-blue-100/70 rounded-2xl text-blue-600">
                 <AlertCircle className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-black uppercase italic text-slate-900 tracking-tight">3. Quality & Safety</h3>
+              <h3 className="text-xl font-black uppercase italic text-slate-900 tracking-tight">3. Product Quality, Safety & Business Operations</h3>
             </div>
             <div className="space-y-4 text-sm text-slate-600 italic">
-              <p>SUDARA HUB shall not be held liable for:</p>
+              <p className="font-medium not-italic text-slate-700">
+                Because SUDARA HUB is only a technology connector, <b>product-related issues are handled entirely by the respective business owners.</b> SUDARA HUB shall not be held legally or operationally liable for:
+              </p>
               <ul className="list-disc list-inside space-y-2 ml-2 font-medium">
-                <li>Food quality, hygiene, or any health-related issues.</li>
-                <li>Inaccurate "Live Special" or "Online Status" updates by owners.</li>
-                <li>Price mismatches or availability of items.</li>
-                <li>Delays in pre-order preparation at the restaurant.</li>
+                <li>Product defects, clothing sizing issues, food hygiene, or health-related incidents.</li>
+                <li>Inaccurate stock updates, pricing errors, or outdated digital catalogs published by owners.</li>
+                <li>Delays in order fulfillment, test-drive schedules, or service appointments.</li>
+                <li>Any physical disputes arising on or off the merchant's premises.</li>
               </ul>
             </div>
           </section>
 
-          {/* 4. User Conduct */}
-          <section className="bg-white p-8 rounded-[2.5rem] border border-slate-100 hover:border-orange-200 transition-all shadow-sm">
+          {/* 4. User Conduct & Legal Protection */}
+          <section className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-200/80 hover:border-orange-200 transition-all shadow-sm">
             <div className="flex items-center gap-4 mb-6">
-              <div className="p-3 bg-orange-50 rounded-2xl text-orange-600">
+              <div className="p-3 bg-orange-100 rounded-2xl text-orange-600">
                 <Scale className="w-6 h-6" />
               </div>
-              <h3 className="text-xl font-black uppercase italic text-slate-900 tracking-tight">4. Network Integrity</h3>
+              <h3 className="text-xl font-black uppercase italic text-slate-900 tracking-tight">4. Network Integrity & Legal Shield</h3>
             </div>
-            <p className="text-sm text-slate-600 leading-relaxed">
-              Users are prohibited from providing fake feedback or exploiting the pre-order system. Misuse of the platform or owner contact details will result in a permanent ban from the SUDARA ecosystem.
-            </p>
+            <div className="space-y-4 text-sm text-slate-600 leading-relaxed">
+              <p>
+                Users are strictly prohibited from submitting fraudulent reviews, manipulating pre-orders, or misusing merchant contact details. Any malicious activity will result in immediate termination of access.
+              </p>
+              <p className="font-bold text-slate-800">
+                Indemnification Clause: By using Sudara Hub, you agree to indemnify, defend, and hold harmless Sudara Hub, its founder (Boyella Raju / BSR), and its affiliates from any claims, legal pressures, damages, or expenses arising from your transactions with local merchants.
+              </p>
+            </div>
           </section>
 
         </div>
@@ -120,7 +132,7 @@ export default function Terms() {
         <div className="mt-20 text-center">
           <Link 
             to="/" 
-            className="inline-flex items-center gap-3 px-10 py-5 bg-indigo-600 hover:bg-orange-600 text-white rounded-[1.8rem] font-black uppercase italic text-xs tracking-widest transition-all shadow-xl shadow-indigo-200 active:scale-95 group"
+            className="inline-flex items-center gap-3 px-10 py-5 bg-blue-600 hover:bg-orange-600 text-white rounded-[1.8rem] font-black uppercase italic text-xs tracking-widest transition-all shadow-xl shadow-blue-200 active:scale-95 group"
           >
             <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> I Accept & Return to Home
           </Link>
