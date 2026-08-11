@@ -124,7 +124,6 @@ const trackPreOrderClick = async () => {
   } catch (err) { console.log("Pre-order track failed"); }
 };
 
-{/* 🛒 నాన్-రెస్టారెంట్ స్టోర్స్ డైరెక్ట్ ఆర్డర్ సబ్మిషన్ ఫంక్షన్ */}
 const handleStoreDirectOrder = async () => {
   if (!storeOrderData.name || !storeOrderData.phone || !storeOrderData.address) {
     return alert("దయచేసి పేరు, ఫోన్ నంబర్ మరియు అడ్రస్ పూర్తిగా నింపండి! 📝");
@@ -133,21 +132,22 @@ const handleStoreDirectOrder = async () => {
   try {
     setLoading(true);
     const itemsTotal = Object.values(cart).reduce((acc, item) => acc + (item.price * item.qty), 0);
-    const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name} (₹${i.price}) [Img: ${i.image || 'N/A'}]`);
+    const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name} (₹${i.price})`);
     const generatedSdrId = "SDR" + Math.floor(100 + Math.random() * 900);
 
     const payload = {
-      restaurantId: id,
+      restaurantId: id, // ఇది బ్యాకెండ్ లో స్టోర్/వెండర్ ID కి మ్యాప్ అవుతుంది
       customerName: storeOrderData.name,
       customerPhone: storeOrderData.phone,
       customerAddress: storeOrderData.address,
       items: itemList,
       subTotal: Number(itemsTotal.toFixed(2)),
       totalAmount: Number(itemsTotal.toFixed(2)),
-      orderType: "Store-Direct-Order", 
+      orderType: "Store-Direct-Order", // 👈 ఇది నాన్-రెస్టారెంట్ స్టోర్స్ కోసం ప్రత్యేకమైన టైప్
       sudaraId: generatedSdrId,
       status: "Pending",
-      paymentMode: "CASH"
+      paymentMode: "CASH",
+      deliveryType: "Store Home Delivery"
     };
 
     const res = await api.post("/orders/add", payload);
@@ -561,11 +561,11 @@ const handleInstantOrder = async () => {
       customerName: customerName,
       tableNo: selectedTable,
       items: itemList,
-      totalAmount: Number(finalTotal.toFixed(2)),
       subTotal: Number(itemsTotal.toFixed(2)),
       gstAmount: Number(gstAmount.toFixed(2)),
       extraCharges: extra,
-      orderType: "Post-book", // 👈 ఇది "Post-book" లేదా "post-order" అని ఉండాలి
+      totalAmount: Number(finalTotal.toFixed(2)),
+      orderType: "Post-book", 
       deliveryType: "Book at Restaurant",
       arrivalTime: "Immediate",
       status: "Pending",
@@ -1420,7 +1420,11 @@ if (!owner || !owner.isApproved) {
                 try {
                   setLoading(true);
                   const itemsTotal = Object.values(cart).reduce((acc, item) => acc + (item.price * item.qty), 0);
-                  const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name} (₹${i.price})`);
+                  const gstPercent = Number(owner?.gstPercentage) || 0; 
+                  const extra = Number(owner?.extraCharges) || 0;
+                  const gstAmount = (itemsTotal * gstPercent) / 100;
+                  const finalTotal = itemsTotal + gstAmount + extra;
+                  const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name}`);
                   const generatedSdrId = "SDR" + Math.floor(100 + Math.random() * 900);
 
                   const payload = {
@@ -1430,8 +1434,11 @@ if (!owner || !owner.isApproved) {
                     customerAddress: onlineOrderData.address,
                     items: itemList,
                     subTotal: Number(itemsTotal.toFixed(2)),
-                    totalAmount: Number(itemsTotal.toFixed(2)),
-                    orderType: "Online-Order",
+                    gstAmount: Number(gstAmount.toFixed(2)),
+                    extraCharges: extra,
+                    totalAmount: Number(finalTotal.toFixed(2)),
+                    orderType: "Online-Order", 
+                    deliveryType: "Home Delivery",
                     sudaraId: generatedSdrId,
                     status: "Pending",
                     paymentMode: "CASH"
@@ -1447,6 +1454,7 @@ if (!owner || !owner.isApproved) {
                     setOnlineOrderData({ name: "", phone: "", address: "" });
                   }
                 } catch (err) {
+                  console.error("Online Order Error:", err);
                   alert("ఆర్డర్ పంపడం విఫలమైంది. ❌");
                 } finally {
                   setLoading(false);
