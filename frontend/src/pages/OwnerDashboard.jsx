@@ -583,11 +583,10 @@ const handlePrintBill = async (orderObj, manualPaymentMethod = "CASH", ownerData
     console.error("Bill Error:", err);
   }
 };
-    const filteredOrders = useMemo(() => {
+const filteredOrders = useMemo(() => {
       if (!orders || orders.length === 0) return [];
 
       return orders.filter(order => {
-        // 1. సెర్చ్ ఫిల్టర్ లాజిక్
         const s = searchTerm ? searchTerm.toLowerCase().trim() : "";
         const nameMatch = (order?.customerName || "").toLowerCase().includes(s);
         const txnMatch = (order?.txnId || "").toLowerCase().includes(s);
@@ -596,19 +595,22 @@ const handlePrintBill = async (orderObj, manualPaymentMethod = "CASH", ownerData
         
         const matchesSearch = !s || nameMatch || txnMatch || idMatch || tableMatch;
 
-        // 2. 🚀 బటన్ టైప్ ఫిల్టర్ లాజిక్ (Pre-Order / Post-Order క్లీన్ చెక్)
+        // 🎯 పక్కా ఫిల్టరింగ్ లాజిక్ రాజు!
         let matchesType = true;
         const type = (order?.orderType || "").toLowerCase().trim();
+        const delivery = (order?.deliveryType || "").toLowerCase().trim();
 
         if (orderTypeFilter === "Pre-book") {
-          matchesType = type === "pre-order" || type === "pre-book";
+          matchesType = type === "pre-book" || type === "pre-order";
         } else if (orderTypeFilter === "Post-book") {
-          matchesType = type === "post-order" || type === "post-book" || type === "";
+          matchesType = type === "post-book" || type === "post-order" || type === "";
+        } else if (orderTypeFilter === "Online-Order") {
+          matchesType = type === "online-order" || type === "online-direct"; // కేవలం ఆన్‌లైన్ మాత్రమే వస్తాయి
         }
 
         return matchesSearch && matchesType;
       });
-    }, [orders, searchTerm, orderTypeFilter]); // 💡 ఇక్కడ orders మారిన ప్రతిసారీ ఇది లైవ్ లో రన్ అవుతుంది!
+    }, [orders, searchTerm, orderTypeFilter]);
   const compressImage = (file) => {
     return new Promise((resolve) => {
       const reader = new FileReader();
@@ -1179,7 +1181,18 @@ const dailyStats = {
       <p className="font-black uppercase italic text-lg text-slate-900 leading-tight">
         {order.customerName}
       </p>
-
+{/* 📦 పార్శిల్ లేదా డైన్-ఇన్ క్లియర్ బ్యాడ్జ్ */}
+     <div className="mt-1.5 flex items-center gap-2">
+       <span className={`px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider ${
+         order.deliveryType === 'Take Away' 
+           ? 'bg-amber-100 text-amber-800 border border-amber-200' 
+           : order.deliveryType === 'Book at Restaurant' 
+           ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+           : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+       }`}>
+         {order.deliveryType === 'Take Away' ? '📦 Parcel (Take Away)' : order.deliveryType === 'Book at Restaurant' ? '🪑 Dine-In (Restaurant)' : '🛍️ Direct Order'}
+       </span>
+     </div>
       {/* 📍 ఆన్‌లైన్ ఆర్డర్‌ల కోసం అడ్రస్ మరియు ఫోన్ నంబర్ డిస్‌ప్లే */}
       {order.customerAddress && (
         <p className="text-[10px] font-bold text-slate-600 mt-1 uppercase">

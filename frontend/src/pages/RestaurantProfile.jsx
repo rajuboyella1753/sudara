@@ -375,7 +375,8 @@ const handleConfirmOrder = async () => {
       orderType: "Pre-book",
       sudaraId: sudaraId,
       status: "Pending",
-      deliveryType: deliveryType
+      deliveryType: deliveryType,
+      peopleCount: Number(orderData.peopleCount) || 1
     };
 
     const orderRes = await api.post("/orders/add", payload);
@@ -541,15 +542,19 @@ useEffect(() => {
 }, []);
 
 const handleInstantOrder = async () => {
-  if (!customerName.trim() || !selectedTable) return alert("Please fill all details! 📝");
+  if (!customerName.trim() || !selectedTable) {
+    return alert("దయచేసి మీ పేరు మరియు టేబుల్ నంబర్ ఇవ్వండి! 📝");
+  }
 
   try {
+    setLoading(true);
     const itemsTotal = Object.values(cart).reduce((acc, item) => acc + (item.price * item.qty), 0);
     const gstPercent = Number(owner?.gstPercentage) || 0; 
     const extra = Number(owner?.extraCharges) || 0;
     const gstAmount = (itemsTotal * gstPercent) / 100;
     const finalTotal = itemsTotal + gstAmount + extra;
     const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name}`);
+    const generatedSdrId = "SDR" + Math.floor(100 + Math.random() * 900);
     
     const payload = {
       restaurantId: id,
@@ -560,27 +565,30 @@ const handleInstantOrder = async () => {
       subTotal: Number(itemsTotal.toFixed(2)),
       gstAmount: Number(gstAmount.toFixed(2)),
       extraCharges: extra,
-      orderType: "Post-book",
+      orderType: "Post-book", // 👈 ఇది "Post-book" లేదా "post-order" అని ఉండాలి
+      deliveryType: "Book at Restaurant",
       arrivalTime: "Immediate",
-      status: "Pending"
+      status: "Pending",
+      sudaraId: generatedSdrId
     };
 
     const res = await api.post("/orders/add", payload);
 
-    if (res.data && res.data.sudaraId) {
-      setPlacedOrderId(res.data.sudaraId);
+    if (res.data) {
+      setPlacedOrderId(generatedSdrId);
       setShowTracking(true);
       setTrackedOrderType("Post-book");
-      alert(`ORDER PLACED! 🍲\nYour Tracking ID: ${res.data.sudaraId}`);
-    } else {
-      alert("ORDER PLACED! 🍲");
+      alert(`ఆర్డర్ విజయవంతంగా పంపబడింది! 🍲\nమీ ట్రాకింగ్ ID: ${generatedSdrId}`);
+      setCart({}); 
+      setShowInstantModal(false);
+      setCustomerName("");
+      setSelectedTable("");
     }
-
-    setCart({}); 
-    setShowInstantModal(false);
   } catch (err) {
-    console.error("Order Error:", err);
-    alert("Order Failed! ❌");
+    console.error("Post-Book Order Error:", err);
+    alert("ఆర్డర్ విఫలమైంది! ❌");
+  } finally {
+    setLoading(false);
   }
 };
 
@@ -1162,12 +1170,12 @@ if (!owner || !owner.isApproved) {
                       whileHover={{ scale: 1.01 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={() => {
-                        if (totalAmount > 0) { trackPostOrderClick(); setShowInstantModal(true); } 
-                        else { alert("Select items first! 🍲"); }
+                        console.log("Post-book button clicked!"); // డిబగ్ చేయడానికి కన్సోల్ లాగ్
+                        trackPostOrderClick(); 
+                        setShowInstantModal(true);
                       }}
-                      className={`w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] flex items-center justify-between transition-all border ${
-                        totalAmount > 0 ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-200/80 shadow-sm' : 'bg-slate-50 text-slate-300 border-slate-100 cursor-not-allowed'
-                      }`}
+                      className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] flex items-center justify-between transition-all border bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-200/80 shadow-sm cursor-pointer"
+                      type="button"
                     >
                       <div className="flex items-center gap-2.5">
                         <div className="p-1.5 bg-amber-100/60 rounded-lg">
@@ -1423,7 +1431,7 @@ if (!owner || !owner.isApproved) {
                     items: itemList,
                     subTotal: Number(itemsTotal.toFixed(2)),
                     totalAmount: Number(itemsTotal.toFixed(2)),
-                    orderType: "Online-Direct",
+                    orderType: "Online-Order",
                     sudaraId: generatedSdrId,
                     status: "Pending",
                     paymentMode: "CASH"
