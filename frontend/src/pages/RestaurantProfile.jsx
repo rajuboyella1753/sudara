@@ -1282,25 +1282,29 @@ if (!owner || !owner.isApproved) {
                 </div>
               </div>
 
-              {/* 🛒 డైరెక్ట్ ఆర్డర్ బటన్ - ఇక్కడ క్లిక్ చేస్తే షో స్టోర్ ఆర్డర్ మోడల్ ఓపెన్ అవుతుంది */}
-              <button 
-                onClick={() => {
-                  if (Object.keys(cart).length === 0) {
-                    return alert("దయచేసి ముందుగా కొన్ని ఐటమ్స్ సెలెక్ట్ చేసుకోండి! 🛍️");
-                  }
-                  setShowStoreOrderModal(true);
-                }}
-                className="w-full mt-2 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black uppercase text-[11px] tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
-              >
-                <ShoppingBag className="w-4 h-4" /> Place Direct Order 🚀
-              </button>
+              {/* 🛑 ఇక్కడ ఆటోమొబైల్ కాకపోతేనే ఈ బటన్స్ కనిపిస్తాయి */}
+              {owner?.category?.toLowerCase() !== "automobile" && (
+                <>
+                  <button 
+                    onClick={() => {
+                      if (Object.keys(cart).length === 0) {
+                        return alert("దయచేసి ముందుగా కొన్ని ఐటమ్స్ సెలెక్ట్ చేసుకోండి! 🛍️");
+                      }
+                      setShowStoreOrderModal(true);
+                    }}
+                    className="w-full mt-2 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black uppercase text-[11px] tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+                  >
+                    <ShoppingBag className="w-4 h-4" /> Place Direct Order 🚀
+                  </button>
 
-              <button 
-                 onClick={() => setShowTracking(true)}
-                 className="w-full mt-2 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center justify-center gap-2 border"
-              >
-                 <Search className="w-3.5 h-3.5" /> Track Existing Order 🔍
-              </button>
+                  <button 
+                     onClick={() => setShowTracking(true)}
+                     className="w-full mt-2 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center justify-center gap-2 border"
+                  >
+                     <Search className="w-3.5 h-3.5" /> Track Existing Order 🔍
+                  </button>
+                </>
+              )}
 
               <button 
                 onClick={() => {
@@ -1316,7 +1320,192 @@ if (!owner || !owner.isApproved) {
         </div>
       </div>
     </main>
+    {/* 🪑 1. POST-BOOK / DINE-IN INSTANT TABLE ORDER MODAL */}
+  <AnimatePresence>
+    {showInstantModal && (
+      <motion.div 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }} 
+        exit={{ opacity: 0 }} 
+        className="fixed inset-0 z-[300] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4"
+      >
+        <div className="bg-white w-full max-w-[400px] rounded-[2.5rem] p-6 shadow-2xl relative text-slate-900">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-black uppercase italic text-slate-900">Dine-in Table Order 🪑</h3>
+            <button onClick={() => setShowInstantModal(false)} className="p-2 bg-slate-100 rounded-full text-slate-600"><X className="w-4 h-4"/></button>
+          </div>
+          <p className="text-[9px] font-bold text-slate-400 uppercase mb-4 tracking-wider">మీ పేరు మరియు టేబుల్ నంబర్ ఇవ్వండి</p>
+          
+          <div className="space-y-4">
+            <input 
+              type="text" 
+              placeholder="మీ పూర్తి పేరు / Full Name" 
+              value={customerName} 
+              onChange={(e) => setCustomerName(e.target.value)} 
+              className="w-full bg-slate-50 border-2 border-slate-100 p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-blue-500"
+            />
+            <input 
+              type="text" 
+              placeholder="టేబుల్ నంబర్ / Table Number (e.g. 4)" 
+              value={selectedTable} 
+              onChange={(e) => setSelectedTable(e.target.value)} 
+              className="w-full bg-slate-50 border-2 border-slate-100 p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-blue-500"
+            />
 
+            <button 
+              onClick={handleInstantOrder}
+              disabled={loading}
+              className="w-full py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl transition-all active:scale-95"
+            >
+              {loading ? "పంపుతోంది..." : "Place Table Order 🍲"}
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+
+  {/* 🛒 2. ONLINE ORDER (DIRECT) MODAL */}
+  <AnimatePresence>
+    {showOnlineOrderModal && (
+      <motion.div 
+        initial={{ opacity: 0 }} 
+        animate={{ opacity: 1 }} 
+        exit={{ opacity: 0 }} 
+        className="fixed inset-0 z-[300] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4"
+      >
+        <div className="bg-white w-full max-w-[400px] rounded-[2.5rem] p-6 shadow-2xl relative text-slate-900">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-black uppercase italic text-slate-900">Direct Online Order 🛍️</h3>
+            <button onClick={() => setShowOnlineOrderModal(false)} className="p-2 bg-slate-100 rounded-full text-slate-600"><X className="w-4 h-4"/></button>
+          </div>
+          <p className="text-[9px] font-bold text-slate-400 uppercase mb-4 tracking-wider">మీ డెలివరీ వివరాలు నమోదు చేయండి</p>
+          
+          <div className="space-y-4">
+            <input 
+              type="text" 
+              placeholder="మీ పూర్తి పేరు / Full Name" 
+              value={onlineOrderData.name} 
+              onChange={(e) => setOnlineOrderData({...onlineOrderData, name: e.target.value})} 
+              className="w-full bg-slate-50 border-2 border-slate-100 p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-blue-500"
+            />
+            <input 
+              type="text" 
+              placeholder="ఫోన్ నంబర్ / Mobile Number" 
+              value={onlineOrderData.phone} 
+              onChange={(e) => setOnlineOrderData({...onlineOrderData, phone: e.target.value})} 
+              className="w-full bg-slate-50 border-2 border-slate-100 p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-blue-500"
+            />
+            <input 
+              type="text" 
+              placeholder="డెలివరీ అడ్రస్ / Delivery Address" 
+              value={onlineOrderData.address} 
+              onChange={(e) => setOnlineOrderData({...onlineOrderData, address: e.target.value})} 
+              className="w-full bg-slate-50 border-2 border-slate-100 p-3.5 rounded-2xl text-xs font-bold outline-none"
+            />
+
+            <button 
+              onClick={async () => {
+                if (!onlineOrderData.name || !onlineOrderData.phone || !onlineOrderData.address) {
+                  return alert("దయచేసి అన్ని వివరాలు నింపండి! 📝");
+                }
+                try {
+                  setLoading(true);
+                  const itemsTotal = Object.values(cart).reduce((acc, item) => acc + (item.price * item.qty), 0);
+                  const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name} (₹${i.price})`);
+                  const generatedSdrId = "SDR" + Math.floor(100 + Math.random() * 900);
+
+                  const payload = {
+                    restaurantId: id,
+                    customerName: onlineOrderData.name,
+                    customerPhone: onlineOrderData.phone,
+                    customerAddress: onlineOrderData.address,
+                    items: itemList,
+                    subTotal: Number(itemsTotal.toFixed(2)),
+                    totalAmount: Number(itemsTotal.toFixed(2)),
+                    orderType: "Online-Direct",
+                    sudaraId: generatedSdrId,
+                    status: "Pending",
+                    paymentMode: "CASH"
+                  };
+
+                  const res = await api.post("/orders/add", payload);
+                  if (res.data) {
+                    alert(`ఆర్డర్ విజయవంతంగా పంపబడింది! ✅\nట్రాకింగ్ ID: ${generatedSdrId}`);
+                    setPlacedOrderId(generatedSdrId);
+                    setShowTracking(true);
+                    setCart({});
+                    setShowOnlineOrderModal(false);
+                    setOnlineOrderData({ name: "", phone: "", address: "" });
+                  }
+                } catch (err) {
+                  alert("ఆర్డర్ పంపడం విఫలమైంది. ❌");
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              disabled={loading}
+              className="w-full py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl transition-all active:scale-95"
+            >
+              {loading ? "పంపుతోంది..." : "Confirm & Send Order 🚀"}
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+{/* 🚗 TEST DRIVE BOOKING MODAL */}
+      <AnimatePresence>
+        {showTestDriveModal && (
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            className="fixed inset-0 z-[350] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4"
+          >
+            <div className="bg-white w-full max-w-[400px] rounded-[2.5rem] p-6 shadow-2xl relative text-slate-900">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h3 className="text-lg font-black uppercase italic text-slate-900">Book Test Drive 🚗</h3>
+                  <p className="text-[10px] text-blue-600 font-bold uppercase">{selectedVehicle?.name}</p>
+                </div>
+                <button onClick={() => setShowTestDriveModal(false)} className="p-2 bg-slate-100 rounded-full text-slate-600"><X className="w-4 h-4"/></button>
+              </div>
+
+              <div className="space-y-4">
+                <input 
+                  type="text" 
+                  placeholder="మీ పూర్తి పేరు / Full Name" 
+                  value={testDriveData.name} 
+                  onChange={(e) => setTestDriveData({...testDriveData, name: e.target.value})} 
+                  className="w-full bg-slate-50 border-2 border-slate-100 p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-blue-500"
+                />
+                <input 
+                  type="text" 
+                  placeholder="ఫోన్ నంబర్ / Mobile Number" 
+                  value={testDriveData.phone} 
+                  onChange={(e) => setTestDriveData({...testDriveData, phone: e.target.value})} 
+                  className="w-full bg-slate-50 border-2 border-slate-100 p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-blue-500"
+                />
+                <input 
+                  type="date" 
+                  value={testDriveData.date} 
+                  onChange={(e) => setTestDriveData({...testDriveData, date: e.target.value})} 
+                  className="w-full bg-slate-50 border-2 border-slate-100 p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-blue-500"
+                />
+
+                <button 
+                  onClick={handleBookTestDrive}
+                  disabled={loading}
+                  className="w-full py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl transition-all active:scale-95"
+                >
+                  {loading ? "బుక్ అవుతోంది..." : "Confirm Test Drive ✅"}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     <AnimatePresence>
       {selectedImg && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[150] bg-black/90 backdrop-blur-lg flex items-center justify-center p-4" onClick={() => setSelectedImg(null)}>
