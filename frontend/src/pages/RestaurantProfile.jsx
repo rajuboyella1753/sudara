@@ -23,11 +23,14 @@ export default function RestaurantProfile() {
       const cats = ["All", "Veg", "Non-Veg", "General"];
       const itemCats = [...new Set(items.map(i => i.category))].filter(Boolean);
       return [...new Set([...cats, ...itemCats])];
+    } else if (owner?.category?.toLowerCase() === "automobile") {
+      // 🚗 ఆటోమొబైల్ అయితే ఫ్యూయల్ టైప్స్ ట్యాబ్స్ వస్తాయి
+      return ["All", "Petrol", "Diesel", "Electric", "CNG"];
     } else {
       const itemCats = [...new Set(items.map(i => i.category || i.subCategory))].filter(Boolean);
       return ["All", ...itemCats];
     }
-  }, [items, isRestaurant]);
+  }, [items, isRestaurant, owner]);
   const orderSectionRef = useRef(null);
   const counterPrintButtonRef = useRef(null);
   const [activeSubCat, setActiveSubCat] = useState("All"); 
@@ -633,7 +636,10 @@ const searchFiltered = useMemo(() => {
     return items.filter(item => {
       let matchesFilter = true;
       if (filter !== "All") {
-        if (filter === "Veg" || filter === "Non-Veg") {
+        if (owner?.category?.toLowerCase() === "automobile") {
+          // ⛽ ఆటోమొబైల్ అయితే ఫ్యూయల్ టైప్ తో మ్యాచ్ చేయాలి
+          matchesFilter = item.fuelType?.toLowerCase() === filter.toLowerCase();
+        } else if (filter === "Veg" || filter === "Non-Veg") {
           matchesFilter = item.category?.toLowerCase() === filter.toLowerCase();
         } else {
           matchesFilter = item.category === filter || item.subCategory === filter;
@@ -645,13 +651,14 @@ const searchFiltered = useMemo(() => {
       
       return matchesFilter && matchesSubCat && matchesSearch;
     });
-  }, [items, filter, activeSubCat, itemSearch, isRestaurant]);
+  }, [items, filter, activeSubCat, itemSearch, isRestaurant, owner]);
 
   const availableItems = searchFiltered; 
 
 const groupedItems = useMemo(() => {
   const groups = {};
   availableItems.forEach(item => {
+    // 💡 ఇది సబ్-క్యాటగిరీ (Bikes/Cars/EV) లేదా కేటగిరీ బట్టి గ్రూప్ చేస్తుంది
     const cat = item.subCategory || item.category || "General";
     if (!groups[cat]) groups[cat] = [];
     groups[cat].push(item);

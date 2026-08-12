@@ -264,11 +264,12 @@ useEffect(() => {
     >
       <option value="All">All Categories</option>
       <option value="Restaurant">Restaurant</option>
+      <option value="Automobile">Automobile Showroom</option>
       <option value="Electronics">Electronics</option>
-      <option value="Clothing">Clothing</option>
+      <option value="Furniture">Furniture & Living</option>
+       <option value="Clothing">Clothing</option>
        <option value="Grocery">Grocery</option>
-       <option value="Automobile">Automobile Showroom</option>
-       <option value="Furniture">Furniture & Living</option>
+       
       {/*<option value="Services">Services</option>
       <option value="General">General</option> */}
     </select>

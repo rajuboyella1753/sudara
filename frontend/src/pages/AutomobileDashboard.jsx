@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api/api-base";
+import api, { socket } from "../api/api-base";
 import { motion, AnimatePresence } from "framer-motion";
 import { QRCodeCanvas } from "qrcode.react";
 import QRCode from 'qrcode';
