@@ -194,9 +194,10 @@ export default function AdminDashboard() {
     return isNotGeneral && matchesTab && matchesState && matchesDistrict && matchesCategory && matchesSearch;
   });
 
-  const dailyTotals = filteredList.reduce((acc, res) => {
+const dailyTotals = filteredList.reduce((acc, res) => {
     const analyticsObj = res.analytics instanceof Map ? Object.fromEntries(res.analytics) : (res.analytics || {});
     let hits = 0, pre = 0, post = 0, calls = 0;
+    
     if (viewMode === "daily") {
       const d = new Date(filterDate);
       const key1 = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
@@ -211,6 +212,7 @@ export default function AdminDashboard() {
       const s = getRangeStats(res.analytics);
       hits = s.hits; pre = s.orders; post = s.postOrders; calls = s.calls;
     }
+    
     acc.hits += hits;
     acc.pre += pre;
     acc.post += post;
@@ -529,8 +531,8 @@ export default function AdminDashboard() {
                   }
 
                   const catLower = (owner.category || "").toLowerCase();
-                  const isRestoMobile = catLower === "restaurant" || catLower === "" || catLower.includes("restaurant");
-                  const isAutoMobile = catLower.includes("automobile");
+  const isRestoMobile = catLower === "restaurant" || catLower === "" || catLower.includes("restaurant");
+  const isAutoMobile = catLower.includes("automobile");
 
                   return (
                     <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} key={owner._id} className="bg-white p-5 rounded-[2.5rem] border border-slate-200 shadow-sm relative flex flex-col h-full overflow-hidden group">
@@ -562,48 +564,47 @@ export default function AdminDashboard() {
                         </div>
                       </div>
 
-                      {/* 📊 ANALYTICS MATRIX GRID (Conditional based on Restaurant vs Others) */}
-                      {isRestoMobile ? (
-                        <div className="grid grid-cols-4 gap-2 mb-4">
-                          {[
-                            { label: 'Hits', val: dHits, color: 'slate' },
-                            { label: 'Pre', val: dOrders, color: 'blue' },
-                            { label: 'Post', val: dPostOrders, color: 'emerald' },
-                            { label: 'Calls', val: dCalls, color: 'orange' }
-                          ].map((stat, idx) => (
-                            <div key={idx} className="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-center">
-                              <p className="text-[7px] font-black text-slate-400 uppercase mb-1 tracking-tighter">{stat.label}</p>
-                              <p className="text-sm font-black text-slate-700 italic">{stat.val}</p>
-                            </div>
-                          ))}
-                        </div>
-                      ) : isAutoMobile ? (
-                        <div className="grid grid-cols-3 gap-2 mb-4">
-                          {[
-                            { label: 'Hits', val: dHits },
-                            { label: 'Test Drives', val: dOrders },
-                            { label: 'Calls', val: dCalls }
-                          ].map((stat, idx) => (
-                            <div key={idx} className="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-center">
-                              <p className="text-[7px] font-black text-slate-400 uppercase mb-1 tracking-tighter">{stat.label}</p>
-                              <p className="text-sm font-black text-slate-700 italic">{stat.val}</p>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-3 gap-2 mb-4">
-                          {[
-                            { label: 'Hits', val: dHits },
-                            { label: 'Orders', val: dOrders },
-                            { label: 'Calls', val: dCalls }
-                          ].map((stat, idx) => (
-                            <div key={idx} className="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-center">
-                              <p className="text-[7px] font-black text-slate-400 uppercase mb-1 tracking-tighter">{stat.label}</p>
-                              <p className="text-sm font-black text-slate-700 italic">{stat.val}</p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                     {isRestoMobile ? (
+    <div className="grid grid-cols-4 gap-2 mb-4">
+      {[
+        { label: 'Hits', val: dHits },
+        { label: 'Pre-Book', val: dOrders },
+        { label: 'Post-Book', val: dPostOrders },
+        { label: 'Calls', val: dCalls }
+      ].map((stat, idx) => (
+        <div key={idx} className="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-center">
+          <p className="text-[7px] font-black text-slate-400 uppercase mb-1 tracking-tighter">{stat.label}</p>
+          <p className="text-sm font-black text-slate-700 italic">{stat.val}</p>
+        </div>
+      ))}
+    </div>
+  ) : isAutoMobile ? (
+    <div className="grid grid-cols-3 gap-2 mb-4">
+      {[
+        { label: 'Hits', val: dHits },
+        { label: 'Test Drives', val: dOrders },
+        { label: 'Calls', val: dCalls }
+      ].map((stat, idx) => (
+        <div key={idx} className="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-center">
+          <p className="text-[7px] font-black text-slate-400 uppercase mb-1 tracking-tighter">{stat.label}</p>
+          <p className="text-sm font-black text-slate-700 italic">{stat.val}</p>
+        </div>
+      ))}
+    </div>
+  ) : (
+    <div className="grid grid-cols-3 gap-2 mb-4">
+      {[
+        { label: 'Hits', val: dHits },
+        { label: 'Orders', val: dOrders },
+        { label: 'Calls', val: dCalls }
+      ].map((stat, idx) => (
+        <div key={idx} className="bg-slate-50 p-3 rounded-2xl border border-slate-100 text-center">
+          <p className="text-[7px] font-black text-slate-400 uppercase mb-1 tracking-tighter">{stat.label}</p>
+          <p className="text-sm font-black text-slate-700 italic">{stat.val}</p>
+        </div>
+      ))}
+    </div>
+  )}
 
                       <div className="flex items-center gap-2 mb-4 px-1">
                         <Calendar className="w-3 h-3 text-slate-400" />

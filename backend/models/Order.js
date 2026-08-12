@@ -33,9 +33,9 @@ const OrderSchema = new mongoose.Schema({
     default: "Pending" 
   },
  
-  deliveryType: { 
+ deliveryType: { 
     type: String, 
-    enum: ['Take Away', 'Book at Restaurant', 'None'], 
+    enum: ['Take Away', 'Book at Restaurant', 'Store Delivery', 'Store Home Delivery', 'None'], // 👈 నాన్-రెస్టారెంట్ స్టోర్ టైప్స్ ని ఇక్కడ యాడ్ చేశాం రాజు!
     default: 'None' 
   },
   
