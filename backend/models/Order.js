@@ -35,7 +35,7 @@ const OrderSchema = new mongoose.Schema({
  
  deliveryType: { 
     type: String, 
-    enum: ['Take Away', 'Book at Restaurant', 'Store Delivery', 'Store Home Delivery', 'None'], // 👈 ఇక్కడ 'Store Home Delivery' మరియు 'Store Delivery' ని యాడ్ చేయాలి
+    enum: ['Take Away', 'Book at Restaurant', 'Home Delivery', 'Store Delivery', 'Store Home Delivery', 'None'], // 👈 ఇక్కడ 'Store Home Delivery' మరియు 'Store Delivery' ని యాడ్ చేయాలి
     default: 'None' 
   },
   

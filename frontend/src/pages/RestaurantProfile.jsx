@@ -132,7 +132,7 @@ const handleStoreDirectOrder = async () => {
   try {
     setLoading(true);
     const itemsTotal = Object.values(cart).reduce((acc, item) => acc + (item.price * item.qty), 0);
-    const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name} (₹${i.price})`);
+    const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name} (₹${i.price}) [Img: ${i.image || 'N/A'}]`);
     const generatedSdrId = "SDR" + Math.floor(100 + Math.random() * 900);
     const todayDate = getUniversalDate();
     const payload = {

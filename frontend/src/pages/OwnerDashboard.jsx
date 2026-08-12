@@ -1208,10 +1208,10 @@ const dailyStats = {
       {/* 🎯 పోస్ట్-బుకింగ్ కి టేబుల్ నంబర్ కనిపిస్తుంది */}
       {(order.orderType?.toLowerCase() === "post-book") && (
         <div className="bg-blue-50 px-4 py-2 rounded-2xl text-center flex flex-col justify-center border border-blue-100 shadow-sm mt-2">
-          <p className="text-[8px] font-black text-blue-400 uppercase leading-none">Table No</p>
-          <p className="text-xl font-black text-blue-600 leading-none mt-1">
+          {/* <p className="text-[8px] font-black text-blue-400 uppercase leading-none">Table No</p> */}
+          {/* <p className="text-xl font-black text-blue-600 leading-none mt-1">
             # {order.tableNo ? order.tableNo : "?"}
-          </p>
+          </p> */}
         </div>
       )}
       {order.sudaraId && (
