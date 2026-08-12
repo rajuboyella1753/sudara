@@ -114,18 +114,41 @@ export default function ElectronicsDashboard() {
       console.error("Failed to fetch store orders");
     }
   };
-  const handleUpdateOrderStatus = async (orderId, newStatus) => {
+const handleUpdateOrderStatus = async (orderId, newStatus) => {
     try {
-      await api.put(`/orders/update-status/${orderId}`, { status: newStatus });
+      // 1. ఒకవేళ Delivered అయితే సేల్స్ కూడా అప్‌డేట్ అయ్యేలా బ్యాకెండ్‌కి పంపాలి
       if (newStatus === "Delivered" || newStatus === "Served") {
-        setStoreOrders(storeOrders.filter(o => o._id !== orderId));
+        const orderObj = storeOrders.find(o => o._id === orderId);
+        if (orderObj) {
+          const d = new Date();
+          const dayKey = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+          
+          // సేల్స్ ట్రాక్ చేయడానికి ఏపీఐ కాల్ (Optional కానీ సేఫ్టీ కోసం)
+          await api.put(`/owner/track-sales/${owner._id}`, {
+            date: dayKey,
+            amount: Number(orderObj.totalAmount || 0),
+            items: orderObj.items,
+            paymentMode: orderObj.paymentMode || "CASH"
+          }).catch(e => console.log("Sales track skip"));
+        }
+      }
+
+      // 2. ఆర్డర్ స్టేటస్ అప్‌డేట్ / డిలీట్ చేయడానికి ఏపీఐ కాల్
+      await api.put(`/orders/update-status/${orderId}`, { status: newStatus });
+      
+      // 3. UI నుండి ఆటోమేటిక్‌గా వెంటనే తొలగించడం
+      setStoreOrders(prev => prev.filter(o => o._id !== orderId));
+      
+      if (newStatus === "Delivered" || newStatus === "Served") {
         alert("ఆర్డర్ విజయవంతంగా డెలివరీ అయింది & క్లియర్ చేయబడింది! ✅");
       } else {
-        setStoreOrders(storeOrders.map(o => o._id === orderId ? { ...o, status: newStatus } : o));
         alert(`స్టేటస్ "${newStatus}" కి మార్చబడింది! 🚚`);
+        // ఒకవేళ స్టేటస్ మారితే ఆర్డర్స్ లిస్ట్ మళ్లీ తెచ్చుకోవడం
+        fetchStoreOrders(owner._id);
       }
     } catch (err) {
-      alert("స్టేటస్ అప్‌డేట్ విఫలమైంది.");
+      console.error("Status update error:", err);
+      alert("స్టేటస్ అప్‌డేట్ విఫలమైంది. ❌");
     }
   };
   const fetchProducts = async (ownerId) => {

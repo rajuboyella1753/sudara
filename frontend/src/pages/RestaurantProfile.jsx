@@ -134,7 +134,7 @@ const handleStoreDirectOrder = async () => {
     const itemsTotal = Object.values(cart).reduce((acc, item) => acc + (item.price * item.qty), 0);
     const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name} (₹${i.price})`);
     const generatedSdrId = "SDR" + Math.floor(100 + Math.random() * 900);
-
+    const todayDate = getUniversalDate();
     const payload = {
       restaurantId: id, // ఇది బ్యాకెండ్ లో స్టోర్/వెండర్ ID కి మ్యాప్ అవుతుంది
       customerName: storeOrderData.name,
@@ -153,6 +153,10 @@ const handleStoreDirectOrder = async () => {
     const res = await api.post("/orders/add", payload);
 
     if (res.data) {
+      await api.put(`/owner/track-analytics/${id}`, { 
+        action: "pre_order_click", 
+        date: todayDate 
+      });
       alert(`ఆర్డర్ విజయవంతంగా పంపబడింది! ✅\nమీ ట్రాకింగ్ ID: ${generatedSdrId}`);
       setPlacedOrderId(generatedSdrId);
       setShowTracking(true);

@@ -205,7 +205,7 @@ const dailyTotals = filteredList.reduce((acc, res) => {
       const data1 = analyticsObj[key1] || {};
       const data2 = analyticsObj[key2] || {};
       hits = (data1.kitchen_entry || 0) + (data2.kitchen_entry || 0);
-      pre = (data1.pre_order_click || 0) + (data2.pre_order_click || 0);
+      pre = (data1.pre_order_click || 0) + (data2.pre_order_click || 0) + (data1.store_order_count || 0); // 👈 ఆన్‌లైన్/స్టోర్ ఆర్డర్స్ కౌంట్ యాడ్ చేశాం
       post = (data1.post_order_click || 0) + (data2.post_order_click || 0);
       calls = (data1.call_click || 0) + (data2.call_click || 0);
     } else {
@@ -408,11 +408,11 @@ const dailyTotals = filteredList.reduce((acc, res) => {
     const cards = [
       { label: "Total Hits", val: dailyTotals.hits, color: "slate", icon: Activity, desc: "Page visits" },
       { 
-        label: isRestoCat ? "Pre-Bookings" : (isAutoCat ? "Test Drives" : "Orders / Enquiries"), 
+        label: isRestoCat ? "Pre-Bookings" : (isAutoCat ? "Test Drives" : "Online Orders 🛍️"), 
         val: dailyTotals.pre, 
         color: "blue", 
         icon: ShoppingBag, 
-        desc: isRestoCat ? "Pre-orders" : (isAutoCat ? "Booking requests" : "Customer orders") 
+        desc: isRestoCat ? "Pre-orders" : (isAutoCat ? "Booking requests" : "Direct store orders") 
       },
       { 
         label: isRestoCat ? "Post-Bookings" : (isAutoCat ? "Showroom Visits" : "Catalog Views"), 

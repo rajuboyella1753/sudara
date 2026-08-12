@@ -22,10 +22,10 @@ const OrderSchema = new mongoose.Schema({
 },
   
   orderType: { 
-  type: String, 
-  enum: ['Pre-book', 'Post-book', 'Express-Route', 'Counter', 'Online-Order', 'Store-Direct-Order'], 
-  required: true 
-},
+    type: String, 
+    enum: ['Pre-book', 'Post-book', 'Express-Route', 'Counter', 'Online-Order', 'Store-Direct-Order'], // 👈 'Store-Direct-Order' ఇక్కడ ఉందో లేదో చూసుకో
+    required: true 
+  },
   customerAddress: { type: String },
  status: { 
     type: String, 
@@ -35,7 +35,7 @@ const OrderSchema = new mongoose.Schema({
  
  deliveryType: { 
     type: String, 
-    enum: ['Take Away', 'Book at Restaurant', 'Store Delivery', 'Store Home Delivery', 'None'], // 👈 నాన్-రెస్టారెంట్ స్టోర్ టైప్స్ ని ఇక్కడ యాడ్ చేశాం రాజు!
+    enum: ['Take Away', 'Book at Restaurant', 'Store Delivery', 'Store Home Delivery', 'None'], // 👈 ఇక్కడ 'Store Home Delivery' మరియు 'Store Delivery' ని యాడ్ చేయాలి
     default: 'None' 
   },
   
