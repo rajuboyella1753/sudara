@@ -327,10 +327,10 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* Veg/Non-Veg & Route Planner Action Row */}
+      {/* Veg/Non-Veg & Route Planner Action Row (కేవలం రెస్టారెంట్ అయితేనే Veg/Non-Veg కనిపిస్తాయి) */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 w-full mt-2">
         <div className="flex gap-2.5 w-full sm:w-auto">
-          {["Veg", "Non-Veg"].map((type) => (
+          {selectedHubType === "Restaurant" && ["Veg", "Non-Veg"].map((type) => (
             <button 
               key={type} 
               onClick={() => setSelectedFoodType(selectedFoodType === type ? "All" : type)}
@@ -343,7 +343,7 @@ useEffect(() => {
             </button>
           ))}
         </div>
-
+      </div>
         {/* Route Planner Toggle Button */}
         {/* <button 
           onClick={() => setIsTravelMode(!isTravelMode)}
@@ -352,7 +352,7 @@ useEffect(() => {
           <Compass className={`w-4 h-4 sm:w-5 sm:h-5 ${isTravelMode ? 'animate-spin' : ''}`} />
           <span>{isTravelMode ? "Highway Mode Active" : "Route-Foodi Planner"}</span>
         </button> */}
-      </div>
+      
 
       {/* Route Planner Input Box (Collapsible) */}
       <AnimatePresence>
