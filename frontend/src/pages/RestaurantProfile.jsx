@@ -15,6 +15,7 @@ import QRCode from 'qrcode';
 export default function RestaurantProfile() {
   const { id } = useParams();
   const [owner, setOwner] = useState(null);
+  // const scrollContainerRef = useRef(null);
   const [items, setItems] = useState([]);
   const [filter, setFilter] = useState("All");
   const isRestaurant = !owner?.category || owner.category.toLowerCase() === "restaurant";
@@ -634,6 +635,7 @@ const handleBookTestDrive = async () => {
 
 const searchFiltered = useMemo(() => {
     return items.filter(item => {
+      if (item.isAvailable === false) return false;
       let matchesFilter = true;
       if (filter !== "All") {
         if (owner?.category?.toLowerCase() === "automobile") {
@@ -1072,12 +1074,21 @@ if (!owner || !owner.isApproved) {
                             <p className="text-sm font-black text-blue-600 italic">
                               ₹{item.price}
                             </p>
+                            {item.category === "Automobile" && (
+                        <p className="text-[7px] font-bold text-slate-400 mt-1 italic leading-tight">
+                          * On-Road price subject to change based on RTO and insurance.
+                        </p>
+                      )}
                           </div>
                         </div>
 
                         {item.category === "Automobile" ? (
                           <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
-                            <span className="text-[8px] font-bold text-emerald-600 uppercase bg-emerald-50 px-2 py-0.5 rounded-md">In Stock</span>
+                            <span className={`text-[8px] font-bold uppercase px-2 py-0.5 rounded-md ${
+  item.isAvailable !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
+}`}>
+  {item.isAvailable !== false ? 'In Stock' : 'Out of Stock'}
+</span>
                             <button 
                               onClick={() => {
                                 setSelectedVehicle(item);

@@ -75,11 +75,11 @@
   const [uploadedReceipt, setUploadedReceipt] = useState(null);
   const [isCopied, setIsCopied] = useState(false);
   const [counterCart, setCounterCart] = useState({});
-  const SUDARA_UPI_ID = "boyella.r@ptyes"; 
+  const SUDARA_UPI_ID = "sudara@ptyes";
 
   // 👑 రాజు మంత్లీ సబ్‌స్క్రిప్షన్ క్యాలిక్యులేటర్ (డిస్కౌంట్ లేకుండా పక్కా 100% అమౌంట్ లాజిక్)
   const calculatedAmount = useMemo(() => {
-    const baseRate = selectedPlanType === "premium" ? 1499 : 500;
+    const baseRate = selectedPlanType === "premium" ? 999 : 499;
     const months = planDuration === 90 ? 3 : 1;
     
     // ఎటువంటి డిస్కౌంట్లు లేవు, 3 నెలలకి పక్కా స్ట్రెయిట్ మల్టిప్లికేషన్ రాజు!

@@ -30,7 +30,9 @@ export default function AutomobileDashboard() {
   const [planDuration, setPlanDuration] = useState(30);
   const [uploadedReceipt, setUploadedReceipt] = useState(null);
   const [isCopied, setIsCopied] = useState(false);
-  const SUDARA_UPI_ID = "boyella.r@ptyes";
+  
+  const SUDARA_UPI_ID = "sudara@ptyes";
+  const ADMIN_PHONE = "7569896128";
   const [newVehicle, setNewVehicle] = useState({
     name: "",
     subCategory: "Bikes",
@@ -146,10 +148,10 @@ const fetchTestDrives = async (ownerId) => {
     }
   };
 const calculatedAmount = useMemo(() => {
-    const baseRate = selectedPlanType === "premium" ? 499 : 299;
-    const months = planDuration === 90 ? 3 : 1;
-    return baseRate * months;
-  }, [selectedPlanType, planDuration]);
+  const baseRate = 699; // పర్ మంత్ 699 రూ.
+  const months = planDuration === 90 ? 3 : 1;
+  return baseRate * months; // 30 రోజులకు 699, 90 రోజులకు (699 * 3) ఆటోమేటిక్‌గా వస్తుంది
+}, [planDuration]);
 
   // రోజుల కౌంట్‌డౌన్ లాజిక్
   const daysRemaining = useMemo(() => {
@@ -1284,96 +1286,7 @@ const handleAcceptTestDrive = async (driveId) => {
           </div>
         )}
       </AnimatePresence>
-{/* 👑 సబ్‌స్క్రిప్షన్ రెనెవల్ మోడల్ */}
-      <AnimatePresence>
-        {isRenewalModalOpen && (
-          <div className="fixed inset-0 z-[250] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white w-full max-w-4xl p-6 md:p-10 rounded-[3rem] shadow-2xl relative max-h-[90vh] overflow-y-auto">
-              
-              <button type="button" onClick={() => setIsRenewalModalOpen(false)} className="absolute top-6 right-6 p-2 bg-slate-100 rounded-full hover:bg-red-50 hover:text-red-500 transition-all"><X className="w-5 h-5"/></button>
-              
-              <h3 className="text-xl sm:text-3xl font-black italic uppercase tracking-tighter mb-2 border-l-8 border-orange-500 pl-6">
-                Sudara Node <span className="text-orange-600">Subscription Renewal</span>
-              </h3>
-              <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-8 pl-8">Direct Peer-to-Peer Settlement</p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                <div className="space-y-6">
-                  <p className="text-xs font-black uppercase text-slate-500">1. ప్లాన్ సెలెక్షన్ & యూపీఐ కాపీ</p>
-                  
-                  <div className="flex bg-slate-100 p-1 rounded-xl border shadow-inner">
-                    <button type="button" onClick={() => setSelectedPlanType("basic")} className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase transition-all ${selectedPlanType === "basic" ? "bg-slate-900 text-white shadow-md" : "text-slate-500"}`}>Basic (₹299/Mo)</button>
-                    <button type="button" onClick={() => setSelectedPlanType("premium")} className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase transition-all ${selectedPlanType === "premium" ? "bg-blue-600 text-white shadow-md" : "text-slate-500"}`}>Premium (₹499/Mo)</button>
-                  </div>
 
-                  <div className="flex bg-slate-100 p-1 rounded-xl border shadow-inner">
-                    <button type="button" onClick={() => setPlanDuration(30)} className={`flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase transition-all ${planDuration === 30 ? "bg-white text-slate-900 shadow-sm font-black" : "text-slate-400"}`}>30 Days (1 Month)</button>
-                    <button type="button" onClick={() => setPlanDuration(90)} className={`flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase transition-all ${planDuration === 90 ? "bg-white text-slate-900 shadow-sm font-black" : "text-slate-400"}`}>90 Days (3 Months)</button>
-                  </div>
-
-                  <div className="bg-slate-50 p-4 rounded-xl border flex justify-between items-center shadow-sm">
-                    <div>
-                      <p className="text-[8px] font-black text-slate-400 uppercase leading-none">Official UPI ID</p>
-                      <p className="font-black text-slate-700 text-xs mt-1.5 tracking-wide">{SUDARA_UPI_ID}</p>
-                    </div>
-                    <button type="button" onClick={() => { navigator.clipboard.writeText(SUDARA_UPI_ID); alert("UPI ID Copied!"); }} className="p-2 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase px-4 py-1.5">
-                      Copy UPI ID
-                    </button>
-                  </div>
-
-                  <div className="bg-slate-900 text-white p-6 rounded-2xl flex justify-between items-center shadow-xl">
-                    <div>
-                      <p className="text-[8px] font-black uppercase opacity-50 tracking-widest leading-none">Total Payable Amount</p>
-                      <p className="text-3xl font-black italic tracking-tighter text-emerald-400 mt-2">₹{calculatedAmount}</p>
-                    </div>
-                    <a href={`upi://pay?pa=${SUDARA_UPI_ID}&pn=Sudara%20Hub&am=${calculatedAmount}&cu=INR`} className="bg-emerald-500 hover:bg-emerald-600 px-6 py-3 rounded-xl text-[10px] font-black uppercase italic tracking-widest text-white shadow-lg">
-                      Pay Now
-                    </a>
-                  </div>
-                </div>
-
-                <div className="space-y-6 bg-slate-50 p-6 rounded-[2rem] border">
-                  <p className="text-xs font-black uppercase text-slate-500">2. రసీదు సమర్పణ (Payment Verification)</p>
-                  
-                  <div className="border-2 border-dashed border-slate-300 bg-white p-6 rounded-2xl text-center relative">
-                    <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => {
-                      const file = e.target.files[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.readAsDataURL(file);
-                        reader.onload = (event) => setUploadedReceipt(event.target.result);
-                      }
-                    }} />
-                    {uploadedReceipt ? (
-                      <span className="text-[10px] font-black uppercase text-emerald-600">Screenshot Attached ✅</span>
-                    ) : (
-                      <span className="text-[9px] font-black uppercase text-slate-400">Upload Payment Screenshot</span>
-                    )}
-                  </div>
-
-                  <button 
-                    type="button" 
-                    onClick={async () => {
-                      if (!uploadedReceipt) return alert("దయచేసి స్క్రీన్‌షాట్ అప్‌లోడ్ చేయండి!");
-                      try {
-                        await api.put(`/owner/update-profile/${owner._id}`, {
-                          paymentReceipt: uploadedReceipt,
-                          billingStatus: "Pending Verification"
-                        });
-                        alert("Receipt Sent to Admin! ✅");
-                        setIsRenewalModalOpen(false);
-                      } catch (err) { alert("Failed"); }
-                    }}
-                    className="w-full bg-slate-900 text-white py-4 rounded-xl text-[10px] font-black uppercase italic tracking-widest shadow-lg"
-                  >
-                    I Have Paid
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
       {/* SIDEBAR DRAWER */}
       <AnimatePresence>
         {isSidebarOpen && (
@@ -1418,7 +1331,12 @@ const handleAcceptTestDrive = async (driveId) => {
                   >
                     <Settings className="w-4 h-4 text-amber-600" /> సర్టిఫికెట్ & ప్రొఫైల్ / Profile
                   </button>
-
+<button 
+  onClick={() => { setIsRenewalModalOpen(true); setIsSidebarOpen(false); }}
+  className="w-full flex items-center gap-3 p-4 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-2xl font-black uppercase text-xs tracking-wider transition-all border border-amber-200 shadow-sm"
+>
+  <Settings className="w-4 h-4 text-amber-600" /> సబ్‌స్క్రిప్షన్ రెనెవల్ / Renew Node
+</button>
                   <button 
                     onClick={() => { downloadQRCode(); setIsSidebarOpen(false); }}
                     className="w-full flex items-center gap-3 p-4 bg-slate-50 hover:bg-amber-50 hover:text-amber-600 rounded-2xl font-black uppercase text-xs tracking-wider transition-all border border-slate-100 text-slate-700"
@@ -1437,6 +1355,81 @@ const handleAcceptTestDrive = async (driveId) => {
 
               <div className="pt-6 border-t border-slate-100 text-center">
                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Sudara Automobile Hub Node • డిజిటల్ ఇండియా</p>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      {/* 👑 సబ్‌స్క్రిప్షన్ రెనెవల్ మోడల్ (ఇది ఇక్కడ చివర్లో ఉండాలి) */}
+      <AnimatePresence>
+        {isRenewalModalOpen && (
+          <div className="fixed inset-0 z-[999] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white w-full max-w-4xl p-6 md:p-10 rounded-[3rem] shadow-2xl relative max-h-[90vh] overflow-y-auto">
+              
+              <button type="button" onClick={() => setIsRenewalModalOpen(false)} className="absolute top-6 right-6 p-2 bg-slate-100 rounded-full hover:bg-red-50 hover:text-red-500 transition-all"><X className="w-5 h-5"/></button>
+              
+              <h3 className="text-xl sm:text-3xl font-black italic uppercase tracking-tighter mb-2 border-l-8 border-orange-500 pl-6">
+                Sudara Node <span className="text-orange-600">Subscription Renewal</span>
+              </h3>
+              <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-8 pl-8">Direct Peer-to-Peer Settlement (₹699 / Month)</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                <div className="space-y-6">
+                  <p className="text-xs font-black uppercase text-slate-500">1. ప్లాన్ కాలపరిమితి & పేమెంట్</p>
+                  
+                  {/* రోజుల స్విచ్ */}
+                  <div className="flex bg-slate-100 p-1 rounded-xl border shadow-inner">
+                    <button type="button" onClick={() => setPlanDuration(30)} className={`flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase transition-all ${planDuration === 30 ? "bg-white text-slate-900 shadow-sm font-black" : "text-slate-400"}`}>30 Days (1 Month - ₹699)</button>
+                    <button type="button" onClick={() => setPlanDuration(90)} className={`flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase transition-all ${planDuration === 90 ? "bg-white text-slate-900 shadow-sm font-black" : "text-slate-400"}`}>90 Days (3 Months - ₹{699 * 3})</button>
+                  </div>
+
+                  {/* అడ్మిన్ UPI ID డిస్‌ప్లే */}
+                  <div className="bg-slate-50 p-4 rounded-xl border flex justify-between items-center shadow-sm">
+                    <div>
+                      <p className="text-[8px] font-black text-slate-400 uppercase leading-none">Official UPI ID</p>
+                      <p className="font-black text-slate-700 text-xs mt-1.5 tracking-wide">{SUDARA_UPI_ID}</p>
+                    </div>
+                    <button type="button" onClick={() => { navigator.clipboard.writeText(SUDARA_UPI_ID); alert("UPI ID Copied! ✅"); }} className="p-2 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase px-4 py-1.5">
+                      Copy UPI ID
+                    </button>
+                  </div>
+
+                  {/* టోటల్ అమౌంట్ మరియు అడ్మిన్ కాంటాక్ట్ ఇన్ఫో */}
+                  <div className="bg-slate-900 text-white p-6 rounded-2xl space-y-4 shadow-xl">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <p className="text-[8px] font-black uppercase opacity-50 tracking-widest leading-none">Total Payable Amount</p>
+                        <p className="text-3xl font-black italic tracking-tighter text-emerald-400 mt-2">₹{calculatedAmount}</p>
+                      </div>
+                      <a href={`upi://pay?pa=${SUDARA_UPI_ID}&pn=Sudara%20Hub&am=${calculatedAmount}&cu=INR`} className="bg-emerald-500 hover:bg-emerald-600 px-6 py-3 rounded-xl text-[10px] font-black uppercase italic tracking-widest text-white shadow-lg">
+                        Pay Now
+                      </a>
+                    </div>
+                    <div className="pt-3 border-t border-slate-800 text-[9px] text-slate-400 font-bold uppercase">
+                      ఏదైనా సమస్య ఉంటే అడ్మిన్‌ని సంప్రదించండి: <a href={`tel:${ADMIN_PHONE}`} className="text-amber-400 underline">{ADMIN_PHONE}</a>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-6 bg-slate-50 p-6 rounded-[2rem] border">
+                  <p className="text-xs font-black uppercase text-slate-500">2. వాట్సాప్ ద్వారా నిర్ధారణ (WhatsApp Verification)</p>
+                  
+                  <div className="bg-white p-5 rounded-2xl border border-slate-200 text-center space-y-3 shadow-2xs">
+                    <p className="text-[10px] font-bold text-slate-600 uppercase leading-relaxed">
+                      UPI ద్వారా రూ. <span className="text-emerald-600 font-black">₹{calculatedAmount}</span> పే చేసిన తర్వాత, ఆ స్క్రీన్‌షాట్‌ని అడ్మిన్ వాట్సాప్‌కి పంపండి! 🚀
+                    </p>
+
+                    <a 
+  href={`https://wa.me/91${ADMIN_PHONE}?text=${encodeURIComponent(`Hello Admin, I am ${owner?.name}, owner of the automobile showroom. I have successfully transferred the subscription amount of ₹${calculatedAmount} for this month. \n\nShowroom ID: ${owner?._id}\n\nPlease verify and activate my node.`)}`}
+  target="_blank"
+  rel="noopener noreferrer"
+  onClick={() => setIsRenewalModalOpen(false)}
+  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl text-[10px] font-black uppercase italic tracking-widest shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95"
+>
+  <span>💬 అడ్మిన్‌కి వాట్సాప్ చేయి / Send via WhatsApp</span>
+</a>
+                  </div>
+                </div>
               </div>
             </motion.div>
           </div>
