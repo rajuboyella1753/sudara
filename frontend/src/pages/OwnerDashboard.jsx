@@ -647,6 +647,7 @@ const handleSubmitItem = async (e) => {
   formData.append("category", form.category); 
   formData.append("subCategory", finalSub);   
   formData.append("ownerId", owner._id);
+  formData.append("isAvailable", "true");
 
   // 3. ఇమేజ్ అపెండ్
   if (form.image instanceof File) {

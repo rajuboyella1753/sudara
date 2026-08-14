@@ -632,28 +632,38 @@ const handleBookTestDrive = async () => {
       setLoading(false);
     }
   };
-
 const searchFiltered = useMemo(() => {
-    return items.filter(item => {
-      if (item.isAvailable === false) return false;
-      let matchesFilter = true;
-      if (filter !== "All") {
-        if (owner?.category?.toLowerCase() === "automobile") {
-          // ⛽ ఆటోమొబైల్ అయితే ఫ్యూయల్ టైప్ తో మ్యాచ్ చేయాలి
-          matchesFilter = item.fuelType?.toLowerCase() === filter.toLowerCase();
-        } else if (filter === "Veg" || filter === "Non-Veg") {
-          matchesFilter = item.category?.toLowerCase() === filter.toLowerCase();
-        } else {
-          matchesFilter = item.category === filter || item.subCategory === filter;
-        }
-      }
+  return items.filter(item => {
+    // 1. స్టాక్ లేనివి హైడ్ చేయడం (ఒకవేళ ఉంచాలంటే ఈ లైన్ తీసేయొచ్చు)
+    if (item.isAvailable === false) return false;
 
-      const matchesSubCat = activeSubCat === "All" ? true : (item.subCategory === activeSubCat || item.category === activeSubCat);
-      const matchesSearch = item.name.toLowerCase().includes(itemSearch.toLowerCase());
-      
-      return matchesFilter && matchesSubCat && matchesSearch;
-    });
-  }, [items, filter, activeSubCat, itemSearch, isRestaurant, owner]);
+    // 2. సెర్చ్ బార్ టెక్స్ట్ మ్యాచ్
+    const matchesSearch = item.name.toLowerCase().includes(itemSearch.toLowerCase());
+
+    // 3. కేటగిరీ / ఫ్యూయెల్ టైప్ ఫిల్టర్ (ఆటోమొబైల్స్ లేదా రెస్టారెంట్ల కోసం)
+    let matchesFilter = true;
+    if (filter !== "All") {
+      if (owner?.category?.toLowerCase() === "automobile") {
+        // 🚗 ఆటోమొబైల్ అయితే కేవలం ఫ్యూయెల్ టైప్‌తో మాత్రమే మ్యాచ్ అవ్వాలి
+        matchesFilter = item.fuelType?.toLowerCase() === filter.toLowerCase();
+      } else if (filter === "Veg" || filter === "Non-Veg") {
+        matchesFilter = item.category?.toLowerCase() === filter.toLowerCase();
+      } else {
+        matchesFilter = item.category?.toLowerCase() === filter.toLowerCase() || 
+                        item.subCategory?.toLowerCase() === filter.toLowerCase();
+      }
+    }
+
+    // 4. సబ్-కేటగిరీ ఫిల్టర్ (Bikes, Cars, Biryanis లాంటివి)
+    let matchesSubCat = true;
+    if (activeSubCat !== "All") {
+      matchesSubCat = item.subCategory?.toLowerCase() === activeSubCat.toLowerCase() || 
+                      item.category?.toLowerCase() === activeSubCat.toLowerCase();
+    }
+    
+    return matchesSearch && matchesFilter && matchesSubCat;
+  });
+}, [items, filter, activeSubCat, itemSearch, owner]);
 
   const availableItems = searchFiltered; 
 
@@ -1028,17 +1038,19 @@ if (!owner || !owner.isApproved) {
                         className="min-w-[220px] sm:min-w-[240px] max-w-[240px] bg-white p-4 rounded-[2rem] border border-slate-200/80 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between shrink-0 snap-start"
                       >
                         <div>
-                          <div className="relative w-full h-32 bg-slate-50 rounded-2xl overflow-hidden mb-3 border border-slate-100 flex items-center justify-center p-2">
-                            <img 
-                              src={item.image || `https://ui-avatars.com/api/?name=${item.name}`} 
-                              loading="lazy" 
-                              className="max-h-full max-w-full object-contain" 
-                              alt={item.name} 
-                            />
-                            <span className="absolute top-2 right-2 bg-slate-900 text-white text-[7px] font-black uppercase px-2 py-0.5 rounded-md">
-                              {item.subCategory || "Hub"}
-                            </span>
-                          </div>
+                          {/* 1. ఇమేజ్ కంటైనర్ (Div) కి ఖచ్చితమైన హైట్ మరియు w-full ఇవ్వాలి */}
+<div className="relative w-full h-56 sm:h-64 bg-slate-100 rounded-[1.8rem] overflow-hidden mb-3 flex items-center justify-center border border-slate-100">
+  <img 
+    src={item.image || `https://ui-avatars.com/api/?name=${item.name}`} 
+    loading="lazy" 
+    className="w-full h-full object-cover" 
+    alt={item.name} 
+  />
+  
+  <span className="absolute top-3 right-3 bg-slate-900/90 backdrop-blur-xs text-white text-[8px] font-black uppercase px-2.5 py-1 rounded-lg shadow-xs">
+    {item.subCategory || "Hub"}
+  </span>
+</div>
 
                           <h4 className="font-black uppercase text-xs text-slate-900 truncate mb-1">
                             {item.name}
