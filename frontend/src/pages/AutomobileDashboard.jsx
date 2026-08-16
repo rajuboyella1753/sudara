@@ -82,36 +82,47 @@ export default function AutomobileDashboard() {
     fetchTestDrives(stored._id);
   }, [navigate]);
 // 🚀 రియల్ టైమ్ సాకెట్ లిజనర్ (పేజీ రిఫ్రెష్ అవ్వకుండా టెస్ట్ డ్రైవ్ రిక్వెస్ట్స్ రావడానికి)
-  useEffect(() => {
-    if (!owner?._id) return;
+useEffect(() => {
+  if (!owner?._id) return;
 
-    if (!socket.connected) {
-      socket.connect();
+  if (!socket.connected) {
+    socket.connect();
+  }
+
+  const joinRoom = () => {
+    console.log("🔌 Joining owner room via socket:", owner._id);
+    socket.emit("join_owner_room", owner._id);
+  };
+
+  const handleNewTestDrive = (newDrive) => {
+    console.log("🚗 కొత్త టెస్ట్ డ్రైవ్ రిక్వెస్ట్ వచ్చింది (Live Socket):", newDrive);
+    
+    // డూప్లికేట్స్ రాకుండా చెక్ చేసి స్టేట్‌లో అప్‌డేట్ చేయడం
+    setTestDrives(prev => {
+      const exists = prev.some(d => d._id === newDrive._id);
+      if (exists) return prev;
+      return [newDrive, ...prev];
+    });
+    
+    // సౌండ్ అలర్ట్
+    if (localStorage.getItem("sudara_alert_status") === "active") {
+      new Audio("/order-beep.mp3").play().catch(e => console.log("Sound play error:", e));
     }
+    alert(`కొత్త టెస్ట్ డ్రైవ్ బుకింగ్ వచ్చింది! వెహికల్: ${newDrive.vehicleName || 'Vehicle'}`);
+  };
 
-    const joinRoom = () => socket.emit("join_owner_room", owner._id);
+  socket.on("connect", joinRoom);
+  socket.on("new_test_drive", handleNewTestDrive); 
 
-    const handleNewTestDrive = (newDrive) => {
-      console.log("🚗 కొత్త టెస్ట్ డ్రైవ్ రిక్వెస్ట్ వచ్చింది:", newDrive);
-      setTestDrives(prev => [newDrive, ...prev]);
-      
-      // ఒకవేళ అలర్ట్ సౌండ్ ఆన్ ఉంటే బీప్ ప్లే అవుతుంది
-      if (localStorage.getItem("sudara_alert_status") === "active") {
-        new Audio("/order-beep.mp3").play().catch(e => console.log("Sound play error:", e));
-      }
-      alert(`కొత్త టెస్ట్ డ్రైవ్ బుకింగ్ వచ్చింది! వెహికల్: ${newDrive.vehicleName}`);
-    };
+  if (socket.connected) {
+    joinRoom();
+  }
 
-    socket.on("connect", joinRoom);
-    socket.on("new_test_drive", handleNewTestDrive); // 👈 బ్యాకెండ్ నుండి వచ్చే ఈవెంట్
-
-    if (socket.connected) joinRoom();
-
-    return () => {
-      socket.off("connect", joinRoom);
-      socket.off("new_test_drive", handleNewTestDrive);
-    };
-  }, [owner]);
+  return () => {
+    socket.off("connect", joinRoom);
+    socket.off("new_test_drive", handleNewTestDrive);
+  };
+}, [owner?._id]);
   const fetchProducts = async (ownerId) => {
     try {
       const res = await api.get(`/items/owner/${ownerId}`);
