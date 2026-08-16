@@ -3,7 +3,6 @@ import TestDrive from '../models/TestDrive.js';
 
 const router = express.Router();
 
-// 🚀 Test Drive బుక్ చేయడానికి API రౌట్
 router.post('/test-drive/add', async (req, res) => {
   try {
     const { restaurantId, customerName, customerPhone, vehicleName, testDriveDate } = req.body;
@@ -19,6 +18,13 @@ router.post('/test-drive/add', async (req, res) => {
       vehicleName,
       testDriveDate
     });
+
+    // 🚀 1. ఇక్కడ సాకెట్ ద్వారా ఓనర్ రూమ్‌కి లైవ్ ఈవెంట్ పంపిస్తున్నాం రాజు!
+    const io = req.app.get('io'); // యాప్ నుండి సాకెట్ ఇన్‌స్టాన్స్ తీసుకోవడం
+    if (io) {
+      io.to(restaurantId).emit("new_test_drive", newTestDrive);
+      console.log(`🔔 Live socket emitted 'new_test_drive' to room: ${restaurantId}`);
+    }
 
     console.log("✅ Test Drive Booked Successfully:", newTestDrive._id);
     return res.status(201).json({ message: "Test Drive booked successfully!", data: newTestDrive });
