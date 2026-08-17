@@ -115,13 +115,21 @@ const About = () => {
               <div className="lg:col-span-5 flex justify-center">
                 <div className="relative group">
                   <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-orange-500 rounded-[2.5rem] blur opacity-30 group-hover:opacity-75 transition duration-500"></div>
-                  <div className="relative w-64 h-64 md:w-80 md:h-80 rounded-[2.5rem] overflow-hidden border-2 border-white/20 shadow-2xl bg-slate-950">
-                    <img 
-                      src="/Raju.jpg" 
-                      alt="Boyella Raju - Founder & CEO" 
-                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-                    />
-                  </div>
+                  <div className="relative w-64 h-64 md:w-80 md:h-80 rounded-[2.5rem] overflow-hidden border-2 border-white/20 shadow-2xl bg-slate-950 flex items-center justify-center">
+  {/* 1. బ్యాక్‌గ్రౌండ్‌లో అదే ఫోటో బ్లర్ అయి నిండుగా కనిపిస్తుంది */}
+  <img 
+    src="/Raju.jpg" 
+    alt="" 
+    className="absolute inset-0 w-full h-full object-cover filter blur-md opacity-40 scale-110" 
+  />
+
+  {/* 2. ఒరిజినల్ ఫోటో మధ్యలో నీట్‌గా కూర్చుంటుంది */}
+  <img 
+    src="/Raju.jpg" 
+    alt="Boyella Raju - Founder & CEO" 
+    className="relative z-10 w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" 
+  />
+</div>
                 </div>
               </div>
 

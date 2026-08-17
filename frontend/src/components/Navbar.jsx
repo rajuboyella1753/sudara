@@ -98,7 +98,7 @@ useEffect(() => {
 
           {!hideOwnerBtn && (
             <Link to="/owner" className="relative group overflow-hidden bg-indigo-600 text-white px-8 py-3.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all hover:shadow-xl hover:shadow-indigo-500/30 active:scale-95">
-              <span className="relative z-10">Partner Access</span>
+              <span className="relative z-10">Owner Login</span>
               <div className="absolute inset-0 bg-orange-600 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
             </Link>
           )}
@@ -166,7 +166,7 @@ useEffect(() => {
                     to="/owner" 
                     className="block bg-indigo-600 text-white text-center py-5 rounded-[1.8rem] text-xs font-black uppercase tracking-[0.25em] shadow-xl shadow-indigo-200"
                   >
-                    Owner Portal Login
+                    Owner Login
                   </Link>
                 </motion.div>
               )}

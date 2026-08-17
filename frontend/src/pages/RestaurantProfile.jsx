@@ -1039,11 +1039,12 @@ if (!owner || !owner.isApproved) {
                       >
                         <div>
                           {/* 1. ఇమేజ్ కంటైనర్ (Div) కి ఖచ్చితమైన హైట్ మరియు w-full ఇవ్వాలి */}
-<div className="relative w-full h-56 sm:h-64 bg-slate-100 rounded-[1.8rem] overflow-hidden mb-3 flex items-center justify-center border border-slate-100">
+{/* 🚗 ఆటోమొబైల్ కార్డ్స్ ఇమేజ్ కంటైనర్ */}
+<div className="relative w-full h-44 sm:h-48 bg-slate-900 rounded-[1.8rem] overflow-hidden mb-3 flex items-center justify-center border border-slate-100">
   <img 
     src={item.image || `https://ui-avatars.com/api/?name=${item.name}`} 
     loading="lazy" 
-    className="w-full h-full object-cover" 
+    className="w-full h-full object-cover hover:scale-105 transition-all duration-500" 
     alt={item.name} 
   />
   
@@ -1523,35 +1524,56 @@ if (!owner || !owner.isApproved) {
               </div>
 
               <div className="space-y-4">
-                <input 
-                  type="text" 
-                  placeholder="మీ పూర్తి పేరు / Full Name" 
-                  value={testDriveData.name} 
-                  onChange={(e) => setTestDriveData({...testDriveData, name: e.target.value})} 
-                  className="w-full bg-slate-50 border-2 border-slate-100 p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-blue-500"
-                />
-                <input 
-                  type="text" 
-                  placeholder="ఫోన్ నంబర్ / Mobile Number" 
-                  value={testDriveData.phone} 
-                  onChange={(e) => setTestDriveData({...testDriveData, phone: e.target.value})} 
-                  className="w-full bg-slate-50 border-2 border-slate-100 p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-blue-500"
-                />
-                <input 
-                  type="date" 
-                  value={testDriveData.date} 
-                  onChange={(e) => setTestDriveData({...testDriveData, date: e.target.value})} 
-                  className="w-full bg-slate-50 border-2 border-slate-100 p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-blue-500"
-                />
+  {/* Full Name Input */}
+  <div className="space-y-1 text-left">
+    <label className="text-[9px] font-black uppercase text-slate-400 block px-1 tracking-wider">
+      పూర్తి పేరు / Full Name
+    </label>
+    <input 
+      type="text" 
+      placeholder="ఉదా: రాజ్ కుమార్ / Enter Name" 
+      value={testDriveData.name} 
+      onChange={(e) => setTestDriveData({...testDriveData, name: e.target.value})} 
+      className="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl text-xs font-bold outline-none focus:border-amber-600 transition-all text-slate-900 shadow-inner"
+    />
+  </div>
 
-                <button 
-                  onClick={handleBookTestDrive}
-                  disabled={loading}
-                  className="w-full py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl transition-all active:scale-95"
-                >
-                  {loading ? "బుక్ అవుతోంది..." : "Confirm Test Drive ✅"}
-                </button>
-              </div>
+  {/* Mobile Number Input */}
+  <div className="space-y-1 text-left">
+    <label className="text-[9px] font-black uppercase text-slate-400 block px-1 tracking-wider">
+      ఫోన్ నంబర్ / Mobile Number
+    </label>
+    <input 
+      type="tel" 
+      placeholder="9876543210" 
+      value={testDriveData.phone} 
+      onChange={(e) => setTestDriveData({...testDriveData, phone: e.target.value})} 
+      className="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl text-xs font-bold outline-none focus:border-amber-600 transition-all text-slate-900 shadow-inner"
+    />
+  </div>
+
+  {/* Test Drive Date Input */}
+  <div className="space-y-1 text-left">
+    <label className="text-[9px] font-black uppercase text-amber-600 block px-1 tracking-wider font-black">
+      📅 టెస్ట్ డ్రైవ్ తేదీ / Test Drive Date
+    </label>
+    <input 
+      type="date" 
+      value={testDriveData.date} 
+      onChange={(e) => setTestDriveData({...testDriveData, date: e.target.value})} 
+      className="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl text-xs font-bold outline-none focus:border-amber-600 transition-all text-slate-900 shadow-inner cursor-pointer"
+    />
+  </div>
+
+  {/* Submit Button */}
+  <button 
+    onClick={handleBookTestDrive}
+    disabled={loading}
+    className="w-full mt-2 py-4 bg-slate-900 hover:bg-amber-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl transition-all active:scale-95 disabled:bg-slate-300"
+  >
+    {loading ? "బుక్ అవుతోంది..." : "Confirm Test Drive ✅"}
+  </button>
+</div>
             </div>
           </motion.div>
         )}
