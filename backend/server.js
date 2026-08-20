@@ -74,7 +74,7 @@ cron.schedule('5 0 * * *', async () => {
 
     for (let owner of owners) {
       // ఇక్కడ .get() బదులు ఆబ్జెక్ట్ బ్రాకెట్ నొటేషన్ వాడాలి
-      const dailyData = owner.analytics.daily[yKey]; 
+      const dailyData = owner?.analytics?.daily?.[yKey]; 
       
       if (dailyData) {
         await Owner.findByIdAndUpdate(owner._id, {
