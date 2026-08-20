@@ -151,12 +151,17 @@ export default function AdminDashboard() {
     return { status: "Payment Due", message: "Subscription Expired! ⚠️", isExpired: true, chargeAmount: actualFee, overdueText: overdueDays <= 0 ? "0 Days Overdue" : `${overdueDays} Days Overdue` };
   };
 
-  const updateApprovalStatus = async (id, status) => {
-    try {
-      await api.put(`/owner/approve-owner/${id}`, { isApproved: status });
-      setOwners(prev => prev.map(o => o._id === id ? { ...o, isApproved: status } : o));
-    } catch (err) { alert("Status Update Failed ❌"); }
-  };
+ const updateApprovalStatus = async (id, status) => {
+  try {
+    // 💡 ఇక్కడ isApproved తో పాటు planType కూడా premium అని పంపిస్తే ఆటోమేటిక్‌గా అప్‌డేట్ అవుతుంది
+    await api.put(`/owner/approve-owner/${id}`, { 
+      isApproved: status, 
+      planType: "premium",
+      billingStatus: "Active" 
+    });
+    setOwners(prev => prev.map(o => o._id === id ? { ...o, isApproved: status, planType: "premium", billingStatus: "Active" } : o));
+  } catch (err) { alert("Status Update Failed ❌"); }
+};
 
   const sendAdminBroadcast = async () => {
     if (!broadcastMsg.title || !broadcastMsg.body) return alert("Title and Body are required! 📢");

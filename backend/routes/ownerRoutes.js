@@ -206,37 +206,46 @@ router.delete("/delete-owner/:id", async (req, res) => {
     res.status(500).json({ success: false, message: "Delete failed completely" });
   }
 });
-// ⚙️ Owner Profile & Image Update Route (Fixed)
-router.put("/update/:id", upload.single('image'), async (req, res) => {
+router.put("/update/:id", upload.fields([
+  { name: 'image', maxCount: 1 },
+  { name: 'interiorImages', maxCount: 10 }
+]), async (req, res) => {
   try {
     const { id } = req.params;
     let updatePayload = { ...req.body };
 
-    // ఒకవేళ కొత్త ఇమేజ్ ఫైల్ అప్‌లోడ్ చేసి ఉంటే, క్లౌడినరీకి పంపి URL తెచ్చుకోవడం
-    if (req.file) {
-      const imageUrl = await uploadImage(req.file.path);
-      updatePayload.hotelImage = imageUrl; // లేదా మీ మోడల్ ప్రాపర్టీకి తగినట్లు (image / hotelImage)
+    // 1. బ్యానర్ ఫోటో ఉంటే అప్‌డేట్ చేయడం
+    if (req.files && req.files['image'] && req.files['image'][0]) {
+      const imageUrl = await uploadImage(req.files['image'][0].path);
+      updatePayload.hotelImage = imageUrl;
     }
 
-    if (updatePayload.todaySpecial) {
-      updatePayload.specialTimestamp = new Date();
+    // 2. కొత్తగా అప్‌లోడ్ చేసిన ఇంటీరియర్ ఫోటోలను క్లౌడినరీకి పంపి, డేటాబేస్‌లో $push చేయడం
+    if (req.files && req.files['interiorImages']) {
+      const interiorUrls = [];
+      for (const file of req.files['interiorImages']) {
+        const url = await uploadImage(file.path);
+        interiorUrls.push(url);
+      }
+      
+      // ఇక్కడ పాతవి పోకుండా కొత్తవి డేటాబేస్‌లో సేవ్ అవుతాయి ($push)
+      await Owner.findByIdAndUpdate(id, {
+        $push: { interiorImages: { $each: interiorUrls } }
+      });
     }
 
+    // 3. మిగతా టెక్స్ట్ సెట్టింగ్స్ అప్‌డేట్ చేయడం
+    delete updatePayload.interiorImages; // ఆల్రెడీ పైదాంట్లో హ్యాండ్ చేసాం కాబట్టి ఇక్కడ తీసేస్తున్నాం
     const updatedOwner = await Owner.findByIdAndUpdate(
       id,
       { $set: updatePayload },
       { new: true, runValidators: true }
     );
 
-    if (!updatedOwner) {
-      return res.status(404).json({ success: false, message: "Owner not found" });
-    }
-
-    console.log(`✅ Owner ${id} Profile Updated Successfully!`);
-    res.status(200).json({ success: true, message: "Updated successfully", owner: updatedOwner });  
+    res.status(200).json({ success: true, message: "Uploaded & Saved successfully", owner: updatedOwner });  
   } catch (err) {
-    console.error("Update Error ❌:", err);
-    res.status(500).json({ success: false, message: "Server error during update", error: err.message });
+    console.error("Upload Error ❌:", err);
+    res.status(500).json({ success: false, message: "Server error during upload", error: err.message });
   }
 });
 router.get("/owners-by-category/:category", async (req, res) => {
@@ -712,6 +721,35 @@ router.get('/admin/daily-stats', async (req, res) => {
     res.json(stats);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch stats" });
+  }
+});
+// 📊 Cross-Showroom Price Comparison Route
+router.get("/compare", async (req, res) => {
+  try {
+    const { name } = req.query;
+    if (!name) {
+      return res.status(400).json({ message: "Vehicle name is required" });
+    }
+
+    // డేటాబేస్ నుండి అదే పేరు ఉన్న (case-insensitive) వేరే షోరూమ్ ఐటమ్స్ వెతకడం
+    const similarItems = await Item.find({ 
+      name: { $regex: new RegExp(name, "i") },
+      category: "Automobile"
+    }).populate('owner', 'name address phone'); // ఓనర్/షోరూమ్ వివరాలు తెచ్చుకోవడం
+
+    // ఫ్రంట్‌ఎండ్‌కి కావలసిన ఫార్మాట్ లోకి డేటాని మ్యాప్ చేయడం
+    const comparisonResults = similarItems.map(item => ({
+      showroomName: item.owner?.name || "Local Showroom",
+      location: item.owner?.address || "Local Area",
+      price: item.price,
+      benefits: item.description || "Standard Warranty & Support",
+      isAvailable: item.isAvailable !== false
+    }));
+
+    res.status(200).json(comparisonResults);
+  } catch (err) {
+    console.error("Comparison Error:", err);
+    res.status(500).json({ message: "Failed to compare prices" });
   }
 });
 export default router;

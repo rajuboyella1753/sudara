@@ -30,7 +30,7 @@ export default function AutomobileDashboard() {
   const [planDuration, setPlanDuration] = useState(30);
   const [uploadedReceipt, setUploadedReceipt] = useState(null);
   const [isCopied, setIsCopied] = useState(false);
-  
+  const [interiorFiles, setInteriorFiles] = useState([]);
   const SUDARA_UPI_ID = "sudara@ptyes";
   const ADMIN_PHONE = "7569896128";
   const [newVehicle, setNewVehicle] = useState({
@@ -224,7 +224,11 @@ const handleImageChange = async (e) => {
       if (storeImageFile) {
         formData.append("image", storeImageFile);
       }
-
+      if (interiorFiles.length > 0) {
+      interiorFiles.forEach((file) => {
+        formData.append("interiorImages", file);
+      });
+    }
       const res = await api.put(`/owner/update/${owner._id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" }
       });
@@ -1075,7 +1079,27 @@ const handleAcceptTestDrive = async (driveId) => {
                     )}
                   </div>
                 </div>
-
+      <div>
+  <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">షోరూమ్ ఇంటీరియర్ / బ్యానర్ ఫోటోలు / Interior Images</label>
+  <div className="relative border border-dashed border-slate-300 rounded-xl p-4 text-center bg-slate-50 hover:bg-slate-100/50 transition-all cursor-pointer">
+    <input 
+      type="file" 
+      accept="image/*" 
+      multiple 
+      onChange={(e) => {
+        const files = Array.from(e.target.files);
+        setInteriorFiles(files);
+      }} 
+      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" 
+    />
+    <div className="flex flex-col items-center gap-1">
+      <ImageIcon className="w-5 h-5 text-amber-500" />
+      <span className="text-[10px] font-black text-slate-600 uppercase">
+        {interiorFiles.length > 0 ? `${interiorFiles.length} ఫోటోలు ఎంపికయ్యాయి ✅` : "షోరూమ్ ఇంటీరియర్ ఫోటోలు అప్‌లోడ్ చేయండి / Upload Interior Photos"}
+      </span>
+    </div>
+  </div>
+</div>
                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
                   <div className="flex items-center justify-between">
                     <h4 className="text-[10px] font-black uppercase tracking-widest text-amber-600 flex items-center gap-1.5">

@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Heart, Share2, Clock, MapPin, Search, Camera, CreditCard, X, 
   PhoneCall, Plus, Minus, ShoppingBag, ShieldCheck, Copy, 
-  UtensilsCrossed, MessageSquare, Star, Send, Navigation,ShieldAlert,
+  UtensilsCrossed, MessageSquare, Star, Send, Navigation,ShieldAlert,Building2,
   User, CheckCircle2 ,Download
 } from "lucide-react";
 import VoiceAssistant from "../components/VoiceAssistant";
@@ -69,7 +69,8 @@ export default function RestaurantProfile() {
   {/* 🛒 నాన్-రెస్టారెంట్ స్టోర్స్ ఆర్డర్ మోడల్ కోసం స్టేట్స్ */}
   const [showStoreOrderModal, setShowStoreOrderModal] = useState(false);
   const [storeOrderData, setStoreOrderData] = useState({ name: "", phone: "", address: "" });
-
+  const [showCompareModal, setShowCompareModal] = useState(false);
+  const [comparisonData, setComparisonData] = useState([]); 
   const availableSubCats = useMemo(() => {
   const defaultCats = ["Biryanis", "Starters", "Soups", "Noodles", "Gravys", "Rice", "Breads", "Sea Food", "Tiffins"];
   const catsInMenu = items.map(item => item.subCategory);
@@ -853,18 +854,18 @@ if (!owner || !owner.isApproved) {
           </div>
         )}
 
-        {owner?.planType === "premium" && owner?.interiorImages?.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 border-l-4 border-blue-600 pl-3">
-              <h3 className="text-[10px] sm:text-xs font-black uppercase text-slate-800 tracking-widest italic">Ambience</h3>
-            </div>
-            <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 scrollbar-hide">
-              {owner.interiorImages.map((img, idx) => (
-                <img key={idx} src={img} loading="lazy" onClick={() => setSelectedImg(img)} className="w-60 sm:w-72 h-40 sm:h-48 object-cover rounded-[1.5rem] sm:rounded-[2rem] border shadow-sm shrink-0 cursor-zoom-in" alt="" />
-              ))}
-            </div>
-          </div>
-        )}
+        {owner?.interiorImages?.length > 0 && (
+  <div className="space-y-4">
+    <div className="flex items-center gap-2 border-l-4 border-blue-600 pl-3">
+      <h3 className="text-[10px] sm:text-xs font-black uppercase text-slate-800 tracking-widest italic">Ambience & Showroom Interior</h3>
+    </div>
+    <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 scrollbar-hide">
+      {owner.interiorImages.map((img, idx) => (
+        <img key={idx} src={img} loading="lazy" onClick={() => setSelectedImg(img)} className="w-60 sm:w-72 h-40 sm:h-48 object-cover rounded-[1.5rem] sm:rounded-[2rem] border shadow-sm shrink-0 cursor-zoom-in" alt="" />
+      ))}
+    </div>
+  </div>
+)}
 
         {showTracking && (
           <div className="mt-8 p-6 bg-white border-2 border-dashed border-slate-200 rounded-[2.5rem]">
@@ -1009,123 +1010,95 @@ if (!owner || !owner.isApproved) {
                   </span>
                 </div>
 
-                <div className="flex gap-4 overflow-x-auto pb-3 pt-1 scrollbar-hide snap-x">
-                  {catItems.map((item) => (
-                    isRestaurant ? (
-                      <div 
-                        key={item._id} 
-                        className="min-w-[260px] sm:min-w-[280px] max-w-[280px] bg-white p-3 rounded-[1.5rem] border border-slate-100 flex items-center justify-between gap-3 shadow-sm shrink-0 snap-start"
-                      >
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="relative shrink-0">
-                            <img src={item.image || `https://ui-avatars.com/api/?name=${item.name}`} loading="lazy" className="w-14 h-14 rounded-xl object-cover border shadow-2xs" alt="" />
-                            <div className={`absolute -top-1 -left-1 w-2.5 h-2.5 rounded-full border-2 border-white ${item.category === 'Veg' ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <h4 className="font-black uppercase text-[10px] sm:text-[11px] italic text-slate-800 leading-tight truncate">{item.name}</h4>
-                            <p className="text-sm font-black text-blue-600 italic mt-0.5">₹{item.price}</p>
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-center gap-1 bg-slate-50 p-1 rounded-xl border shrink-0">
-                          <button onClick={() => addToCart(item)} className="p-1"><Plus className="w-3.5 h-3.5 text-slate-700" /></button>
-                          <span className="text-[10px] font-black min-w-[12px] text-center">{cart[item._id]?.qty || 0}</span>
-                          <button onClick={() => removeFromCart(item)} className="p-1"><Minus className="w-3.5 h-3.5 text-slate-400" /></button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div 
-                        key={item._id} 
-                        className="min-w-[220px] sm:min-w-[240px] max-w-[240px] bg-white p-4 rounded-[2rem] border border-slate-200/80 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between shrink-0 snap-start"
-                      >
-                        <div>
-                          {/* 1. ఇమేజ్ కంటైనర్ (Div) కి ఖచ్చితమైన హైట్ మరియు w-full ఇవ్వాలి */}
-{/* 🚗 ఆటోమొబైల్ కార్డ్స్ ఇమేజ్ కంటైనర్ */}
-<div className="relative w-full h-44 sm:h-48 bg-slate-900 rounded-[1.8rem] overflow-hidden mb-3 flex items-center justify-center border border-slate-100">
-  <img 
-    src={item.image || `https://ui-avatars.com/api/?name=${item.name}`} 
-    loading="lazy" 
-    className="w-full h-full object-cover hover:scale-105 transition-all duration-500" 
-    alt={item.name} 
-  />
-  
-  <span className="absolute top-3 right-3 bg-slate-900/90 backdrop-blur-xs text-white text-[8px] font-black uppercase px-2.5 py-1 rounded-lg shadow-xs">
-    {item.subCategory || "Hub"}
-  </span>
-</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-3 pt-1">
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-3 pt-1">
+  {catItems.map((item) => (
+    isRestaurant ? (
+      <div 
+        key={item._id} 
+        className="w-full bg-white p-3 rounded-[1.5rem] border border-slate-100 flex items-center justify-between gap-3 shadow-sm"
+      >
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="relative shrink-0">
+            <img src={item.image || `https://ui-avatars.com/api/?name=${item.name}`} loading="lazy" className="w-14 h-14 rounded-xl object-cover border shadow-2xs" alt="" />
+            <div className={`absolute -top-1 -left-1 w-2.5 h-2.5 rounded-full border-2 border-white ${item.category === 'Veg' ? 'bg-green-500' : 'bg-red-500'}`}></div>
+          </div>
+          <div className="min-w-0 flex-1">
+            <h4 className="font-black uppercase text-[10px] sm:text-[11px] italic text-slate-800 leading-tight truncate">{item.name}</h4>
+            <p className="text-sm font-black text-blue-600 italic mt-0.5">₹{item.price}</p>
+          </div>
+        </div>
+        <div className="flex flex-col items-center gap-1 bg-slate-50 p-1 rounded-xl border shrink-0">
+          <button onClick={() => addToCart(item)} className="p-1"><Plus className="w-3.5 h-3.5 text-slate-700" /></button>
+          <span className="text-[10px] font-black min-w-[12px] text-center">{cart[item._id]?.qty || 0}</span>
+          <button onClick={() => removeFromCart(item)} className="p-1"><Minus className="w-3.5 h-3.5 text-slate-400" /></button>
+        </div>
+      </div>
+    ) : (
+      <div 
+        key={item._id} 
+        className="w-full bg-white p-4 rounded-[2rem] border border-slate-200/80 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+      >
+        {/* ఐటమ్ ఇమేజ్ & డీటెయిల్స్ */}
+        <div>
+          <div className="relative w-full h-44 sm:h-48 bg-slate-900 rounded-[1.8rem] overflow-hidden mb-3 flex items-center justify-center border border-slate-100">
+            <img src={item.image || `https://ui-avatars.com/api/?name=${item.name}`} loading="lazy" className="w-full h-full object-cover" alt={item.name} />
+            <span className="absolute top-3 right-3 bg-slate-900/90 text-white text-[8px] font-black uppercase px-2.5 py-1 rounded-lg">{item.subCategory || "Hub"}</span>
+          </div>
+          <h4 className="font-black uppercase text-xs text-slate-900 truncate mb-1">{item.name}</h4>
+          
+          {item.description && (
+            <div className="max-h-12 overflow-y-auto scrollbar-none my-1 pr-1">
+              <p className="text-[9px] font-medium text-slate-500 leading-snug">{item.description}</p>
+            </div>
+          )}
 
-                          <h4 className="font-black uppercase text-xs text-slate-900 truncate mb-1">
-                            {item.name}
-                          </h4>
+          <p className="text-sm font-black text-blue-600 italic mt-2">₹{item.price}</p>
+        </div>
 
-                          {item.category === "Automobile" && (
-                            <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
-                              {item.mileageOrRange && (
-                                <span className="text-[8px] font-bold bg-amber-50 text-amber-800 px-2 py-0.5 rounded border border-amber-200">
-                                  ⚡ మైలేజ్/liter: {item.mileageOrRange}
-                                </span>
-                              )}
-                              {item.fuelType && (
-                                <span className="text-[8px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
-                                  ⛽ {item.fuelType}
-                                </span>
-                              )}
-                            </div>
-                          )}
+        {/* ⚡ కంపారిజన్ బటన్ & యాక్షన్ బటన్స్ */}
+        <div className="mt-3 pt-2.5 border-t border-slate-100 space-y-2">
+          
+          {/* 1. కంపారిజన్ బటన్ (ఇది ఆటోమొబైల్స్ మరియు ఎలక్ట్రానిక్స్ రెండింటికీ వస్తుంది) */}
+          <button 
+            onClick={async () => {
+              try {
+                const res = await api.get(`/items/compare?name=${item.name}`);
+                setComparisonData(res.data);
+                setShowCompareModal(true);
+              } catch (err) { alert("కంపారిజన్ డేటా లేదు!"); }
+            }}
+            className="w-full py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 border border-blue-200"
+          >
+            <Search className="w-3 h-3" /> Compare Prices 📊
+          </button>
 
-                          {item.description && (
-                            <div className="max-h-12 overflow-y-auto scrollbar-none my-1 pr-1">
-                              <p className="text-[9px] font-medium text-slate-500 leading-snug">
-                                {item.description}
-                              </p>
-                            </div>
-                          )}
-
-                          <div className="mt-2">
-                            <p className="text-[8px] font-black uppercase text-slate-400 tracking-wider">
-                              {item.category === "Automobile" ? "On-Road Price" : "Price"}
-                            </p>
-                            <p className="text-sm font-black text-blue-600 italic">
-                              ₹{item.price}
-                            </p>
-                            {item.category === "Automobile" && (
-                        <p className="text-[7px] font-bold text-slate-400 mt-1 italic leading-tight">
-                          * On-Road price subject to change based on RTO and insurance.
-                        </p>
-                      )}
-                          </div>
-                        </div>
-
-                        {item.category === "Automobile" ? (
-                          <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
-                            <span className={`text-[8px] font-bold uppercase px-2 py-0.5 rounded-md ${
-  item.isAvailable !== false ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'
-}`}>
-  {item.isAvailable !== false ? 'In Stock' : 'Out of Stock'}
-</span>
-                            <button 
-                              onClick={() => {
-                                setSelectedVehicle(item);
-                                setShowTestDriveModal(true);
-                              }}
-                              className="bg-slate-900 hover:bg-amber-600 text-white px-3.5 py-2 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all shadow-sm active:scale-95"
-                            >
-                              🚗 Book Test Drive
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
-                            <span className="text-[8px] font-bold text-emerald-600 uppercase bg-emerald-50 px-2 py-0.5 rounded-md">In Stock</span>
-                            <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border">
-                              <button onClick={() => removeFromCart(item)} className="p-1 bg-white rounded-lg"><Minus className="w-2.5 h-2.5 text-slate-600" /></button>
-                              <span className="text-[11px] font-black min-w-[14px] text-center">{cart[item._id]?.qty || 0}</span>
-                              <button onClick={() => addToCart(item)} className="p-1 bg-slate-900 text-white rounded-lg"><Plus className="w-2.5 h-2.5" /></button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  ))}
+          {/* 2. కింది యాక్షన్ బటన్స్ (కేటగిరీ బట్టి మారుతాయి) */}
+          <div className="flex items-center justify-between">
+            {item.category === "Automobile" ? (
+              <button 
+                onClick={() => { setSelectedVehicle(item); setShowTestDriveModal(true); }}
+                className="w-full bg-slate-900 hover:bg-amber-600 text-white py-2 rounded-xl text-[9px] font-black uppercase transition-all"
+              >
+                🚗 Book Test Drive
+              </button>
+            ) : (
+              <>
+                <span className="text-[8px] font-bold text-emerald-600 uppercase bg-emerald-50 px-2 py-0.5 rounded-md">In Stock</span>
+                <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border">
+                  <button onClick={() => removeFromCart(item)} className="p-1 bg-white rounded-lg"><Minus className="w-2.5 h-2.5" /></button>
+                  <span className="text-[11px] font-black min-w-[14px] text-center">{cart[item._id]?.qty || 0}</span>
+                  <button onClick={() => addToCart(item)} className="p-1 bg-slate-900 text-white rounded-lg"><Plus className="w-2.5 h-2.5" /></button>
                 </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  ))}
+</div>
+</div>
               </div>
             ))
           )}
@@ -1990,7 +1963,116 @@ if (!owner || !owner.isApproved) {
         </motion.div>
       )}
     </AnimatePresence>
+<AnimatePresence>
+  {showCompareModal && (
+    <motion.div 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      exit={{ opacity: 0 }} 
+      className="fixed inset-0 z-[400] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 sm:p-6"
+    >
+      <motion.div 
+        initial={{ scale: 0.95, y: 20 }} 
+        animate={{ scale: 1, y: 0 }} 
+        exit={{ scale: 0.95, y: 20 }}
+        className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl relative text-slate-900 max-h-[85vh] flex flex-col overflow-hidden border border-slate-100"
+      >
+        {/* Modal Header */}
+        <div className="px-6 sm:px-8 py-6 bg-slate-900 text-white flex justify-between items-center relative">
+          <div>
+            <span className="text-[9px] font-black uppercase tracking-[0.25em] text-amber-400 italic">Sudara Matrix Intelligence</span>
+            <h3 className="text-xl sm:text-2xl font-black uppercase italic tracking-tighter mt-0.5">Price Comparison Matrix 📊</h3>
+          </div>
+          <button 
+            onClick={() => setShowCompareModal(false)} 
+            className="p-2.5 bg-white/10 hover:bg-rose-500 rounded-full text-white transition-all active:scale-90"
+          >
+            <X className="w-4 h-4"/>
+          </button>
+        </div>
+        
+        {/* Modal Content */}
+        <div className="p-6 sm:p-8 overflow-y-auto space-y-4 scrollbar-custom bg-slate-50/50 flex-1">
+          {comparisonData.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-slate-200">
+              <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">ఈ ఐటమ్ వేరే స్టోర్స్‌లో అందుబాటులో లేదు.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {comparisonData.map((compItem, idx) => {
+                // 💡 కేటగిరీని బట్టి డైనమిక్ టెక్స్ట్ సెట్ చేయడం
+                const isAuto = compItem.category?.toLowerCase() === "automobile";
+                const badgeText = isAuto ? "Verified Showroom" : "Verified Hub Store";
+                const priceLabel = isAuto ? "On-Road Price" : "Hub Price";
+                const visitButtonText = isAuto ? "Visit Showroom ➔" : "Visit Store ➔";
 
+                return (
+                  <div 
+                    key={idx} 
+                    className="bg-white p-5 sm:p-6 rounded-[2rem] border border-slate-200/80 shadow-xs hover:shadow-md transition-all flex flex-col gap-4 relative overflow-hidden group"
+                  >
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                      {/* Left: Store Info */}
+                      <div className="space-y-1.5 min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="bg-amber-50 text-amber-800 border border-amber-200 text-[8px] font-black uppercase px-2.5 py-1 rounded-md">
+                            {badgeText}
+                          </span>
+                          {compItem.isAvailable ? (
+                            <span className="bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase px-2.5 py-1 rounded-md">
+                              In Stock ✅
+                            </span>
+                          ) : (
+                            <span className="bg-rose-50 text-rose-600 text-[8px] font-black uppercase px-2.5 py-1 rounded-md">
+                              Out of Stock ❌
+                            </span>
+                          )}
+                        </div>
+
+                        <h4 className="font-black text-sm sm:text-base uppercase text-slate-900 tracking-tight truncate">
+                          {compItem.showroomName}
+                        </h4>
+                        
+                        <p className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
+                          <MapPin className="w-3 h-3 text-amber-500 shrink-0" /> {compItem.location || "Local Area"}
+                        </p>
+                      </div>
+
+                      {/* Right: Pricing Box */}
+                      <div className="w-full sm:w-auto bg-slate-900 text-white p-4 rounded-2xl flex sm:flex-col justify-between items-center sm:items-end shrink-0 shadow-inner">
+                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">{priceLabel}</span>
+                        <span className="text-xl sm:text-2xl font-black italic text-amber-400 tracking-tighter mt-0.5">
+                          ₹{compItem.price}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Visit Button */}
+                    <button 
+                      onClick={() => {
+                        window.location.href = `/restaurant/${compItem.ownerId}`;
+                      }}
+                      className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all"
+                    >
+                      <Building2 className="w-4 h-4" /> {visitButtonText}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Modal Footer */}
+        <div className="p-4 bg-white border-t border-slate-100 text-center">
+          <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">
+            Sudara Hub • Hyperlocal Price Comparison Engine
+          </p>
+        </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
     {Object.keys(counterCart).length > 0 && (
       <motion.div
         initial={{ opacity: 0, y: 100 }}

@@ -237,4 +237,39 @@ router.post("/add-from-master", async (req, res) => {
     return res.status(500).json({ message: "Failed to add item from master catalog", details: err.message });
   }
 });
+// 📊 Universal Price Comparison Route (ఏ ఐటమ్‌కైనా పనిచేస్తుంది)
+router.get("/compare", async (req, res) => {
+  try {
+    const { name } = req.query;
+    if (!name) {
+      return res.status(400).json({ message: "Item name is required" });
+    }
+
+    // ఆటోమొబైల్స్ మాత్రమే అని కాకుండా, అన్ని కేటగిరీల ఐటమ్స్ వచ్చేలా క్వెరీ
+    const similarItems = await Item.find({ 
+      name: { $regex: new RegExp(name, "i") } 
+    }).populate('ownerId', 'name address phone state district collegeName');
+
+    const comparisonResults = similarItems.map(item => {
+      const ownerObj = item.ownerId || {};
+      const locationParts = [ownerObj.collegeName, ownerObj.district, ownerObj.state].filter(Boolean);
+      const fullLocation = locationParts.length > 0 ? locationParts.join(", ") : (ownerObj.address || "Local Area");
+
+      return {
+        ownerId: ownerObj._id,
+        showroomName: ownerObj.name || "Local Store",
+        location: fullLocation,
+        price: item.price,
+        category: item.category || "General",
+        benefits: item.description || "Standard Support",
+        isAvailable: item.isAvailable !== false
+      };
+    });
+
+    res.status(200).json(comparisonResults);
+  } catch (err) {
+    console.error("Comparison Error:", err);
+    res.status(500).json({ message: "Failed to compare prices" });
+  }
+});
 export default router;
