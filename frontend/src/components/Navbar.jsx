@@ -54,16 +54,19 @@ useEffect(() => {
       <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
         
         {/* 🏢 Logo Section */}
-        <Link to="/" className="relative group flex items-center">
-          <img 
-            src="/SUDAR.png" 
-            alt="Sudara Logo"
-            className="h-7 md:h-10 w-auto object-contain transition-transform duration-500 group-hover:scale-105"
-            onError={(e) => (e.target.style.display = 'none')}
-          />
-          {/* Indigo Underline on hover */}
-          <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-indigo-600 transition-all duration-300 group-hover:w-full"></div>
-        </Link>
+        <Link 
+  to="/" 
+  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
+  className="relative group flex items-center"
+>
+  <img 
+    src="/SUDAR.png" 
+    alt="Sudara Logo"
+    className="h-7 md:h-10 w-auto object-contain transition-transform duration-500 group-hover:scale-105"
+    onError={(e) => (e.target.style.display = 'none')}
+  />
+  <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-indigo-600 transition-all duration-300 group-hover:w-full"></div>
+</Link>
 
         {/* 💻 Desktop Menu */}
         <div className="hidden lg:flex items-center space-x-10">

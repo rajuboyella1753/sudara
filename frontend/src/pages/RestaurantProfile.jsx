@@ -1083,20 +1083,23 @@ if (!owner || !owner.isApproved) {
             </p>
           )}
         </div>
-<div className="bg-amber-50/60 p-3 rounded-2xl border border-amber-200/60 space-y-1.5 mt-2">
-  <p className="text-[9px] font-black uppercase text-amber-900 flex items-center justify-between">
-    <span>💳 లోన్ & EMI ఆప్షన్:</span>
-    <span className="text-blue-600">₹{item.estimatedEMI}/నెల</span>
-  </p>
-  <p className="text-[8px] font-bold text-slate-600 flex justify-between">
-    <span>కనీస డౌన్‌పేమెంట్:</span>
-    <span className="text-slate-900 font-black">₹{item.downPayment}</span>
-  </p>
-  <p className="text-[8px] font-bold text-slate-600 flex justify-between">
-    <span>అర్హతగల కనీస సాలరీ:</span>
-    <span className="text-slate-900 font-black">₹{item.requiredSalary} / నెల</span>
-  </p>
-</div>
+{/* 💳 కేవలం ఆటోమొబైల్స్‌కి మాత్రమే లోన్ & EMI బాక్స్ కనిపించడానికి */}
+{item.category === "Automobile" && (item.downPayment || item.estimatedEMI) && (
+  <div className="bg-amber-50/60 p-3 rounded-2xl border border-amber-200/60 space-y-1.5 mt-2">
+    <p className="text-[9px] font-black uppercase text-amber-900 flex items-center justify-between">
+      <span>💳 లోన్ & EMI ఆప్షన్:</span>
+      <span className="text-blue-600">₹{item.estimatedEMI}/నెల</span>
+    </p>
+    <p className="text-[8px] font-bold text-slate-600 flex justify-between">
+      <span>కనీస డౌన్‌పేమెంట్:</span>
+      <span className="text-slate-900 font-black">₹{item.downPayment}</span>
+    </p>
+    <p className="text-[8px] font-bold text-slate-600 flex justify-between">
+      <span>అర్హతగల కనీస సాలరీ:</span>
+      <span className="text-slate-900 font-black">₹{item.requiredSalary} / నెల</span>
+    </p>
+  </div>
+)}
       </div>
 
       {/* యాక్షన్ & కంపారిజన్ బటన్స్ */}
