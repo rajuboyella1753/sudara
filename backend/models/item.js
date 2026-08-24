@@ -18,6 +18,9 @@ const itemSchema = new mongoose.Schema({
 
   mileageOrRange: { type: String, default: "" },
   fuelType: { type: String, default: "" },
+  downPayment: { type: String, default: "" },       // కనీస డౌన్‌పేమెంట్
+  estimatedEMI: { type: String, default: "" },      // అంచనా నెలవారీ EMI
+  requiredSalary: { type: String, default: "" },
   material: { type: String, default: "" }, 
 
   // ownerId ఇప్పుడు మాస్టర్ ఐటమ్స్ కోసం required కాకుండా ఉండాలి (required: false)

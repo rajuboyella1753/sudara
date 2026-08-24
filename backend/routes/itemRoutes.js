@@ -20,6 +20,7 @@ router.post("/add", upload.single('image'), async (req, res) => {
       description, 
       isAvailable, 
       mileageOrRange, 
+      downPayment, estimatedEMI, requiredSalary,
       fuelType, 
       material 
     } = req.body;
@@ -44,6 +45,9 @@ router.post("/add", upload.single('image'), async (req, res) => {
       isAvailable: parsedAvailability,
       ownerId,
       image: imageUrl,
+      downPayment: downPayment || "",       // 👈 సేవ్ చేస్తున్నాం
+      estimatedEMI: estimatedEMI || "",     // 👈 సేవ్ చేస్తున్నాం
+      requiredSalary: requiredSalary || "",
       // 🎯 డేటాబేస్ లో పర్ఫెక్ట్ గా సేవ్ అయ్యేలా ఇక్కడ యాడ్ చేయాలి
       mileageOrRange: mileageOrRange || "",
       fuelType: fuelType || "",
@@ -84,6 +88,7 @@ router.put("/update/:id", upload.single('image'), async (req, res) => {
       isAvailable, 
       mileageOrRange, 
       fuelType, 
+      downPayment, estimatedEMI, requiredSalary,
       material 
     } = req.body; 
     
@@ -96,6 +101,9 @@ router.put("/update/:id", upload.single('image'), async (req, res) => {
       isAvailable: isAvailable === 'true' || isAvailable === true,
       mileageOrRange: mileageOrRange || "",
       fuelType: fuelType || "",
+      downPayment,
+      estimatedEMI,
+      requiredSalary,
       material: material || ""
     };
     
@@ -153,7 +161,7 @@ router.get("/owner/:ownerId", async (req, res) => {
     const { ownerId } = req.params;
     
     const items = await Item.find({ ownerId })
-      .select("name price category subCategory description image isAvailable ownerId mileageOrRange fuelType material") // 👈 ఇక్కడ 'description' యాడ్ చెయ్యి
+      .select("name price category subCategory description image isAvailable ownerId mileageOrRange fuelType material downPayment estimatedEMI requiredSalary") // 👈 ఇక్కడ 'description' యాడ్ చెయ్యి
       .lean();
       console.log("🔍 Backend Sending Items with Description:", items.map(i => ({ name: i.name, desc: i.description })));
     console.log("Fetched Items for Owner:", items.length);

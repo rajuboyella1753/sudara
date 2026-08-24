@@ -1083,6 +1083,20 @@ if (!owner || !owner.isApproved) {
             </p>
           )}
         </div>
+<div className="bg-amber-50/60 p-3 rounded-2xl border border-amber-200/60 space-y-1.5 mt-2">
+  <p className="text-[9px] font-black uppercase text-amber-900 flex items-center justify-between">
+    <span>💳 లోన్ & EMI ఆప్షన్:</span>
+    <span className="text-blue-600">₹{item.estimatedEMI}/నెల</span>
+  </p>
+  <p className="text-[8px] font-bold text-slate-600 flex justify-between">
+    <span>కనీస డౌన్‌పేమెంట్:</span>
+    <span className="text-slate-900 font-black">₹{item.downPayment}</span>
+  </p>
+  <p className="text-[8px] font-bold text-slate-600 flex justify-between">
+    <span>అర్హతగల కనీస సాలరీ:</span>
+    <span className="text-slate-900 font-black">₹{item.requiredSalary} / నెల</span>
+  </p>
+</div>
       </div>
 
       {/* యాక్షన్ & కంపారిజన్ బటన్స్ */}
@@ -2067,8 +2081,8 @@ if (!owner || !owner.isApproved) {
                       <div className="w-full sm:w-auto bg-slate-900 text-white p-4 rounded-2xl flex sm:flex-col justify-between items-center sm:items-end shrink-0 shadow-inner">
                         <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">{priceLabel}</span>
                         <span className="text-xl sm:text-2xl font-black italic text-amber-400 tracking-tighter mt-0.5">
-                          ₹{compItem.price}
-                        </span>
+                        ₹{compItem.price} {compItem.category?.toLowerCase() === "automobile" ? "Lakhs" : ""}
+                      </span>
                       </div>
                     </div>
 

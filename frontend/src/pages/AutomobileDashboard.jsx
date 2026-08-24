@@ -39,6 +39,9 @@ export default function AutomobileDashboard() {
     price: "",
     mileageOrRange: "45 kmpl",
     fuelType: "Petrol",
+    downPayment: "",
+    estimatedEMI: "", 
+    requiredSalary: "",
     description: "",
     isAvailable: true
   });
@@ -163,7 +166,22 @@ const calculatedAmount = useMemo(() => {
   const months = planDuration === 90 ? 3 : 1;
   return baseRate * months; // 30 రోజులకు 699, 90 రోజులకు (699 * 3) ఆటోమేటిక్‌గా వస్తుంది
 }, [planDuration]);
-
+// ప్రైస్ ఎంటర్ చేయగానే ఆటోమేటిక్‌గా 20% డౌన్‌పేమెంట్ మరియు 3 సంవత్సరాల EMI కాలిక్యులేట్ అవ్వడానికి
+const calculateFinance = (price) => {
+  const numericPrice = Number(price) || 0;
+  const downPayment = Math.round(numericPrice * 0.2); // 20% Downpayment
+  const loanAmount = numericPrice - downPayment;
+  const monthlyEMI = Math.round((loanAmount * 1.1) / 36); // అంచనాగా 3 సంవత్సరాలకు (10% ఇంట్రెస్ట్ కలిపి)
+  const requiredSalary = monthlyEMI * 2.5; // సాధారణంగా EMI కి 2.5 రెట్లు సాలరీ ఉండాలి
+  
+  setNewVehicle(prev => ({
+    ...prev,
+    price,
+    downPayment: downPayment.toString(),
+    estimatedEMI: monthlyEMI.toString(),
+    requiredSalary: requiredSalary.toString()
+  }));
+};
   // రోజుల కౌంట్‌డౌన్ లాజిక్
   const daysRemaining = useMemo(() => {
     if (!owner?.nextBillingDate) return 0;
@@ -259,7 +277,9 @@ const handleAddVehicle = async (e) => {
       formData.append("fuelType", newVehicle.fuelType || "Petrol");
       formData.append("description", newVehicle.description || "");
       formData.append("isAvailable", String(newVehicle.isAvailable)); // స్ట్రింగ్‌గా పంపిస్తే బ్యాక్‌ఎండ్‌లో ఈజీగా పార్സ് అవుతుంది
-      
+      formData.append("downPayment", newVehicle.downPayment || "");
+      formData.append("estimatedEMI", newVehicle.estimatedEMI || "");
+      formData.append("requiredSalary", newVehicle.requiredSalary || "");
       if (imageFile) {
         formData.append("image", imageFile);
       }
@@ -333,7 +353,9 @@ const handleAddVehicle = async (e) => {
       formData.append("fuelType", editingItem.fuelType || "Petrol");
       formData.append("description", editingItem.description || "");
       formData.append("isAvailable", editingItem.isAvailable);
-      
+      formData.append("downPayment", editingItem.downPayment || "");
+          formData.append("estimatedEMI", editingItem.estimatedEMI || "");
+          formData.append("requiredSalary", editingItem.requiredSalary || "");
       if (imageFile) {
         formData.append("image", imageFile);
       }
@@ -669,6 +691,7 @@ const handleAcceptTestDrive = async (driveId) => {
                     className="bg-white rounded-3xl border border-slate-200 shadow-2xs overflow-hidden flex flex-col justify-between transition-all hover:border-slate-300 hover:shadow-md"
                   >
                     <div>
+                      {/* {console.log("Single Item Data:", item)} */}
                       <div className="w-full h-48 sm:h-52 bg-slate-100 overflow-hidden relative flex items-center justify-center p-4">
                         {item.image ? (
                           <img src={item.image} alt={item.name} className="max-h-full max-w-full object-contain drop-shadow-sm" />
@@ -690,6 +713,30 @@ const handleAcceptTestDrive = async (driveId) => {
                         <div className="pt-2">
                           <span className="text-base font-black text-amber-600">₹{item.price}</span>
                         </div>
+{/* 💳 ఆటోమొబైల్ ఫైనాన్స్ & EMI డిస్‌ప్లే బాక్స్ */}
+{(() => {
+  const priceNum = Number(item.price) || 0;
+  const dp = item.downPayment || Math.round(priceNum * 0.2);
+  const emi = item.estimatedEMI || Math.round(((priceNum - dp) * 1.1) / 36);
+  const salary = item.requiredSalary || (emi * 2.5);
+
+  return (
+    <div className="bg-amber-50/70 p-2.5 rounded-2xl border border-amber-200/60 space-y-1 mt-2 text-[10px]">
+      <div className="flex justify-between font-bold text-slate-700">
+        <span className="text-amber-900 font-black">అంచనా EMI:</span>
+        <span className="text-blue-600 font-black">₹{emi} / నెల</span>
+      </div>
+      <div className="flex justify-between text-slate-600 font-medium">
+        <span>డౌన్‌పేమెంట్:</span>
+        <span className="text-slate-900 font-bold">₹{dp}</span>
+      </div>
+      <div className="flex justify-between text-slate-600 font-medium">
+        <span>కనీస జీతం:</span>
+        <span className="text-slate-900 font-bold">₹{salary} / నెల</span>
+      </div>
+    </div>
+  );
+})()}
                       </div>
                     </div>
 
@@ -979,21 +1026,27 @@ const handleAcceptTestDrive = async (driveId) => {
                   masterCatalog
                     .filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()))
                     .map((mItem) => (
-                      <div key={mItem._id || mItem.name} className="flex items-center justify-between p-3.5 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-slate-100/60 transition-all">
-                        <div className="flex items-center gap-3">
-                          <img src={mItem.image || "https://ui-avatars.com/api/?name=" + mItem.name} className="w-12 h-12 object-contain bg-white rounded-xl p-1 border" alt="" />
-                          <div>
-                            <h4 className="font-black uppercase text-xs text-slate-900">{mItem.name}</h4>
-                            <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md uppercase">{mItem.subCategory || "Bikes"}</span>
-                          </div>
-                        </div>
-                        <button 
-                          onClick={() => handleAddFromMaster(mItem)}
-                          className="bg-slate-900 hover:bg-amber-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shadow-sm"
-                        >
-                          + షోరూమ్‌కి జోడించు / Add
-                        </button>
-                      </div>
+                      <div key={mItem._id || mItem.name} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-slate-100/60 transition-all">
+  
+  {/* లెఫ్ట్ సైడ్: ఇమేజ్ మరియు పేరు */}
+  <div className="flex items-center gap-3 min-w-0 flex-1">
+    <img src={mItem.image || "https://ui-avatars.com/api/?name=" + mItem.name} className="w-12 h-12 object-contain bg-white rounded-xl p-1 border shrink-0" alt="" />
+    <div className="min-w-0">
+      <h4 className="font-black uppercase text-xs sm:text-sm text-slate-900 truncate">{mItem.name}</h4>
+      <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md uppercase inline-block mt-0.5">{mItem.subCategory || "Bikes"}</span>
+    </div>
+  </div>
+
+  {/* రైట్ సైడ్: యాడ్ బటన్ (మొబైల్‌లో ఫుల్ విడ్త్, పెద్ద స్క్రీన్లలో ఆటో) */}
+  <button 
+    onClick={() => handleAddFromMaster(mItem)}
+    className="w-full sm:w-auto bg-slate-900 hover:bg-amber-600 text-white px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shadow-sm shrink-0 flex items-center justify-center gap-1"
+  >
+    <span>+ షోరూమ్‌కి జోడించు</span>
+    <span className="hidden xs:inline">/ Add</span>
+  </button>
+
+</div>
                     ))
                 )}
               </div>
@@ -1198,7 +1251,39 @@ const handleAcceptTestDrive = async (driveId) => {
                   <input type="text" required placeholder="95000" value={newVehicle.price} onChange={(e)=>setNewVehicle({...newVehicle, price: e.target.value})} className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-amber-600 text-slate-900" />
                 </div>
               </div>
-
+{/* 💳 ఆటోమొబైల్ ఫైనాన్స్ & EMI ఇన్‌పుట్ ఫీల్డ్స్ */}
+<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 bg-amber-50/60 p-3 rounded-2xl border border-amber-200/60 my-2">
+  <div>
+    <label className="text-[8px] font-black uppercase text-amber-900 block mb-1">డౌన్‌పేమెంట్ (₹)</label>
+    <input 
+      type="text" 
+      placeholder="100000" 
+      value={newVehicle.downPayment} 
+      onChange={(e)=>setNewVehicle({...newVehicle, downPayment: e.target.value})} 
+      className="w-full bg-white border border-amber-200 px-3 py-2 rounded-xl font-bold text-xs outline-none focus:border-amber-600 text-slate-900" 
+    />
+  </div>
+  <div>
+    <label className="text-[8px] font-black uppercase text-amber-900 block mb-1">అంచనా EMI/నెల (₹)</label>
+    <input 
+      type="text" 
+      placeholder="12000" 
+      value={newVehicle.estimatedEMI} 
+      onChange={(e)=>setNewVehicle({...newVehicle, estimatedEMI: e.target.value})} 
+      className="w-full bg-white border border-amber-200 px-3 py-2 rounded-xl font-bold text-xs outline-none focus:border-amber-600 text-slate-900" 
+    />
+  </div>
+  <div>
+    <label className="text-[8px] font-black uppercase text-amber-900 block mb-1">కనీస సాలరీ (₹)</label>
+    <input 
+      type="text" 
+      placeholder="30000" 
+      value={newVehicle.requiredSalary} 
+      onChange={(e)=>setNewVehicle({...newVehicle, requiredSalary: e.target.value})} 
+      className="w-full bg-white border border-amber-200 px-3 py-2 rounded-xl font-bold text-xs outline-none focus:border-amber-600 text-slate-900" 
+    />
+  </div>
+</div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">మైలేజ్ / రేంజ్ / Mileage/Range</label>
@@ -1280,7 +1365,36 @@ const handleAcceptTestDrive = async (driveId) => {
                     <input type="text" required value={editingItem.price} onChange={(e)=>setEditingItem({...editingItem, price: e.target.value})} className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-amber-600" />
                   </div>
                 </div>
-
+{/* 💳 ఎడిట్ కోసం ఫైనాన్స్ ఇన్‌పుట్స్ */}
+<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 bg-amber-50/60 p-3 rounded-2xl border border-amber-200/60 my-2">
+  <div>
+    <label className="text-[8px] font-black uppercase text-amber-900 block mb-1">డౌన్‌పేమెంట్ (₹)</label>
+    <input 
+      type="text" 
+      value={editingItem.downPayment || ""} 
+      onChange={(e)=>setEditingItem({...editingItem, downPayment: e.target.value})} 
+      className="w-full bg-white border border-amber-200 px-3 py-2 rounded-xl font-bold text-xs outline-none focus:border-amber-600 text-slate-900" 
+    />
+  </div>
+  <div>
+    <label className="text-[8px] font-black uppercase text-amber-900 block mb-1">అంచనా EMI/నెల (₹)</label>
+    <input 
+      type="text" 
+      value={editingItem.estimatedEMI || ""} 
+      onChange={(e)=>setEditingItem({...editingItem, estimatedEMI: e.target.value})} 
+      className="w-full bg-white border border-amber-200 px-3 py-2 rounded-xl font-bold text-xs outline-none focus:border-amber-600 text-slate-900" 
+    />
+  </div>
+  <div>
+    <label className="text-[8px] font-black uppercase text-amber-900 block mb-1">కనీస సాలరీ (₹)</label>
+    <input 
+      type="text" 
+      value={editingItem.requiredSalary || ""} 
+      onChange={(e)=>setEditingItem({...editingItem, requiredSalary: e.target.value})} 
+      className="w-full bg-white border border-amber-200 px-3 py-2 rounded-xl font-bold text-xs outline-none focus:border-amber-600 text-slate-900" 
+    />
+  </div>
+</div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">మైలేజ్ / రేంజ్</label>
