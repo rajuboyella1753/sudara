@@ -21,7 +21,9 @@ export default function Home() {
   const [filteredRestaurants, setFilteredRestaurants] = useState([]);
   const [userCoords, setUserCoords] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+  const [aiResults, setAiResults] = useState([]);
+const [aiLoading, setAiLoading] = useState(false);
+const [aiSearched, setAiSearched] = useState(false);
   const [dbStates, setDbStates] = useState([]);
   const [dbDistricts, setDbDistricts] = useState([]);
   const [selectedState, setSelectedState] = useState("Andhra Pradesh");
@@ -78,19 +80,84 @@ const fetchOwners = async () => {
     setLoading(false); 
   }
 };
+const getLocation = () => {
 
-  const getLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        },
-        (err) => console.error("Location Denied"),
-        { enableHighAccuracy: true }
-      );
-    }
-  };
+  if (navigator.geolocation) {
 
+    navigator.geolocation.getCurrentPosition(
+
+      (pos) => {
+
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+
+        console.log("📍 USER LOCATION:", {
+          latitude: lat,
+          longitude: lng
+        });
+
+        setUserCoords({
+          lat,
+          lng
+        });
+
+      },
+
+      (err) => {
+        console.error("❌ Location Denied:", err);
+      },
+
+      {
+        enableHighAccuracy: true
+      }
+    );
+
+  } else {
+    console.error("❌ Geolocation is not supported");
+  }
+
+};
+const handleAISearch = async () => {
+
+  const query = searchTerm.trim();
+
+  if (!query) return;
+
+  setAiLoading(true);
+  setAiSearched(true);
+
+  try {
+
+    const response = await api.post("/search/universal-ai", {
+
+      query,
+
+      latitude: userCoords?.lat ?? null,
+
+      longitude: userCoords?.lng ?? null,
+
+    });
+
+    console.log("🤖 SUDARA AI SEARCH:", response.data);
+
+    setAiResults(response.data?.results || []);
+
+  } catch (error) {
+
+    console.error(
+      "❌ SUDARA AI SEARCH ERROR:",
+      error.response?.data || error.message
+    );
+
+    setAiResults([]);
+
+  } finally {
+
+    setAiLoading(false);
+
+  }
+
+};
   const requestNotificationPermission = async () => {
     if ("Notification" in window) {
       const permission = await Notification.requestPermission();
@@ -250,7 +317,7 @@ useEffect(() => {
     <div className="max-w-6xl mx-auto flex flex-col gap-5">
       
       {/* 🚀 Hub Type Responsive Tabs Bar */}
-      <div className="w-full">
+<div className="w-full">
   <div className="relative group">
     <Compass className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-blue-600 pointer-events-none" />
     <select 
@@ -263,15 +330,10 @@ useEffect(() => {
       className="w-full bg-white border border-slate-200 py-4 sm:py-5 pl-12 sm:pl-14 pr-10 rounded-[1.75rem] sm:rounded-[2rem] text-[10px] sm:text-xs font-black uppercase tracking-widest outline-none appearance-none cursor-pointer focus:border-blue-400 shadow-xl shadow-blue-900/5 text-slate-700"
     >
       <option value="All">All Categories</option>
-      <option value="Restaurant">Restaurant</option>
-      <option value="Automobile">Automobile Showroom</option>
-      <option value="Electronics">Electronics</option>
-      {/* <option value="Furniture">Furniture & Living</option>
-       <option value="Clothing">Clothing</option>
-       <option value="Grocery">Grocery</option> */}
-       
-      {/*<option value="Services">Services</option>
-      <option value="General">General</option> */}
+      {/* 🚀 ఇక్కడ hubs బదులు restaurants అని మార్చాం */}
+      {Array.isArray(restaurants) && Array.from(new Set(restaurants.map(r => r.category))).filter(Boolean).map((type) => (
+        <option key={type} value={type}>{type}</option>
+      ))}
     </select>
     <ChevronDown className="absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
   </div>
@@ -317,15 +379,40 @@ useEffect(() => {
           <ChevronDown className="absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
         </div>
             <div className="md:col-span-6 relative group">
-          <Search className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-slate-300 group-focus-within:text-blue-600 transition-all" />
-          <input 
-            type="text" 
-            placeholder="Search hub name..." 
-            value={searchTerm} 
-            onChange={(e) => setSearchTerm(e.target.value)} 
-            className="w-full bg-white border border-slate-200 py-4 sm:py-5 pl-12 sm:pl-14 pr-6 rounded-[1.75rem] sm:rounded-[2rem] text-xs sm:text-sm font-bold outline-none focus:border-blue-400 transition-all shadow-xl shadow-blue-900/5 placeholder:text-slate-300" 
-          />
-        </div>
+
+  <div className="absolute left-4 sm:left-5 top-1/2 -translate-y-1/2 z-10">
+    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-orange-500 flex items-center justify-center shadow-md">
+      <Search className="w-4 h-4 text-white" />
+    </div>
+  </div>
+
+  <input
+    type="text"
+    placeholder="Ask Sudara AI... e.g. chicken biryani under ₹250"
+    value={searchTerm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+    onKeyDown={(e) => {
+      if (e.key === "Enter") {
+        handleAISearch();
+      }
+    }}
+    className="w-full bg-white border-2 border-blue-100 py-4 sm:py-5 pl-16 pr-16 rounded-[1.75rem] sm:rounded-[2rem] text-xs sm:text-sm font-bold outline-none focus:border-blue-500 transition-all shadow-xl shadow-blue-900/10 placeholder:text-slate-300"
+  />
+
+  <button
+    type="button"
+    onClick={handleAISearch}
+    disabled={aiLoading || !searchTerm.trim()}
+    className="absolute right-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-2xl bg-slate-900 text-white flex items-center justify-center hover:bg-blue-600 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+  >
+    {aiLoading ? (
+      <Activity className="w-5 h-5 animate-spin" />
+    ) : (
+      <ArrowUpRight className="w-5 h-5" />
+    )}
+  </button>
+
+</div>
       </div>
 
       {/* Veg/Non-Veg & Route Planner Action Row (కేవలం రెస్టారెంట్ అయితేనే Veg/Non-Veg కనిపిస్తాయి) */}
@@ -400,7 +487,267 @@ useEffect(() => {
         <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-orange-100/30 blur-[120px] rounded-full -z-10"></div>
         <div className="absolute top-40 left-0 w-[400px] h-[400px] bg-blue-100/30 blur-[120px] rounded-full -z-10"></div>
 
-        {loading ? (
+       {aiSearched ? (
+
+  // =====================================================
+  // 🤖 SUDARA AI SEARCH RESULTS
+  // =====================================================
+
+  <section className="mb-16">
+
+    <div className="flex items-center justify-between mb-6">
+
+      <div>
+        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-blue-600">
+          SUDARA AI
+        </p>
+
+        <h2 className="text-2xl md:text-3xl font-black uppercase italic tracking-tight text-slate-900">
+          Search Results
+        </h2>
+
+        <p className="text-xs font-bold text-slate-400 mt-1">
+          Results for "{searchTerm}"
+        </p>
+      </div>
+
+      <button
+        onClick={() => {
+          setAiResults([]);
+          setAiSearched(false);
+          setSearchTerm("");
+        }}
+        className="px-4 py-2 rounded-xl bg-slate-100 text-slate-500 text-[9px] font-black uppercase tracking-widest hover:bg-slate-200"
+      >
+        Clear
+      </button>
+
+    </div>
+
+    {aiLoading ? (
+
+      <div className="flex flex-col items-center justify-center py-24">
+
+        <Activity className="w-10 h-10 text-blue-600 animate-spin" />
+
+        <p className="mt-4 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400">
+          Sudara AI is searching...
+        </p>
+
+      </div>
+
+    ) : aiResults.length === 0 ? (
+
+      <div className="bg-white border border-slate-100 rounded-[2rem] p-12 text-center shadow-xl">
+
+        <Search className="w-10 h-10 mx-auto text-slate-300" />
+
+        <h3 className="mt-4 text-lg font-black uppercase italic text-slate-700">
+          No matching items found
+        </h3>
+
+        <p className="mt-2 text-xs font-bold text-slate-400">
+          Try another item or search naturally.
+        </p>
+
+      </div>
+
+    ) : (
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        {aiResults.map((item) => (
+
+          <motion.div
+            key={item.itemId}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-[2rem] border border-slate-100 overflow-hidden shadow-lg hover:shadow-2xl transition-all"
+          >
+
+            {item.image && (
+              <div className="aspect-[16/9] overflow-hidden">
+                <img
+                  src={item.image}
+                  alt={item.itemName}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+
+            <div className="p-6">
+
+              <div className="flex items-start justify-between gap-3">
+
+                <div>
+                  <h3 className="text-lg font-black uppercase italic tracking-tight text-slate-900">
+                    {item.itemName}
+                  </h3>
+
+                  <p className="text-[10px] font-black uppercase tracking-widest text-blue-600 mt-1">
+                    {item.owner?.name}
+                  </p>
+                </div>
+
+                <span className="text-lg font-black text-orange-600">
+                  ₹{item.price}
+                </span>
+
+              </div>
+
+              <div className="flex flex-wrap gap-2 mt-5">
+
+                {userCoords &&
+ item.owner?.latitude &&
+ item.owner?.longitude && (
+  <span className="px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 text-[9px] font-black uppercase">
+    📍{" "}
+    {getDistance(
+      userCoords.lat,
+      userCoords.lng,
+      item.owner.latitude,
+      item.owner.longitude
+    )}
+  </span>
+)}
+
+                <span
+                  className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase ${
+                    item.isAvailable
+                      ? "bg-emerald-50 text-emerald-600"
+                      : "bg-red-50 text-red-500"
+                  }`}
+                >
+                  {item.isAvailable ? "Available" : "Unavailable"}
+                </span>
+
+                {item.owner?.averageRating > 0 && (
+                  <span className="px-3 py-1.5 rounded-lg bg-orange-50 text-orange-600 text-[9px] font-black uppercase">
+                    ⭐ {item.owner.averageRating}
+                  </span>
+                )}
+
+              </div>
+
+              {item.description && (
+                <p className="text-xs text-slate-400 font-medium mt-4 line-clamp-2">
+                  {item.description}
+                </p>
+              )}
+
+              <div className="mt-5 pt-5 border-t border-slate-100">
+
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">
+                  {item.owner?.address ||
+                    item.owner?.district ||
+                    "Location available"}
+                </p>
+
+                <button
+                  onClick={() =>
+                    navigate(`/restaurant/${item.owner?.id}`)
+                  }
+                  className="w-full mt-4 py-3.5 rounded-xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all"
+                >
+                  View Restaurant
+                </button>
+
+              </div>
+
+            </div>
+
+          </motion.div>
+
+        ))}
+
+      </div>
+
+    )}
+
+  </section>
+
+) : (
+
+  // =====================================================
+  // 🏪 EXISTING SUDARA HUB LIST
+  // =====================================================
+
+  loading ? (
+
+    <div className="flex flex-col items-center py-32">
+
+      <Activity className="w-12 h-12 text-blue-600 animate-spin" />
+
+      <p className="mt-4 text-[10px] font-black uppercase text-slate-400 tracking-[0.3em]">
+        Syncing Matrix...
+      </p>
+
+    </div>
+
+  ) : (!isTravelMode && selectedDistrict === "Select") ? (
+
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex flex-col items-center justify-center py-24 text-center"
+    >
+
+      <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 mb-4 border border-blue-100 shadow-md animate-pulse">
+        <MapPin className="w-6 h-6" />
+      </div>
+
+      <h3 className="text-xl font-black uppercase italic text-slate-700 tracking-tight">
+        Discover Your Neighborhood
+      </h3>
+
+      <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-2">
+        Please select your district above to explore Sudara Hubs
+      </p>
+
+    </motion.div>
+
+  ) : filteredRestaurants.length === 0 ? (
+
+    <div className="flex flex-col items-center justify-center py-24 text-center">
+
+      <p className="text-xs font-black text-orange-600 uppercase tracking-widest">
+        No Sudara Hubs registered in this region yet!
+      </p>
+
+    </div>
+
+  ) : (
+
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+      <AnimatePresence>
+
+        {filteredRestaurants.map((res) => (
+
+          <motion.div
+            layout
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            key={res._id}
+            className="group h-full"
+            onClick={() =>
+              res.isStoreOpen &&
+              handleRestaurantClick(res._id)
+            }
+          >
+
+            {/* నీ existing restaurant card మొత్తం ఇక్కడే ఉంచు */}
+
+          </motion.div>
+
+        ))}
+
+      </AnimatePresence>
+
+    </div>
+
+  )
+)}: {loading ? (
   <div className="flex flex-col items-center py-32">
      <Activity className="w-12 h-12 text-blue-600 animate-spin" />
      <p className="mt-4 text-[10px] font-black uppercase text-slate-400 tracking-[0.3em]">Syncing Matrix...</p>

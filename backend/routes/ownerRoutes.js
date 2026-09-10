@@ -56,7 +56,9 @@ router.post("/register", async (req, res) => {
     const existing = await Owner.findOne({ email });
     if (existing) return res.status(400).json({ message: "Owner already exists" });
 
-    // 💡 కేటగిరీని బట్టి రెస్టారెంట్ డేటాని వేరుగా, మిగతా వాటికి వేరుగా హ్యాండ్ చేస్తున్నాం
+    // స్పేసెస్ తొలగించడం
+    const cleanCategory = category ? category.trim() : "Restaurant";
+
     const ownerData = {
       name, 
       ownerName: ownerName || name,
@@ -70,21 +72,26 @@ router.post("/register", async (req, res) => {
       collegeName: collegeName || "General",
       fssaiNumber: fssaiNumber || "",
       gstNumber: gstNumber || "", 
-      category: category || "Restaurant", 
+      category: cleanCategory, 
       isApproved: false 
     };
 
-    // ఒకవేళ కేటగిరీ "Restaurant" అయితేనే ఈ ఎక్స్ట్రా ఫీల్డ్స్ యాడ్ అవుతాయి
-    if (category === "Restaurant") {
+    // కేవలం రెస్టారెంట్ అయితేనే ఫుడ్ వివరాలు
+    if (cleanCategory === "Restaurant") {
       ownerData.foodType = foodType || "Both";
-      ownerData.tableCount = tableCount || 0;
+      ownerData.tableCount = tableCount ? Number(tableCount) : 0;
       ownerData.todaySpecial = todaySpecial || "";
+    } else {
+      ownerData.foodType = "";
+      ownerData.tableCount = 0;
+      ownerData.todaySpecial = "";
     }
 
     const owner = await Owner.create(ownerData);
 
     res.status(201).json({ success: true, owner });
   } catch (err) {
+    console.error("Owner Register Error:", err);
     res.status(500).json({ message: err.message });
   }
 });

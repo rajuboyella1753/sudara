@@ -39,13 +39,15 @@ export default function OwnerRegister() {
 
   const collegesList = ["MBU", "Others"];
   const categoriesList = [
-    { label: "🍔 Restaurants & Food", value: "Restaurant" },
-    { label: "📱 Electronics & Mobiles", value: "Electronics" },
-    { label: "👗 Clothing & Fashion", value: "Clothing" },
-    { label: "🛒 Groceries & Supermarket", value: "Grocery" },
-    { label: "🚗 Automobile Showroom", value: "Automobile" },
-    { label: "🛋️ Furniture & Living", value: "Furniture" },
-  ];
+  { label: "🍔 Restaurants & Food", value: "Restaurant" },
+  { label: "🚗 Automobile Showroom", value: "Automobile" },
+  { label: "📱 Electronics & Mobiles", value: "Electronics" },
+  { label: "👗 Clothing & Fashion", value: "Clothing" },
+  { label: "🛒 Groceries & Supermarket", value: "Grocery" },
+  { label: "🛋️ Furniture & Living", value: "Furniture" },
+  { label: "🔧 Services & Repairs", value: "Services" },
+  { label: "🏬 General Store", value: "General" }
+];
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -147,7 +149,7 @@ export default function OwnerRegister() {
                 </div>
                 <div className="relative">
                   <label className="text-[9px] font-black uppercase text-slate-400 mb-1.5 ml-1 block">స్టోర్ / బిజినెస్ పేరు</label> 
-                  <input type="text" name="name" required placeholder="ఉదా: రాయల్ దాబా" value={form.name} onChange={handleChange} className="w-full bg-slate-50 border-2 border-slate-50 px-4 py-3.5 rounded-2xl focus:border-indigo-100 focus:bg-white focus:outline-none font-bold text-sm transition-all shadow-sm" />
+                  <input type="text" name="name" required placeholder="ఉదా: రాయల్ Business" value={form.name} onChange={handleChange} className="w-full bg-slate-50 border-2 border-slate-50 px-4 py-3.5 rounded-2xl focus:border-indigo-100 focus:bg-white focus:outline-none font-bold text-sm transition-all shadow-sm" />
                 </div>
               </div>
 
@@ -214,7 +216,7 @@ export default function OwnerRegister() {
                   <label className="text-[9px] font-black uppercase text-indigo-600 ml-1">రాష్ట్రం (State)</label>
                   <div className="relative">
                     <select name="state" value={form.state} onChange={handleChange} className="w-full bg-white border-2 border-indigo-50 px-4 py-3.5 rounded-2xl font-bold text-sm outline-none focus:border-indigo-400 appearance-none cursor-pointer shadow-sm">
-                      <option value="Andhra Pradesh">Andhra Pradesh</option>
+                     <option value="Andhra Pradesh">Andhra Pradesh</option>
                       <option value="Telangana">Telangana</option>
                     </select>
                     <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-300 pointer-events-none" />
