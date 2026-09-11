@@ -67,7 +67,43 @@ export const processVoiceOrder = async (req, res) => {
     });
   }
 };
+const generateUniversalSearchAI = async (prompt) => {
+  const models = [
+    "gemini-3.6-flash",
+    "gemini-3.5-flash-lite"
+  ];
 
+  let lastError = null;
+
+  for (const modelName of models) {
+    try {
+      console.log(`🤖 Sudara AI trying model: ${modelName}`);
+
+      const model = genAI.getGenerativeModel({
+        model: modelName
+      });
+
+      const result = await model.generateContent(prompt);
+
+      console.log(`✅ Sudara AI success: ${modelName}`);
+
+      return result;
+
+    } catch (error) {
+      lastError = error;
+
+      console.error(
+        `❌ Sudara AI failed with ${modelName}:`,
+        error?.message || error
+      );
+
+      // Small delay before trying fallback
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+
+  throw lastError;
+};
 
 // ======================================================
 // SUDARA UNIVERSAL SEARCH AI
@@ -94,9 +130,7 @@ export const parseUniversalSearch = async (req, res) => {
     // GEMINI MODEL
     // --------------------------------------------------
 
-    const model = genAI.getGenerativeModel({
-      model: "gemini-3.6-flash"
-    });
+   
 
 
     // --------------------------------------------------
@@ -350,7 +384,7 @@ Output:
     // CALL GEMINI
     // --------------------------------------------------
 
-    const result = await model.generateContent(prompt);
+const result = await generateUniversalSearchAI(prompt);
 
     let responseText = result.response
       .text()
@@ -394,13 +428,8 @@ Output:
         ? parsedData.maxDistanceKm
         : null,
 
-      latitude: parsedData.useUserLocation
-        ? req.body.latitude
-        : null,
-
-      longitude: parsedData.useUserLocation
-        ? req.body.longitude
-        : null,
+    latitude: req.body.latitude,
+    longitude: req.body.longitude,
 
       availability: parsedData.availability,
 

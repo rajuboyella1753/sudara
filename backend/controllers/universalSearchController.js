@@ -101,12 +101,12 @@ export const searchUniversalItems = async ({
 
 
     // CATEGORY
-    if (category) {
-        itemFilter.category = {
-            $regex: String(category),
-            $options: "i"
-        };
-    }
+    // if (category) {
+    //     itemFilter.category = {
+    //         $regex: String(category),
+    //         $options: "i"
+    //     };
+    // }
 
 
     // SUB CATEGORY
@@ -136,14 +136,33 @@ export const searchUniversalItems = async ({
     items = items.filter(
         item => item.ownerId && item.ownerId._id
     );
+// ======================================================
+// BUSINESS CATEGORY FILTER
+// ======================================================
 
+if (category) {
+    const requestedCategory = String(category)
+        .trim()
+        .toLowerCase();
+
+    items = items.filter(item => {
+        const ownerCategory =
+            item.ownerId?.category?.trim().toLowerCase() || "";
+
+        return ownerCategory === requestedCategory;
+    });
+}
 // ======================================================
 // LOCATION
 // ======================================================
 
 const hasLocation =
+    latitude !== null &&
+    latitude !== undefined &&
+    longitude !== null &&
+    longitude !== undefined &&
     Number.isFinite(Number(latitude)) &&
-    Number.isFinite(Number(longitude));
+    Number.isFinite(Number(longitude)); 
 
 console.log("🔥 SEARCH CONTROLLER LOCATION:", {
     latitude,

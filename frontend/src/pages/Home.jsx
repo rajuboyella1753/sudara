@@ -416,22 +416,52 @@ useEffect(() => {
       </div>
 
       {/* Veg/Non-Veg & Route Planner Action Row (కేవలం రెస్టారెంట్ అయితేనే Veg/Non-Veg కనిపిస్తాయి) */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 w-full mt-2">
-        <div className="flex gap-2.5 w-full sm:w-auto">
-          {selectedHubType === "Restaurant" && ["Veg", "Non-Veg"].map((type) => (
-            <button 
-              key={type} 
-              onClick={() => setSelectedFoodType(selectedFoodType === type ? "All" : type)}
-              className={`flex-1 sm:min-w-[140px] px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-[1.5rem] text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all duration-300 border-2 active:scale-95 ${selectedFoodType === type ? "bg-blue-600 text-white border-blue-500 shadow-lg scale-105" : "bg-white text-slate-600 border-slate-100 hover:border-orange-300"}`}
-            >
-              <div className="flex items-center justify-center gap-2">
-                <div className={`w-1.5 h-1.5 rounded-full ${type === 'Veg' ? 'bg-emerald-500' : 'bg-rose-500'} ${selectedFoodType === type ? 'animate-pulse' : ''}`} />
-                <span className="whitespace-nowrap">{type}</span>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
+     <div className="flex flex-col sm:flex-row items-center justify-between gap-3 w-full mt-2">
+  <div className="flex gap-2.5 w-full sm:w-auto">
+
+    {selectedHubType?.trim().toLowerCase() === "restaurant" &&
+      ["Veg", "Non-Veg"].map((type) => (
+
+        <button
+          key={type}
+          onClick={() =>
+            setSelectedFoodType(
+              selectedFoodType === type ? "All" : type
+            )
+          }
+          className={`flex-1 sm:min-w-[140px] px-5 py-3.5 sm:py-4 rounded-xl sm:rounded-[1.5rem] text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all duration-300 border-2 active:scale-95 ${
+            selectedFoodType === type
+              ? "bg-blue-600 text-white border-blue-500 shadow-lg scale-105"
+              : "bg-white text-slate-600 border-slate-100 hover:border-orange-300"
+          }`}
+        >
+
+          <div className="flex items-center justify-center gap-2">
+
+            <div
+              className={`w-1.5 h-1.5 rounded-full ${
+                type === "Veg"
+                  ? "bg-emerald-500"
+                  : "bg-rose-500"
+              } ${
+                selectedFoodType === type
+                  ? "animate-pulse"
+                  : ""
+              }`}
+            />
+
+            <span className="whitespace-nowrap">
+              {type}
+            </span>
+
+          </div>
+
+        </button>
+
+      ))}
+
+  </div>
+</div>
         {/* Route Planner Toggle Button */}
         {/* <button 
           onClick={() => setIsTravelMode(!isTravelMode)}
@@ -643,14 +673,28 @@ useEffect(() => {
                     "Location available"}
                 </p>
 
-                <button
-                  onClick={() =>
-                    navigate(`/restaurant/${item.owner?.id}`)
-                  }
-                  className="w-full mt-4 py-3.5 rounded-xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all"
-                >
-                  View Restaurant
-                </button>
+               <button
+  onClick={() =>
+    navigate(`/restaurant/${item.owner?.id}`)
+  }
+  className="w-full mt-4 py-3.5 rounded-xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all"
+>
+  {item.owner?.category?.trim().toLowerCase() === "restaurant"
+    ? "Enter Restaurant"
+    : item.owner?.category?.trim().toLowerCase() === "automobile"
+    ? "Enter Automobile Showroom"
+    : item.owner?.category?.trim().toLowerCase() === "electronics"
+    ? "Enter Electronics Store"
+    : item.owner?.category?.trim().toLowerCase() === "clothing"
+    ? "Enter Clothing Store"
+    : item.owner?.category?.trim().toLowerCase() === "furniture"
+    ? "Enter Furniture Hub"
+    : item.owner?.category?.trim().toLowerCase() === "grocery"
+    ? "Enter Grocery Store"
+    : item.owner?.category?.trim().toLowerCase() === "services"
+    ? "Enter Services Hub"
+    : `Enter ${item.owner?.category || "Store"}`}
+</button>
 
               </div>
 
@@ -818,34 +862,27 @@ useEffect(() => {
 
               <div className="mt-auto">
                 <button 
-                  disabled={!res.isStoreOpen} 
-                  className={`w-full group/btn relative py-4 rounded-xl font-black uppercase text-[11px] tracking-[0.2em] transition-all duration-300 overflow-hidden flex items-center justify-center gap-3 ${
-                    res.isStoreOpen 
-                      ? 'bg-slate-900 text-white hover:bg-blue-600 shadow-[0_10px_20px_-5px_rgba(15,23,42,0.3)] hover:shadow-blue-600/30 active:scale-95' 
-                      : 'bg-slate-100 text-slate-300 cursor-not-allowed'
-                  }`}
-                >
-                  <div className="absolute inset-0 bg-white/10 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
-                  <span className="relative z-10">
-                    {res.isStoreOpen ? (
-  /* 🎯 కేటగిరీని బట్టి బటన్ టెక్స్ట్ మారే లాజిక్ ఇక్కడ ఉంది రా! */
-  res.category?.toLowerCase() === 'restaurant' 
-    ? 'Enter Restaurant' 
-    : res.category?.toLowerCase() === 'clothing' 
-    ? 'Enter Clothing Store' 
-    : res.category?.toLowerCase() === 'electronics' 
-    ? 'Enter Electronics Store' 
-    : res.category?.toLowerCase() === 'automobile' 
-    ? 'Enter Automobile Showroom' 
-    : res.category?.toLowerCase() === 'furniture' 
-    ? 'Enter Furniture Hub'  
-    : `Enter ${res.category || 'Store'}`
-) : (
-  'CURRENTLY CLOSED'
-)}
-                  </span>
-                  {res.isStoreOpen && <ArrowUpRight className="relative z-10 w-4 h-4 transition-transform group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1" />}
-                </button>
+  onClick={() => 
+    navigate(`/restaurant/${item.owner?.id}`) 
+  } 
+  className="w-full mt-4 py-3.5 rounded-xl bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all" 
+>
+  {item.owner?.category?.trim().toLowerCase() === "restaurant"
+    ? "Enter Restaurant"
+    : item.owner?.category?.trim().toLowerCase() === "automobile"
+    ? "Enter Automobile Showroom"
+    : item.owner?.category?.trim().toLowerCase() === "electronics"
+    ? "Enter Electronics Store"
+    : item.owner?.category?.trim().toLowerCase() === "clothing"
+    ? "Enter Clothing Store"
+    : item.owner?.category?.trim().toLowerCase() === "furniture"
+    ? "Enter Furniture Hub"
+    : item.owner?.category?.trim().toLowerCase() === "grocery"
+    ? "Enter Grocery Store"
+    : item.owner?.category?.trim().toLowerCase() === "services"
+    ? "Enter Service Center"
+    : `Enter ${item.owner?.category || "Store"}`}
+</button>
               </div>
 
             </div>
