@@ -1,4 +1,4 @@
-  import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
   import { useNavigate } from "react-router-dom";
   import api from "../api/api-base"; 
   import { motion, AnimatePresence } from "framer-motion";
@@ -6,7 +6,7 @@
   import { 
     Compass, UtensilsCrossed, Plus, Search, X, Bell, 
     Settings, LogOut, Image as ImageIcon, MapPin, 
-    Menu, Power, Calendar, PhoneCall, BarChart3, Star, Send,ShoppingBag, UploadCloud, QrCode, Download, Camera, ShieldCheck, CheckCircle2, Trash2
+    Menu, Power, Calendar, PhoneCall, BarChart3, Star, Send, ShoppingBag, UploadCloud, QrCode, Download, Camera, ShieldCheck, CheckCircle2, Trash2
   } from "lucide-react"; 
   import { QRCodeCanvas } from "qrcode.react";
   import QRCode from 'qrcode';
@@ -33,7 +33,7 @@
     const [isEditingItem, setIsEditingItem] = useState(false);
     const [isEditingProfile, setIsEditingProfile] = useState(false); 
     const [isShowingMatrix, setIsShowingMatrix] = useState(false);
-     
+      
     const [sending, setSending] = useState(false);
     const [todayMsg, setTodayMsg] = useState(""); 
     const [activeCategory, setActiveCategory] = useState("All");
@@ -756,7 +756,7 @@ const handleSubmitItem = async (e) => {
       ctx.fillStyle = "#FFFFFF";
       ctx.font = `bold ${fontSize}px sans-serif`; 
       
-      // పేరు మరీ పెద్దదైతే పక్కలకు వెళ్лкуండా గరిష్టంగా 1000px వెడల్పులో ఫిట్ చేస్తుంది
+      // పేరు మరీ పెద్దదైతే పక్కలకు వెళ్లకుండా గరిష్టంగా 1000px వెడల్పులో ఫిట్ చేస్తుంది
       ctx.fillText(hotelName, canvas.width / 2, 230, 1000); 
 
       // Sub-title spacing
@@ -860,7 +860,7 @@ const filteredItems = items.filter(i => {
 });
 
 
-    if (loading) return <div className="h-screen flex items-center justify-center text-blue-600 font-black animate-pulse">LOADING...</div>;
+    if (loading) return <div className="h-screen flex items-center justify-center text-cyan-400 font-black animate-pulse bg-[#05081c]">LOADING...</div>;
 // 1. Keys
 const todayKey = `${new Date().getDate()}/${new Date().getMonth() + 1}/${new Date().getFullYear()}`;
 const currentMonthKey = `${new Date().getMonth() + 1}-${new Date().getFullYear()}`;
@@ -881,11 +881,11 @@ const dailyStats = {
 // console.log("Filtered Items for UI:", filteredItems);
 // console.log("Daily Stats Data:", dailyStats);
     return (
-      <div className="min-h-screen bg-[#F8FAFC] text-slate-800 flex flex-col font-sans">
+      <div className="min-h-screen bg-[#05081c] text-slate-100 flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
         
         {/* 👑 NAVBAR (రాజు అల్టిమేట్ రెస్పాన్సివ్ గ్లోబల్ నావ్ - Mobile + Desktop Optimized) */}
   {/* 👑 NAVBAR (మొబైల్ స్పేస్ ఆప్టిమైజ్డ్ లగ్జరీ నావ్ - Mobile + Desktop Fixed) */}
-  <nav className="bg-white border-b border-slate-200/80 px-3 sm:px-8 py-3.5 flex justify-between items-center sticky top-0 z-[60] shadow-sm w-full transition-all duration-300">
+  <nav className="bg-[#070b24]/90 backdrop-blur-md border-b border-[#131d47] px-3 sm:px-8 py-3.5 flex justify-between items-center sticky top-0 z-[60] shadow-md w-full transition-all duration-300">
     
     {/* 👈 లెఫ్ట్ సెక్షన్: 3 లైన్స్ మెనూ, లోగో, హోటల్ పేరు & సబ్‌స్క్రిప్షన్ కౌంటర్ */}
     <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1 md:flex-none">
@@ -893,21 +893,21 @@ const dailyStats = {
       <button 
         type="button" 
         onClick={() => setIsMenuOpen(true)} 
-        className="p-2.5 bg-slate-50 hover:bg-slate-100 lg:hidden rounded-xl shrink-0 active:scale-90 transition-all border border-slate-100"
+        className="p-2.5 bg-[#0a1033] hover:bg-[#0e1638] lg:hidden rounded-xl shrink-0 active:scale-90 transition-all border border-[#1e2d69] text-slate-300"
       >
-        <Menu className="w-4 h-4 text-slate-700 stroke-[2.5]" />
+        <Menu className="w-4 h-4 text-slate-200 stroke-[2.5]" />
       </button>
       
       {/* హోటల్ లోగో చుక్క */}
       <img 
         src={owner?.hotelImage || "https://via.placeholder.com/50"} 
-        className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-cover border-2 border-white shadow-md shrink-0" 
+        className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-cover border-2 border-[#1e2d69] shadow-md shrink-0" 
         alt="Logo" 
       />
       
       {/* 🎯 స్పేసింగ్ & ఓవర్‌లాప్ ఫిక్స్డ్ టైటిల్ బ్లాక్ */}
       <div className="min-w-0 max-w-[120px] xs:max-w-[160px] sm:max-w-none">
-        <h1 className="font-black text-[11px] sm:text-xs md:text-sm uppercase italic tracking-tighter text-slate-900 leading-none truncate">
+        <h1 className="font-black text-[11px] sm:text-xs md:text-sm uppercase italic tracking-tighter text-white leading-none truncate">
           {owner?.name}
         </h1>
         <div className="flex items-center gap-1 mt-0.5 overflow-hidden">
@@ -915,14 +915,14 @@ const dailyStats = {
           
           {/* ⏳ రోజులు: మొబైల్ లో కూడా పక్కా క్లియర్ గ్యాప్ తో కనిపిస్తుంది */}
           {daysRemaining > 0 ? (
-            <span className="bg-emerald-50 text-emerald-600 border border-emerald-200/60 text-[7px] sm:text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider whitespace-nowrap shrink-0">
+            <span className="bg-emerald-950/50 text-emerald-400 border border-emerald-500/40 text-[7px] sm:text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider whitespace-nowrap shrink-0">
               ⏳ {daysRemaining}D Left
             </span>
           ) : (
             <button 
               type="button" 
               onClick={() => setIsRenewalModalOpen(true)} 
-              className="bg-red-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase animate-bounce whitespace-nowrap shrink-0 shadow-sm"
+              className="bg-rose-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase animate-bounce whitespace-nowrap shrink-0 shadow-sm border border-rose-400/40"
             >
               ⚠️ Renew
             </button>
@@ -931,11 +931,11 @@ const dailyStats = {
       </div>
 
       {/* డెస్క్‌టాప్ ట్యాబ్ నావిగేషన్ (పెద్ద స్క్రీన్స్ లో మాత్రమే కనిపిస్తుంది రాజు) */}
-      <div className="hidden md:flex items-center gap-6 border-l ml-6 pl-6 shrink-0">
-        <button onClick={() => setActiveTab("dashboard")} className={`text-[10px] font-black uppercase italic transition-all pb-1 ${activeTab === "dashboard" ? "text-blue-600 border-b-2 border-blue-600" : "text-slate-400 hover:text-slate-600"}`}>Menu</button>
-        <button onClick={() => setActiveTab("live-orders")} className={`text-[10px] font-black uppercase italic transition-all pb-1 ${activeTab === "live-orders" ? "text-orange-600 border-b-2 border-orange-600" : "text-slate-400 hover:text-slate-600"}`}>Orders ({orders.length})</button>
-        <button onClick={() => setActiveTab("sales-report")} className={`text-[10px] font-black uppercase italic transition-all pb-1 ${activeTab === "sales-report" ? "text-emerald-600 border-b-2 border-emerald-600" : "text-slate-400 hover:text-slate-600"}`}>Sales</button>
-        <button onClick={() => setActiveTab("profile")} className={`text-[10px] font-black uppercase italic transition-all pb-1 ${activeTab === "profile" ? "text-purple-600 border-b-2 border-purple-600" : "text-slate-400 hover:text-slate-600"}`}>Login Details</button>
+      <div className="hidden md:flex items-center gap-6 border-l border-[#1e2d69] ml-6 pl-6 shrink-0">
+        <button onClick={() => setActiveTab("dashboard")} className={`text-[10px] font-black uppercase italic transition-all pb-1 ${activeTab === "dashboard" ? "text-cyan-400 border-b-2 border-cyan-400" : "text-slate-400 hover:text-slate-200"}`}>Menu</button>
+        <button onClick={() => setActiveTab("live-orders")} className={`text-[10px] font-black uppercase italic transition-all pb-1 ${activeTab === "live-orders" ? "text-orange-400 border-b-2 border-orange-400" : "text-slate-400 hover:text-slate-200"}`}>Orders ({orders.length})</button>
+        <button onClick={() => setActiveTab("sales-report")} className={`text-[10px] font-black uppercase italic transition-all pb-1 ${activeTab === "sales-report" ? "text-emerald-400 border-b-2 border-emerald-400" : "text-slate-400 hover:text-slate-200"}`}>Sales</button>
+        <button onClick={() => setActiveTab("profile")} className={`text-[10px] font-black uppercase italic transition-all pb-1 ${activeTab === "profile" ? "text-indigo-400 border-b-2 border-indigo-400" : "text-slate-400 hover:text-slate-200"}`}>Login Details</button>
       </div>
     </div>
 
@@ -946,25 +946,25 @@ const dailyStats = {
       <button 
         type="button" 
         onClick={() => setIsShowingMatrix(true)} 
-        className="hidden lg:flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-blue-50 text-blue-600 rounded-xl font-black uppercase italic text-[9px] border border-slate-100 transition-all active:scale-90"
+        className="hidden lg:flex items-center gap-2 px-4 py-2 bg-[#0a1033] hover:bg-[#0e1638] text-cyan-300 rounded-xl font-black uppercase italic text-[9px] border border-[#1e2d69] transition-all active:scale-90"
       >
-        <BarChart3 className="w-4 h-4" /> Matrix
+        <BarChart3 className="w-4 h-4 text-cyan-400" /> Matrix
       </button>
 
       <button 
         type="button" 
         onClick={() => setIsEditingProfile(true)} 
-        className="hidden lg:flex items-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl font-black uppercase italic text-[9px] border border-slate-100 transition-all active:scale-90"
+        className="hidden lg:flex items-center gap-2 px-4 py-2 bg-[#0a1033] hover:bg-[#0e1638] text-slate-300 rounded-xl font-black uppercase italic text-[9px] border border-[#1e2d69] transition-all active:scale-90"
       >
-        <Settings className="w-4 h-4" /> Settings
+        <Settings className="w-4 h-4 text-slate-400" /> Settings
       </button>
 
       <button 
         type="button" 
         onClick={() => setIsRenewalModalOpen(true)} 
-        className="hidden lg:flex items-center gap-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white px-4 py-2 rounded-xl font-black uppercase italic text-[9px] shadow-sm border border-orange-600/30 transition-all active:scale-90"
+        className="hidden lg:flex items-center gap-2 bg-gradient-to-r from-orange-600 to-amber-600 text-white px-4 py-2 rounded-xl font-black uppercase italic text-[9px] shadow-sm border border-orange-400/40 transition-all active:scale-90"
       >
-        <QrCode className="w-4 h-4" /> Renew Node
+        <QrCode className="w-4 h-4 text-amber-300" /> Renew Node
       </button>
 
       {/* 🔴 CLOSE / LIVE బటన్ (మొబైల్ & డెస్క్‌టాప్ రెండింటిలోనూ హైలైట్ అవుతుంది) */}
@@ -973,8 +973,8 @@ const dailyStats = {
         onClick={toggleShopStatus} 
         className={`text-[9px] sm:text-[10px] font-black uppercase px-3.5 py-2.5 sm:px-4 sm:py-2.5 rounded-xl border italic shadow-sm transition-all active:scale-95 whitespace-nowrap ${
           owner?.isStoreOpen 
-            ? 'bg-white border-red-200 text-red-500 hover:bg-red-50/60' 
-            : 'bg-emerald-500 border-emerald-600 text-white hover:bg-emerald-600'
+            ? 'bg-[#0a1033] border-rose-500/40 text-rose-400 hover:bg-rose-950/40' 
+            : 'bg-emerald-600 border-emerald-500 text-white hover:bg-emerald-500'
         }`}
       >
         <span className="sm:hidden">{owner?.isStoreOpen ? 'Close' : 'Live'}</span>
@@ -985,10 +985,10 @@ const dailyStats = {
       <button 
         type="button" 
         onClick={() => { localStorage.removeItem("owner"); navigate("/owner"); }} 
-        className="bg-slate-900 hover:bg-slate-800 text-white p-2.5 rounded-xl active:scale-95 transition-all shrink-0 flex items-center justify-center shadow-md border border-slate-950"
+        className="bg-[#0a1033] hover:bg-[#0e1638] text-white p-2.5 rounded-xl active:scale-95 transition-all shrink-0 flex items-center justify-center shadow-md border border-[#1e2d69]"
         title="Sign Out"
       >
-        <LogOut className="w-4 h-4 stroke-[2.5]" />
+        <LogOut className="w-4 h-4 stroke-[2.5] text-rose-400" />
       </button>
       
     </div>
@@ -997,7 +997,7 @@ const dailyStats = {
         <main className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-8">
           
 {activeTab === "dashboard" && (
-  <div className="flex flex-col h-[calc(100vh-80px)] overflow-y-auto pb-20 relative px-2">
+  <div className="flex flex-col h-[calc(100vh-80px)] overflow-y-auto pb-20 relative px-2 scrollbar-hide">
     {/* 🔔 ALERT SOUND TOGGLE BUTTON (Nav బార్ లో ఇలా యాడ్ చెయ్) */}
 <button 
   type="button"
@@ -1015,36 +1015,36 @@ const dailyStats = {
   }}
   className={`p-2.5 rounded-xl border transition-all active:scale-95 ${
     isAlertActive 
-      ? 'bg-emerald-50 border-emerald-200 text-emerald-600' 
-      : 'bg-slate-50 border-slate-200 text-slate-400'
+      ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-400' 
+      : 'bg-[#0a1033] border-[#1e2d69] text-slate-400'
   }`}
   title="Toggle Alert Sound"
 >
-  <Bell className={`w-4 h-4 ${isAlertActive ? 'fill-emerald-600' : ''}`} />
+  <Bell className={`w-4 h-4 ${isAlertActive ? 'fill-emerald-400' : ''}`} />
 </button>
     {/* 1. స్టిక్కీ హెడర్ (Add Dish & Search) */}
-    <section className="bg-[#F8FAFC] pb-4 pt-2 sticky top-0 z-50">
+    <section className="bg-[#05081c] pb-4 pt-2 sticky top-0 z-50 border-b border-[#131d47]/50">
       <div className="flex justify-between items-end mb-4">
-        <h2 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-slate-900">Kitchen</h2>
-        <button onClick={() => setIsAddingItem(true)} className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase italic flex items-center gap-2 shadow-lg active:scale-95 transition-all">
+        <h2 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-white">Kitchen</h2>
+        <button onClick={() => setIsAddingItem(true)} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase italic flex items-center gap-2 shadow-lg active:scale-95 transition-all border border-cyan-400/30">
           <Plus className="w-4 h-4" /> Add New Dish
         </button>
       </div>
       <div className="relative w-full sm:w-80">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <input type="text" placeholder="Search dish..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} className="w-full bg-white border border-slate-200 p-4 pl-11 rounded-2xl text-[11px] font-bold shadow-sm" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400" />
+        <input type="text" placeholder="Search dish..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} className="w-full bg-[#0a1033] border border-[#1e2d69] p-4 pl-11 rounded-2xl text-[11px] font-bold shadow-inner text-white placeholder:text-slate-500 outline-none focus:border-cyan-400 transition-all" />
       </div>
     </section>
 {/* బిల్లు ప్రింట్ సెక్షన్ (ఇది ఇప్పుడు పైన ఉంటుంది) */}
-<div ref={counterPrintButtonRef} className="bg-white p-6 rounded-3xl shadow-md mb-6 border-2 border-emerald-100">
-  <h3 className="font-black uppercase italic mb-4 text-emerald-700">Counter Order Cart</h3>
-  <select id="counterPayMode" className="w-full p-3 border rounded-xl text-[10px] font-bold uppercase">
+<div ref={counterPrintButtonRef} className="bg-[#0a1033] p-6 rounded-3xl shadow-md mb-6 border border-emerald-500/30">
+  <h3 className="font-black uppercase italic mb-4 text-emerald-400">Counter Order Cart</h3>
+  <select id="counterPayMode" className="w-full p-3 bg-[#0e1638] border border-[#1e2d69] rounded-xl text-[10px] font-bold uppercase text-white outline-none focus:border-cyan-400">
     <option value="CASH">💵 CASH</option>
     <option value="ONLINE/UPI">📱 ONLINE/UPI</option>
   </select>
   <button 
     onClick={handleCounterPrint} 
-    className="w-full bg-emerald-600 text-white py-4 rounded-2xl font-black uppercase mt-4 active:scale-95 transition-all"
+    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-2xl font-black uppercase mt-4 active:scale-95 transition-all border border-emerald-400/30 shadow-lg"
   >
     Print Bill & Reset
   </button>
@@ -1054,13 +1054,13 @@ const dailyStats = {
       {/* Category (Veg/Non-Veg) */}
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
         {["All", "Veg", "Non-Veg"].map(cat => (
-          <button key={cat} onClick={() => setCategoryFilter(cat)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase whitespace-nowrap border transition-all ${categoryFilter === cat ? 'bg-slate-900 text-white' : 'bg-white'}`}>{cat}</button>
+          <button key={cat} onClick={() => setCategoryFilter(cat)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase whitespace-nowrap border transition-all ${categoryFilter === cat ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-cyan-400/50 shadow-md' : 'bg-[#0a1033] text-slate-400 border-[#1e2d69] hover:text-slate-200'}`}>{cat}</button>
         ))}
       </div>
       {/* Sub-Category (Biryani, Starters etc) */}
       <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
         {["All", ...allCategories].map(sub => (
-          <button key={sub} onClick={() => setSubCategoryFilter(sub)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase whitespace-nowrap border transition-all ${subCategoryFilter === sub ? 'bg-blue-600 text-white' : 'bg-white'}`}>{sub}</button>
+          <button key={sub} onClick={() => setSubCategoryFilter(sub)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase whitespace-nowrap border transition-all ${subCategoryFilter === sub ? 'bg-cyan-600 text-white border-cyan-400 shadow-md' : 'bg-[#0a1033] text-slate-400 border-[#1e2d69] hover:text-slate-200'}`}>{sub}</button>
         ))}
       </div>
     </div>
@@ -1074,29 +1074,29 @@ const dailyStats = {
 
         return (
           <div key={cat} className="space-y-2">
-            <h3 className="text-sm font-black uppercase italic text-slate-800 pl-2">{cat}</h3>
+            <h3 className="text-sm font-black uppercase italic text-cyan-400 pl-2">{cat}</h3>
             <div className="flex gap-4 overflow-x-auto pb-4 px-2 scrollbar-hide">
               {categoryItems.map(i => (
-                <div key={i._id} className="min-w-[160px] w-[160px] bg-white p-3 rounded-[2rem] border shadow-sm shrink-0 transition-transform hover:scale-[1.02]">
-                  <div className="aspect-square rounded-[1.5rem] overflow-hidden mb-3 bg-slate-50">
+                <div key={i._id} className="min-w-[160px] w-[160px] bg-[#0a1033] p-3 rounded-[2rem] border border-[#1e2d69] shadow-sm shrink-0 transition-transform hover:scale-[1.02] hover:border-cyan-400/40">
+                  <div className="aspect-square rounded-[1.5rem] overflow-hidden mb-3 bg-[#05081c] border border-[#1e2d69]">
                     <img src={i.image} className="w-full h-full object-cover" alt={i.name} />
                   </div>
-                  <h4 className="font-black text-[10px] uppercase truncate">{i.name}</h4>
-                  <p className="text-[9px] text-blue-500 uppercase font-bold">{i.category}</p>
-                  <p className="text-xs font-black text-slate-900 mt-1">₹{i.price}</p>
+                  <h4 className="font-black text-[10px] uppercase truncate text-white">{i.name}</h4>
+                  <p className="text-[9px] text-cyan-400 uppercase font-bold">{i.category}</p>
+                  <p className="text-xs font-black text-amber-300 mt-1">₹{i.price}</p>
                   
                   <div className="flex flex-col gap-2 mt-3">
-                    <button onClick={() => setCounterCart(prev => ({ ...prev, [i._id]: (prev[i._id] || 0) + 1 }))} className="w-full bg-blue-600 text-white py-2 rounded-xl text-[9px] font-black uppercase">Add</button>
+                    <button onClick={() => setCounterCart(prev => ({ ...prev, [i._id]: (prev[i._id] || 0) + 1 }))} className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2 rounded-xl text-[9px] font-black uppercase border border-cyan-400/30">Add</button>
                     <button onClick={() => setCounterCart(prev => {
         const newCart = { ...prev };
         if (newCart[i._id] > 0) newCart[i._id] -= 1;
         if (newCart[i._id] === 0) delete newCart[i._id];
         return newCart;
-    })} className="px-3 bg-red-100 text-red-600 rounded-xl text-[9px] font-black uppercase">Remove</button>
+    })} className="px-3 bg-rose-950/40 border border-rose-500/30 text-rose-400 rounded-xl text-[9px] font-black uppercase">Remove</button>
                     <div className="flex gap-1">
-                      <button onClick={() => api.put(`/items/update-availability/${i._id}`, { isAvailable: !i.isAvailable }).then(res => setItems(prev => prev.map(it => it._id === i._id ? res.data : it)))} className={`flex-1 py-2 rounded-xl text-[8px] font-black uppercase border ${i.isAvailable ? 'text-emerald-600 bg-emerald-50' : 'text-red-600 bg-red-50'}`}>{i.isAvailable ? 'Live' : 'Sold'}</button>
-                      <button onClick={() => { setForm({ ...i }); setEditItemId(i._id); setIsEditingItem(true); }} className="px-3 bg-slate-100 text-slate-600 rounded-xl text-[8px] font-black">Edit</button>
-                      <button onClick={async () => { if(window.confirm("Remove?")) { await api.delete(`/items/delete/${i._id}`); setItems(items.filter(it => it._id !== i._id)); } }} className="px-3 bg-red-100 text-red-500 rounded-xl text-[8px] font-black"><Trash2 className="w-3 h-3"/></button>
+                      <button onClick={() => api.put(`/items/update-availability/${i._id}`, { isAvailable: !i.isAvailable }).then(res => setItems(prev => prev.map(it => it._id === i._id ? res.data : it)))} className={`flex-1 py-2 rounded-xl text-[8px] font-black uppercase border ${i.isAvailable ? 'text-emerald-400 bg-emerald-950/40 border-emerald-500/30' : 'text-rose-400 bg-rose-950/40 border-rose-500/30'}`}>{i.isAvailable ? 'Live' : 'Sold'}</button>
+                      <button onClick={() => { setForm({ ...i }); setEditItemId(i._id); setIsEditingItem(true); }} className="px-3 bg-[#0e1638] text-slate-300 border border-[#1e2d69] rounded-xl text-[8px] font-black">Edit</button>
+                      <button onClick={async () => { if(window.confirm("Remove?")) { await api.delete(`/items/delete/${i._id}`); setItems(items.filter(it => it._id !== i._id)); } }} className="px-3 bg-rose-950/50 text-rose-400 border border-rose-500/30 rounded-xl text-[8px] font-black"><Trash2 className="w-3 h-3"/></button>
                     </div>
                   </div>
                 </div>
@@ -1114,38 +1114,38 @@ const dailyStats = {
               {activeTab === "live-orders" && (
                 owner?.planType === "premium" ? (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-                    <h2 className="text-4xl font-black italic uppercase text-slate-900">
-                      Live<br/><span className="text-orange-500">Orders Feed</span>
+                    <h2 className="text-4xl font-black italic uppercase text-white">
+                      Live<br/><span className="text-orange-400">Orders Feed</span>
                     </h2>
                     
                     <div className="relative max-w-md">
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400" />
                       <input 
                         type="text" 
                         placeholder="Search by Name, Type (Pre/Post) or Txn ID..." 
                         value={searchTerm} 
                         onChange={(e) => setSearchTerm(e.target.value)} 
-                        className="w-full bg-white border border-slate-200 p-4 pl-11 rounded-2xl text-xs font-bold outline-none shadow-sm focus:border-orange-400 transition-all"
+                        className="w-full bg-[#0a1033] border border-[#1e2d69] p-4 pl-11 rounded-2xl text-xs font-bold outline-none shadow-sm text-white placeholder:text-slate-500 focus:border-cyan-400 transition-all"
                       />
                     </div>
                               <button 
                         onClick={togglePreBookStatus} 
                         className={`group relative flex items-center justify-center gap-3 w-full sm:w-auto px-6 py-3.5 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all active:scale-95 shadow-lg ${
                           owner?.isPreBookEnabled 
-                            ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20' 
-                            : 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/20'
+                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-400/40 shadow-emerald-950/40' 
+                            : 'bg-rose-600 hover:bg-rose-500 text-white border border-rose-400/40 shadow-rose-950/40'
                         }`}
                       >
                         {/* స్టేటస్ ని బట్టి ఒక చిన్న లైవ్ డాట్ */}
                         <span className={`relative flex h-2 w-2`}>
-                          <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${owner?.isPreBookEnabled ? 'bg-white' : 'bg-white'}`}></span>
+                          <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-white`}></span>
                           <span className={`relative inline-flex rounded-full h-2 w-2 bg-white`}></span>
                         </span>
                         
                         {owner?.isPreBookEnabled ? "Pre-Booking Enabled" : "Pre-Booking Disabled"}
                       </button>
   {/* 🚀 రాజు స్మార్ట్ ఆర్డర్ టైప్ స్విచ్ బటన్స్ */}
-        <div className="flex bg-white p-1 rounded-2xl border border-slate-200 shadow-sm w-fit mt-3">
+        <div className="flex bg-[#0a1033] p-1 rounded-2xl border border-[#1e2d69] shadow-sm w-fit mt-3">
           {[
             { id: "All", label: "All Feeds" },
             { id: "Pre-book", label: "Pre-Bookings 🚗" },
@@ -1156,7 +1156,7 @@ const dailyStats = {
               key={tab.id} 
               type="button" 
               onClick={() => setOrderTypeFilter(tab.id)} 
-              className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all ${orderTypeFilter === tab.id ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400 hover:text-slate-600'}`}
+              className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all border ${orderTypeFilter === tab.id ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-cyan-400/40 shadow-md' : 'text-slate-400 border-transparent hover:text-slate-200'}`}
             >
               {tab.label}
             </button>
@@ -1164,51 +1164,51 @@ const dailyStats = {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredOrders.length === 0 ? (
-            <div className="col-span-full p-20 text-center text-slate-300 font-black uppercase italic bg-white rounded-[2.5rem] border border-dashed">
+            <div className="col-span-full p-20 text-center text-slate-500 font-black uppercase italic bg-[#0a1033] rounded-[2.5rem] border border-dashed border-[#1e2d69]">
               {searchTerm ? "No matching results found ❌" : "No Active Orders"}
             </div>
           ) : (
             filteredOrders.map(order => (
-              <div key={order._id} className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm flex flex-col justify-between gap-4 hover:shadow-md transition-all relative overflow-hidden">
+              <div key={order._id} className="bg-[#0a1033] p-6 rounded-[2.5rem] border border-[#1e2d69] shadow-sm flex flex-col justify-between gap-4 hover:border-cyan-400/40 transition-all relative overflow-hidden">
                 
                 {/* 🏷️ NEW: Order Type Ribbon (Pre/Post Order/Express) */}
-                <div className={`absolute top-0 right-0 px-4 py-1 rounded-bl-2xl text-[8px] font-black uppercase italic text-white ${order.orderType === 'Pre-Order' ? 'bg-purple-600' : order.orderType === 'Express-Route' ? 'bg-blue-600' : 'bg-orange-500'}`}>
+                <div className={`absolute top-0 right-0 px-4 py-1 rounded-bl-2xl text-[8px] font-black uppercase italic text-white ${order.orderType === 'Pre-Order' ? 'bg-purple-600' : order.orderType === 'Express-Route' ? 'bg-cyan-600' : 'bg-orange-500'}`}>
                   {order.orderType || 'Post-Order'}
                 </div>
 
                 <div>
   <div className="flex justify-between items-start mb-4">
     <div>
-      <p className="font-black uppercase italic text-lg text-slate-900 leading-tight">
+      <p className="font-black uppercase italic text-lg text-white leading-tight">
         {order.customerName}
       </p>
 {/* 📦 పార్శిల్ లేదా డైన్-ఇన్ క్లియర్ బ్యాడ్జ్ */}
      <div className="mt-1.5 flex items-center gap-2">
        <span className={`px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider ${
          order.deliveryType === 'Take Away' 
-           ? 'bg-amber-100 text-amber-800 border border-amber-200' 
+           ? 'bg-amber-950/50 text-amber-300 border border-amber-500/40' 
            : order.deliveryType === 'Book at Restaurant' 
-           ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-           : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+           ? 'bg-indigo-950/50 text-cyan-300 border border-indigo-500/40'
+           : 'bg-emerald-950/50 text-emerald-300 border border-emerald-500/40'
        }`}>
          {order.deliveryType === 'Take Away' ? '📦 Parcel (Take Away)' : order.deliveryType === 'Book at Restaurant' ? '🪑 Dine-In (Restaurant)' : '🛍️ Direct Order'}
        </span>
      </div>
       {/* 📍 ఆన్‌లైన్ ఆర్డర్‌ల కోసం అడ్రస్ మరియు ఫోన్ నంబర్ డిస్‌ప్లే */}
       {order.customerAddress && (
-        <p className="text-[10px] font-bold text-slate-600 mt-1 uppercase">
+        <p className="text-[10px] font-bold text-slate-300 mt-1 uppercase">
           📍 Address: {order.customerAddress}
         </p>
       )}
       {order.customerPhone && (
-        <p className="text-[10px] font-bold text-blue-600 mt-0.5 uppercase">
+        <p className="text-[10px] font-bold text-cyan-400 mt-0.5 uppercase">
           📞 Phone: {order.customerPhone}
         </p>
       )}
 
       {/* 🎯 పోస్ట్-బుకింగ్ కి టేబుల్ నంబర్ కనిపిస్తుంది */}
       {(order.orderType?.toLowerCase() === "post-book") && (
-        <div className="bg-blue-50 px-4 py-2 rounded-2xl text-center flex flex-col justify-center border border-blue-100 shadow-sm mt-2">
+        <div className="bg-[#0e1638] px-4 py-2 rounded-2xl text-center flex flex-col justify-center border border-[#1e2d69] shadow-sm mt-2">
           {/* <p className="text-[8px] font-black text-blue-400 uppercase leading-none">Table No</p> */}
           {/* <p className="text-xl font-black text-blue-600 leading-none mt-1">
             # {order.tableNo ? order.tableNo : "?"}
@@ -1217,36 +1217,36 @@ const dailyStats = {
       )}
       {order.sudaraId && (
         <div className="mt-1 flex gap-2 items-center">
-          <span className="bg-blue-100 text-blue-800 text-[9px] font-black px-2 py-0.5 rounded border border-blue-200 uppercase italic">
+          <span className="bg-[#0e1638] text-cyan-300 text-[9px] font-black px-2 py-0.5 rounded border border-cyan-500/30 uppercase italic">
             ID: {order.sudaraId}
           </span>
         </div>
       )}
      
       {order.orderType === "Pre-book" && (
-        <p className="text-[10px] font-black text-orange-600 uppercase mt-1 italic">
+        <p className="text-[10px] font-black text-orange-400 uppercase mt-1 italic">
           🚗 Coming at: {order.arrivalTime} 
         </p>
       )}
     </div>
   {order.orderType === "Pre-book" && (
     <div className="flex gap-2 mt-2">
-      <span className="bg-amber-50 text-amber-700 text-[8px] font-black px-2 py-0.5 rounded-lg uppercase italic border border-amber-200">
+      <span className="bg-amber-950/40 text-amber-300 text-[8px] font-black px-2 py-0.5 rounded-lg uppercase italic border border-amber-500/40">
         👥 {order.peopleCount || 1}
       </span>
     </div>
   )}
   {order.deliveryType === "Book at Restaurant" && (
-    <div className="bg-blue-50 px-4 py-2 rounded-2xl text-center flex flex-col justify-center">
-      <p className="text-[8px] font-black text-blue-400 uppercase leading-none">Table</p>
-      <p className="text-xl font-black text-blue-600 leading-none mt-1">
+    <div className="bg-[#0e1638] px-4 py-2 rounded-2xl text-center flex flex-col justify-center border border-cyan-500/20">
+      <p className="text-[8px] font-black text-cyan-400 uppercase leading-none">Table</p>
+      <p className="text-xl font-black text-cyan-300 leading-none mt-1">
         # {order.tableNo !== "PRE" && order.tableNo ? order.tableNo : "?"}
       </p>
       
       {(!order.tableNo || order.tableNo === "PRE") && (
         <button 
-          onClick={() => handleAssignTable(order._id)}
-          className="mt-2 text-[8px] bg-blue-600 text-white px-2 py-1 rounded-lg font-bold hover:bg-blue-700 transition-all"
+          onClick={() => handleAssignTable(order._id)} 
+          className="mt-2 text-[8px] bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-2 py-1 rounded-lg font-bold hover:from-blue-500 hover:to-indigo-500 transition-all border border-cyan-400/30"
         >
           Assign Table
         </button>
@@ -1258,7 +1258,7 @@ const dailyStats = {
   {/* Items List */}
   <div className="flex flex-wrap gap-2 mb-4 max-h-24 overflow-y-auto scrollbar-hide p-1">
     {order.items.map((it, idx) => (
-      <span key={idx} className="bg-slate-50 text-slate-700 px-3 py-1.5 rounded-2xl text-[10px] font-black uppercase border border-slate-100 italic shrink-0">
+      <span key={idx} className="bg-[#0e1638] text-slate-200 px-3 py-1.5 rounded-2xl text-[10px] font-black uppercase border border-[#1e2d69] italic shrink-0">
         {it}
       </span>
     ))}
@@ -1266,72 +1266,72 @@ const dailyStats = {
 
   {/* 🕒 EXPRESS ROUTE TIMER & DELAY ALERT */}
   {order.orderType === 'Express-Route' && (
-    <div className={`mt-3 p-3 rounded-2xl border ${order.isDelayed ? 'bg-red-50 border-red-200 animate-pulse' : 'bg-blue-50 border-blue-100'}`}>
+    <div className={`mt-3 p-3 rounded-2xl border ${order.isDelayed ? 'bg-rose-950/40 border-rose-500/40 animate-pulse' : 'bg-[#0e1638] border-cyan-500/30'}`}>
       <div className="flex items-center gap-2">
-        <div className={`w-2 h-2 rounded-full ${order.isDelayed ? 'bg-red-500' : 'bg-blue-500'}`}></div>
-        <p className="text-[9px] font-black uppercase text-slate-500">
+        <div className={`w-2 h-2 rounded-full ${order.isDelayed ? 'bg-rose-500' : 'bg-cyan-400'}`}></div>
+        <p className="text-[9px] font-black uppercase text-slate-400">
           {order.isDelayed ? '⚠️ CUSTOMER DELAYED' : '🕒 EXPRESS START TIME'}
         </p>
       </div>
-      <p className="text-sm font-black text-slate-900 mt-1 tracking-tight">
+      <p className="text-sm font-black text-white mt-1 tracking-tight">
         {new Date(order.scheduledStartTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
       </p>
     </div>
   )}
 
   {order.txnId && (
-    <div className="bg-emerald-50 p-3 rounded-2xl border border-emerald-100 mb-4 mt-4">
+    <div className="bg-emerald-950/40 p-3 rounded-2xl border border-emerald-500/30 mb-4 mt-4">
       <p className="text-[8px] font-black text-emerald-400 uppercase">Transaction ID</p>
-      <p className="text-[10px] font-bold text-emerald-700 break-all">{order.txnId}</p>
+      <p className="text-[10px] font-bold text-emerald-300 break-all">{order.txnId}</p>
     </div>
   )}
 </div>
 
                 {/* 🎯 అమౌంట్ మరియు యాక్షన్ బటన్స్ సెక్షన్ */}
-                <div className="pt-4 border-t border-slate-50 flex flex-col gap-4">
+                <div className="pt-4 border-t border-[#1e2d69] flex flex-col gap-4">
                   <div className="flex items-center justify-between">
                   {/* 🎯 క్లీన్ అమౌంట్ & స్టేటస్ సెక్షన్ */}
-                  <div className="pt-4 border-t border-slate-100 mt-2 space-y-4">
+                  <div className="pt-4 border-t border-[#1e2d69] mt-2 space-y-4 w-full">
                     
                     {/* టోటల్, పెయిడ్, బ్యాలెన్స్ ఒకే లైన్ లో */}
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <div>
                         <p className="text-[8px] font-black text-slate-400 uppercase">Total</p>
-                        <p className="text-sm font-black text-slate-900">₹{order.totalAmount}</p>
+                        <p className="text-sm font-black text-white">₹{order.totalAmount}</p>
                       </div>
                       
                       {order.advancePaid > 0 && (
                         <div>
-                          <p className="text-[8px] font-black text-orange-500 uppercase">Paid</p>
-                          <p className="text-sm font-black text-orange-600">₹{order.advancePaid}</p>
+                          <p className="text-[8px] font-black text-orange-400 uppercase">Paid</p>
+                          <p className="text-sm font-black text-orange-300">₹{order.advancePaid}</p>
                         </div>
                       )}
 
                       {order.advancePaid > 0 && (
                         <div>
-                          <p className="text-[8px] font-black text-emerald-600 uppercase">Pending</p>
-                          <p className="text-sm font-black text-emerald-800">₹{order.totalAmount - order.advancePaid}</p>
+                          <p className="text-[8px] font-black text-emerald-400 uppercase">Pending</p>
+                          <p className="text-sm font-black text-emerald-300">₹{order.totalAmount - order.advancePaid}</p>
                         </div>
                       )}
                     </div>
 
   {/* 🎯 బ్యాలెన్స్ పేమెంట్ మోడ్ సెలక్షన్ (కేవలం బ్యాలెన్స్ ఉంటేనే కనిపిస్తుంది) */}
             {order.advancePaid > 0 && (
-              <div className="bg-slate-50 p-2 rounded-xl border border-slate-200 flex items-center justify-between px-3">
-                <span className="text-[8px] font-black text-slate-500 uppercase">Balance Mode:</span>
+              <div className="bg-[#0e1638] p-2 rounded-xl border border-[#1e2d69] flex items-center justify-between px-3">
+                <span className="text-[8px] font-black text-slate-400 uppercase">Balance Mode:</span>
                 <select 
                   id={`payMode-${order._id}`} 
-                  className="bg-transparent text-[9px] font-black uppercase text-slate-700 outline-none cursor-pointer"
+                  className="bg-transparent text-[9px] font-black uppercase text-cyan-300 outline-none cursor-pointer"
                 >
-                  <option value="CASH">💵 CASH</option>
-                  <option value="ONLINE/UPI">📱 ONLINE / UPI</option>
+                  <option value="CASH" className="bg-[#0a1033] text-white">💵 CASH</option>
+                  <option value="ONLINE/UPI" className="bg-[#0a1033] text-white">📱 ONLINE / UPI</option>
                 </select>
               </div>
             )}
           </div>
 
                     {/* స్టేటస్ ని బట్టి రంగు మారుతుంది */}
-                    <div className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase italic ${order.status === 'Preparing' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
+                    <div className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase italic ${order.status === 'Preparing' ? 'bg-orange-950/40 text-orange-300 border border-orange-500/30' : 'bg-cyan-950/40 text-cyan-300 border border-cyan-500/30'}`}>
                       {order.status || 'Pending'}
                     </div>
                   </div>
@@ -1340,15 +1340,15 @@ const dailyStats = {
   {/* టాప్ యాక్షన్ రో: Accepted & Preparing */}
   <div className="flex gap-2 w-full">
     <button 
-      onClick={() => updateOrderStatus(order._id, "Accepted")}
-      className="flex-1 py-3 bg-blue-600 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-sm active:scale-95 transition-all"
+      onClick={() => updateOrderStatus(order._id, "Accepted")} 
+      className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-sm active:scale-95 transition-all border border-cyan-400/30"
     >
       Accepted
     </button>
 
     <button 
-      onClick={() => updateOrderStatus(order._id, "Preparing")}
-      className="flex-1 py-3 bg-orange-500 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-sm active:scale-95 transition-all"
+      onClick={() => updateOrderStatus(order._id, "Preparing")} 
+      className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-400 hover:to-amber-500 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-sm active:scale-95 transition-all border border-orange-400/30"
     >
       Preparing
     </button>
@@ -1358,14 +1358,14 @@ const dailyStats = {
 {order.orderType === 'Online-Order' && (
   <div className="flex gap-2 w-full mt-1">
     <button 
-      onClick={() => updateOrderStatus(order._id, "Out for Delivery")}
-      className="flex-1 py-3 bg-purple-600 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-sm active:scale-95 transition-all"
+      onClick={() => updateOrderStatus(order._id, "Out for Delivery")} 
+      className="flex-1 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-sm active:scale-95 transition-all border border-purple-400/30"
     >
       Out for Delivery 🛵
     </button>
     <button 
-      onClick={() => updateOrderStatus(order._id, "Delivered")}
-      className="flex-1 py-3 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-lg active:scale-95 transition-all"
+      onClick={() => updateOrderStatus(order._id, "Delivered")} 
+      className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-lg active:scale-95 transition-all border border-emerald-400/30"
     >
       Delivered ✅
     </button>
@@ -1374,15 +1374,15 @@ const dailyStats = {
 
   {/* 🎯 రాజు మ్యాజిక్: కౌంటర్ దగ్గర ఫోన్‌పే/UPI లేదా క్యాష్ అని సెలెక్ట్ చేసుకునే క్విక్ గేట్‌వే (Only for counter orders) */}
   {!order.txnId && order.orderType === "Post-book" && (
-    <div className="flex items-center justify-between bg-slate-50 p-2 rounded-xl border border-slate-200 gap-2 mt-1">
+    <div className="flex items-center justify-between bg-[#0e1638] p-2 rounded-xl border border-[#1e2d69] gap-2 mt-1">
       <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider pl-1">Counter Pay Mode:</span>
       <select 
-        id={`payMode-${order._id}`}
-        className="p-1.5 bg-white border border-slate-300 rounded-lg text-[9px] font-black text-slate-700 uppercase outline-none focus:border-blue-500"
+        id={`payMode-${order._id}`} 
+        className="p-1.5 bg-[#0a1033] border border-[#1e2d69] rounded-lg text-[9px] font-black text-cyan-300 uppercase outline-none focus:border-cyan-400" 
         defaultValue="CASH"
       >
-        <option value="CASH">💵 CASH</option>
-        <option value="ONLINE/UPI">📱 PHONEPE / UPI</option>
+        <option value="CASH" className="bg-[#0a1033] text-white">💵 CASH</option>
+        <option value="ONLINE/UPI" className="bg-[#0a1033] text-white">📱 PHONEPE / UPI</option>
       </select>
     </div>
   )}
@@ -1390,13 +1390,13 @@ const dailyStats = {
   {/* బాటమ్ యాక్షన్ రో: Print Bill & Served */}
   <div className="flex gap-2 w-full mt-1">
     <button 
-      type="button"
+      type="button" 
       onClick={() => {
         const selectEl = document.getElementById(`payMode-${order._id}`);
         const chosenMode = selectEl ? selectEl.value : "CASH";
         handlePrintBill(order, chosenMode);
-      }}
-      className="flex-1 py-3 bg-slate-800 hover:bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5 border border-slate-950"
+      }} 
+      className="flex-1 py-3 bg-[#0e1638] hover:bg-[#141f4a] text-cyan-300 rounded-2xl text-[10px] font-black uppercase italic shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5 border border-cyan-500/30"
     >
       <span>Print Bill</span> <span>🖨️</span>
     </button>
@@ -1404,8 +1404,8 @@ const dailyStats = {
    {/* Kevalam Pre-book mariyu Post-book order types aithe matrame 'Served' button chupinchali */}
 {(order.orderType === 'Pre-book' || order.orderType === 'Post-book') && (
   <button 
-    onClick={() => handleServed(order)}
-    className="flex-1 py-3 bg-emerald-700 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-lg active:scale-95 transition-all"
+    onClick={() => handleServed(order)} 
+    className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-lg active:scale-95 transition-all border border-emerald-400/30"
   >
     Served ✅
   </button>
@@ -1428,40 +1428,40 @@ const dailyStats = {
   {activeTab === "sales-report" && (
     owner?.planType === "premium" ? (
       <div className="space-y-8 animate-in slide-in-from-bottom duration-500">
-        <h2 className="text-4xl font-black italic uppercase text-slate-900">Sales<br/><span className="text-emerald-500">Matrix</span></h2>
+        <h2 className="text-4xl font-black italic uppercase text-white">Sales<br/><span className="text-emerald-400">Matrix</span></h2>
         
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
     {/* రెవెన్యూ బాక్స్ */}
-   <div className="bg-slate-900 p-8 rounded-[2rem] text-white">
-            <p className="text-[10px] uppercase opacity-50">Total Revenue</p>
-            <h3 className="text-3xl font-black">₹{dailyStats.revenue}</h3>
+   <div className="bg-[#0a1033] p-8 rounded-[2rem] text-white border border-[#1e2d69]">
+            <p className="text-[10px] uppercase text-slate-400">Total Revenue</p>
+            <h3 className="text-3xl font-black text-cyan-300">₹{dailyStats.revenue}</h3>
           </div>
 {/* 2. Monthly Revenue బాక్స్ - కొత్తగా యాడ్ చేసింది */}
-  <div className="bg-purple-600 p-8 rounded-[2rem] text-white">
-    <p className="text-[10px] uppercase opacity-80">Monthly Revenue</p>
-    <h3 className="text-3xl font-black">₹{dailyStats.monthlyRevenue}</h3>
+  <div className="bg-indigo-950/60 p-8 rounded-[2rem] text-white border border-indigo-500/40">
+    <p className="text-[10px] uppercase text-indigo-300">Monthly Revenue</p>
+    <h3 className="text-3xl font-black text-indigo-200">₹{dailyStats.monthlyRevenue}</h3>
   </div>
           {/* Cash బాక్స్ */}
-          <div className="bg-emerald-500 p-8 rounded-[2rem] text-white">
-            <p className="text-[10px] uppercase opacity-80">Cash Sales</p>
-            <h3 className="text-3xl font-black">₹{dailyStats.cashSales}</h3>
+          <div className="bg-emerald-950/60 p-8 rounded-[2rem] text-white border border-emerald-500/40">
+            <p className="text-[10px] uppercase text-emerald-300">Cash Sales</p>
+            <h3 className="text-3xl font-black text-emerald-200">₹{dailyStats.cashSales}</h3>
           </div>
 
           {/* Online బాక్స్ */}
-          <div className="bg-blue-500 p-8 rounded-[2rem] text-white">
-            <p className="text-[10px] uppercase opacity-80">Online Sales</p>
-            <h3 className="text-3xl font-black">₹{dailyStats.onlineSales}</h3>
+          <div className="bg-blue-950/60 p-8 rounded-[2rem] text-white border border-cyan-500/40">
+            <p className="text-[10px] uppercase text-cyan-300">Online Sales</p>
+            <h3 className="text-3xl font-black text-cyan-200">₹{dailyStats.onlineSales}</h3>
           </div>
 
           {/* Orders బాక్స్ */}
-          <div className="bg-white p-8 rounded-[2rem] border border-slate-100">
+          <div className="bg-[#0a1033] p-8 rounded-[2rem] border border-[#1e2d69]">
             <p className="text-[10px] uppercase text-slate-400">Total Orders</p>
-            <h3 className="text-3xl font-black text-slate-900">{dailyStats.count}</h3>
+            <h3 className="text-3xl font-black text-white">{dailyStats.count}</h3>
           </div>
   </div>
 
-        <div className="bg-emerald-50 p-6 rounded-[2rem] border border-emerald-100 flex items-center gap-4 text-emerald-700">
-          <ShieldCheck className="w-6 h-6 shrink-0" />
+        <div className="bg-emerald-950/40 p-6 rounded-[2rem] border border-emerald-500/30 flex items-center gap-4 text-emerald-300">
+          <ShieldCheck className="w-6 h-6 shrink-0 text-emerald-400" />
           <p className="text-[10px] font-black uppercase italic">Protocol: Data auto-purged every 15 days for speed optimization.</p>
         </div>
       </div>
@@ -1472,24 +1472,24 @@ const dailyStats = {
   {/* PAGE 4: OWNER PROFILE DETAILS */}
   {activeTab === "profile" && (
     <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in zoom-in duration-500">
-      <h2 className="text-4xl font-black italic uppercase text-slate-900">
-        Owner<br/><span className="text-purple-600">Profile Matrix</span>
+      <h2 className="text-4xl font-black italic uppercase text-white">
+        Owner<br/><span className="text-indigo-400">Profile Matrix</span>
       </h2>
 
-  <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-[2.5rem] p-6 md:p-8 border border-slate-700/50 shadow-2xl relative overflow-hidden w-full">
+  <div className="bg-gradient-to-br from-[#0a1033] to-[#0e1638] rounded-[2.5rem] p-6 md:p-8 border border-[#1e2d69] shadow-2xl relative overflow-hidden w-full">
         {/* Background Ambient Glows */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-orange-500/5 rounded-full blur-2xl pointer-events-none" />
 
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
           <div className="flex flex-col sm:flex-row items-start gap-4">
-            <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-400 border border-blue-500/20 shadow-lg shrink-0 mx-auto sm:mx-0">
+            <div className="w-12 h-12 bg-[#0e1638] rounded-xl flex items-center justify-center text-cyan-400 border border-cyan-500/30 shadow-lg shrink-0 mx-auto sm:mx-0">
               <span className="text-xl">🛡️</span>
             </div>
             <div className="text-center sm:text-left">
               <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
                 <h4 className="text-base md:text-lg font-black text-white uppercase tracking-tight italic">Sudara Trust & Verification</h4>
-                <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-black uppercase px-2 py-0.5 rounded-md tracking-widest">Active</span>
+                <span className="bg-emerald-950/40 text-emerald-400 border border-emerald-500/30 text-[9px] font-black uppercase px-2 py-0.5 rounded-md tracking-widest">Active</span>
               </div>
               <p className="text-slate-400 text-[11px] md:text-xs mt-1 max-w-2xl font-medium leading-relaxed uppercase tracking-wider">
                 Your establishment is officially verified within the Sudara Network. Download your official partner certificate to enhance merchant credibility and showcase community trust.
@@ -1659,7 +1659,7 @@ const dailyStats = {
       alert("Something went wrong with local generation, Raju!");
     }
   }}
-            className="w-full lg:w-auto bg-blue-600 hover:bg-blue-500 text-white font-black uppercase text-[10px] tracking-[0.2em] px-6 py-3.5 rounded-xl shadow-[0_10px_20px_-5px_rgba(59,130,246,0.4)] active:scale-95 transition-all duration-300 shrink-0 flex items-center justify-center gap-2"
+            className="w-full lg:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black uppercase text-[10px] tracking-[0.2em] px-6 py-3.5 rounded-xl shadow-lg border border-cyan-400/30 active:scale-95 transition-all duration-300 shrink-0 flex items-center justify-center gap-2"
           >
             <span>Download Certificate</span>
             <span className="text-xs">⬇️</span>
@@ -1667,33 +1667,33 @@ const dailyStats = {
         </div>
       </div>
   {/* Profile పేజీలో ఈ సెక్షన్ యాడ్ చేయి */}
-<div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-xl mt-8">
-  <h3 className="text-xl font-black uppercase italic mb-6">Digital Hub QR</h3>
+<div className="bg-[#0a1033] p-8 rounded-[3rem] border border-[#1e2d69] shadow-xl mt-8">
+  <h3 className="text-xl font-black uppercase italic mb-6 text-white">Digital Hub QR</h3>
   <div className="flex flex-col items-center gap-6">
-    <div className="p-4 bg-white rounded-[2rem] shadow-lg border">
+    <div className="p-4 bg-white rounded-[2rem] shadow-lg border border-white/20">
        <QRCodeCanvas id="qr-gen" value={`https://sudara.in/restaurant/${owner?._id}`} size={200} level="H" />
     </div>
     <button 
       onClick={downloadQRCode} 
-      className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black uppercase italic text-[10px] tracking-widest flex items-center gap-3 active:scale-95 transition-all"
+      className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-8 py-4 rounded-2xl font-black uppercase italic text-[10px] tracking-widest flex items-center gap-3 active:scale-95 transition-all border border-cyan-400/30 shadow-lg"
     >
       <Download className="w-4 h-4" /> Download QR Poster
     </button>
   </div>
 </div>
-      <div className="bg-white p-8 rounded-[3rem] border border-slate-100 shadow-xl space-y-6 relative overflow-hidden">
+      <div className="bg-[#0a1033] p-8 rounded-[3rem] border border-[#1e2d69] shadow-xl space-y-6 relative overflow-hidden">
         {/* Background Decor */}
-        <div className="absolute -top-10 -right-10 w-32 h-32 bg-purple-50 rounded-full blur-3xl"></div>
+        <div className="absolute -top-10 -right-10 w-32 h-32 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none"></div>
 
         {/* Profile Image & Name */}
-        <div className="flex flex-col items-center gap-4 border-b pb-6">
+        <div className="flex flex-col items-center gap-4 border-b border-[#1e2d69] pb-6">
           <img 
             src={owner?.hotelImage || "https://via.placeholder.com/150"} 
-            className="w-24 h-24 rounded-[2rem] object-cover border-4 border-purple-50 shadow-lg" 
-            alt="Owner"
+            className="w-24 h-24 rounded-[2rem] object-cover border-4 border-[#1e2d69] shadow-lg" 
+            alt="Owner" 
           />
           <div className="text-center">
-            <h3 className="text-2xl font-black uppercase italic text-slate-900">{owner?.name}</h3>
+            <h3 className="text-2xl font-black uppercase italic text-white">{owner?.name}</h3>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Registered Owner</p>
           </div>
         </div>
@@ -1701,22 +1701,22 @@ const dailyStats = {
         {/* Credential Fields */}
         <div className="space-y-4">
           {/* Email Field */}
-          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+          <div className="bg-[#0e1638] p-5 rounded-2xl border border-[#1e2d69]">
             <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Registered Email</p>
-            <p className="font-bold text-slate-700">{owner?.email}</p>
+            <p className="font-bold text-slate-200">{owner?.email}</p>
           </div>
 
           {/* Password Field - ఇక్కడ ఒక చిన్న ట్రిక్! */}
-          <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 relative group">
+          <div className="bg-[#0e1638] p-5 rounded-2xl border border-[#1e2d69] relative group">
             <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Secret Access Key (Password)</p>
             <div className="flex justify-between items-center">
-              <p className="font-bold text-slate-700 tracking-tighter">
+              <p className="font-bold text-slate-200 tracking-tighter">
                 {/* పాస్‌వర్డ్ ని డైరెక్ట్ గా చూపించకుండా ఇలా పెడితే బాగుంటుంది రాజు */}
                 ••••••••••••
               </p>
               <button 
-                onClick={() => alert(`నీ పాస్‌వర్డ్: ${owner?.password}`)}
-                className="text-[9px] font-black uppercase text-purple-600 bg-purple-50 px-3 py-1 rounded-lg hover:bg-purple-100 transition-all"
+                onClick={() => alert(`నీ పాస్‌వర్డ్: ${owner?.password}`)} 
+                className="text-[9px] font-black uppercase text-cyan-400 bg-cyan-950/40 border border-cyan-500/30 px-3 py-1 rounded-lg hover:bg-cyan-900/40 transition-all"
               >
                 See Password
               </button>
@@ -1726,20 +1726,20 @@ const dailyStats = {
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 gap-4 pt-4">
-          <div className="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
+          <div className="text-center p-4 bg-[#0e1638] rounded-2xl border border-[#1e2d69]">
             <p className="text-[8px] font-black text-slate-400 uppercase">Category</p>
-            <p className="text-xs font-black uppercase italic text-slate-700">{owner?.category || 'General'}</p>
+            <p className="text-xs font-black uppercase italic text-slate-200">{owner?.category || 'General'}</p>
           </div>
-          <div className="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
+          <div className="text-center p-4 bg-[#0e1638] rounded-2xl border border-[#1e2d69]">
             <p className="text-[8px] font-black text-slate-400 uppercase">Status</p>
-            <p className="text-xs font-black uppercase italic text-emerald-600">Active Node</p>
+            <p className="text-xs font-black uppercase italic text-emerald-400">Active Node</p>
           </div>
         </div>
       </div>
 
       {/* Security Note */}
-      <div className="bg-purple-50 p-6 rounded-[2rem] border border-purple-100 flex items-center gap-4 text-purple-700">
-        <ShieldCheck className="w-6 h-6 shrink-0" />
+      <div className="bg-[#0e1638] p-6 rounded-[2rem] border border-cyan-500/30 flex items-center gap-4 text-cyan-300">
+        <ShieldCheck className="w-6 h-6 shrink-0 text-cyan-400" />
         <p className="text-[10px] font-black uppercase italic">Protocol: Keep your credentials confidential. SUDARA never asks for passwords via call.</p>
       </div>
     </div>
@@ -1753,39 +1753,39 @@ const dailyStats = {
           {/* MOBILE MENU */}
           {isMenuOpen && (
             <>
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsMenuOpen(false)} className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-sm lg:hidden" />
-              <motion.div initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }} className="fixed top-0 left-0 bottom-0 w-[280px] bg-white z-[110] shadow-2xl flex flex-col p-6 lg:hidden">
-                <div className="flex justify-between items-center mb-10 border-b pb-4"><span className="font-black italic uppercase text-blue-600">Hub Menu</span><button onClick={() => setIsMenuOpen(false)} className="p-2 bg-slate-50 rounded-full"><X className="w-6 h-6"/></button></div>
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsMenuOpen(false)} className="fixed inset-0 z-[100] bg-[#05081c]/80 backdrop-blur-sm lg:hidden" />
+              <motion.div initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }} className="fixed top-0 left-0 bottom-0 w-[280px] bg-[#070b24] z-[110] shadow-2xl flex flex-col p-6 lg:hidden border-r border-[#131d47]">
+                <div className="flex justify-between items-center mb-10 border-b border-[#131d47] pb-4"><span className="font-black italic uppercase text-cyan-400">Hub Menu</span><button onClick={() => setIsMenuOpen(false)} className="p-2 bg-[#0e1638] text-slate-300 rounded-full border border-[#1e2d69]"><X className="w-6 h-6"/></button></div>
                 <div className="flex flex-col gap-4">
-                  <button onClick={() => { setActiveTab("dashboard"); setIsMenuOpen(false); }} className={`p-4 rounded-2xl font-bold uppercase italic text-xs flex items-center gap-4 ${activeTab === 'dashboard' ? 'bg-blue-50 text-blue-600' : 'bg-slate-50'}`}><UtensilsCrossed className="w-5 h-5" /> Menu Management</button>
-                  <button onClick={() => { setActiveTab("live-orders"); setIsMenuOpen(false); }} className={`p-4 rounded-2xl font-bold uppercase italic text-xs flex items-center gap-4 ${activeTab === 'live-orders' ? 'bg-orange-50 text-orange-600' : 'bg-slate-50'}`}><Bell className="w-5 h-5" /> Live Orders</button>
-                  <button onClick={() => { setActiveTab("sales-report"); setIsMenuOpen(false); }} className={`p-4 rounded-2xl font-bold uppercase italic text-xs flex items-center gap-4 ${activeTab === 'sales-report' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-50'}`}><BarChart3 className="w-5 h-5" /> Sales Report</button>
+                  <button onClick={() => { setActiveTab("dashboard"); setIsMenuOpen(false); }} className={`p-4 rounded-2xl font-bold uppercase italic text-xs flex items-center gap-4 transition-all border ${activeTab === 'dashboard' ? 'bg-[#0e1638] text-cyan-300 border-cyan-500/40 shadow-sm' : 'bg-[#0a1033] text-slate-300 border-[#1e2d69]'}`}><UtensilsCrossed className="w-5 h-5 text-cyan-400" /> Menu Management</button>
+                  <button onClick={() => { setActiveTab("live-orders"); setIsMenuOpen(false); }} className={`p-4 rounded-2xl font-bold uppercase italic text-xs flex items-center gap-4 transition-all border ${activeTab === 'live-orders' ? 'bg-[#0e1638] text-orange-400 border-orange-500/40 shadow-sm' : 'bg-[#0a1033] text-slate-300 border-[#1e2d69]'}`}><Bell className="w-5 h-5 text-orange-400" /> Live Orders</button>
+                  <button onClick={() => { setActiveTab("sales-report"); setIsMenuOpen(false); }} className={`p-4 rounded-2xl font-bold uppercase italic text-xs flex items-center gap-4 transition-all border ${activeTab === 'sales-report' ? 'bg-[#0e1638] text-emerald-400 border-emerald-500/40 shadow-sm' : 'bg-[#0a1033] text-slate-300 border-[#1e2d69]'}`}><BarChart3 className="w-5 h-5 text-emerald-400" /> Sales Report</button>
                   <button 
     onClick={() => { setActiveTab("profile"); setIsMenuOpen(false); }} 
-    className={`p-4 rounded-2xl font-bold uppercase italic text-xs flex items-center gap-4 transition-all ${activeTab === 'profile' ? 'bg-purple-50 text-purple-600 shadow-sm' : 'bg-slate-50 text-slate-600'}`}
+    className={`p-4 rounded-2xl font-bold uppercase italic text-xs flex items-center gap-4 transition-all border ${activeTab === 'profile' ? 'bg-[#0e1638] text-indigo-300 border-indigo-500/40 shadow-sm' : 'bg-[#0a1033] text-slate-300 border-[#1e2d69]'}`}
   >
-    <Settings className="w-5 h-5" /> Login Details & Verified Certificate
+    <Settings className="w-5 h-5 text-indigo-400" /> Login Details & Verified Certificate
   </button>
-                  <hr className="my-4" />
-                  <button onClick={() => { setIsMenuOpen(false); setIsShowingMatrix(true); }} className="flex items-center gap-4 p-4 rounded-2xl bg-blue-50 text-blue-600 font-bold uppercase italic text-xs"><BarChart3 className="w-5 h-5" /> Analytics Matrix</button>
-                  <button onClick={() => { setIsMenuOpen(false); setIsRenewalModalOpen(true); }} className="flex items-center gap-4 p-4 rounded-2xl bg-orange-50 text-orange-600 font-black uppercase italic text-xs border border-orange-200 shadow-sm"><QrCode className="w-5 h-5" /> Renew Node</button>
-                  <button onClick={() => { setIsMenuOpen(false); setIsEditingProfile(true); }} className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 text-slate-800 font-bold uppercase italic text-xs border border-slate-100"><Settings className="w-5 h-5" /> Hub Settings</button>
-                  <button onClick={() => { localStorage.removeItem("owner"); navigate("/owner"); }} className="mt-10 p-4 rounded-2xl bg-red-50 text-red-500 font-bold uppercase italic text-xs"><LogOut className="w-5 h-5" /> Logout</button>
+                  <hr className="my-4 border-[#1e2d69]" />
+                  <button onClick={() => { setIsMenuOpen(false); setIsShowingMatrix(true); }} className="flex items-center gap-4 p-4 rounded-2xl bg-[#0e1638] text-cyan-300 border border-cyan-500/30 font-bold uppercase italic text-xs"><BarChart3 className="w-5 h-5 text-cyan-400" /> Analytics Matrix</button>
+                  <button onClick={() => { setIsMenuOpen(false); setIsRenewalModalOpen(true); }} className="flex items-center gap-4 p-4 rounded-2xl bg-orange-950/40 text-orange-300 font-black uppercase italic text-xs border border-orange-500/40 shadow-sm"><QrCode className="w-5 h-5 text-orange-400" /> Renew Node</button>
+                  <button onClick={() => { setIsMenuOpen(false); setIsEditingProfile(true); }} className="flex items-center gap-4 p-4 rounded-2xl bg-[#0a1033] text-slate-200 font-bold uppercase italic text-xs border border-[#1e2d69]"><Settings className="w-5 h-5 text-slate-400" /> Hub Settings</button>
+                  <button onClick={() => { localStorage.removeItem("owner"); navigate("/owner"); }} className="mt-10 p-4 rounded-2xl bg-rose-950/40 text-rose-400 border border-rose-500/40 font-bold uppercase italic text-xs"><LogOut className="w-5 h-5" /> Logout</button>
                 </div>
               </motion.div>
             </>
           )}
   {/* SETTINGS MODAL - FULL MATRIX CONFIGURATION */}
   {isEditingProfile && (
-    <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
-      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl relative max-h-[95vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-[200] bg-[#05081c]/90 backdrop-blur-md flex items-center justify-center p-4">
+      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[#0a1033] w-full max-w-2xl rounded-[2.5rem] shadow-2xl relative max-h-[95vh] flex flex-col overflow-hidden border border-[#1e2d69] text-white">
         
-        <div className="px-8 py-6 border-b flex justify-between items-center bg-white sticky top-0 z-10">
+        <div className="px-8 py-6 border-b border-[#1e2d69] flex justify-between items-center bg-[#070b24] sticky top-0 z-10">
           <div>
-            <h3 className="text-xl font-black italic uppercase text-slate-900">Hub Configuration</h3>
+            <h3 className="text-xl font-black italic uppercase text-white">Hub Configuration</h3>
             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">Master Profile Matrix</p>
           </div>
-          <button onClick={() => setIsEditingProfile(false)} className="p-2 bg-slate-50 rounded-full hover:bg-red-50 hover:text-red-500 transition-all"><X className="w-5 h-5"/></button>
+          <button onClick={() => setIsEditingProfile(false)} className="p-2 bg-[#0e1638] rounded-full hover:bg-rose-950/50 hover:text-rose-400 text-slate-400 transition-all border border-[#1e2d69]"><X className="w-5 h-5"/></button>
         </div>
         
         <form onSubmit={async (e) => { 
@@ -1810,18 +1810,18 @@ const dailyStats = {
       
       {/* Main Banner Image */}
       <div className="relative flex-shrink-0">
-        <img src={profileForm.hotelImage || "https://via.placeholder.com/150"} className="w-24 h-24 rounded-2xl object-cover border-2 border-blue-500" />
-        <label className="absolute -top-2 -right-2 bg-blue-600 text-white p-1.5 rounded-full cursor-pointer shadow-lg">
+        <img src={profileForm.hotelImage || "https://via.placeholder.com/150"} className="w-24 h-24 rounded-2xl object-cover border-2 border-cyan-400" />
+        <label className="absolute -top-2 -right-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-1.5 rounded-full cursor-pointer shadow-lg border border-cyan-400/40">
           <Camera className="w-3 h-3" />
           <input type="file" accept="image/*" className="hidden" onChange={handleProfileImage} />
         </label>
-        <p className="text-[8px] text-center mt-1 font-bold uppercase">Main Banner</p>
+        <p className="text-[8px] text-center mt-1 font-bold uppercase text-slate-300">Main Banner</p>
       </div>
 
       {/* Interior Images Display */}
       {profileForm.interiorImages?.map((img, idx) => (
         <div key={idx} className="relative flex-shrink-0">
-          <img src={img} className="w-24 h-24 rounded-2xl object-cover border-2 border-slate-100" />
+          <img src={img} className="w-24 h-24 rounded-2xl object-cover border-2 border-[#1e2d69]" />
           <button 
             type="button" 
             onClick={() => {
@@ -1829,7 +1829,7 @@ const dailyStats = {
               const newImgs = profileForm.interiorImages.filter((_, i) => i !== idx);
               setProfileForm({...profileForm, interiorImages: newImgs});
             }} 
-            className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full active:scale-90 transition-all shadow-md"
+            className="absolute -top-2 -right-2 bg-rose-600 text-white p-1 rounded-full active:scale-90 transition-all shadow-md"
           >
             <X className="w-3 h-3"/>
           </button>
@@ -1837,8 +1837,8 @@ const dailyStats = {
       ))}
       
       {/* Add More Interior Button */}
-      <label className="w-24 h-24 flex-shrink-0 rounded-2xl border-2 border-dashed border-slate-300 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-all active:scale-95 shadow-inner">
-        <Plus className="w-6 h-6 text-slate-400" />
+      <label className="w-24 h-24 flex-shrink-0 rounded-2xl border-2 border-dashed border-[#1e2d69] bg-[#0e1638] flex flex-col items-center justify-center cursor-pointer hover:border-cyan-400/50 transition-all active:scale-95 shadow-inner text-slate-400 hover:text-cyan-300">
+        <Plus className="w-6 h-6" />
         <span className="text-[7px] font-black uppercase mt-1">Add Interior</span>
         <input 
           type="file" 
@@ -1852,30 +1852,30 @@ const dailyStats = {
   </div>
 
           {/* ⚡ STATUS & QUICK ACTIONS */}
-          <div className="grid grid-cols-2 gap-4 bg-slate-50 p-6 rounded-[2rem]">
+          <div className="grid grid-cols-2 gap-4 bg-[#0e1638] p-6 rounded-[2rem] border border-[#1e2d69]">
             {/* ఓనర్ డ్యాష్‌బోర్డ్ లోని Settings Modal లో ఈ కోడ్ యాడ్ చెయ్ */}
 <div className="space-y-2">
   <label className="text-[9px] font-black uppercase text-slate-400">Hub Occupancy (Rush Level)</label>
   <select 
     value={profileForm.busyStatus} 
     onChange={e => setProfileForm({...profileForm, busyStatus: e.target.value})} 
-    className="w-full bg-white p-4 rounded-2xl text-xs font-bold border outline-none focus:border-blue-500 transition-all"
+    className="w-full bg-[#0a1033] p-4 rounded-2xl text-xs font-bold border border-[#1e2d69] text-white outline-none focus:border-cyan-400 transition-all cursor-pointer"
   >
     {['Low', 'Medium', 'High', 'Busy'].map(s => (
-      <option key={s} value={s}>{s}</option>
+      <option key={s} value={s} className="bg-[#0a1033] text-white">{s}</option>
     ))}
   </select>
 </div>
             <div className="space-y-2">
               <label className="text-[9px] font-black uppercase text-slate-400">Total Tables</label>
-              <input type="number" value={profileForm.tableCount} onChange={e=>setProfileForm({...profileForm, tableCount: e.target.value})} className="w-full bg-white p-3 rounded-xl text-xs font-bold border outline-none" />
+              <input type="number" value={profileForm.tableCount} onChange={e=>setProfileForm({...profileForm, tableCount: e.target.value})} className="w-full bg-[#0a1033] p-3 rounded-xl text-xs font-bold border border-[#1e2d69] text-white outline-none focus:border-cyan-400" />
             </div>
           </div>
 
           {/* 📢 TODAY'S SPECIAL MESSAGE */}
           <div className="space-y-2">
-            <label className="text-[9px] font-black uppercase text-blue-500 italic">🔥 Today's Special Broadcast</label>
-            <input type="text" placeholder="E.g., Fresh Dum Biryani available now!" value={profileForm.todaySpecial} onChange={e=>setProfileForm({...profileForm, todaySpecial:e.target.value})} className="w-full bg-blue-50 p-4 rounded-2xl font-bold text-xs border border-blue-100 outline-none focus:bg-white" />
+            <label className="text-[9px] font-black uppercase text-cyan-400 italic">🔥 Today's Special Broadcast</label>
+            <input type="text" placeholder="E.g., Fresh Dum Biryani available now!" value={profileForm.todaySpecial} onChange={e=>setProfileForm({...profileForm, todaySpecial:e.target.value})} className="w-full bg-[#0e1638] p-4 rounded-2xl font-bold text-xs border border-[#1e2d69] text-white outline-none focus:border-cyan-400 placeholder:text-slate-500" />
           </div>
 
           {/* 🏦 FINANCIAL NODE (UPI) */}
@@ -1886,11 +1886,11 @@ const dailyStats = {
             </div> */}
             <div className="space-y-2">
               <label className="text-[9px] font-black uppercase text-slate-400">PhonePe/GPay Number</label>
-              <input type="text" placeholder="9876543210" value={profileForm.upiNumber} onChange={e=>setProfileForm({...profileForm, upiNumber:e.target.value})} className="w-full bg-slate-50 p-4 rounded-2xl font-bold text-xs border outline-none" />
+              <input type="text" placeholder="9876543210" value={profileForm.upiNumber} onChange={e=>setProfileForm({...profileForm, upiNumber:e.target.value})} className="w-full bg-[#0e1638] p-4 rounded-2xl font-bold text-xs border border-[#1e2d69] text-white outline-none focus:border-cyan-400 placeholder:text-slate-500" />
             </div>
           </div>
   {/* 🧾 DYNAMIC TAX & ADDITIONAL CHARGES PROTOCOL (100% RESPONSIVE) */}
-  <div className="mt-4 p-5 sm:p-6 bg-slate-50 border border-slate-100 rounded-[2rem] sm:rounded-[2.5rem]">
+  <div className="mt-4 p-5 sm:p-6 bg-[#0e1638] border border-[#1e2d69] rounded-[2rem] sm:rounded-[2.5rem]">
     
     {/* సెక్షన్ హెడ్డింగ్ */}
     <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-4 italic text-center sm:text-left">
@@ -1917,7 +1917,7 @@ const dailyStats = {
               const val = e.target.value === "" ? 0 : Number(e.target.value);
               setProfileForm({...profileForm, gstPercentage: val});
             }} 
-            className="w-full bg-white p-3.5 pr-10 rounded-2xl text-xs font-bold border border-slate-200 outline-none focus:border-blue-500 text-slate-800 shadow-sm transition-all uppercase" 
+            className="w-full bg-[#0a1033] p-3.5 pr-10 rounded-2xl text-xs font-bold border border-[#1e2d69] outline-none focus:border-cyan-400 text-white shadow-inner transition-all uppercase placeholder:text-slate-500" 
           />
           {/* పక్కన సింబల్ లగ్జరీ లుక్ కోసం */}
           <span className="absolute right-4 text-xs font-black text-slate-400 pointer-events-none">%</span>
@@ -1940,7 +1940,7 @@ const dailyStats = {
               const val = e.target.value === "" ? 0 : Number(e.target.value);
               setProfileForm({...profileForm, extraCharges: val});
             }} 
-            className="w-full bg-white p-3.5 pl-8 rounded-2xl text-xs font-bold border border-slate-200 outline-none focus:border-blue-500 text-slate-800 shadow-sm transition-all uppercase" 
+            className="w-full bg-[#0a1033] p-3.5 pl-8 rounded-2xl text-xs font-bold border border-[#1e2d69] outline-none focus:border-cyan-400 text-white shadow-inner transition-all uppercase placeholder:text-slate-500" 
           />
         </div>
       </div>
@@ -1954,17 +1954,17 @@ const dailyStats = {
   </div>
           {/* 📍 GEOLOCATION & ADDRESS */}
           <div className="grid grid-cols-2 gap-4">
-            <button type="button" onClick={handleGetLocation} className="bg-blue-600 text-white p-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 active:scale-95 transition-all"><MapPin className="w-4 h-4" /> Sync GPS</button>
-            <div className="flex bg-slate-100 p-1 rounded-2xl border">
+            <button type="button" onClick={handleGetLocation} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white p-4 rounded-2xl text-[10px] font-black uppercase flex items-center justify-center gap-3 active:scale-95 transition-all border border-cyan-400/30"><MapPin className="w-4 h-4" /> Sync GPS</button>
+            <div className="flex bg-[#0e1638] p-1 rounded-2xl border border-[#1e2d69]">
               {['Veg', 'Non-Veg', 'Both'].map(t => (
-                <button key={t} type="button" onClick={() => setProfileForm({...profileForm, foodType:t})} className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase transition-all ${profileForm.foodType===t ? 'bg-slate-900 text-white shadow-md' : 'text-slate-400'}`}>{t}</button>
+                <button key={t} type="button" onClick={() => setProfileForm({...profileForm, foodType:t})} className={`flex-1 py-3 rounded-xl text-[9px] font-black uppercase transition-all ${profileForm.foodType===t ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md border border-cyan-400/40' : 'text-slate-400'}`}>{t}</button>
               ))}
             </div>
           </div>
 
-          <textarea placeholder="Specific Building Address / Landmark" value={profileForm.address} onChange={e=>setProfileForm({...profileForm, address:e.target.value})} className="w-full bg-slate-50 p-4 rounded-2xl font-bold text-xs border h-24 outline-none focus:bg-white" />
+          <textarea placeholder="Specific Building Address / Landmark" value={profileForm.address} onChange={e=>setProfileForm({...profileForm, address:e.target.value})} className="w-full bg-[#0e1638] p-4 rounded-2xl font-bold text-xs border border-[#1e2d69] h-24 outline-none focus:border-cyan-400 text-white placeholder:text-slate-500" />
           
-          <button disabled={sending} className="w-full bg-slate-900 py-6 text-white rounded-[2rem] font-black uppercase italic shadow-2xl tracking-[0.2em] active:scale-95 transition-all sticky bottom-0">
+          <button disabled={sending} className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 py-6 text-white rounded-[2rem] font-black uppercase italic shadow-2xl tracking-[0.2em] active:scale-95 transition-all sticky bottom-0 border border-cyan-400/30 disabled:bg-slate-800 disabled:border-slate-700">
             {sending ? "Transmitting Matrix..." : "Commit Global Update"}
           </button>
         </form>
@@ -1975,12 +1975,12 @@ const dailyStats = {
           {/* ANALYTICS MATRIX MODAL (Original Detailed Logic) */}
   {/* ANALYTICS MATRIX MODAL (Original Detailed Logic) */}
           {isShowingMatrix && (
-            <div className="fixed inset-0 z-[200] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
-              <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-white w-full max-w-5xl p-6 md:p-12 rounded-[2.5rem] md:rounded-[4rem] shadow-2xl relative max-h-[90vh] overflow-y-auto scrollbar-hide">
-                <button type="button" onClick={() => setIsShowingMatrix(false)} className="absolute top-6 right-6 p-2 bg-slate-100 rounded-full active:scale-90"><X className="w-5 h-5"/></button>
-                <h3 className="text-xl sm:text-3xl font-black italic uppercase tracking-tighter mb-8 border-l-8 border-blue-600 pl-6">Hub Matrix</h3>
+            <div className="fixed inset-0 z-[200] bg-[#05081c]/90 backdrop-blur-md flex items-center justify-center p-4">
+              <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="bg-[#0a1033] w-full max-w-5xl p-6 md:p-12 rounded-[2.5rem] md:rounded-[4rem] shadow-2xl relative max-h-[90vh] overflow-y-auto scrollbar-hide border border-[#1e2d69] text-white">
+                <button type="button" onClick={() => setIsShowingMatrix(false)} className="absolute top-6 right-6 p-2 bg-[#0e1638] rounded-full active:scale-90 text-slate-400 hover:text-white border border-[#1e2d69]"><X className="w-5 h-5"/></button>
+                <h3 className="text-xl sm:text-3xl font-black italic uppercase tracking-tighter mb-8 border-l-8 border-cyan-400 pl-6 text-white">Hub Matrix</h3>
                 
-                {/* 🎯 రాజు మాస్టర్ Λాక్: ఒకవేళ ఓనర్ ప్రీమియం కాకపోతే (అంటే బేసిక్ ₹50 ప్లాన్ అయితే) మ్యాట్రిక్స్ డేటా మొత్తం హైడ్ అయిపోతుంది! */}
+                {/* 🎯 రాజు మాస్టర్ లాక్: ఒకవేళ ఓనర్ ప్రీమియం కాకపోతే (అంటే బేసిక్ ₹50 ప్లాన్ అయితే) మ్యాట్రిక్స్ డేటా మొత్తం హైడ్ అయిపోతుంది! */}
                 {owner?.planType !== "premium" ? (
                   <div className="py-4 text-center">
                     <UpgradeBanner />
@@ -1988,18 +1988,18 @@ const dailyStats = {
                 ) : (
                   /* 👑 ఓనర్ ప్రీమియం అయితేనే ఈ కింద ఉన్న అనలిటిక్స్ మ్యాట్రిక్స్ అంతా ఓపెన్ అవుతుంది రాజు! */
                   <>
-                    <div className="flex bg-slate-100 p-1.5 rounded-2xl w-fit mb-6">
-                      <button type="button" onClick={() => setViewMode("daily")} className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase ${viewMode === "daily" ? "bg-white text-blue-600 shadow-lg" : "text-slate-400"}`}>Today</button>
-                      <button type="button" onClick={() => setViewMode("range")} className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase ${viewMode === "range" ? "bg-white text-blue-600 shadow-lg" : "text-slate-400"}`}>Range</button>
+                    <div className="flex bg-[#0e1638] p-1.5 rounded-2xl w-fit mb-6 border border-[#1e2d69]">
+                      <button type="button" onClick={() => setViewMode("daily")} className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${viewMode === "daily" ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg border border-cyan-400/40" : "text-slate-400 hover:text-slate-200"}`}>Today</button>
+                      <button type="button" onClick={() => setViewMode("range")} className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${viewMode === "range" ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg border border-cyan-400/40" : "text-slate-400 hover:text-slate-200"}`}>Range</button>
                     </div>
                     
                     <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
                       {viewMode === "daily" ? (
-                        <input type="date" value={filterDate} onChange={e=>setFilterDate(e.target.value)} className="bg-slate-50 p-4 rounded-2xl font-bold text-xs border" />
+                        <input type="date" value={filterDate} onChange={e=>setFilterDate(e.target.value)} className="bg-[#0e1638] p-4 rounded-2xl font-bold text-xs border border-[#1e2d69] text-white outline-none focus:border-cyan-400" />
                       ) : (
                         <>
-                          <input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)} className="bg-slate-50 p-4 rounded-2xl font-bold text-xs border" />
-                          <input type="date" value={endDate} onChange={e=>setEndDate(e.target.value)} className="bg-slate-50 p-4 rounded-2xl font-bold text-xs border" />
+                          <input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)} className="bg-[#0e1638] p-4 rounded-2xl font-bold text-xs border border-[#1e2d69] text-white outline-none focus:border-cyan-400" />
+                          <input type="date" value={endDate} onChange={e=>setEndDate(e.target.value)} className="bg-[#0e1638] p-4 rounded-2xl font-bold text-xs border border-[#1e2d69] text-white outline-none focus:border-cyan-400" />
                         </>
                       )}
                     </div>
@@ -2014,15 +2014,15 @@ const dailyStats = {
                         } : getOwnerRangeStats();
                         
                         return [
-                          { label: "Menu Hits", val: stats.hits, icon: Compass, color: "text-slate-500", bg: "bg-slate-100" },
-                          { label: "Pre-Orders", val: stats.preOrders, icon: UtensilsCrossed, color: "text-blue-600", bg: "bg-blue-100" },
-                          { label: "Post-Booking", val: stats.postOrders, icon: Bell, color: "text-orange-600", bg: "bg-orange-100" },
-                          { label: "Calls Made", val: stats.calls, icon: PhoneCall, color: "text-emerald-600", bg: "bg-emerald-100" },
+                          { label: "Menu Hits", val: stats.hits, icon: Compass, color: "text-cyan-400", bg: "bg-cyan-950/40", border: "border-cyan-500/30" },
+                          { label: "Pre-Orders", val: stats.preOrders, icon: UtensilsCrossed, color: "text-blue-400", bg: "bg-blue-950/40", border: "border-blue-500/30" },
+                          { label: "Post-Booking", val: stats.postOrders, icon: Bell, color: "text-orange-400", bg: "bg-orange-950/40", border: "border-orange-500/30" },
+                          { label: "Calls Made", val: stats.calls, icon: PhoneCall, color: "text-emerald-400", bg: "bg-emerald-950/40", border: "border-emerald-500/30" },
                         ].map((s, idx) => (
-                          <div key={idx} className="bg-white p-8 rounded-[3rem] border border-slate-100 text-center hover:shadow-xl transition-all group">
-                            <div className={`w-14 h-14 ${s.bg} ${s.color} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform`}><s.icon className="w-7 h-7"/></div>
-                            <p className="text-[10px] font-black uppercase opacity-40 mb-2">{s.label}</p>
-                            <p className="text-5xl font-black italic text-slate-900 tracking-tighter">{s.val}</p>
+                          <div key={idx} className="bg-[#0e1638] p-8 rounded-[3rem] border border-[#1e2d69] text-center hover:border-cyan-400/40 transition-all group">
+                            <div className={`w-14 h-14 ${s.bg} ${s.color} border ${s.border} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform`}><s.icon className="w-7 h-7"/></div>
+                            <p className="text-[10px] font-black uppercase text-slate-400 mb-2">{s.label}</p>
+                            <p className="text-5xl font-black italic text-white tracking-tighter">{s.val}</p>
                           </div>
                         ));
                       })()}
@@ -2036,31 +2036,31 @@ const dailyStats = {
 
           {/* ADD/EDIT DISH MODAL (Original Logic) */}
           {(isAddingItem || isEditingItem) && (
-            <div className="fixed inset-0 z-[200] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
-              <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-white w-full max-w-sm p-8 rounded-[3rem] shadow-2xl relative overflow-y-auto max-h-[90vh]">
-                <button onClick={() => { setIsAddingItem(false); setIsEditingItem(false); }} className="absolute top-8 right-8 p-2 bg-slate-50 rounded-full active:scale-90"><X className="w-5 h-5"/></button>
-                <h3 className="text-xl font-black italic uppercase mb-8">{isEditingItem ? "Modify dish" : "Add to Kitchen"}</h3>
+            <div className="fixed inset-0 z-[200] bg-[#05081c]/80 backdrop-blur-md flex items-center justify-center p-4">
+              <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-[#0a1033] w-full max-w-sm p-8 rounded-[3rem] shadow-2xl relative overflow-y-auto max-h-[90vh] border border-[#1e2d69] text-white">
+                <button onClick={() => { setIsAddingItem(false); setIsEditingItem(false); }} className="absolute top-8 right-8 p-2 bg-[#0e1638] text-slate-400 hover:text-white rounded-full active:scale-90 border border-[#1e2d69]"><X className="w-5 h-5"/></button>
+                <h3 className="text-xl font-black italic uppercase mb-8 text-white">{isEditingItem ? "Modify dish" : "Add to Kitchen"}</h3>
                 <form onSubmit={handleSubmitItem} className="space-y-4">
-                  <div className="flex flex-col items-center gap-3 p-6 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50">
+                  <div className="flex flex-col items-center gap-3 p-6 border-2 border-dashed border-[#1e2d69] rounded-3xl bg-[#0e1638]">
                     {form.image ? (
     <img 
       src={form.image instanceof File ? URL.createObjectURL(form.image) : form.image} 
-      className="w-20 h-20 rounded-2xl object-cover shadow-lg" 
+      className="w-20 h-20 rounded-2xl object-cover shadow-lg border border-[#1e2d69]" 
       onLoad={(e) => {
         // ఒక్కసారి ఫోటో లోడ్ అవ్వగానే ఆ టెంపరరీ URLని రిలీజ్ చెయ్ (మెమరీ కోసం)
         if (form.image instanceof File) URL.revokeObjectURL(e.target.src);
-      }}
-      alt="Dish Preview"
+      }} 
+      alt="Dish Preview" 
     />
   ) : (
-    <ImageIcon className="text-slate-200 w-10 h-10"/>
+    <ImageIcon className="text-slate-500 w-10 h-10"/>
   )}
-                    <label className="text-[10px] font-black bg-white border border-slate-200 px-5 py-2.5 rounded-xl cursor-pointer hover:bg-blue-600 hover:text-white transition-all">Upload Photo<input type="file" className="hidden" onChange={handleItemImage} accept="image/*" /></label>
+                    <label className="text-[10px] font-black bg-[#0a1033] border border-cyan-500/30 text-cyan-300 px-5 py-2.5 rounded-xl cursor-pointer hover:bg-gradient-to-r hover:from-blue-600 hover:to-indigo-600 hover:text-white transition-all">Upload Photo<input type="file" className="hidden" onChange={handleItemImage} accept="image/*" /></label>
                   </div>
-                  <input type="text" placeholder="Dish Name" value={form.name} onChange={e=>setForm({...form, name:e.target.value})} className="w-full bg-slate-50 p-4 rounded-2xl font-bold border outline-none" required />
-                  <input type="number" placeholder="Price (₹)" value={form.price} onChange={e=>setForm({...form, price:e.target.value})} className="w-full bg-slate-50 p-4 rounded-2xl font-bold border outline-none" required />
+                  <input type="text" placeholder="Dish Name" value={form.name} onChange={e=>setForm({...form, name:e.target.value})} className="w-full bg-[#0e1638] p-4 rounded-2xl font-bold border border-[#1e2d69] outline-none text-white focus:border-cyan-400 placeholder:text-slate-500" required />
+                  <input type="number" placeholder="Price (₹)" value={form.price} onChange={e=>setForm({...form, price:e.target.value})} className="w-full bg-[#0e1638] p-4 rounded-2xl font-bold border border-[#1e2d69] outline-none text-white focus:border-cyan-400 placeholder:text-slate-500" required />
                   {/* పాత కోడ్ ప్లేస్ లో దీన్ని పెట్టు */}
-<div className="flex bg-slate-100 p-1 rounded-xl">
+<div className="flex bg-[#0e1638] p-1 rounded-xl border border-[#1e2d69]">
   {["Veg", "Non-Veg", "General"].map(c => (
     <button 
       key={c} 
@@ -2068,9 +2068,9 @@ const dailyStats = {
       onClick={() => setForm({...form, category: c})} 
       className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase transition-all 
         ${form.category === c 
-          ? (c === 'Veg' ? 'bg-emerald-500 text-white' : 
-             c === 'Non-Veg' ? 'bg-red-500 text-white' : 
-             'bg-slate-700 text-white') 
+          ? (c === 'Veg' ? 'bg-emerald-600 text-white shadow-md' : 
+             c === 'Non-Veg' ? 'bg-rose-600 text-white shadow-md' : 
+             'bg-slate-700 text-white shadow-md') 
           : 'text-slate-400 bg-transparent'}`}
     >
       {c}
@@ -2086,10 +2086,10 @@ const dailyStats = {
     setForm({...form, subCategory: val});
     setIsOtherSub(val === "Others"); 
   }} 
-  className="w-full bg-slate-50 p-4 rounded-2xl font-bold border text-xs outline-none"
+  className="w-full bg-[#0e1638] p-4 rounded-2xl font-bold border border-[#1e2d69] text-xs outline-none text-white focus:border-cyan-400 cursor-pointer"
 >
-  {allCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-  <option value="Others">+ Create New Category</option>
+  {allCategories.map(cat => <option key={cat} value={cat} className="bg-[#0a1033] text-white">{cat}</option>)}
+  <option value="Others" className="bg-[#0a1033] text-white">+ Create New Category</option>
 </select>
 
 {/* కొత్త కేటగిరీ పేరు ఎంటర్ చేయడానికి */}
@@ -2099,25 +2099,25 @@ const dailyStats = {
     placeholder="Enter New Category Name" 
     value={customSub} 
     onChange={e => setCustomSub(e.target.value)} 
-    className="w-full bg-blue-50 border-blue-200 p-4 rounded-2xl font-bold text-xs" 
+    className="w-full bg-[#0e1638] border border-cyan-500/40 p-4 rounded-2xl font-bold text-xs text-white outline-none focus:border-cyan-400" 
     required 
   />
 )}
-                  <button disabled={sending} className="w-full bg-slate-900 py-5 text-white rounded-2xl font-black uppercase italic tracking-widest mt-4 shadow-xl active:scale-95 transition-all">{sending ? 'Publishing...' : 'Publish Item'}</button>
+                  <button disabled={sending} className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 py-5 text-white rounded-2xl font-black uppercase italic tracking-widest mt-4 shadow-xl active:scale-95 transition-all border border-cyan-400/30 disabled:bg-slate-800 disabled:border-slate-700">{sending ? 'Publishing...' : 'Publish Item'}</button>
                 </form>
               </motion.div>
             </div>
           )}
   {/* 👑 రాజు సపరేట్ సబ్‌స్క్రిప్షన్ రెనెవల్ మోడల్ (Subscription Renewal Modal) */}
   {isRenewalModalOpen && (
-    <div className="fixed inset-0 z-[250] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
-      <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white w-full max-w-4xl p-6 md:p-10 rounded-[3rem] shadow-2xl relative max-h-[90vh] overflow-y-auto scrollbar-hide">
+    <div className="fixed inset-0 z-[250] bg-[#05081c]/90 backdrop-blur-md flex items-center justify-center p-4">
+      <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-[#0a1033] w-full max-w-4xl p-6 md:p-10 rounded-[3rem] shadow-2xl relative max-h-[90vh] overflow-y-auto scrollbar-hide border border-[#1e2d69] text-white">
         
         {/* క్లోజ్ బటన్ */}
-        <button type="button" onClick={() => setIsRenewalModalOpen(false)} className="absolute top-6 right-6 p-2 bg-slate-100 rounded-full active:scale-90 hover:bg-red-50 hover:text-red-500 transition-all"><X className="w-5 h-5"/></button>
+        <button type="button" onClick={() => setIsRenewalModalOpen(false)} className="absolute top-6 right-6 p-2 bg-[#0e1638] rounded-full active:scale-90 hover:bg-rose-950/50 hover:text-rose-400 text-slate-400 transition-all border border-[#1e2d69]"><X className="w-5 h-5"/></button>
         
-        <h3 className="text-xl sm:text-3xl font-black italic uppercase tracking-tighter mb-2 border-l-8 border-orange-500 pl-6">
-          Sudara Node <span className="text-orange-600">Subscription Renewal</span>
+        <h3 className="text-xl sm:text-3xl font-black italic uppercase tracking-tighter mb-2 border-l-8 border-orange-500 pl-6 text-white">
+          Sudara Node <span className="text-orange-400">Subscription Renewal</span>
         </h3>
         <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-8 pl-8">Plan B Protocol: Direct Peer-to-Peer Settlement</p>
         
@@ -2125,33 +2125,33 @@ const dailyStats = {
           
           {/* 👉 ఎడమ పక్క: ప్లాన్ కాన్ఫిగరేషన్ & యూపీఐ ఐడీ కాపీ ఏరియా (మొదటి స్టెప్స్) */}
           <div className="space-y-6">
-            <p className="text-xs font-black uppercase text-slate-500">1. ప్లాన్ సెలెక్షన్ & యూపీఐ కాపీ</p>
+            <p className="text-xs font-black uppercase text-slate-300">1. ప్లాన్ సెలెక్షన్ & యూపీఐ కాపీ</p>
             
             {/* ప్లాన్ టైప్ స్విచ్ */}
-            <div className="flex bg-slate-100 p-1 rounded-xl border shadow-inner">
-              <button type="button" onClick={() => setSelectedPlanType("basic")} className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase transition-all ${selectedPlanType === "basic" ? "bg-slate-900 text-white shadow-md" : "text-slate-500"}`}>Basic (₹500/Month)</button>
-              <button type="button" onClick={() => setSelectedPlanType("premium")} className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase transition-all ${selectedPlanType === "premium" ? "bg-blue-600 text-white shadow-md" : "text-slate-500"}`}>Premium (₹1499/Month)</button>
+            <div className="flex bg-[#0e1638] p-1 rounded-xl border border-[#1e2d69] shadow-inner">
+              <button type="button" onClick={() => setSelectedPlanType("basic")} className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase transition-all ${selectedPlanType === "basic" ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md border border-cyan-400/40" : "text-slate-400 hover:text-slate-200"}`}>Basic (₹500/Month)</button>
+              <button type="button" onClick={() => setSelectedPlanType("premium")} className={`flex-1 py-3 rounded-lg text-[10px] font-black uppercase transition-all ${selectedPlanType === "premium" ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md border border-cyan-400/40" : "text-slate-400 hover:text-slate-200"}`}>Premium (₹1499/Month)</button>
             </div>
 
             {/* రోజుల స్విచ్ */}
-            <div className="flex bg-slate-100 p-1 rounded-xl border shadow-inner">
-              <button type="button" onClick={() => setPlanDuration(30)} className={`flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase transition-all ${planDuration === 30 ? "bg-white text-slate-900 shadow-sm font-black" : "text-slate-400"}`}>30 Days (1 Month)</button>
-              <button type="button" onClick={() => setPlanDuration(90)} className={`flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase transition-all ${planDuration === 90 ? "bg-white text-slate-900 shadow-sm font-black" : "text-slate-400"}`}>90 Days (3 Months)</button>
+            <div className="flex bg-[#0e1638] p-1 rounded-xl border border-[#1e2d69] shadow-inner">
+              <button type="button" onClick={() => setPlanDuration(30)} className={`flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase transition-all ${planDuration === 30 ? "bg-[#0a1033] text-white shadow-sm font-black border border-cyan-500/30" : "text-slate-400 hover:text-slate-200"}`}>30 Days (1 Month)</button>
+              <button type="button" onClick={() => setPlanDuration(90)} className={`flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase transition-all ${planDuration === 90 ? "bg-[#0a1033] text-white shadow-sm font-black border border-cyan-500/30" : "text-slate-400 hover:text-slate-200"}`}>90 Days (3 Months)</button>
             </div>
 
             {/* 🎯 రాజు ఫిక్స్: ఫస్ట్ ఐడీ కాపీ ఆప్షన్ ఇక్కడికి తీసుకొచ్చాను! */}
-            <div className="bg-slate-50 p-4 rounded-xl border flex justify-between items-center shadow-sm">
+            <div className="bg-[#0e1638] p-4 rounded-xl border border-[#1e2d69] flex justify-between items-center shadow-sm">
               <div>
                 <p className="text-[8px] font-black text-slate-400 uppercase leading-none">Official UPI ID</p>
-                <p className="font-black text-slate-700 text-xs mt-1.5 tracking-wide">{SUDARA_UPI_ID}</p>
+                <p className="font-black text-cyan-300 text-xs mt-1.5 tracking-wide">{SUDARA_UPI_ID}</p>
               </div>
-              <button type="button" onClick={copyUpiIdToClipboard} className="p-2 bg-slate-900 text-white rounded-xl hover:bg-slate-800 active:scale-90 transition-all text-[9px] font-black uppercase px-4 py-1.5 shadow-sm">
+              <button type="button" onClick={copyUpiIdToClipboard} className="p-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-500 hover:to-indigo-500 active:scale-90 transition-all text-[9px] font-black uppercase px-4 py-1.5 shadow-sm border border-cyan-400/30">
                 {isCopied ? "Copied! ✅" : "Copy UPI ID"}
               </button>
             </div>
 
             {/* టోటల్ అమౌంట్ ప్రొఫెషనల్ డిస్‌ప్లే & పే నౌ బటన్ */}
-            <div className="bg-slate-900 text-white p-6 rounded-2xl flex justify-between items-center shadow-xl relative overflow-hidden">
+            <div className="bg-[#070b24] text-white p-6 rounded-2xl flex justify-between items-center shadow-xl relative overflow-hidden border border-[#1e2d69]">
               <div>
                 <p className="text-[8px] font-black uppercase opacity-50 tracking-widest leading-none">Total Payable Amount</p>
                 <p className="text-3xl font-black italic tracking-tighter text-emerald-400 mt-2">₹{calculatedAmount}</p>
@@ -2159,8 +2159,8 @@ const dailyStats = {
               
               {/* PAY NOW ఫోన్‌పే డీప్ లింక్ బటన్ */}
               <a 
-                href={`upi://pay?pa=${SUDARA_UPI_ID}&pn=Sudara%20Hub&am=${calculatedAmount}&cu=INR`}
-                className="bg-emerald-500 hover:bg-emerald-600 px-6 py-3 rounded-xl text-[10px] font-black uppercase italic tracking-widest shadow-lg text-white transition-all active:scale-95"
+                href={`upi://pay?pa=${SUDARA_UPI_ID}&pn=Sudara%20Hub&am=${calculatedAmount}&cu=INR`} 
+                className="bg-emerald-600 hover:bg-emerald-500 px-6 py-3 rounded-xl text-[10px] font-black uppercase italic tracking-widest shadow-lg text-white transition-all active:scale-95 border border-emerald-400/30"
               >
                 Pay Now
               </a>
@@ -2168,23 +2168,23 @@ const dailyStats = {
           </div>
 
           {/* 👉 కుడి పక్క: స్క్రీన్‌షాట్ అప్‌లోడ్ బాక్స్ & వెరిఫికేషన్ సబ్మిషన్ (చివరి స్టెప్స్) */}
-          <div className="space-y-6 bg-slate-50 p-6 rounded-[2rem] border">
-            <p className="text-xs font-black uppercase text-slate-500">2. రసీదు సమర్పణ (Payment Verification)</p>
+          <div className="space-y-6 bg-[#0e1638] p-6 rounded-[2rem] border border-[#1e2d69]">
+            <p className="text-xs font-black uppercase text-slate-300">2. రసీదు సమర్పణ (Payment Verification)</p>
             
             {/* స్క్రీన్‌షాట్ అప్‌లోడర్ */}
-            <div className="border-2 border-dashed border-slate-300 bg-white p-6 rounded-2xl text-center relative hover:bg-slate-50 transition-all">
+            <div className="border-2 border-dashed border-[#1e2d69] bg-[#0a1033] p-6 rounded-2xl text-center relative hover:border-cyan-400/40 transition-all">
               <input type="file" accept="image/*" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => {
                 const file = e.target.files[0];
                 if (file) optimizeImage(file, (base64) => setUploadedReceipt(base64));
               }} />
               {uploadedReceipt ? (
-                <div className="flex items-center justify-center gap-2 text-emerald-600">
+                <div className="flex items-center justify-center gap-2 text-emerald-400">
                   <CheckCircle2 className="w-5 h-5" />
                   <span className="text-[10px] font-black uppercase">Screenshot Attached ✅</span>
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-1 text-slate-400">
-                  <UploadCloud className="w-6 h-6" />
+                  <UploadCloud className="w-6 h-6 text-cyan-400" />
                   <span className="text-[9px] font-black uppercase">Upload Payment Screenshot</span>
                 </div>
               )}
@@ -2193,9 +2193,9 @@ const dailyStats = {
             {/* I HAVE PAID ఫైనల్ యాక్షన్ బటన్ */}
             <button 
               type="button" 
-              onClick={() => { handleCommitRenewal(); setIsRenewalModalOpen(false); }}
-              disabled={sending}
-              className="w-full bg-slate-900 hover:bg-slate-800 text-white py-4 rounded-xl text-[10px] font-black uppercase italic tracking-[0.15em] shadow-lg transition-all"
+              onClick={() => { handleCommitRenewal(); setIsRenewalModalOpen(false); }} 
+              disabled={sending} 
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white py-4 rounded-xl text-[10px] font-black uppercase italic tracking-[0.15em] shadow-lg transition-all border border-cyan-400/30 active:scale-95 disabled:bg-slate-800 disabled:border-slate-700"
             >
               {sending ? "Transmitting Receipt..." : "I Have Paid"}
             </button>
@@ -2219,7 +2219,7 @@ const dailyStats = {
       onClick={() => {
         counterPrintButtonRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
       }}
-      className="w-full bg-slate-950 text-white p-4 rounded-2xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.4)] flex items-center justify-between border border-white/10 pointer-events-auto active:scale-95 transition-all"
+      className="w-full bg-[#070b24]/95 backdrop-blur-md text-white p-4 rounded-2xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.8)] flex items-center justify-between border border-cyan-400/30 pointer-events-auto active:scale-95 transition-all"
     >
       <div className="flex items-center gap-3">
         <div className="bg-emerald-600 p-2.5 rounded-xl text-white">
@@ -2230,29 +2230,29 @@ const dailyStats = {
           <p className="text-sm font-black text-white italic">{Object.keys(counterCart).length} Items Selected</p>
         </div>
       </div>
-      <div className="text-blue-400 font-black text-[10px] uppercase bg-white/5 py-2 px-4 rounded-xl border border-white/5">
+      <div className="text-cyan-300 font-black text-[10px] uppercase bg-white/5 py-2 px-4 rounded-xl border border-white/10">
         Go to Print
       </div>
     </button>
   </motion.div>
 )}
-        <footer className="mt-auto border-t border-slate-200 bg-white p-8"><Footer /></footer>
+        <footer className="mt-auto border-t border-[#131d47] bg-[#070b24] p-8"><Footer /></footer>
       </div>
     );
   }
   // 👑 రాజు ప్రీమియం ప్రమోషన్ యుఐ బ్యానర్
   function UpgradeBanner() {
     return (
-      <div className="max-w-xl mx-auto bg-white p-10 rounded-[3rem] border border-purple-100 text-center shadow-2xl mt-12 relative overflow-hidden">
-        <div className="absolute -top-10 -right-10 w-32 h-32 bg-purple-50 rounded-full blur-2xl"></div>
-        <div className="w-16 h-16 bg-purple-50 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6 border border-purple-100 shadow-md">👑</div>
-        <h3 className="text-2xl font-black uppercase italic tracking-tight text-slate-900">Upgrade to Advanced Pro Node</h3>
-        <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mt-2">Unlock the full power of Sudara Hub</p>
-        <p className="text-xs font-medium text-slate-500 mt-4 leading-relaxed uppercase tracking-wide">
+      <div className="max-w-xl mx-auto bg-[#0a1033] p-10 rounded-[3rem] border border-indigo-500/40 text-center shadow-2xl mt-12 relative overflow-hidden text-white">
+        <div className="absolute -top-10 -right-10 w-32 h-32 bg-cyan-600/10 rounded-full blur-2xl pointer-events-none"></div>
+        <div className="w-16 h-16 bg-[#0e1638] border border-indigo-500/30 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-6 shadow-md">👑</div>
+        <h3 className="text-2xl font-black uppercase italic tracking-tight text-white">Upgrade to Advanced Pro Node</h3>
+        <p className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mt-2">Unlock the full power of Sudara Hub</p>
+        <p className="text-xs font-medium text-slate-400 mt-4 leading-relaxed uppercase tracking-wide">
           Your account is currently on the Basic Plan (₹50/Day). To unlock Live Real-time Orders, Table Dining Configurations, Automatic Invoice Printing, and graphical Sales Matrix Reports, upgrade to Premium Plan for just ₹100/day.
         </p>
-        <div className="mt-8 pt-6 border-t flex flex-col sm:flex-row gap-3 justify-center">
-          <a href="tel:7569896128" className="bg-slate-950 text-white px-6 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest italic shadow-lg active:scale-95 transition-all">Contact Account Manager</a>
+        <div className="mt-8 pt-6 border-t border-[#1e2d69] flex flex-col sm:flex-row gap-3 justify-center">
+          <a href="tel:7569896128" className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-6 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest italic shadow-lg active:scale-95 transition-all border border-cyan-400/30">Contact Account Manager</a>
         </div>
       </div>
     );

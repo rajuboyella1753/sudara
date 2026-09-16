@@ -112,7 +112,11 @@ const generateUniversalSearchAI = async (prompt) => {
 export const parseUniversalSearch = async (req, res) => {
   try {
 
-    const { query } = req.body || {};
+   const {
+  query,
+  state = "All",
+  district = "Select"
+} = req.body || {};
 
     // --------------------------------------------------
     // VALIDATE QUERY
@@ -439,7 +443,9 @@ const result = await generateUniversalSearchAI(prompt);
 
       foodType: parsedData.foodType,
 
-      sort: parsedData.sort
+      sort: parsedData.sort,
+      state,
+      district
 
     });
 

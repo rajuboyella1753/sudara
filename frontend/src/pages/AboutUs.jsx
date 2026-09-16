@@ -29,32 +29,32 @@ const features = [
   {
     title: "Personally Verified Merchants",
     desc: "Every business and store on our platform is carefully audited to maintain high quality standards.",
-    icon: <ShieldCheck className="w-6 h-6 text-emerald-500" />,
+    icon: <ShieldCheck className="w-6 h-6 text-emerald-400" />,
   },
   {
     title: "Regional Discovery",
     desc: "Filter across states and districts instantly to find trusted local providers in your exact area.",
-    icon: <Globe className="w-6 h-6 text-indigo-500" />,
+    icon: <Globe className="w-6 h-6 text-cyan-400" />,
   },
   {
     title: "Live Stock & Inventories",
     desc: "Check real-time product availability and direct pricing before visiting or ordering.",
-    icon: <Search className="w-6 h-6 text-orange-500" />,
+    icon: <Search className="w-6 h-6 text-orange-400" />,
   },
   {
     title: "Storefront & Catalog Previews",
     desc: "Explore high-resolution product photos, store ambiances, and complete digital catalogs.",
-    icon: <Camera className="w-6 h-6 text-purple-500" />,
+    icon: <Camera className="w-6 h-6 text-indigo-400" />,
   },
   {
     title: "GPS Routing & Crowds",
     desc: "Get precise directions to any local store or showroom using integrated map routing.",
-    icon: <Navigation className="w-6 h-6 text-orange-600" />,
+    icon: <Navigation className="w-6 h-6 text-orange-500" />,
   },
   {
     title: "Direct Secure Ordering",
     desc: "Place direct orders or pre-book test drives and reservations with zero intermediary delays.",
-    icon: <CreditCard className="w-6 h-6 text-indigo-600" />,
+    icon: <CreditCard className="w-6 h-6 text-cyan-300" />,
   }
 ];
 
@@ -75,25 +75,25 @@ const About = () => {
   const navigate = useNavigate(); 
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-orange-100 overflow-x-hidden flex flex-col">
+    <div className="min-h-screen bg-[#05081c] text-slate-100 font-sans selection:bg-cyan-500/30 selection:text-cyan-200 overflow-x-hidden flex flex-col">
       <Navbar />
 
       <div className="flex-1">
         {/* --- 🚀 DYNAMIC HERO SECTION --- */}
-        <section className="relative pt-32 pb-16 md:pt-48 md:pb-32 bg-white overflow-hidden border-b border-slate-100">
+        <section className="relative pt-32 pb-16 md:pt-48 md:pb-32 bg-[#05081c] overflow-hidden border-b border-[#131d47]">
           {/* Animated Background Glows */}
-          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-500/5 blur-[120px] -z-10 rounded-full animate-pulse" />
-          <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-orange-500/5 blur-[120px] -z-10 rounded-full animate-pulse delay-700" />
+          <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-600/10 blur-[140px] -z-10 rounded-full animate-pulse pointer-events-none" />
+          <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-orange-600/10 blur-[140px] -z-10 rounded-full animate-pulse delay-700 pointer-events-none" />
           
           <div className="max-w-7xl mx-auto px-6 text-center relative z-10">
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }}>
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-full font-black uppercase text-[10px] tracking-widest mb-8 border border-blue-100">
-                <Activity className="w-3 h-3 animate-bounce" /> Unified Hyperlocal Protocol v2.0
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#0a1033] text-cyan-300 rounded-full font-black uppercase text-[10px] tracking-widest mb-8 border border-cyan-500/30 shadow-md">
+                <Activity className="w-3 h-3 text-cyan-400 animate-bounce" /> Unified Hyperlocal Protocol v2.0
               </div>
-              <h1 className="text-5xl sm:text-7xl md:text-[8rem] font-black italic uppercase tracking-tighter leading-[0.85] mb-8">
-                How <span className="text-blue-600">Sudara Hub</span> <br/> <span className="text-orange-600">Works.</span>
+              <h1 className="text-5xl sm:text-7xl md:text-[8rem] font-black italic uppercase tracking-tighter leading-[0.85] mb-8 text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)]">
+                How <span className="text-cyan-400">Sudara Hub</span> <br/> <span className="text-orange-500">Works.</span>
               </h1>
-              <p className="text-slate-500 font-medium text-sm md:text-lg max-w-2xl mx-auto leading-relaxed italic">
+              <p className="text-slate-400 font-medium text-sm md:text-lg max-w-2xl mx-auto leading-relaxed italic">
                 Bridging the gap between consumers and local businesses across food, fashion, electronics, groceries, and automobiles.
               </p>
             </motion.div>
@@ -106,39 +106,39 @@ const About = () => {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="bg-slate-900 text-white rounded-[3rem] md:rounded-[4rem] p-8 md:p-20 relative overflow-hidden shadow-2xl border border-slate-800"
+            className="bg-[#0a1033] text-white rounded-[3rem] md:rounded-[4rem] p-8 md:p-20 relative overflow-hidden shadow-2xl border border-[#1e2d69]"
           >
-            <div className="absolute top-0 right-0 p-40 bg-blue-600/10 blur-[120px] rounded-full pointer-events-none"></div>
-            <div className="absolute bottom-0 left-0 p-40 bg-orange-600/10 blur-[120px] rounded-full pointer-events-none"></div>
+            <div className="absolute top-0 right-0 p-40 bg-blue-600/15 blur-[120px] rounded-full pointer-events-none"></div>
+            <div className="absolute bottom-0 left-0 p-40 bg-orange-600/15 blur-[120px] rounded-full pointer-events-none"></div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
               <div className="lg:col-span-5 flex justify-center">
                 <div className="relative group">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-orange-500 rounded-[2.5rem] blur opacity-30 group-hover:opacity-75 transition duration-500"></div>
-                  <div className="relative w-64 h-64 md:w-80 md:h-80 rounded-[2.5rem] overflow-hidden border-2 border-white/20 shadow-2xl bg-slate-950 flex items-center justify-center">
-  {/* 1. బ్యాక్‌గ్రౌండ్‌లో అదే ఫోటో బ్లర్ అయి నిండుగా కనిపిస్తుంది */}
-  <img 
-    src="/Raju.jpg" 
-    alt="" 
-    className="absolute inset-0 w-full h-full object-cover filter blur-md opacity-40 scale-110" 
-  />
+                  <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-orange-500 rounded-[2.5rem] blur opacity-40 group-hover:opacity-80 transition duration-500"></div>
+                  <div className="relative w-64 h-64 md:w-80 md:h-80 rounded-[2.5rem] overflow-hidden border-2 border-cyan-400/30 shadow-2xl bg-[#05081c] flex items-center justify-center">
+                    {/* 1. బ్యాక్‌గ్రౌండ్‌లో అదే ఫోటో బ్లర్ అయి నిండుగా కనిపిస్తుంది */}
+                    <img 
+                      src="/Raju.jpg" 
+                      alt="" 
+                      className="absolute inset-0 w-full h-full object-cover filter blur-md opacity-40 scale-110" 
+                    />
 
-  {/* 2. ఒరిజినల్ ఫోటో మధ్యలో నీట్‌గా కూర్చుంటుంది */}
-  <img 
-    src="/Raju.jpg" 
-    alt="Boyella Raju - Founder & CEO" 
-    className="relative z-10 w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" 
-  />
-</div>
+                    {/* 2. ఒరిజినల్ ఫోటో మధ్యలో నీట్‌గా కూర్చుంటుంది */}
+                    <img 
+                      src="/Raju.jpg" 
+                      alt="Boyella Raju - Founder & CEO" 
+                      className="relative z-10 w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" 
+                    />
+                  </div>
                 </div>
               </div>
 
               <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 rounded-full border border-white/10 text-[10px] font-black uppercase tracking-widest text-blue-400">
-                  <Sparkles className="w-3.5 h-3.5" /> Leadership & Transparency
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#0e1638] rounded-full border border-cyan-500/30 text-[10px] font-black uppercase tracking-widest text-cyan-300">
+                  <Sparkles className="w-3.5 h-3.5 text-cyan-400" /> Leadership & Transparency
                 </div>
                 
-                <h2 className="text-3xl md:text-5xl font-black italic uppercase tracking-tighter leading-tight">
+                <h2 className="text-3xl md:text-5xl font-black italic uppercase tracking-tighter leading-tight text-white">
                   Meet the Founder & CEO
                 </h2>
                 
@@ -152,11 +152,11 @@ const About = () => {
                 </p>
 
                 <div className="pt-2 flex flex-wrap justify-center lg:justify-start gap-4">
-                  <div className="px-5 py-2.5 bg-white/5 rounded-2xl border border-white/10 text-center">
+                  <div className="px-5 py-2.5 bg-[#0e1638] rounded-2xl border border-[#1e2d69] text-center">
                     <p className="text-[8px] font-black uppercase text-slate-400 tracking-widest">Ecosystem</p>
-                    <p className="text-xs font-black text-white italic">Hyperlocal Matrix</p>
+                    <p className="text-xs font-black text-cyan-300 italic">Hyperlocal Matrix</p>
                   </div>
-                  <div className="px-5 py-2.5 bg-white/5 rounded-2xl border border-white/10 text-center">
+                  <div className="px-5 py-2.5 bg-[#0e1638] rounded-2xl border border-[#1e2d69] text-center">
                     <p className="text-[8px] font-black uppercase text-slate-400 tracking-widest">Base State</p>
                     <p className="text-xs font-black text-white italic">Andhra Pradesh, India</p>
                   </div>
@@ -167,11 +167,11 @@ const About = () => {
         </section>
 
         {/* --- 🛒 MULTI-INDUSTRY VERTICALS HIGHLIGHT --- */}
-        <section className="bg-slate-50 border-y border-slate-100 py-16">
+        <section className="bg-[#070b24] border-y border-[#131d47] py-16">
           <div className="max-w-7xl mx-auto px-6">
             <div className="text-center mb-12">
-              <h3 className="text-orange-600 font-black uppercase text-[10px] tracking-[0.4em] mb-3 italic">Ecosystem Coverage</h3>
-              <h2 className="text-2xl md:text-4xl font-black uppercase italic tracking-tight text-slate-900">Digitizing All Local Industries</h2>
+              <h3 className="text-orange-400 font-black uppercase text-[10px] tracking-[0.4em] mb-3 italic">Ecosystem Coverage</h3>
+              <h2 className="text-2xl md:text-4xl font-black uppercase italic tracking-tight text-white">Digitizing All Local Industries</h2>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
@@ -181,12 +181,12 @@ const About = () => {
                 { icon: Tv, title: "Electronics & Gadgets", desc: "Appliances & tech hardware" },
                 { icon: Car, title: "Automobiles", desc: "Showrooms & test drive booking" }
               ].map((ind, idx) => (
-                <div key={idx} className="bg-white p-6 rounded-3xl border border-slate-200/70 shadow-2xs text-center space-y-3">
-                  <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl mx-auto flex items-center justify-center">
+                <div key={idx} className="bg-[#0a1033] p-6 rounded-3xl border border-[#1e2d69] shadow-sm text-center space-y-3 hover:border-cyan-400/40 transition-all">
+                  <div className="w-12 h-12 bg-[#0e1638] text-cyan-400 rounded-2xl mx-auto flex items-center justify-center border border-cyan-500/20">
                     <ind.icon className="w-6 h-6" />
                   </div>
-                  <h4 className="text-xs font-black uppercase italic text-slate-900">{ind.title}</h4>
-                  <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{ind.desc}</p>
+                  <h4 className="text-xs font-black uppercase italic text-white">{ind.title}</h4>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{ind.desc}</p>
                 </div>
               ))}
             </div>
@@ -196,8 +196,8 @@ const About = () => {
         {/* --- 🛠️ THE 3-STEP ARCHITECTURE --- */}
         <section className="max-w-7xl mx-auto px-6 py-20 md:py-32">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h3 className="text-blue-600 font-black uppercase text-[10px] tracking-[0.4em] mb-3 italic">Seamless Workflow</h3>
-            <h2 className="text-3xl md:text-5xl font-black uppercase italic tracking-tight text-slate-900">How Connection Works</h2>
+            <h3 className="text-cyan-400 font-black uppercase text-[10px] tracking-[0.4em] mb-3 italic">Seamless Workflow</h3>
+            <h2 className="text-3xl md:text-5xl font-black uppercase italic tracking-tight text-white">How Connection Works</h2>
           </div>
 
           <motion.div 
@@ -208,17 +208,17 @@ const About = () => {
             className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12"
           >
             {[
-              { step: "01", title: "Location Discovery", desc: "Users select their state, district, and category to browse verified local merchants and inventories instantly.", icon: Globe, color: "text-blue-600", bg: "bg-blue-50" },
-              { step: "02", title: "Direct Interaction", desc: "Browse real-time product catalogs, view store ambiances, or call/chat directly with the merchant without middlemen.", icon: Zap, color: "text-orange-600", bg: "bg-orange-50" },
-              { step: "03", title: "Fulfillment & Visit", desc: "Place direct orders for doorstep delivery, pick up parcels, or schedule a physical visit/test drive.", icon: Store, color: "text-emerald-600", bg: "bg-emerald-50" }
+              { step: "01", title: "Location Discovery", desc: "Users select their state, district, and category to browse verified local merchants and inventories instantly.", icon: Globe, color: "text-cyan-400", bg: "bg-cyan-950/40", border: "border-cyan-500/30" },
+              { step: "02", title: "Direct Interaction", desc: "Browse real-time product catalogs, view store ambiances, or call/chat directly with the merchant without middlemen.", icon: Zap, color: "text-orange-400", bg: "bg-orange-950/40", border: "border-orange-500/30" },
+              { step: "03", title: "Fulfillment & Visit", desc: "Place direct orders for doorstep delivery, pick up parcels, or schedule a physical visit/test drive.", icon: Store, color: "text-emerald-400", bg: "bg-emerald-950/40", border: "border-emerald-500/30" }
             ].map((s, idx) => (
-              <motion.div key={idx} variants={itemVariants} className="relative p-8 md:p-10 bg-slate-50 border border-slate-200/80 rounded-[2.5rem] md:rounded-[3rem] shadow-sm hover:shadow-xl transition-all group overflow-hidden">
-                <div className="text-5xl md:text-7xl font-black italic text-slate-200/60 absolute -top-2 -right-2 group-hover:text-blue-100 transition-colors pointer-events-none">{s.step}</div>
-                <div className={`w-14 h-14 md:w-16 md:h-16 ${s.bg} ${s.color} rounded-2xl md:rounded-3xl flex items-center justify-center mb-6 md:mb-8 shadow-sm transition-transform group-hover:-translate-y-2`}>
+              <motion.div key={idx} variants={itemVariants} className="relative p-8 md:p-10 bg-[#0a1033] border border-[#1e2d69] rounded-[2.5rem] md:rounded-[3rem] shadow-sm hover:shadow-xl hover:border-cyan-400/50 transition-all group overflow-hidden">
+                <div className="text-5xl md:text-7xl font-black italic text-slate-800/80 absolute -top-2 -right-2 group-hover:text-[#141b4d] transition-colors pointer-events-none">{s.step}</div>
+                <div className={`w-14 h-14 md:w-16 md:h-16 ${s.bg} ${s.color} border ${s.border} rounded-2xl md:rounded-3xl flex items-center justify-center mb-6 md:mb-8 shadow-sm transition-transform group-hover:-translate-y-2`}>
                   <s.icon className="w-7 h-7 md:w-8 md:h-8" />
                 </div>
-                <h3 className="text-xl md:text-2xl font-black uppercase italic mb-3 text-slate-900 tracking-tighter">{s.title}</h3>
-                <p className="text-slate-600 text-sm md:text-base leading-relaxed italic">{s.desc}</p>
+                <h3 className="text-xl md:text-2xl font-black uppercase italic mb-3 text-white tracking-tighter">{s.title}</h3>
+                <p className="text-slate-400 text-sm md:text-base leading-relaxed italic">{s.desc}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -230,18 +230,18 @@ const About = () => {
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="bg-slate-900 rounded-[3rem] md:rounded-[4rem] p-10 md:p-24 text-white flex flex-col lg:flex-row items-center gap-10 md:gap-16 relative overflow-hidden shadow-2xl"
+            className="bg-[#0a1033] rounded-[3rem] md:rounded-[4rem] p-10 md:p-24 text-white flex flex-col lg:flex-row items-center gap-10 md:gap-16 relative overflow-hidden shadow-2xl border border-[#1e2d69]"
           >
             {/* Dynamic Pattern Overlays */}
-            <div className="absolute top-0 right-0 p-40 bg-blue-500/10 blur-[100px] rounded-full"></div>
-            <div className="absolute bottom-0 left-0 p-20 bg-orange-500/10 blur-[80px] rounded-full"></div>
-             
-            <div className="shrink-0 w-24 h-24 md:w-36 md:h-36 bg-white/10 backdrop-blur-xl rounded-[2.5rem] md:rounded-[3rem] flex items-center justify-center border border-white/20 shadow-inner">
+            <div className="absolute top-0 right-0 p-40 bg-blue-600/15 blur-[100px] rounded-full pointer-events-none"></div>
+            <div className="absolute bottom-0 left-0 p-20 bg-orange-600/15 blur-[80px] rounded-full pointer-events-none"></div>
+              
+            <div className="shrink-0 w-24 h-24 md:w-36 md:h-36 bg-[#0e1638] border border-orange-500/30 backdrop-blur-xl rounded-[2.5rem] md:rounded-[3rem] flex items-center justify-center shadow-inner">
               <Banknote className="w-12 h-12 md:w-20 md:h-20 text-orange-400" />
             </div>
-             
+              
             <div className="text-center lg:text-left relative z-10">
-              <h2 className="text-3xl md:text-6xl font-black uppercase italic tracking-tighter mb-6 leading-tight">Zero Commissions & <span className="text-blue-400">Direct Settlement</span></h2>
+              <h2 className="text-3xl md:text-6xl font-black uppercase italic tracking-tighter mb-6 leading-tight">Zero Commissions & <span className="text-cyan-400">Direct Settlement</span></h2>
               <p className="text-slate-300 text-base md:text-xl leading-relaxed italic opacity-90 max-w-3xl">
                 Transparency is our core principle. <strong>Sudara Hub charges 0% commission on orders.</strong> Payments and inquiries flow directly to local business owners, ensuring customers pay fair local prices and merchants keep 100% of their revenue.
               </p>
@@ -250,15 +250,15 @@ const About = () => {
         </section>
 
         {/* --- 🍱 ADVANCED FEATURE GRID --- */}
-        <section className="bg-slate-950 py-20 md:py-36 relative overflow-hidden text-white">
-          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_20%,#3b82f608,transparent)]"></div>
-           
+        <section className="bg-[#040616] py-20 md:py-36 relative overflow-hidden text-white border-t border-[#131d47]">
+          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_20%,#00d4ff0a,transparent)] pointer-events-none"></div>
+            
           <div className="max-w-7xl mx-auto px-6 relative z-10">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
               <div className="text-center lg:text-left">
-                <h3 className="text-orange-500 font-black uppercase text-[10px] tracking-[0.5em] mb-6 italic">Platform Matrix</h3>
+                <h3 className="text-orange-400 font-black uppercase text-[10px] tracking-[0.5em] mb-6 italic">Platform Matrix</h3>
                 <h2 className="text-4xl md:text-7xl font-black italic uppercase tracking-tighter leading-[0.9] text-white mb-8">
-                  Empowering Every <br/> <span className="text-blue-500">Local Business.</span>
+                  Empowering Every <br/> <span className="text-cyan-400">Local Business.</span>
                 </h2>
                 <p className="text-slate-400 text-base md:text-lg mb-10 italic leading-relaxed">
                   We connect communities with local enterprises across all sectors, providing powerful digital storefronts built for speed, transparency, and trust.
@@ -267,7 +267,7 @@ const About = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => navigate("/")}
-                  className="inline-flex items-center gap-4 bg-blue-600 text-white px-10 py-5 rounded-2xl font-black uppercase italic text-xs tracking-widest shadow-xl hover:bg-blue-500 transition-all"
+                  className="inline-flex items-center gap-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-10 py-5 rounded-2xl font-black uppercase italic text-xs tracking-widest shadow-xl shadow-blue-950/60 transition-all border border-cyan-400/30"
                 >
                   Explore Local Hubs <ArrowRight className="w-4 h-4" />
                 </motion.button>
@@ -280,9 +280,9 @@ const About = () => {
                     initial={{ opacity: 0, x: 20 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.1 }}
-                    className="p-8 bg-white/5 border border-white/10 rounded-[2rem] md:rounded-[2.5rem] hover:bg-white/[0.08] transition-all group"
+                    className="p-8 bg-[#0a1033] border border-[#1e2d69] rounded-[2rem] md:rounded-[2.5rem] hover:border-cyan-400/40 hover:bg-[#0e1638] transition-all group"
                   >
-                    <div className="shrink-0 mb-6 group-hover:scale-110 transition-transform bg-white/5 w-12 h-12 flex items-center justify-center rounded-xl">
+                    <div className="shrink-0 mb-6 group-hover:scale-110 transition-transform bg-[#0e1638] border border-white/5 w-12 h-12 flex items-center justify-center rounded-xl shadow-sm">
                       {f.icon}
                     </div>
                     <h4 className="font-black uppercase italic text-base text-white mb-3 tracking-tight">{f.title}</h4>
@@ -296,22 +296,22 @@ const About = () => {
 
         {/* --- 🎯 THE SUDARA PROMISE --- */}
         <section className="py-24 md:py-40 text-center max-w-5xl mx-auto px-6 relative">
-           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#3b82f605,transparent)] -z-10"></div>
-           <motion.div
-             initial={{ opacity: 0, scale: 0.95 }}
-             whileInView={{ opacity: 1, scale: 1 }}
-             viewport={{ once: true }}
-           >
-             <div className="inline-flex items-center gap-3 px-6 py-2.5 bg-blue-50 text-blue-600 rounded-full font-black uppercase text-[10px] tracking-widest mb-10 border border-blue-100">
-               <Zap className="w-4 h-4 fill-blue-600 animate-pulse" /> Hyperlocal Mission
-             </div>
-             <h2 className="text-4xl md:text-7xl font-black italic uppercase tracking-tighter leading-tight mb-10 text-slate-900">
-               Connecting Communities, <br/> <span className="text-blue-600">Empowering Businesses.</span>
-             </h2>
-             <p className="text-slate-600 text-base md:text-xl leading-relaxed italic max-w-3xl mx-auto px-4 font-medium">
-               "Whether you are looking for local dining, fashion boutiques, home electronics, or automobile showrooms, Sudara Hub connects you directly to trusted merchants in your region."
-             </p>
-           </motion.div>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,#00d4ff08,transparent)] -z-10 pointer-events-none"></div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+          >
+            <div className="inline-flex items-center gap-3 px-6 py-2.5 bg-[#0a1033] text-cyan-300 rounded-full font-black uppercase text-[10px] tracking-widest mb-10 border border-cyan-500/30 shadow-md">
+              <Zap className="w-4 h-4 text-cyan-400 fill-cyan-400 animate-pulse" /> Hyperlocal Mission
+            </div>
+            <h2 className="text-4xl md:text-7xl font-black italic uppercase tracking-tighter leading-tight mb-10 text-white">
+              Connecting Communities, <br/> <span className="text-cyan-400">Empowering Businesses.</span>
+            </h2>
+            <p className="text-slate-300 text-base md:text-xl leading-relaxed italic max-w-3xl mx-auto px-4 font-medium">
+              "Whether you are looking for local dining, fashion boutiques, home electronics, or automobile showrooms, Sudara Hub connects you directly to trusted merchants in your region."
+            </p>
+          </motion.div>
         </section>
       </div>
 

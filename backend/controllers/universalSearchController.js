@@ -31,7 +31,11 @@ export const searchUniversalItems = async ({
     longitude = null,
     availability = null,
     category = null,
-    subCategory = null
+    subCategory = null,
+    foodType = null,
+    sort = "relevance",
+    state = "All",
+    district = "Select"
 }) => {
 
     const cleanQuery = String(query).trim();
@@ -85,7 +89,10 @@ export const searchUniversalItems = async ({
     };
 
 
-    // PRICE
+// ======================================================
+// PRICE
+// ======================================================
+
     if (minPrice !== null && minPrice !== undefined) {
         itemFilter.price = {
             $gte: Number(minPrice)
@@ -100,16 +107,22 @@ export const searchUniversalItems = async ({
     }
 
 
-    // CATEGORY
-    // if (category) {
-    //     itemFilter.category = {
-    //         $regex: String(category),
-    //         $options: "i"
-    //     };
-    // }
+// ======================================================
+// CATEGORY
+// ======================================================
+
+// if (category) {
+//     itemFilter.category = {
+//         $regex: String(category),
+//         $options: "i"
+//     };
+// }
 
 
-    // SUB CATEGORY
+// ======================================================
+// SUB CATEGORY
+// ======================================================
+
     if (subCategory) {
         itemFilter.subCategory = {
             $regex: String(subCategory),
@@ -118,7 +131,10 @@ export const searchUniversalItems = async ({
     }
 
 
-    // AVAILABILITY
+// ======================================================
+// AVAILABILITY
+// ======================================================
+
     if (availability === true) {
         itemFilter.isAvailable = true;
     }
@@ -132,104 +148,236 @@ export const searchUniversalItems = async ({
         .lean();
 
 
-    // REMOVE ITEMS WITHOUT OWNER
+// ======================================================
+// REMOVE ITEMS WITHOUT OWNER
+// ======================================================
+
     items = items.filter(
         item => item.ownerId && item.ownerId._id
     );
+
+
+// ======================================================
+// STATE FILTER
+// ======================================================
+
+    if (
+        state &&
+        String(state).trim() !== "" &&
+        String(state).trim().toLowerCase() !== "all"
+    ) {
+        const requestedState = String(state)
+            .trim()
+            .toLowerCase();
+
+        items = items.filter(item => {
+            const ownerState =
+                item.ownerId?.state?.trim().toLowerCase() || "";
+
+            return ownerState === requestedState;
+        });
+    }
+
+
+// ======================================================
+// DISTRICT FILTER
+// ======================================================
+
+    if (
+        district &&
+        String(district).trim() !== "" &&
+        String(district).trim().toLowerCase() !== "select" &&
+        String(district).trim().toLowerCase() !== "all"
+    ) {
+        const requestedDistrict = String(district)
+            .trim()
+            .toLowerCase();
+
+        items = items.filter(item => {
+            const ownerDistrict =
+                item.ownerId?.district?.trim().toLowerCase() || "";
+
+            return ownerDistrict === requestedDistrict;
+        });
+    }
+
+
+// ======================================================
+// FOOD TYPE FILTER
+// ======================================================
+
+    if (foodType) {
+
+        items = items.filter(item => {
+
+            const ownerFoodType =
+                item.ownerId?.foodType;
+
+            if (!ownerFoodType) {
+                return false;
+            }
+
+            if (foodType === "Both") {
+                return ownerFoodType === "Both";
+            }
+
+            return (
+                ownerFoodType === foodType ||
+                ownerFoodType === "Both"
+            );
+
+        });
+
+    }
+
+
 // ======================================================
 // BUSINESS CATEGORY FILTER
 // ======================================================
 
-if (category) {
-    const requestedCategory = String(category)
-        .trim()
-        .toLowerCase();
+    if (category) {
+        const requestedCategory = String(category)
+            .trim()
+            .toLowerCase();
 
-    items = items.filter(item => {
-        const ownerCategory =
-            item.ownerId?.category?.trim().toLowerCase() || "";
+        items = items.filter(item => {
+            const ownerCategory =
+                item.ownerId?.category?.trim().toLowerCase() || "";
 
-        return ownerCategory === requestedCategory;
-    });
-}
+            return ownerCategory === requestedCategory;
+        });
+    }
+
+
 // ======================================================
 // LOCATION
 // ======================================================
 
-const hasLocation =
-    latitude !== null &&
-    latitude !== undefined &&
-    longitude !== null &&
-    longitude !== undefined &&
-    Number.isFinite(Number(latitude)) &&
-    Number.isFinite(Number(longitude)); 
+    const hasLocation =
+        latitude !== null &&
+        latitude !== undefined &&
+        longitude !== null &&
+        longitude !== undefined &&
+        Number.isFinite(Number(latitude)) &&
+        Number.isFinite(Number(longitude)); 
 
-console.log("🔥 SEARCH CONTROLLER LOCATION:", {
-    latitude,
-    longitude,
-    hasLocation
-});
+    console.log("🔥 SEARCH CONTROLLER LOCATION:", {
+        latitude,
+        longitude,
+        hasLocation
+    });
 
-const userLat = Number(latitude);
-const userLng = Number(longitude);
+    const userLat = Number(latitude);
+    const userLng = Number(longitude);
 
-items = items.map(item => {
+    items = items.map(item => {
 
-    const owner = item.ownerId;
+        const owner = item.ownerId;
 
-    const ownerLat = Number(owner.latitude);
-    const ownerLng = Number(owner.longitude);
+        const ownerLat = Number(owner.latitude);
+        const ownerLng = Number(owner.longitude);
 
-    let distanceKm = null;
+        let distanceKm = null;
 
-    console.log("🔥 DISTANCE INITIAL:", distanceKm);
+        console.log("🔥 DISTANCE INITIAL:", distanceKm);
 
-    if (
-        hasLocation &&
-        Number.isFinite(ownerLat) &&
-        Number.isFinite(ownerLng) &&
-        ownerLat !== 0 &&
-        ownerLng !== 0
-    ) {
+        if (
+            hasLocation &&
+            Number.isFinite(ownerLat) &&
+            Number.isFinite(ownerLng) &&
+            ownerLat !== 0 &&
+            ownerLng !== 0
+        ) {
 
-        console.log("🔥 CALCULATING DISTANCE");
+            console.log("🔥 CALCULATING DISTANCE");
 
-        distanceKm = calculateDistanceKm(
-            userLat,
-            userLng,
-            ownerLat,
-            ownerLng
-        );
+            distanceKm = calculateDistanceKm(
+                userLat,
+                userLng,
+                ownerLat,
+                ownerLng
+            );
 
-    }
+        }
 
-    return {
-        ...item,
-        distanceKm
-    };
+        return {
+            ...item,
+            distanceKm
+        };
 
-});
+    });
 
 
 // ======================================================
 // MAX DISTANCE
 // ======================================================
 
-if (
-    maxDistanceKm !== null &&
-    maxDistanceKm !== undefined &&
-    hasLocation
-) {
+    if (
+        maxDistanceKm !== null &&
+        maxDistanceKm !== undefined &&
+        hasLocation
+    ) {
 
-    const maxDistance = Number(maxDistanceKm);
+        const maxDistance = Number(maxDistanceKm);
 
-    items = items.filter(item =>
-        item.distanceKm !== null &&
-        item.distanceKm <= maxDistance
-    );
+        items = items.filter(item =>
+            item.distanceKm !== null &&
+            item.distanceKm <= maxDistance
+        );
 
-}
-    // RESULT FORMAT
+    }
+
+
+// ======================================================
+// SORTING
+// ======================================================
+
+    if (sort === "price_asc") {
+
+        items.sort((a, b) =>
+            Number(a.price || 0) -
+            Number(b.price || 0)
+        );
+
+    }
+
+    if (sort === "price_desc") {
+
+        items.sort((a, b) =>
+            Number(b.price || 0) -
+            Number(a.price || 0)
+        );
+
+    }
+
+    if (sort === "rating_desc") {
+
+        items.sort((a, b) =>
+            Number(b.ownerId?.averageRating || 0) -
+            Number(a.ownerId?.averageRating || 0)
+        );
+
+    }
+
+    if (sort === "distance_asc") {
+
+        items.sort((a, b) => {
+
+            if (a.distanceKm === null) return 1;
+
+            if (b.distanceKm === null) return -1;
+
+            return a.distanceKm - b.distanceKm;
+
+        });
+
+    }
+
+
+// ======================================================
+// RESULT FORMAT
+// ======================================================
+
     return items.map(item => {
 
         const owner = item.ownerId;
@@ -322,7 +470,8 @@ export const universalSearch = async (req, res) => {
             longitude,
             availability,
             category,
-            subCategory
+            subCategory,
+            sort = "relevance"
         } = req.body || {};
 
 
@@ -336,7 +485,8 @@ export const universalSearch = async (req, res) => {
             longitude,
             availability,
             category,
-            subCategory
+            subCategory,
+            sort
 
         });
 
@@ -365,7 +515,6 @@ export const universalSearch = async (req, res) => {
             results
 
         });
-
 
     } catch (error) {
 

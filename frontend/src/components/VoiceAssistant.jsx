@@ -9,7 +9,7 @@ const VoiceAssistant = ({ menuItems, onOrderDetected }) => {
   const startListening = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert("మీ బ్రౌజర్ వాయిస్ సపోర్ట్ చేయదు రాజు, Chrome వాడండి!");
+      alert("మీ బ్రౌజర్ వాయిస్ సపోర్ట్ చేయదు, Chrome వాడండి!");
       return;
     }
 
@@ -71,11 +71,19 @@ const VoiceAssistant = ({ menuItems, onOrderDetected }) => {
     <button 
       onClick={isListening ? null : startListening} 
       disabled={loading}
-      className={`fixed bottom-24 right-6 z-[500] p-5 rounded-full shadow-[0_10px_40px_rgba(0,0,0,0.3)] transition-all active:scale-90 ${
-        isListening ? 'bg-red-500 animate-pulse' : 'bg-slate-900'
-      } text-white`}
+      className={`fixed bottom-24 right-6 z-[500] p-5 rounded-full shadow-[0_10px_35px_rgba(0,0,0,0.6)] border transition-all active:scale-90 ${
+        isListening 
+          ? 'bg-rose-600 border-rose-400/80 shadow-rose-600/50 animate-pulse text-white' 
+          : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 border-cyan-400/40 shadow-blue-900/50 text-cyan-200'
+      }`}
     >
-      {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : isListening ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+      {loading ? (
+        <Loader2 className="w-6 h-6 animate-spin text-cyan-300" />
+      ) : isListening ? (
+        <MicOff className="w-6 h-6 text-white" />
+      ) : (
+        <Mic className="w-6 h-6 text-white" />
+      )}
     </button>
   );
 };

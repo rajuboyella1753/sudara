@@ -8,7 +8,7 @@ import imageCompression from 'browser-image-compression';
 import { io } from "socket.io-client";
 import api, { socket } from "../api/api-base";
 import { 
-  Cpu, Smartphone, Laptop, Headphones, Watch, Plus, Trash2, Edit3, Download, Menu,ShoppingBag,
+  Cpu, Smartphone, Laptop, Headphones, Watch, Plus, Trash2, Edit3, Download, Menu, ShoppingBag,
   Power, LogOut, Package, X, UploadCloud, Settings, Image as ImageIcon, Search, Key, MapPin
 } from "lucide-react";
 
@@ -28,10 +28,10 @@ export default function ElectronicsDashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isRenewalModalOpen, setIsRenewalModalOpen] = useState(false);
-const [selectedPlanType, setSelectedPlanType] = useState("premium");
-const [planDuration, setPlanDuration] = useState(30);
-const SUDARA_UPI_ID = "sudara@ptyes";
-const ADMIN_PHONE = "7569896128";
+  const [selectedPlanType, setSelectedPlanType] = useState("premium");
+  const [planDuration, setPlanDuration] = useState(30);
+  const SUDARA_UPI_ID = "sudara@ptyes";
+  const ADMIN_PHONE = "7569896128";
   const [newGadget, setNewGadget] = useState({
     name: "",
     subCategory: "Mobiles",
@@ -79,7 +79,8 @@ const ADMIN_PHONE = "7569896128";
     fetchMasterCatalog();
     fetchStoreOrders(stored._id);
   }, [navigate]);
-// 🚀 రియల్ టైమ్ సాకెట్ లిజనర్ (పేజీ రిఫ్రెష్ అవ్వకుండా ఆర్డర్స్ రావడానికి)
+
+  // 🚀 రియల్ టైమ్ సాకెట్ లిజనర్ (పేజీ రిఫ్రెష్ అవ్వకుండా ఆర్డర్స్ రావడానికి)
   useEffect(() => {
     if (!owner?._id) return;
 
@@ -110,6 +111,7 @@ const ADMIN_PHONE = "7569896128";
       socket.off("new_order_received", handleNewOrder);
     };
   }, [owner]);
+
   const fetchStoreOrders = async (ownerId) => {
     try {
       const res = await api.get(`/orders/restaurant/${ownerId}`);
@@ -118,12 +120,14 @@ const ADMIN_PHONE = "7569896128";
       console.error("Failed to fetch store orders");
     }
   };
+
   const calculatedAmount = useMemo(() => {
-  const baseRate = 699; 
-  const months = planDuration === 90 ? 3 : 1;
-  return baseRate * months; 
-}, [planDuration]);
-const handleUpdateOrderStatus = async (orderId, newStatus) => {
+    const baseRate = 699; 
+    const months = planDuration === 90 ? 3 : 1;
+    return baseRate * months; 
+  }, [planDuration]);
+
+  const handleUpdateOrderStatus = async (orderId, newStatus) => {
     try {
       // 1. ఒకవేళ Delivered అయితే సేల్స్ కూడా అప్‌డేట్ అయ్యేలా బ్యాకెండ్‌కి పంపాలి
       if (newStatus === "Delivered" || newStatus === "Served") {
@@ -160,6 +164,7 @@ const handleUpdateOrderStatus = async (orderId, newStatus) => {
       alert("స్టేటస్ అప్‌డేట్ విఫలమైంది. ❌");
     }
   };
+
   const fetchProducts = async (ownerId) => {
     try {
       const res = await api.get(`/items/owner/${ownerId}`);
@@ -169,9 +174,9 @@ const handleUpdateOrderStatus = async (orderId, newStatus) => {
     }
   };
 
-const fetchMasterCatalog = async () => {
+  const fetchMasterCatalog = async () => {
     try {
-      // owner.category లేదా కచ్చితంగా "Electronics" అని వెళ్తుందో లే지 చూసుకోండి
+      // owner.category లేదా కచ్చితంగా "Electronics" అని వెళ్తుందో లేదో చూసుకోండి
       const cat = owner?.category || "Electronics";
       const res = await api.get(`/items/master-catalog?category=${cat}`);
       console.log("Electronics Master Items:", res.data); // కన్సోల్ లో చెక్ చేయడానికి
@@ -179,7 +184,7 @@ const fetchMasterCatalog = async () => {
     } catch (err) {
       console.log("Master catalog fetch fallback");
     }
-};
+  };
 
   const handleToggleStore = async () => {
     try {
@@ -192,31 +197,31 @@ const fetchMasterCatalog = async () => {
     }
   };
 
-const handleImageChange = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  try {
-    // 💡 ఇక్కడ మనం కంప్రెషన్ చేస్తున్నాం
-    const options = {
-      maxSizeMB: 0.3, // మాక్సిమం 300KB వరకు
-      maxWidthOrHeight: 800, // వెడల్పు లేదా ఎత్తు 800px మించకుండా
-      useWebWorker: true,
-    };
+    try {
+      // 💡 ఇక్కడ మనం కంప్రెషన్ చేస్తున్నాం
+      const options = {
+        maxSizeMB: 0.3, // మాక్సిమం 300KB వరకు
+        maxWidthOrHeight: 800, // వెడల్పు లేదా ఎత్తు 800px మించకుండా
+        useWebWorker: true,
+      };
 
-    const compressedFile = await imageCompression(file, options);
-    
-    // ఇప్పుడు కంప్రెస్ అయిన ఫైల్‌ని స్టేట్‌లో సెట్ చెయ్
-    setImageFile(compressedFile);
-    setImagePreview(URL.createObjectURL(compressedFile));
-    
-  } catch (error) {
-    console.error("Image compression error:", error);
-    // ఒకవేళ కంప్రెషన్ ఫెయిల్ అయితే ఒరిజినల్ ఫైల్ తీసుకుంటుంది
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
-  }
-};
+      const compressedFile = await imageCompression(file, options);
+      
+      // ఇప్పుడు కంప్రెస్ అయిన ఫైల్‌ని స్టేట్‌లో సెట్ చెయ్
+      setImageFile(compressedFile);
+      setImagePreview(URL.createObjectURL(compressedFile));
+      
+    } catch (error) {
+      console.error("Image compression error:", error);
+      // ఒకవేళ కంప్రెషన్ ఫెయిల్ అయితే ఒరిజినల్ ఫైల్ తీసుకుంటుంది
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
 
   const handleStoreImageChange = (e) => {
     const file = e.target.files[0];
@@ -259,7 +264,8 @@ const handleImageChange = async (e) => {
       setLoading(false);
     }
   };
-// ⏳ రోజుల కౌంట్‌డౌన్ లాజిక్
+
+  // ⏳ రోజుల కౌంట్‌డౌన్ లాజిక్
   const daysRemaining = useMemo(() => {
     if (!owner?.nextBillingDate) return 0;
     const today = new Date();
@@ -268,7 +274,8 @@ const handleImageChange = async (e) => {
     const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
     return differenceInDays < 0 ? 0 : differenceInDays;
   }, [owner]);
-const handleAddGadget = async (e) => {
+
+  const handleAddGadget = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
@@ -454,11 +461,11 @@ const handleAddGadget = async (e) => {
         ctx.font = "bold 30px sans-serif";
         ctx.fillStyle = "#475569"; 
         ctx.fillText("POWERED BY ", canvas.width / 2 - 190, 1830);
-             
+              
         ctx.fillStyle = "#FACC15"; 
         ctx.fillText("SUDARA HUB", canvas.width / 2 + 30, 1830);
-             
-        ctx.fillStyle = "#475569";
+              
+        ctx.fillStyle = "#475569"; 
         ctx.fillText(" • sudara.in", canvas.width / 2 + 220, 1830);
 
         const link = document.createElement("a");
@@ -502,7 +509,7 @@ const handleAddGadget = async (e) => {
   if (!owner) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col justify-between selection:bg-indigo-100">
+    <div className="min-h-screen bg-[#05081c] text-slate-100 font-sans flex flex-col justify-between selection:bg-cyan-500/30 selection:text-cyan-200">
       
       {/* 🤫 HIDDEN QR CANVAS FOR POSTER DOWNLOAD */}
       <div style={{ display: "none" }}>
@@ -510,12 +517,12 @@ const handleAddGadget = async (e) => {
       </div>
 
       {/* 👑 CLEAN & RESPONSIVE NAVBAR */}
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 px-3 sm:px-6 lg:px-12 py-3 flex justify-between items-center shadow-xs w-full">
+      <nav className="bg-[#070b24]/90 backdrop-blur-md border-b border-[#131d47] sticky top-0 z-50 px-3 sm:px-6 lg:px-12 py-3 flex justify-between items-center shadow-md w-full">
         <div className="flex items-center gap-3 min-w-0 pr-2">
           {/* 🍔 Hamburger Menu Button */}
           <button 
             onClick={() => setIsSidebarOpen(true)}
-            className="p-2 sm:p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all shrink-0"
+            className="p-2 sm:p-2.5 bg-[#0a1033] hover:bg-[#0e1638] text-slate-300 rounded-xl transition-all shrink-0 border border-[#1e2d69]"
             title="Open Hub Menu"
           >
             <Menu className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -523,34 +530,34 @@ const handleAddGadget = async (e) => {
 
           <div className="flex items-center gap-2.5 min-w-0">
             {/* 🖼️ STORE IMAGE / BANNER INSTEAD OF CPU ICON */}
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl overflow-hidden bg-indigo-50 border border-slate-200 shadow-sm flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl overflow-hidden bg-[#0e1638] border border-[#1e2d69] shadow-sm flex items-center justify-center shrink-0">
               {(owner?.image || owner?.hotelImage) ? (
                 <img src={owner.image || owner.hotelImage} alt={owner.name} className="w-full h-full object-cover" />
               ) : (
-                <Cpu className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-600" />
+                <Cpu className="w-4 h-4 sm:w-5 sm:h-5 text-cyan-400" />
               )}
             </div>
 
             <div className="min-w-0 flex flex-col justify-center">
-  <h1 className="text-[11px] sm:text-sm font-black uppercase tracking-wider text-slate-900 truncate max-w-[100px] xs:max-w-[130px] sm:max-w-xs leading-tight">
-    {owner.name}
-  </h1>
-  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-    <p className="text-[7px] sm:text-[8px] font-extrabold uppercase text-purple-600 tracking-widest truncate">గ్యాజెట్స్ హబ్ / Gadgets Hub</p>
-    {daysRemaining > 0 ? (
-      <span className="bg-emerald-50 text-emerald-600 border border-emerald-200/60 text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0">
-        ⏳ {daysRemaining}D Left
-      </span>
-    ) : (
-      <button 
-        onClick={() => alert("Admin కి సంప్రదించండి!")} 
-        className="bg-red-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase animate-bounce shrink-0"
-      >
-        ⚠️ Renew
-      </button>
-    )}
-  </div>
-</div>
+              <h1 className="text-[11px] sm:text-sm font-black uppercase tracking-wider text-white truncate max-w-[100px] xs:max-w-[130px] sm:max-w-xs leading-tight">
+                {owner.name}
+              </h1>
+              <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                <p className="text-[7px] sm:text-[8px] font-extrabold uppercase text-cyan-400 tracking-widest truncate">గ్యాజెట్స్ హబ్ / Gadgets Hub</p>
+                {daysRemaining > 0 ? (
+                  <span className="bg-emerald-950/50 text-emerald-400 border border-emerald-500/40 text-[7px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0">
+                    ⏳ {daysRemaining}D Left
+                  </span>
+                ) : (
+                  <button 
+                    onClick={() => alert("Admin కి సంప్రదించండి!")} 
+                    className="bg-rose-600 text-white text-[7px] font-black px-1.5 py-0.5 rounded uppercase animate-bounce shrink-0 border border-rose-400/40"
+                  >
+                    ⚠️ Renew
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -558,7 +565,7 @@ const handleAddGadget = async (e) => {
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <button 
             onClick={handleToggleStore}
-            className={`flex items-center gap-1 px-2.5 sm:px-3.5 py-2 rounded-xl text-[8px] sm:text-[10px] font-black uppercase tracking-wider transition-all shadow-xs ${owner.isStoreOpen ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'}`}
+            className={`flex items-center gap-1 px-2.5 sm:px-3.5 py-2 rounded-xl text-[8px] sm:text-[10px] font-black uppercase tracking-wider transition-all shadow-xs border ${owner.isStoreOpen ? 'bg-[#0a1033] border-emerald-500/40 text-emerald-400 hover:bg-emerald-950/40' : 'bg-[#0a1033] border-rose-500/40 text-rose-400 hover:bg-rose-950/40'}`}
           >
             <Power className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
             <span className="hidden xs:inline">{owner.isStoreOpen ? 'Online (తెరిచి ఉంది)' : 'Offline (మూసి ఉంది)'}</span>
@@ -568,18 +575,18 @@ const handleAddGadget = async (e) => {
           {/* Store Settings Button */}
           <button 
             onClick={() => setIsSettingsModal(true)}
-            className="p-2 sm:p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all shrink-0"
+            className="p-2 sm:p-2.5 bg-[#0a1033] hover:bg-[#0e1638] text-slate-300 rounded-xl transition-all shrink-0 border border-[#1e2d69]"
             title="Store Settings"
           >
-            <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-300" />
           </button>
           
           <button 
             onClick={() => { localStorage.removeItem("owner"); navigate("/owner"); }}
-            className="p-2 sm:p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all shrink-0"
+            className="p-2 sm:p-2.5 bg-[#0a1033] hover:bg-[#0e1638] text-slate-300 rounded-xl transition-all shrink-0 border border-[#1e2d69]"
             title="Sign Out"
           >
-            <LogOut className="w-3 h-3.5 sm:w-4 sm:h-4" />
+            <LogOut className="w-3 h-3.5 sm:w-4 sm:h-4 text-rose-400" />
           </button>
         </div>
       </nav>
@@ -590,22 +597,22 @@ const handleAddGadget = async (e) => {
         {activeTab === "inventory" && (
           <>
             {/* TOP CONTROLS & ADD BUTTON */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/80 shadow-xs">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#0a1033] p-5 sm:p-6 rounded-3xl border border-[#1e2d69] shadow-sm">
               <div>
-                <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight text-slate-900">ఇన్వెంటరీ కేటలాగ్ / Inventory Catalog</h2>
+                <h2 className="text-lg sm:text-xl font-black uppercase tracking-tight text-white">ఇన్వెంటరీ కేటలాగ్ / Inventory Catalog</h2>
                 <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">గ్యాజెట్లు, ధరలు మరియు మాస్టర్ క్యాటలాగ్ మేనేజ్‌మెంట్</p>
               </div>
               <div className="flex items-center gap-2.5 w-full sm:w-auto">
                 {/* 🔍 Master Catalog Import Button */}
                 <button 
                   onClick={() => setIsMasterModal(true)}
-                  className="flex-1 sm:flex-none bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-4 sm:px-5 py-3.5 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2"
+                  className="flex-1 sm:flex-none bg-[#0e1638] hover:bg-[#141f4d] text-cyan-300 border border-cyan-500/30 px-4 sm:px-5 py-3.5 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-2"
                 >
-                  <Search className="w-4 h-4" /> మాస్టర్ నుండి తెచ్చుకోండి / Import
+                  <Search className="w-4 h-4 text-cyan-400" /> మాస్టర్ నుండి తెచ్చుకోండి / Import
                 </button>
                 <button 
                   onClick={() => setIsAddModal(true)}
-                  className="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white px-5 sm:px-6 py-3.5 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-md shadow-indigo-100 transition-all flex items-center justify-center gap-2 active:scale-95 shrink-0"
+                  className="flex-1 sm:flex-none bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-5 sm:px-6 py-3.5 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg border border-cyan-400/30 transition-all flex items-center justify-center gap-2 active:scale-95 shrink-0"
                 >
                   <Plus className="w-4 h-4" /> కొత్త గ్యాజెట్ / Add Gadget
                 </button>
@@ -619,7 +626,7 @@ const handleAddGadget = async (e) => {
                   <button
                     key={cat}
                     onClick={() => setSelectedCategoryTab(cat)}
-                    className={`px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-2xs shrink-0 ${selectedCategoryTab === cat ? 'bg-slate-900 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}`}
+                    className={`px-4 sm:px-5 py-2.5 sm:py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shrink-0 border ${selectedCategoryTab === cat ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-cyan-400/40 shadow-md' : 'bg-[#0a1033] text-slate-400 hover:text-slate-200 border-[#1e2d69]'}`}
                   >
                     {cat}
                   </button>
@@ -629,9 +636,9 @@ const handleAddGadget = async (e) => {
 
             {/* PRODUCT GRID */}
             {filteredProducts.length === 0 ? (
-              <div className="bg-white border border-dashed border-slate-200 rounded-3xl p-12 sm:p-16 text-center space-y-3">
-                <Package className="w-10 h-10 text-slate-300 mx-auto" />
-                <h3 className="text-sm font-black uppercase text-slate-700 tracking-wider">గ్యాజెట్లు ఏవీ లేవు / No Gadgets Found</h3>
+              <div className="bg-[#0a1033] border border-dashed border-[#1e2d69] rounded-3xl p-12 sm:p-16 text-center space-y-3">
+                <Package className="w-10 h-10 text-slate-500 mx-auto" />
+                <h3 className="text-sm font-black uppercase text-slate-300 tracking-wider">గ్యాజెట్లు ఏవీ లేవు / No Gadgets Found</h3>
                 <p className="text-[10px] font-bold text-slate-400 uppercase">పైన ఉన్న 'Import from Master' లేదా 'Add New Gadget' ద్వారా జోడించండి.</p>
               </div>
             ) : (
@@ -642,33 +649,33 @@ const handleAddGadget = async (e) => {
                     initial={{ opacity: 0 }} 
                     animate={{ opacity: 1 }} 
                     key={item._id} 
-                    className="bg-white rounded-3xl border border-slate-200 shadow-2xs overflow-hidden flex flex-col justify-between transition-all hover:border-slate-300 hover:shadow-md"
+                    className="bg-[#0a1033] rounded-3xl border border-[#1e2d69] shadow-sm overflow-hidden flex flex-col justify-between transition-all hover:border-cyan-400/40 hover:shadow-md"
                   >
                     <div>
-                      <div className="w-full h-48 sm:h-52 bg-slate-100 overflow-hidden relative flex items-center justify-center p-4">
+                      <div className="w-full h-48 sm:h-52 bg-[#05081c] overflow-hidden relative flex items-center justify-center p-4 border-b border-[#1e2d69]">
                         {item.image ? (
                           <img src={item.image} alt={item.name} className="max-h-full max-w-full object-contain drop-shadow-sm" />
                         ) : (
-                          <Smartphone className="w-10 h-10 text-slate-300" />
+                          <Smartphone className="w-10 h-10 text-slate-600" />
                         )}
-                        <span className="absolute top-3 right-3 bg-white/90 backdrop-blur-xs text-slate-700 text-[8px] font-black uppercase px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs">
+                        <span className="absolute top-3 right-3 bg-[#0a1033]/90 backdrop-blur-xs text-cyan-300 text-[8px] font-black uppercase px-2.5 py-1 rounded-lg border border-cyan-500/30 shadow-sm">
                           {item.subCategory || "Gadget"}
                         </span>
                       </div>
 
                       <div className="p-4 sm:p-5 space-y-1.5">
-                        <h3 className="text-sm font-black uppercase text-slate-900 tracking-tight truncate">{item.name}</h3>
-                        <p className="text-[11px] font-medium text-slate-500 line-clamp-2 leading-relaxed">{item.description}</p>
+                        <h3 className="text-sm font-black uppercase text-white tracking-tight truncate">{item.name}</h3>
+                        <p className="text-[11px] font-medium text-slate-400 line-clamp-2 leading-relaxed">{item.description}</p>
                         <div className="pt-2">
-                          <span className="text-base font-black text-indigo-600">₹{item.price}</span>
+                          <span className="text-base font-black text-cyan-400">₹{item.price}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="p-3.5 sm:p-4 bg-slate-50/80 border-t border-slate-100 flex justify-between items-center">
+                    <div className="p-3.5 sm:p-4 bg-[#070b24] border-t border-[#1e2d69] flex justify-between items-center">
                       <button 
                         onClick={() => handleToggleAvailability(item)}
-                        className={`text-[9px] font-black uppercase px-3 py-1.5 rounded-lg transition-all ${item.isAvailable !== false ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' : 'bg-rose-100 text-rose-700 hover:bg-rose-200'}`}
+                        className={`text-[9px] font-black uppercase px-3 py-1.5 rounded-lg transition-all border ${item.isAvailable !== false ? 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30 hover:bg-emerald-900/40' : 'bg-rose-950/40 text-rose-300 border-rose-500/30 hover:bg-rose-900/40'}`}
                       >
                         {item.isAvailable !== false ? 'స్టాక్‌లో ఉంది / In Stock' : 'స్టాక్ లేదు / Out of Stock'}
                       </button>
@@ -676,14 +683,14 @@ const handleAddGadget = async (e) => {
                       <div className="flex items-center gap-1">
                         <button 
                           onClick={() => { setEditingItem(item); setImagePreview(item.image); setIsEditModal(true); }} 
-                          className="p-2 text-slate-400 hover:text-indigo-600 transition-colors"
+                          className="p-2 text-slate-400 hover:text-cyan-400 transition-colors"
                           title="సవరించు / Edit"
                         >
                           <Edit3 className="w-4 h-4" />
                         </button>
                         <button 
                           onClick={() => handleDeleteProduct(item._id)} 
-                          className="p-2 text-slate-400 hover:text-rose-600 transition-colors"
+                          className="p-2 text-slate-400 hover:text-rose-400 transition-colors"
                           title="తొలగించు / Delete"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -699,20 +706,20 @@ const handleAddGadget = async (e) => {
 
         {activeTab === "profile" && (
           <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in zoom-in duration-500">
-            <h2 className="text-4xl font-black italic uppercase text-slate-900">
-              ఓనర్ ప్రొఫైల్<br/><span className="text-purple-600">& వెరిఫికేషన్ సర్టిఫికెట్</span>
+            <h2 className="text-4xl font-black italic uppercase text-white">
+              ఓనర్ ప్రొఫైల్<br/><span className="text-cyan-400">& వెరిఫికేషన్ సర్టిఫికెట్</span>
             </h2>
 
-            <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-[2.5rem] p-6 md:p-8 border border-slate-700/50 shadow-2xl relative overflow-hidden w-full">
+            <div className="bg-gradient-to-br from-[#0a1033] to-[#0e1638] rounded-[2.5rem] p-6 md:p-8 border border-[#1e2d69] shadow-2xl relative overflow-hidden w-full">
               <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
                 <div className="flex flex-col sm:flex-row items-start gap-4">
-                  <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center text-blue-400 border border-blue-500/20 shadow-lg shrink-0 mx-auto sm:mx-0">
+                  <div className="w-12 h-12 bg-[#0e1638] rounded-xl flex items-center justify-center text-cyan-400 border border-cyan-500/30 shadow-lg shrink-0 mx-auto sm:mx-0">
                     <span className="text-xl">🛡️</span>
                   </div>
                   <div className="text-center sm:text-left">
                     <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
                       <h4 className="text-base md:text-lg font-black text-white uppercase tracking-tight italic">సుడరా ట్రస్ట్ & వెరిఫికేషన్ / Verified Partner</h4>
-                      <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-black uppercase px-2 py-0.5 rounded-md tracking-widest">Active</span>
+                      <span className="bg-emerald-950/40 text-emerald-400 border border-emerald-500/30 text-[9px] font-black uppercase px-2 py-0.5 rounded-md tracking-widest">Active</span>
                     </div>
                     <p className="text-slate-400 text-[11px] md:text-xs mt-1 max-w-2xl font-medium leading-relaxed uppercase tracking-wider">
                       మీ అధికారిక మర్చంట్ భాగస్వామ్య సర్టిఫికెట్‌ను డౌన్‌లోడ్ చేసుకోండి.
@@ -814,7 +821,7 @@ const handleAddGadget = async (e) => {
                       alert("సర్టిఫికెట్ జనరేట్ అవ్వడంలో లోపం!");
                     }
                   }}
-                  className="w-full lg:w-auto bg-blue-600 hover:bg-blue-500 text-white font-black uppercase text-[10px] tracking-[0.2em] px-6 py-3.5 rounded-xl shadow-lg active:scale-95 transition-all shrink-0 flex items-center justify-center gap-2"
+                  className="w-full lg:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black uppercase text-[10px] tracking-[0.2em] px-6 py-3.5 rounded-xl shadow-lg active:scale-95 transition-all shrink-0 flex items-center justify-center gap-2 border border-cyan-400/30"
                 >
                   <span>సర్టిఫికెట్ డౌన్‌లోడ్ / Download Certificate</span>
                   <span className="text-xs">⬇️</span>
@@ -825,48 +832,48 @@ const handleAddGadget = async (e) => {
         )}
         {activeTab === "orders" && (
           <div className="space-y-6">
-            <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-xs flex justify-between items-center">
+            <div className="bg-[#0a1033] p-6 rounded-3xl border border-[#1e2d69] shadow-sm flex justify-between items-center">
               <div>
-                <h2 className="text-xl font-black uppercase tracking-tight text-slate-900">కస్టమర్ ఆర్డర్స్ / Live Customer Orders</h2>
+                <h2 className="text-xl font-black uppercase tracking-tight text-white">కస్టమర్ ఆర్డర్స్ / Live Customer Orders</h2>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">ప్రత్యక్ష ఆర్డర్లు మరియు డెలివరీ ట్రాకింగ్</p>
               </div>
-              <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-black px-4 py-2 rounded-xl">
+              <span className="bg-[#0e1638] text-cyan-300 border border-cyan-500/30 text-xs font-black px-4 py-2 rounded-xl">
                 Total Orders: {storeOrders.length}
               </span>
             </div>
 
             {storeOrders.length === 0 ? (
-              <div className="bg-white border border-dashed border-slate-200 rounded-3xl p-16 text-center space-y-3">
-                <ShoppingBag className="w-10 h-10 text-slate-300 mx-auto" />
-                <h3 className="text-sm font-black uppercase text-slate-700">ఆర్డర్‌లు ఏవీ లేవు / No Orders Yet</h3>
+              <div className="bg-[#0a1033] border border-dashed border-[#1e2d69] rounded-3xl p-16 text-center space-y-3">
+                <ShoppingBag className="w-10 h-10 text-slate-500 mx-auto" />
+                <h3 className="text-sm font-black uppercase text-slate-300">ఆర్డర్‌లు ఏవీ లేవు / No Orders Yet</h3>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {storeOrders.map((order) => (
-                  <div key={order._id} className="bg-white rounded-3xl border border-slate-200 p-5 shadow-sm space-y-4 flex flex-col justify-between">
+                  <div key={order._id} className="bg-[#0a1033] rounded-3xl border border-[#1e2d69] p-5 shadow-sm space-y-4 flex flex-col justify-between">
                     <div className="space-y-3">
                       <div className="flex justify-between items-start">
-                        <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 text-[9px] font-black uppercase px-2.5 py-1 rounded-lg">
+                        <span className="bg-[#0e1638] text-cyan-300 border border-cyan-500/30 text-[9px] font-black uppercase px-2.5 py-1 rounded-lg">
                           📦 ID: {order.sudaraId}
                         </span>
-                        <span className="text-[9px] font-black uppercase px-2.5 py-1 rounded-lg bg-amber-100 text-amber-800">
+                        <span className="text-[9px] font-black uppercase px-2.5 py-1 rounded-lg bg-amber-950/40 text-amber-300 border border-amber-500/30">
                           {order.status || "Pending"}
                         </span>
                       </div>
 
                       {/* కస్టమర్ వివరాలు */}
                       <div className="space-y-1">
-                        <h3 className="text-sm font-black uppercase text-slate-900">{order.customerName}</h3>
-                        <p className="text-xs font-bold text-indigo-600">
+                        <h3 className="text-sm font-black uppercase text-white">{order.customerName}</h3>
+                        <p className="text-xs font-bold text-cyan-400">
                           📞 <a href={`tel:${order.customerPhone}`} className="underline">{order.customerPhone}</a>
                         </p>
-                        <p className="text-[11px] font-bold text-slate-600">
-                          📍 అడ్రస్: <span className="text-slate-900">{order.customerAddress || "N/A"}</span>
+                        <p className="text-[11px] font-bold text-slate-300">
+                          📍 అడ్రస్: <span className="text-white">{order.customerAddress || "N/A"}</span>
                         </p>
                       </div>
 
                       {/* 🛒 ఆర్డర్ చేసిన ఐటమ్స్ & ప్రొడక్ట్ ఇమేజ్ */}
-                      <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-2">
+                      <div className="bg-[#0e1638] p-3 rounded-2xl border border-[#1e2d69] space-y-2">
                         <p className="text-[9px] font-black text-slate-400 uppercase">Selected Items:</p>
                         {order.items.map((itemStr, idx) => {
                           let displayName = itemStr;
@@ -879,51 +886,51 @@ const handleAddGadget = async (e) => {
                           }
 
                           return (
-                            <div key={idx} className="flex items-center gap-3 bg-white p-2 rounded-xl border border-slate-100">
+                            <div key={idx} className="flex items-center gap-3 bg-[#0a1033] p-2 rounded-xl border border-[#1e2d69]">
                               {imageUrl && imageUrl !== 'N/A' ? (
-                                <img src={imageUrl} alt="" className="w-10 h-10 object-contain rounded-lg border bg-slate-50 shrink-0" />
+                                <img src={imageUrl} alt="" className="w-10 h-10 object-contain rounded-lg border border-[#1e2d69] bg-[#05081c] shrink-0" />
                               ) : (
-                                <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center shrink-0">
-                                  <Package className="w-5 h-5 text-slate-400" />
+                                <div className="w-10 h-10 bg-[#05081c] rounded-lg flex items-center justify-center shrink-0 border border-[#1e2d69]">
+                                  <Package className="w-5 h-5 text-slate-500" />
                                 </div>
                               )}
                               <div className="min-w-0 flex-1">
-                                <span className="text-xs font-black uppercase text-slate-800 block truncate">{displayName}</span>
+                                <span className="text-xs font-black uppercase text-slate-100 block truncate">{displayName}</span>
                               </div>
                             </div>
                           );
                         })}
 
-                        <div className="pt-2 border-t border-slate-200 flex justify-between text-xs font-black text-slate-900">
+                        <div className="pt-2 border-t border-[#1e2d69] flex justify-between text-xs font-black text-white">
                           <span>Total Amount:</span>
-                          <span className="text-indigo-600">₹{order.totalAmount}</span>
+                          <span className="text-cyan-400">₹{order.totalAmount}</span>
                         </div>
                       </div>
                     </div>
 
                     {/* మేనేజ్‌మెంట్ బటన్స్ */}
-                    <div className="pt-3 border-t border-slate-100 grid grid-cols-2 gap-2">
+                    <div className="pt-3 border-t border-[#1e2d69] grid grid-cols-2 gap-2">
                       <button 
                         onClick={() => handleUpdateOrderStatus(order._id, "Accepted")}
-                        className="bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-black uppercase text-[9px] tracking-wider transition-all"
+                        className="bg-blue-600 hover:bg-blue-500 text-white py-2.5 rounded-xl font-black uppercase text-[9px] tracking-wider transition-all border border-cyan-400/30"
                       >
                         Accept ✓
                       </button>
                       <button 
                         onClick={() => handleUpdateOrderStatus(order._id, "Shipping")}
-                        className="bg-purple-600 hover:bg-purple-700 text-white py-2.5 rounded-xl font-black uppercase text-[9px] tracking-wider transition-all"
+                        className="bg-purple-600 hover:bg-purple-500 text-white py-2.5 rounded-xl font-black uppercase text-[9px] tracking-wider transition-all border border-purple-400/30"
                       >
                         Shipping 📦
                       </button>
                       <button 
                         onClick={() => handleUpdateOrderStatus(order._id, "Out for Delivery")}
-                        className="bg-amber-600 hover:bg-amber-700 text-white py-2.5 rounded-xl font-black uppercase text-[9px] tracking-wider transition-all"
+                        className="bg-amber-600 hover:bg-amber-500 text-white py-2.5 rounded-xl font-black uppercase text-[9px] tracking-wider transition-all border border-amber-400/30"
                       >
                         Out For Delivery 🛵
                       </button>
                       <button 
                         onClick={() => handleUpdateOrderStatus(order._id, "Delivered")}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl font-black uppercase text-[9px] tracking-wider transition-all shadow-sm"
+                        className="bg-emerald-600 hover:bg-emerald-500 text-white py-2.5 rounded-xl font-black uppercase text-[9px] tracking-wider transition-all shadow-sm border border-emerald-400/30"
                       >
                         Delivered 🚀
                       </button>
@@ -937,14 +944,14 @@ const handleAddGadget = async (e) => {
       </main>
 
       {/* 📌 FOOTER */}
-      <footer className="bg-white border-t border-slate-200 px-4 sm:px-6 lg:px-12 py-6 mt-12">
+      <footer className="bg-[#070b24] border-t border-[#131d47] px-4 sm:px-6 lg:px-12 py-6 mt-12">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3 text-center sm:text-left">
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
             Sudara Electronics Hub &copy; 2026 • డిజిటల్ ఇండియా హైపర్‌కలోకల్ నెట్‌వర్క్
           </p>
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">క్లౌడ్ సింక్రనైజ్డ్ / Cloud Synced</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">క్లౌడ్ సింక్రనైజ్డ్ / Cloud Synced</span>
           </div>
         </div>
       </footer>
@@ -952,12 +959,12 @@ const handleAddGadget = async (e) => {
       {/* 🔍 MASTER CATALOG IMPORT MODAL (ఇతర ఓనర్లు యాడ్ చేసిన ఐటమ్స్ కోసం) */}
       <AnimatePresence>
         {isMasterModal && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs">
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white w-full max-w-2xl p-6 sm:p-8 rounded-[2.5rem] shadow-2xl relative border border-slate-200 max-h-[85vh] flex flex-col">
-              <button onClick={() => setIsMasterModal(false)} className="absolute top-5 right-5 sm:top-6 sm:right-6 bg-slate-100 p-2 rounded-full text-slate-600"><X className="w-5 h-5"/></button>
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-3 sm:p-4 bg-[#05081c]/80 backdrop-blur-xs">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[#0a1033] w-full max-w-2xl p-6 sm:p-8 rounded-[2.5rem] shadow-2xl relative border border-[#1e2d69] max-h-[85vh] flex flex-col text-white">
+              <button onClick={() => setIsMasterModal(false)} className="absolute top-5 right-5 sm:top-6 sm:right-6 bg-[#0e1638] p-2 rounded-full text-slate-400 hover:text-white border border-[#1e2d69]"><X className="w-5 h-5"/></button>
               
               <div className="mb-4 pr-8">
-                <h3 className="text-lg font-black uppercase text-slate-900 tracking-tight">గ్లోబల్ మాస్టర్ గ్యాజెట్స్ కేటలాగ్</h3>
+                <h3 className="text-lg font-black uppercase text-white tracking-tight">గ్లోబల్ మాస్టర్ గ్యాజెట్స్ కేటలాగ్</h3>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">ఇప్పటికే నెట్‌వర్క్‌లో ఉన్న గ్యాజెట్లను ఎంచుకోండి / Select Pre-loaded Items</p>
               </div>
 
@@ -967,28 +974,28 @@ const handleAddGadget = async (e) => {
                   placeholder="గ్యాజెట్ వెతకండి (ఉదా: iPhone, Laptop, Buds)... / Search..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-indigo-600"
+                  className="w-full bg-[#0e1638] border border-[#1e2d69] px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-cyan-400 text-white placeholder:text-slate-500"
                 />
               </div>
 
-              <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+              <div className="flex-1 overflow-y-auto space-y-3 pr-1 scrollbar-hide">
                 {masterCatalog.filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase())).length === 0 ? (
                   <div className="text-center py-10 text-slate-400 text-xs font-bold uppercase">ఐటమ్స్ ఏవీ కనుగొనబడలేదు. కొత్తవి జోడించండి!</div>
                 ) : (
                   masterCatalog
                     .filter(i => i.name.toLowerCase().includes(searchQuery.toLowerCase()))
                     .map((mItem) => (
-                      <div key={mItem._id || mItem.name} className="flex items-center justify-between p-3.5 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-slate-100/60 transition-all">
+                      <div key={mItem._id || mItem.name} className="flex items-center justify-between p-3.5 bg-[#0e1638] rounded-2xl border border-[#1e2d69] hover:border-cyan-400/40 transition-all">
                         <div className="flex items-center gap-3">
-                          <img src={mItem.image || "https://ui-avatars.com/api/?name=" + mItem.name} className="w-12 h-12 object-contain bg-white rounded-xl p-1 border" alt="" />
+                          <img src={mItem.image || "https://ui-avatars.com/api/?name=" + mItem.name} className="w-12 h-12 object-contain bg-white rounded-xl p-1 border border-[#1e2d69]" alt="" />
                           <div>
-                            <h4 className="font-black uppercase text-xs text-slate-900">{mItem.name}</h4>
-                            <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md uppercase">{mItem.subCategory || "Mobiles"}</span>
+                            <h4 className="font-black uppercase text-xs text-white">{mItem.name}</h4>
+                            <span className="text-[9px] font-bold text-cyan-400 bg-cyan-950/40 border border-cyan-500/30 px-2 py-0.5 rounded-md uppercase">{mItem.subCategory || "Mobiles"}</span>
                           </div>
                         </div>
                         <button 
                           onClick={() => handleAddFromMaster(mItem)}
-                          className="bg-slate-900 hover:bg-indigo-600 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shadow-sm"
+                          className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shadow-sm border border-cyan-400/30"
                         >
                           + స్టోర్‌కి జోడించు / Add
                         </button>
@@ -1004,87 +1011,87 @@ const handleAddGadget = async (e) => {
       {/* ⚙️ STORE SETTINGS MODAL */}
       <AnimatePresence> 
         {isSettingsModal && ( 
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-900/50 backdrop-blur-xs pt-16 sm:pt-20"> 
-            <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="bg-white w-full max-w-lg p-6 sm:p-8 rounded-[2.5rem] shadow-2xl relative border border-slate-200 max-h-[85vh] overflow-y-auto scrollbar-custom" > 
-              <button onClick={() => setIsSettingsModal(false)} className="absolute top-5 right-5 sm:top-6 sm:right-6 bg-slate-100 hover:bg-slate-200 text-slate-600 p-2 rounded-full transition-all" > <X className="w-4 h-4"/> </button> 
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-[#05081c]/80 backdrop-blur-xs pt-16 sm:pt-20"> 
+            <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }} className="bg-[#0a1033] w-full max-w-lg p-6 sm:p-8 rounded-[2.5rem] shadow-2xl relative border border-[#1e2d69] max-h-[85vh] overflow-y-auto scrollbar-custom text-white" > 
+              <button onClick={() => setIsSettingsModal(false)} className="absolute top-5 right-5 sm:top-6 sm:right-6 bg-[#0e1638] hover:bg-rose-950/50 text-slate-400 hover:text-rose-400 p-2 rounded-full transition-all border border-[#1e2d69]" > <X className="w-4 h-4"/> </button> 
               <div className="mb-5 sm:mb-6 pr-8"> 
-                <h3 className="text-base sm:text-lg font-black uppercase text-slate-900 tracking-tight">స్టోర్ సెట్టింగ్స్ & పేమెంట్ హబ్ / Settings</h3> 
+                <h3 className="text-base sm:text-lg font-black uppercase text-white tracking-tight">స్టోర్ సెట్టింగ్స్ & పేమెంట్ హబ్ / Settings</h3> 
                 <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">లాగిన్ వివరాలు, ఫోన్‌పే నంబర్, జీపీఎస్ లొకేషన్ & ఇమేజ్</p> 
               </div>
 
               <form onSubmit={handleUpdateSettings} className="space-y-4">
                 {/* 🔑 LOGIN CREDENTIALS SECTION */}
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-600 flex items-center gap-1.5">
+                <div className="bg-[#0e1638] p-4 rounded-2xl border border-[#1e2d69] space-y-3">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-cyan-400 flex items-center gap-1.5">
                     <Key className="w-3.5 h-3.5" /> లాగిన్ వివరాలు / Login Credentials
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-[8px] font-black uppercase text-slate-400 block mb-1">ఇమెయిల్ (Login ID)</label>
-                      <input type="text" disabled value={owner.email || ""} className="w-full bg-slate-200/60 border border-slate-200 px-3 py-2 rounded-xl font-bold text-xs text-slate-600 cursor-not-allowed" />
+                      <input type="text" disabled value={owner.email || ""} className="w-full bg-[#0a1033] border border-[#1e2d69] px-3 py-2 rounded-xl font-bold text-xs text-slate-400 cursor-not-allowed" />
                     </div>
                     <div>
                       <label className="text-[8px] font-black uppercase text-slate-400 block mb-1">పాస్‌వర్డ్ / Password</label>
-                      <input type="text" disabled value={owner.password || "••••••••"} className="w-full bg-slate-200/60 border border-slate-200 px-3 py-2 rounded-xl font-bold text-xs text-slate-600 cursor-not-allowed" />
+                      <input type="text" disabled value={owner.password || "••••••••"} className="w-full bg-[#0a1033] border border-[#1e2d69] px-3 py-2 rounded-xl font-bold text-xs text-slate-400 cursor-not-allowed" />
                     </div>
                   </div>
                 </div>
 
                 <div>
                   <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">స్టోర్ / ఓనర్ పేరు / Store Name</label>
-                  <input type="text" required value={storeSettings.name} onChange={(e)=>setStoreSettings({...storeSettings, name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-indigo-600" />
+                  <input type="text" required value={storeSettings.name} onChange={(e)=>setStoreSettings({...storeSettings, name: e.target.value})} className="w-full bg-[#0e1638] border border-[#1e2d69] px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-cyan-400 text-white" />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">ఫోన్ నంబర్ / Phone Number</label>
-                    <input type="text" value={storeSettings.phone} onChange={(e)=>setStoreSettings({...storeSettings, phone: e.target.value})} className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-indigo-600" />
+                    <input type="text" value={storeSettings.phone} onChange={(e)=>setStoreSettings({...storeSettings, phone: e.target.value})} className="w-full bg-[#0e1638] border border-[#1e2d69] px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-cyan-400 text-white" />
                   </div>
                   <div>
-                    <label className="text-[9px] font-black uppercase text-indigo-600 block mb-1 font-black">ఫోన్‌పే / UPI నంబర్ (Payment ID)</label>
-                    <input type="text" placeholder="e.g. 9876543210 / UPI ID" value={storeSettings.upiNumber} onChange={(e)=>setStoreSettings({...storeSettings, upiNumber: e.target.value})} className="w-full bg-indigo-50/50 border border-indigo-200 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-indigo-600 text-indigo-800" />
+                    <label className="text-[9px] font-black uppercase text-cyan-400 block mb-1 font-black">ఫోన్‌పే / UPI నంబర్ (Payment ID)</label>
+                    <input type="text" placeholder="e.g. 9876543210 / UPI ID" value={storeSettings.upiNumber} onChange={(e)=>setStoreSettings({...storeSettings, upiNumber: e.target.value})} className="w-full bg-[#0e1638] border border-cyan-500/40 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-cyan-400 text-cyan-300" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">బిజినెస్ లైసెన్స్ / License No</label>
-                    <input type="text" value={storeSettings.fssaiNumber} onChange={(e)=>setStoreSettings({...storeSettings, fssaiNumber: e.target.value})} className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-indigo-600" />
+                    <input type="text" value={storeSettings.fssaiNumber} onChange={(e)=>setStoreSettings({...storeSettings, fssaiNumber: e.target.value})} className="w-full bg-[#0e1638] border border-[#1e2d69] px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-cyan-400 text-white" />
                   </div>
                   <div>
                     <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">GST నంబర్ / GST Number</label>
-                    <input type="text" value={storeSettings.gstNumber} onChange={(e)=>setStoreSettings({...storeSettings, gstNumber: e.target.value})} className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-indigo-600" />
+                    <input type="text" value={storeSettings.gstNumber} onChange={(e)=>setStoreSettings({...storeSettings, gstNumber: e.target.value})} className="w-full bg-[#0e1638] border border-[#1e2d69] px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-cyan-400 text-white" />
                   </div>
                 </div>
 
                 <div>
                   <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">స్టోర్ అడ్రస్ / Store Address</label>
-                  <input type="text" value={storeSettings.address} onChange={(e)=>setStoreSettings({...storeSettings, address: e.target.value})} className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-indigo-600" />
+                  <input type="text" value={storeSettings.address} onChange={(e)=>setStoreSettings({...storeSettings, address: e.target.value})} className="w-full bg-[#0e1638] border border-[#1e2d69] px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-cyan-400 text-white" />
                 </div>
 
                 {/* 🖼️ STORE MAIN BANNER IMAGE */}
                 <div>
                   <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">స్టోర్ ఫోటో / Store Banner Image</label>
-                  <div className="relative border border-dashed border-slate-300 rounded-xl p-4 text-center bg-slate-50 hover:bg-slate-100/50 transition-all cursor-pointer">
+                  <div className="relative border border-dashed border-[#1e2d69] rounded-xl p-4 text-center bg-[#0e1638] hover:border-cyan-400/50 transition-all cursor-pointer">
                     <input type="file" accept="image/*" onChange={handleStoreImageChange} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
                     {storeImagePreview ? (
                       <div className="flex items-center justify-center gap-3">
-                        <img src={storeImagePreview} alt="Store Preview" className="w-12 h-12 object-cover rounded-lg border" />
-                        <span className="text-[10px] font-black text-indigo-600 uppercase">ఫోటో మార్చండి ✅ / Change Image</span>
+                        <img src={storeImagePreview} alt="Store Preview" className="w-12 h-12 object-cover rounded-lg border border-[#1e2d69]" />
+                        <span className="text-[10px] font-black text-cyan-400 uppercase">ఫోటో మార్చండి ✅ / Change Image</span>
                       </div>
                     ) : (
                       <div className="flex flex-col items-center gap-1">
-                        <ImageIcon className="w-5 h-5 text-indigo-500" />
-                        <span className="text-[10px] font-black text-slate-600 uppercase">స్టోర్ ఫోటో అప్‌లోడ్ చేయండి / Upload Banner</span>
+                        <ImageIcon className="w-5 h-5 text-cyan-400" />
+                        <span className="text-[10px] font-black text-slate-300 uppercase">స్టోర్ ఫోటో అప్‌లోడ్ చేయండి / Upload Banner</span>
                       </div>
                     )}
                   </div>
                 </div>
 
                 {/* 📍 STORE LOCATION COORDINATES (GPS SYNC) */}
-                <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-3">
+                <div className="bg-[#0e1638] p-4 rounded-2xl border border-[#1e2d69] space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-600 flex items-center gap-1.5">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-cyan-400 flex items-center gap-1.5">
                       <MapPin className="w-3.5 h-3.5" /> జీపీఎస్ లొకేషన్ / GPS Coordinates
                     </h4>
                     <button
@@ -1106,7 +1113,7 @@ const handleAddGadget = async (e) => {
                           alert("లొకేషన్ సపోర్ట్ చేయదు");
                         }
                       }}
-                      className="text-[9px] font-black uppercase bg-indigo-600 text-white px-3 py-1.5 rounded-xl shadow-sm hover:bg-indigo-700 transition-all"
+                      className="text-[9px] font-black uppercase bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 py-1.5 rounded-xl shadow-sm hover:from-blue-500 hover:to-indigo-500 border border-cyan-400/30 transition-all"
                     >
                       📍 నా లొకేషన్ తీసుకోండి / Capture GPS
                     </button>
@@ -1117,22 +1124,22 @@ const handleAddGadget = async (e) => {
                       <label className="text-[8px] font-black uppercase text-slate-400 block mb-1">లాటిట్యూడ్ / Latitude</label>
                       <input 
                         type="number" 
-                        step="any"
+                        step="any" 
                         value={storeSettings.latitude || ""} 
                         onChange={(e)=>setStoreSettings({...storeSettings, latitude: e.target.value})} 
                         placeholder="e.g. 13.6288"
-                        className="w-full bg-white border border-slate-200 px-3 py-2 rounded-xl font-bold text-xs text-slate-700 outline-none focus:border-indigo-600" 
+                        className="w-full bg-[#0a1033] border border-[#1e2d69] px-3 py-2 rounded-xl font-bold text-xs text-slate-200 outline-none focus:border-cyan-400" 
                       />
                     </div>
                     <div>
                       <label className="text-[8px] font-black uppercase text-slate-400 block mb-1">లాంగిట్యూడ్ / Longitude</label>
                       <input 
                         type="number" 
-                        step="any"
+                        step="any" 
                         value={storeSettings.longitude || ""} 
                         onChange={(e)=>setStoreSettings({...storeSettings, longitude: e.target.value})} 
                         placeholder="e.g. 79.4192"
-                        className="w-full bg-white border border-slate-200 px-3 py-2 rounded-xl font-bold text-xs text-slate-700 outline-none focus:border-indigo-600" 
+                        className="w-full bg-[#0a1033] border border-[#1e2d69] px-3 py-2 rounded-xl font-bold text-xs text-slate-200 outline-none focus:border-cyan-400" 
                       />
                     </div>
                   </div>
@@ -1143,7 +1150,7 @@ const handleAddGadget = async (e) => {
                   <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">స్టోర్ ఇంటీరియర్ / Showcase Images</label>
                   <div className="flex flex-wrap gap-2 mb-2">
                     {owner.interiorImages && owner.interiorImages.map((imgUrl, idx) => (
-                      <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden border">
+                      <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden border border-[#1e2d69]">
                         <img src={imgUrl} alt="Interior" className="w-full h-full object-cover" />
                         <button 
                           type="button"
@@ -1161,7 +1168,7 @@ const handleAddGadget = async (e) => {
                       </div>
                     ))}
                   </div>
-                  <div className="relative border border-dashed border-slate-300 rounded-xl p-3 text-center bg-slate-50 cursor-pointer">
+                  <div className="relative border border-dashed border-[#1e2d69] rounded-xl p-3 text-center bg-[#0e1638] hover:border-cyan-400/40 transition-all cursor-pointer">
                     <input 
                       type="file" 
                       accept="image/*" 
@@ -1192,11 +1199,11 @@ const handleAddGadget = async (e) => {
                       }} 
                       className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" 
                     />
-                    <span className="text-[10px] font-black text-indigo-600 uppercase">+ ఇంటీరియర్ ఫోటోలు అప్‌లోడ్ చేయండి</span>
+                    <span className="text-[10px] font-black text-cyan-400 uppercase">+ ఇంటీరియర్ ఫోటోలు అప్‌లోడ్ చేయండి</span>
                   </div>
                 </div>
 
-                <button type="submit" disabled={loading} className="w-full bg-slate-900 text-white py-3.5 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-indigo-600 transition-all shadow-sm active:scale-95 disabled:bg-slate-300">
+                <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white py-3.5 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all shadow-md active:scale-95 border border-cyan-400/30 disabled:bg-slate-800 disabled:border-slate-700">
                   {loading ? "సేవ్ అవుతోంది..." : "సెట్టింగ్స్ సేవ్ చేయి / Save Settings"}
                 </button>
               </form>
@@ -1208,19 +1215,19 @@ const handleAddGadget = async (e) => {
       {/* 🚀 ADD GADGET MODAL */}
     <AnimatePresence>
       {isAddModal && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-          <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white w-full max-w-md p-6 sm:p-8 rounded-3xl shadow-2xl relative border border-slate-200 max-h-[90vh] overflow-y-auto my-auto text-slate-900">
-            <button onClick={() => setIsAddModal(false)} className="absolute top-5 right-5 sm:top-6 sm:right-6 text-slate-400 hover:text-slate-700 z-10"><X className="w-5 h-5"/></button>
+        <div className="fixed inset-0 z-[999] flex items-center justify-center p-3 sm:p-4 bg-[#05081c]/80 backdrop-blur-xs overflow-y-auto">
+          <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[#0a1033] w-full max-w-md p-6 sm:p-8 rounded-3xl shadow-2xl relative border border-[#1e2d69] max-h-[90vh] overflow-y-auto my-auto text-white">
+            <button onClick={() => setIsAddModal(false)} className="absolute top-5 right-5 sm:top-6 sm:right-6 text-slate-400 hover:text-white z-10 p-1 rounded-full bg-[#0e1638]"><X className="w-5 h-5"/></button>
             
             <div className="mb-5 sm:mb-6">
-              <h3 className="text-base sm:text-lg font-black uppercase text-slate-900 tracking-tight">కొత్త గ్యాజెట్ జోడించు / Add Gadget</h3>
+              <h3 className="text-base sm:text-lg font-black uppercase text-white tracking-tight">కొత్త గ్యాజెట్ జోడించు / Add Gadget</h3>
               <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">మీ స్టోర్ కేటలాగ్‌లో కొత్త ఐటమ్‌ను చేర్చండి</p>
             </div>
 
             <form onSubmit={handleAddGadget} className="space-y-4">
               <div>
                 <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">గ్యాజెట్ పేరు / Gadget Name</label>
-                <input type="text" required placeholder="e.g. iPhone 17 Pro / MacBook Pro" value={newGadget.name} onChange={(e)=>setNewGadget({...newGadget, name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-indigo-600 text-slate-900" />
+                <input type="text" required placeholder="e.g. iPhone 17 Pro / MacBook Pro" value={newGadget.name} onChange={(e)=>setNewGadget({...newGadget, name: e.target.value})} className="w-full bg-[#0e1638] border border-[#1e2d69] px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-cyan-400 text-white placeholder:text-slate-500" />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1229,51 +1236,51 @@ const handleAddGadget = async (e) => {
                   <select 
                     value={newGadget.subCategory} 
                     onChange={(e)=>setNewGadget({...newGadget, subCategory: e.target.value})} 
-                    className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-indigo-600 cursor-pointer text-slate-900"
+                    className="w-full bg-[#0e1638] border border-[#1e2d69] px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-cyan-400 cursor-pointer text-white"
                   >
-                    <option value="Mobiles">మొబైల్స్ / Mobiles</option>
-                    <option value="Laptops">లాప్‌టాప్స్ / Laptops</option>
-                    <option value="Audio">ఆడియో / Audio</option>
-                    <option value="Accessories">యాక్ససరీస్ / Accessories</option>
-                    <option value="Home Appliances">హోమ్ అప్లయన్సెస్ (AC, Fridges)</option>
-                    <option value="Other">➕ ఇతర కేటగిరీ (Other)</option>
+                    <option value="Mobiles" className="bg-[#0a1033] text-white">మొబైల్స్ / Mobiles</option>
+                    <option value="Laptops" className="bg-[#0a1033] text-white">లాప్‌టాప్స్ / Laptops</option>
+                    <option value="Audio" className="bg-[#0a1033] text-white">ఆడియో / Audio</option>
+                    <option value="Accessories" className="bg-[#0a1033] text-white">యాక్ససరీస్ / Accessories</option>
+                    <option value="Home Appliances" className="bg-[#0a1033] text-white">హోమ్ అప్లయన్సెస్ (AC, Fridges)</option>
+                    <option value="Other" className="bg-[#0a1033] text-white">➕ ఇతర కేటగిరీ (Other)</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">ధర (₹) / Price</label>
-                  <input type="number" required placeholder="89990" value={newGadget.price} onChange={(e)=>setNewGadget({...newGadget, price: e.target.value})} className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-indigo-600 text-slate-900" />
+                  <input type="number" required placeholder="89990" value={newGadget.price} onChange={(e)=>setNewGadget({...newGadget, price: e.target.value})} className="w-full bg-[#0e1638] border border-[#1e2d69] px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-cyan-400 text-white placeholder:text-slate-500" />
                 </div>
               </div>
 
               {/* 💡 'Other' సెలెక్ట్ చేస్తే ఈ బాక్స్ ఓపెన్ అవుతుంది */}
               {newGadget.subCategory === "Other" && (
                 <div>
-                  <label className="text-[9px] font-black uppercase text-indigo-600 block mb-1">కొత్త కేటగిరీ పేరు రాయండి / Custom Category Name</label>
+                  <label className="text-[9px] font-black uppercase text-cyan-400 block mb-1">కొత్త కేటగిరీ పేరు రాయండి / Custom Category Name</label>
                   <input 
                     type="text" 
                     required 
                     placeholder="e.g. Refrigerators, Washing Machines" 
                     value={newGadget.customCategory} 
                     onChange={(e)=>setNewGadget({...newGadget, customCategory: e.target.value})} 
-                    className="w-full bg-indigo-50/50 border border-indigo-200 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-indigo-600 text-slate-900" 
+                    className="w-full bg-[#0e1638] border border-cyan-500/40 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-cyan-400 text-white placeholder:text-slate-500" 
                   />
                 </div>
               )}
 
               <div>
                 <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">ఫోటో / Product Image</label>
-                <div className="relative border border-dashed border-slate-300 rounded-xl p-4 text-center bg-slate-50 hover:bg-slate-100/50 transition-all cursor-pointer">
+                <div className="relative border border-dashed border-[#1e2d69] rounded-xl p-4 text-center bg-[#0e1638] hover:border-cyan-400/40 transition-all cursor-pointer">
                   <input type="file" accept="image/*" onChange={handleImageChange} required className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
                   {imagePreview ? (
                     <div className="flex items-center justify-center gap-3">
-                      <img src={imagePreview} alt="Preview" className="w-10 h-10 object-contain rounded-lg" />
-                      <span className="text-[10px] font-black text-indigo-600 uppercase">ఫోటో ఎంపికైంది ✅</span>
+                      <img src={imagePreview} alt="Preview" className="w-10 h-10 object-contain rounded-lg border border-[#1e2d69]" />
+                      <span className="text-[10px] font-black text-cyan-400 uppercase">ఫోటో ఎంపికైంది ✅</span>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center gap-1">
-                      <UploadCloud className="w-5 h-5 text-indigo-500" />
-                      <span className="text-[10px] font-black text-slate-600 uppercase">ఫోటో అప్‌లోడ్ చేయండి / Browse</span>
+                      <UploadCloud className="w-5 h-5 text-cyan-400" />
+                      <span className="text-[10px] font-black text-slate-300 uppercase">ఫోటో అప్‌లోడ్ చేయండి / Browse</span>
                     </div>
                   )}
                 </div>
@@ -1281,10 +1288,10 @@ const handleAddGadget = async (e) => {
 
               <div>
                 <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">వివరాలు / Description</label>
-                <textarea placeholder="గ్యాజెట్ స్పెసిఫికేషన్స్ రాయండి..." value={newGadget.description} onChange={(e)=>setNewGadget({...newGadget, description: e.target.value})} className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-bold text-xs outline-none focus:border-indigo-600 h-20 resize-none text-slate-900"></textarea>
+                <textarea placeholder="గ్యాజెట్ స్పెసిఫికేషన్స్ రాయండి..." value={newGadget.description} onChange={(e)=>setNewGadget({...newGadget, description: e.target.value})} className="w-full bg-[#0e1638] border border-[#1e2d69] p-4 rounded-xl font-bold text-xs outline-none focus:border-cyan-400 h-20 resize-none text-white placeholder:text-slate-500"></textarea>
               </div>
 
-              <button type="submit" disabled={loading} className="w-full bg-slate-900 text-white py-3.5 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-indigo-600 transition-all shadow-sm active:scale-95 disabled:bg-slate-300">
+              <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white py-3.5 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all shadow-md active:scale-95 border border-cyan-400/30 disabled:bg-slate-800 disabled:border-slate-700">
                 {loading ? "ప్రచురిస్తోంది..." : "ప్రచురించు / Publish Product"}
               </button>
             </form>
@@ -1296,54 +1303,54 @@ const handleAddGadget = async (e) => {
       {/* 🛠️ EDIT GADGET MODAL */}
       <AnimatePresence>
         {isEditModal && editingItem && (
-          <div className="fixed inset-0 z-100 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 backdrop-blur-xs">
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white w-full max-w-md p-6 sm:p-8 rounded-3xl shadow-xl relative border border-slate-200 max-h-[90vh] overflow-y-auto">
-              <button onClick={() => setIsEditModal(false)} className="absolute top-5 right-5 sm:top-6 sm:right-6 text-slate-400 hover:text-slate-700"><X className="w-5 h-5"/></button>
+          <div className="fixed inset-0 z-100 flex items-center justify-center p-3 sm:p-4 bg-[#05081c]/80 backdrop-blur-xs">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-[#0a1033] w-full max-w-md p-6 sm:p-8 rounded-3xl shadow-xl relative border border-[#1e2d69] max-h-[90vh] overflow-y-auto text-white">
+              <button onClick={() => setIsEditModal(false)} className="absolute top-5 right-5 sm:top-6 sm:right-6 text-slate-400 hover:text-white p-1 rounded-full bg-[#0e1638]"><X className="w-5 h-5"/></button>
               
               <div className="mb-5 sm:mb-6">
-                <h3 className="text-base sm:text-lg font-black uppercase text-slate-900 tracking-tight">ప్రొడక్ట్ సవరించు / Edit Product</h3>
+                <h3 className="text-base sm:text-lg font-black uppercase text-white tracking-tight">ప్రొడక్ట్ సవరించు / Edit Product</h3>
                 <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">గ్యాజెట్ వివరాలను అప్‌డేట్ చేయండి</p>
               </div>
 
               <form onSubmit={handleEditGadget} className="space-y-4">
                 <div>
                   <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">గ్యాజెట్ పేరు / Gadget Name</label>
-                  <input type="text" required value={editingItem.name} onChange={(e)=>setEditingItem({...editingItem, name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-indigo-600" />
+                  <input type="text" required value={editingItem.name} onChange={(e)=>setEditingItem({...editingItem, name: e.target.value})} className="w-full bg-[#0e1638] border border-[#1e2d69] px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-cyan-400 text-white" />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">కేటగిరీ / Category</label>
-                    <select value={editingItem.subCategory} onChange={(e)=>setEditingItem({...editingItem, subCategory: e.target.value})} className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-indigo-600 cursor-pointer">
-                      <option value="Mobiles">మొబైల్స్</option>
-                      <option value="Laptops">లాప్‌టాప్స్</option>
-                      <option value="Audio">ఆడియో</option>
-                      <option value="Accessories">యాక్ససరీస్</option>
+                    <select value={editingItem.subCategory} onChange={(e)=>setEditingItem({...editingItem, subCategory: e.target.value})} className="w-full bg-[#0e1638] border border-[#1e2d69] px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-cyan-400 cursor-pointer text-white">
+                      <option value="Mobiles" className="bg-[#0a1033] text-white">మొబైల్స్</option>
+                      <option value="Laptops" className="bg-[#0a1033] text-white">లాప్‌టాప్స్</option>
+                      <option value="Audio" className="bg-[#0a1033] text-white">ఆడియో</option>
+                      <option value="Accessories" className="bg-[#0a1033] text-white">యాక్ససరీస్</option>
                     </select>
                   </div>
                   <div>
                     <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">ధర (₹) / Price</label>
-                    <input type="number" required value={editingItem.price} onChange={(e)=>setEditingItem({...editingItem, price: e.target.value})} className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-indigo-600" />
+                    <input type="number" required value={editingItem.price} onChange={(e)=>setEditingItem({...editingItem, price: e.target.value})} className="w-full bg-[#0e1638] border border-[#1e2d69] px-4 py-3 rounded-xl font-bold text-xs outline-none focus:border-cyan-400 text-white" />
                   </div>
                 </div>
 
                 <div>
                   <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">ఫోటో అప్‌డేట్ / Update Image</label>
-                  <div className="relative border border-dashed border-slate-300 rounded-xl p-4 text-center bg-slate-50 cursor-pointer">
+                  <div className="relative border border-dashed border-[#1e2d69] rounded-xl p-4 text-center bg-[#0e1638] cursor-pointer hover:border-cyan-400/40">
                     <input type="file" accept="image/*" onChange={handleImageChange} className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
                     <div className="flex items-center justify-center gap-3">
-                      <img src={imagePreview} alt="Preview" className="w-10 h-10 object-contain rounded-lg" />
-                      <span className="text-[10px] font-black text-indigo-600 uppercase">ఫోటో మార్చు / Change Image</span>
+                      <img src={imagePreview} alt="Preview" className="w-10 h-10 object-contain rounded-lg border border-[#1e2d69]" />
+                      <span className="text-[10px] font-black text-cyan-400 uppercase">ఫోటో మార్చు / Change Image</span>
                     </div>
                   </div>
                 </div>
 
                 <div>
                   <label className="text-[9px] font-black uppercase text-slate-400 block mb-1">వివరాలు / Description</label>
-                  <textarea value={editingItem.description || ""} onChange={(e)=>setEditingItem({...editingItem, description: e.target.value})} className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl font-bold text-xs outline-none focus:border-indigo-600 h-20 resize-none"></textarea>
+                  <textarea value={editingItem.description || ""} onChange={(e)=>setEditingItem({...editingItem, description: e.target.value})} className="w-full bg-[#0e1638] border border-[#1e2d69] p-4 rounded-xl font-bold text-xs outline-none focus:border-cyan-400 h-20 resize-none text-white"></textarea>
                 </div>
 
-                <button type="submit" disabled={loading} className="w-full bg-slate-900 text-white py-3.5 rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-indigo-600 transition-all shadow-sm active:scale-95 disabled:bg-slate-300">
+                <button type="submit" disabled={loading} className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white py-3.5 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all shadow-md active:scale-95 border border-cyan-400/30 disabled:bg-slate-800 disabled:border-slate-700">
                   {loading ? "సేవ్ అవుతోంది..." : "మార్పులు సేవ్ చేయి / Save Changes"}
                 </button>
               </form>
@@ -1355,17 +1362,17 @@ const handleAddGadget = async (e) => {
       {/* 📱 HUB MENU DRAWER MODAL */}
       <AnimatePresence>
         {isSidebarOpen && (
-          <div className="fixed inset-0 z-[110] flex justify-start bg-slate-900/50 backdrop-blur-xs">
+          <div className="fixed inset-0 z-[110] flex justify-start bg-[#05081c]/80 backdrop-blur-xs">
             <motion.div 
               initial={{ x: "-100%", opacity: 0 }} 
               animate={{ x: 0, opacity: 1 }} 
               exit={{ x: "-100%", opacity: 0 }} 
-              className="bg-white w-full max-w-sm h-full p-6 shadow-2xl flex flex-col justify-between overflow-y-auto"
+              className="bg-[#070b24] w-full max-w-sm h-full p-6 shadow-2xl flex flex-col justify-between overflow-y-auto border-r border-[#131d47] text-white"
             >
               <div>
-                <div className="flex justify-between items-center mb-8">
-                  <h3 className="text-lg font-black uppercase tracking-wider text-slate-900 italic">హబ్ మెనూ / Hub Menu</h3>
-                  <button onClick={() => setIsSidebarOpen(false)} className="bg-slate-100 hover:bg-slate-200 text-slate-600 p-2 rounded-full transition-all">
+                <div className="flex justify-between items-center mb-8 border-b border-[#131d47] pb-4">
+                  <h3 className="text-lg font-black uppercase tracking-wider text-cyan-400 italic">హబ్ మెనూ / Hub Menu</h3>
+                  <button onClick={() => setIsSidebarOpen(false)} className="bg-[#0e1638] hover:bg-rose-950/40 text-slate-400 hover:text-rose-400 p-2 rounded-full transition-all border border-[#1e2d69]">
                     <X className="w-5 h-5"/>
                   </button>
                 </div>
@@ -1373,124 +1380,125 @@ const handleAddGadget = async (e) => {
                 <div className="space-y-3">
                   <button 
                     onClick={() => { setActiveTab("inventory"); setIsSidebarOpen(false); }}
-                    className="w-full flex items-center gap-3 p-4 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 rounded-2xl font-black uppercase text-xs tracking-wider transition-all border border-slate-100 text-slate-700"
+                    className="w-full flex items-center gap-3 p-4 bg-[#0a1033] hover:bg-[#0e1638] text-slate-200 hover:text-cyan-300 rounded-2xl font-black uppercase text-xs tracking-wider transition-all border border-[#1e2d69]"
                   >
-                    <Package className="w-4 h-4 text-indigo-600" /> ఇన్వెంటరీ మేనేజ్‌మెంట్ / Inventory
+                    <Package className="w-4 h-4 text-cyan-400" /> ఇన్వెంటరీ మేనేజ్‌మెంట్ / Inventory
                   </button>
                   <button 
-  onClick={() => { setActiveTab("orders"); setIsSidebarOpen(false); }}
-  className="w-full flex items-center justify-between p-4 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 rounded-2xl font-black uppercase text-xs tracking-wider transition-all border border-slate-100 text-slate-700"
->
-  <div className="flex items-center gap-3">
-    <ShoppingBag className="w-4 h-4 text-indigo-600" /> కస్టమర్ ఆర్డర్స్ / Live Orders
-  </div>
-  {storeOrders.length > 0 && (
-    <span className="bg-indigo-600 text-white text-[9px] px-2.5 py-0.5 rounded-full">
-      {storeOrders.length}
-    </span>
-  )}
-</button>
-<button 
-  onClick={() => { setIsRenewalModalOpen(true); setIsSidebarOpen(false); }}
-  className="w-full flex items-center gap-3 p-4 bg-purple-50 hover:bg-purple-100 text-purple-900 rounded-2xl font-black uppercase text-xs tracking-wider transition-all border border-purple-200 shadow-sm"
->
-  <Settings className="w-4 h-4 text-purple-600" /> సబ్‌స్క్రిప్షన్ రెనెవల్ / Renew Node
-</button>
+                    onClick={() => { setActiveTab("orders"); setIsSidebarOpen(false); }}
+                    className="w-full flex items-center justify-between p-4 bg-[#0a1033] hover:bg-[#0e1638] text-slate-200 hover:text-cyan-300 rounded-2xl font-black uppercase text-xs tracking-wider transition-all border border-[#1e2d69]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <ShoppingBag className="w-4 h-4 text-cyan-400" /> కస్టమర్ ఆర్డర్స్ / Live Orders
+                    </div>
+                    {storeOrders.length > 0 && (
+                      <span className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[9px] px-2.5 py-0.5 rounded-full border border-cyan-400/30">
+                        {storeOrders.length}
+                      </span>
+                    )}
+                  </button>
+                  <button 
+                    onClick={() => { setIsRenewalModalOpen(true); setIsSidebarOpen(false); }}
+                    className="w-full flex items-center gap-3 p-4 bg-orange-950/40 hover:bg-orange-950/60 text-orange-300 rounded-2xl font-black uppercase text-xs tracking-wider transition-all border border-orange-500/40 shadow-sm"
+                  >
+                    <Settings className="w-4 h-4 text-orange-400" /> సబ్‌స్క్రిప్షన్ రెనెవల్ / Renew Node
+                  </button>
                   <button 
                     onClick={() => { setActiveTab("profile"); setIsSidebarOpen(false); }}
-                    className="w-full flex items-center gap-3 p-4 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 rounded-2xl font-black uppercase text-xs tracking-wider transition-all border border-slate-100 text-slate-700"
+                    className="w-full flex items-center gap-3 p-4 bg-[#0a1033] hover:bg-[#0e1638] text-slate-200 hover:text-cyan-300 rounded-2xl font-black uppercase text-xs tracking-wider transition-all border border-[#1e2d69]"
                   >
-                    <Settings className="w-4 h-4 text-indigo-600" /> లాగిన్ వివరాలు & సర్టిఫికెట్ / Profile
+                    <Settings className="w-4 h-4 text-cyan-400" /> లాగిన్ వివరాలు & సర్టిఫికెట్ / Profile
                   </button>
 
                   <button 
                     onClick={() => { downloadQRCode(); setIsSidebarOpen(false); }}
-                    className="w-full flex items-center gap-3 p-4 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 rounded-2xl font-black uppercase text-xs tracking-wider transition-all border border-slate-100 text-slate-700"
+                    className="w-full flex items-center gap-3 p-4 bg-[#0a1033] hover:bg-[#0e1638] text-slate-200 hover:text-cyan-300 rounded-2xl font-black uppercase text-xs tracking-wider transition-all border border-[#1e2d69]"
                   >
-                    <Download className="w-4 h-4 text-indigo-600" /> క్యూఆర్ పోస్టర్ డౌన్‌లోడ్ / QR Poster
+                    <Download className="w-4 h-4 text-cyan-400" /> క్యూఆర్ పోస్టర్ డౌన్‌లోడ్ / QR Poster
                   </button>
 
                   <button 
                     onClick={() => { setIsSettingsModal(true); setIsSidebarOpen(false); }}
-                    className="w-full flex items-center gap-3 p-4 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 rounded-2xl font-black uppercase text-xs tracking-wider transition-all border border-slate-100 text-slate-700"
+                    className="w-full flex items-center gap-3 p-4 bg-[#0a1033] hover:bg-[#0e1638] text-slate-200 hover:text-cyan-300 rounded-2xl font-black uppercase text-xs tracking-wider transition-all border border-[#1e2d69]"
                   >
-                    <Settings className="w-4 h-4 text-indigo-600" /> హబ్ సెట్టింగ్స్ / Settings
+                    <Settings className="w-4 h-4 text-cyan-400" /> హబ్ సెట్టింగ్స్ / Settings
                   </button>
                 </div>
               </div>
 
-              <div className="pt-6 border-t border-slate-100 text-center">
+              <div className="pt-6 border-t border-[#131d47] text-center">
                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Sudara Electronics Hub Node • డిజిటల్ ఇండియా</p>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
-  {/* 👑 సబ్‌స్క్రిప్షన్ రెనెవల్ మోడల్ */}
-<AnimatePresence>
-  {isRenewalModalOpen && (
-    <div className="fixed inset-0 z-[250] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
-      <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-white w-full max-w-2xl p-6 md:p-10 rounded-[3rem] shadow-2xl relative max-h-[90vh] overflow-y-auto">
-        
-        <button type="button" onClick={() => setIsRenewalModalOpen(false)} className="absolute top-6 right-6 p-2 bg-slate-100 rounded-full hover:bg-red-50 hover:text-red-500 transition-all"><X className="w-5 h-5"/></button>
-        
-        <h3 className="text-xl sm:text-2xl font-black italic uppercase tracking-tighter mb-2 border-l-8 border-purple-500 pl-6">
-          Sudara Node <span className="text-purple-600">Subscription Renewal</span>
-        </h3>
-        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-8 pl-8">Direct Peer-to-Peer Settlement (₹699 / Month)</p>
-        
-        <div className="space-y-6">
-          {/* ప్లాన్ కాలపరిమితి స్విచ్ */}
-          <div className="flex bg-slate-100 p-1 rounded-xl border shadow-inner">
-            <button type="button" onClick={() => setPlanDuration(30)} className={`flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase transition-all ${planDuration === 30 ? "bg-white text-slate-900 shadow-sm font-black" : "text-slate-400"}`}>30 Days (1 Month - ₹699)</button>
-            <button type="button" onClick={() => setPlanDuration(90)} className={`flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase transition-all ${planDuration === 90 ? "bg-white text-slate-900 shadow-sm font-black" : "text-slate-400"}`}>90 Days (3 Months - ₹{699 * 3})</button>
-          </div>
 
-          {/* అడ్మిన్ UPI ID డిస్‌ప్లే & కాపీ */}
-          <div className="bg-slate-50 p-4 rounded-xl border flex justify-between items-center shadow-sm">
-            <div>
-              <p className="text-[8px] font-black text-slate-400 uppercase leading-none">Official UPI ID</p>
-              <p className="font-black text-slate-700 text-xs mt-1.5 tracking-wide">{SUDARA_UPI_ID}</p>
-            </div>
-            <button type="button" onClick={() => { navigator.clipboard.writeText(SUDARA_UPI_ID); alert("UPI ID Copied! ✅"); }} className="p-2 bg-slate-900 text-white rounded-xl text-[9px] font-black uppercase px-4 py-1.5">
-              Copy UPI ID
-            </button>
-          </div>
+      {/* 👑 సబ్‌స్క్రిప్షన్ రెనెవల్ మోడల్ */}
+      <AnimatePresence>
+        {isRenewalModalOpen && (
+          <div className="fixed inset-0 z-[250] bg-[#05081c]/90 backdrop-blur-md flex items-center justify-center p-4">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="bg-[#0a1033] w-full max-w-2xl p-6 md:p-10 rounded-[3rem] shadow-2xl relative max-h-[90vh] overflow-y-auto border border-[#1e2d69] text-white">
+              
+              <button type="button" onClick={() => setIsRenewalModalOpen(false)} className="absolute top-6 right-6 p-2 bg-[#0e1638] rounded-full hover:bg-rose-950/50 hover:text-rose-400 text-slate-400 transition-all border border-[#1e2d69]"><X className="w-5 h-5"/></button>
+              
+              <h3 className="text-xl sm:text-2xl font-black italic uppercase tracking-tighter mb-2 border-l-8 border-purple-500 pl-6 text-white">
+                Sudara Node <span className="text-purple-400">Subscription Renewal</span>
+              </h3>
+              <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-8 pl-8">Direct Peer-to-Peer Settlement (₹699 / Month)</p>
+              
+              <div className="space-y-6">
+                {/* ప్లాన్ కాలపరిమితి స్విచ్ */}
+                <div className="flex bg-[#0e1638] p-1 rounded-xl border border-[#1e2d69] shadow-inner">
+                  <button type="button" onClick={() => setPlanDuration(30)} className={`flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase transition-all ${planDuration === 30 ? "bg-[#0a1033] text-white shadow-sm font-black border border-cyan-500/30" : "text-slate-400 hover:text-slate-200"}`}>30 Days (1 Month - ₹699)</button>
+                  <button type="button" onClick={() => setPlanDuration(90)} className={`flex-1 py-2.5 rounded-lg text-[10px] font-black uppercase transition-all ${planDuration === 90 ? "bg-[#0a1033] text-white shadow-sm font-black border border-cyan-500/30" : "text-slate-400 hover:text-slate-200"}`}>90 Days (3 Months - ₹{699 * 3})</button>
+                </div>
 
-          {/* టోటల్ అమౌంట్ మరియు పే నౌ */}
-          <div className="bg-slate-900 text-white p-6 rounded-2xl space-y-4 shadow-xl">
-            <div className="flex justify-between items-center">
-              <div>
-                <p className="text-[8px] font-black uppercase opacity-50 tracking-widest leading-none">Total Payable Amount</p>
-                <p className="text-3xl font-black italic tracking-tighter text-emerald-400 mt-2">₹{calculatedAmount}</p>
+                {/* అడ్మిన్ UPI ID డిస్‌ప్లే & కాపీ */}
+                <div className="bg-[#0e1638] p-4 rounded-xl border border-[#1e2d69] flex justify-between items-center shadow-sm">
+                  <div>
+                    <p className="text-[8px] font-black text-slate-400 uppercase leading-none">Official UPI ID</p>
+                    <p className="font-black text-cyan-300 text-xs mt-1.5 tracking-wide">{SUDARA_UPI_ID}</p>
+                  </div>
+                  <button type="button" onClick={() => { navigator.clipboard.writeText(SUDARA_UPI_ID); alert("UPI ID Copied! ✅"); }} className="p-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-[9px] font-black uppercase px-4 py-1.5 border border-cyan-400/30 transition-all active:scale-95">
+                    Copy UPI ID
+                  </button>
+                </div>
+
+                {/* టోటల్ అమౌంట్ మరియు పే నౌ */}
+                <div className="bg-[#070b24] text-white p-6 rounded-2xl space-y-4 shadow-xl border border-[#1e2d69]">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-[8px] font-black uppercase opacity-50 tracking-widest leading-none">Total Payable Amount</p>
+                      <p className="text-3xl font-black italic tracking-tighter text-emerald-400 mt-2">₹{calculatedAmount}</p>
+                    </div>
+                    <a href={`upi://pay?pa=${SUDARA_UPI_ID}&pn=Sudara%20Hub&am=${calculatedAmount}&cu=INR`} className="bg-emerald-600 hover:bg-emerald-500 px-6 py-3 rounded-xl text-[10px] font-black uppercase italic tracking-widest text-white shadow-lg border border-emerald-400/30 transition-all active:scale-95">
+                      Pay Now
+                    </a>
+                  </div>
+                </div>
+
+                {/* వాట్సాప్ ద్వారా నిర్ధారణ పంపే బటన్ */}
+                <div className="bg-[#0e1638] p-6 rounded-[2rem] border border-purple-500/30 text-center space-y-3">
+                  <p className="text-[10px] font-bold text-slate-300 uppercase leading-relaxed tracking-wider">
+                    💳 UPI ద్వారా రూ. <span className="text-emerald-400 font-black">₹{calculatedAmount}</span> విజయవంతంగా బదిలీ చేసిన తర్వాత, <span className="text-purple-400">పేమెంట్ స్క్రీన్‌షాట్‌ను</span> నేరుగా అడ్మిన్ వాట్సాప్‌కి షేర్ చేయండి. తక్షణమే మీ నోడ్ వెరిఫై చేయబడుతుంది! 🚀
+                  </p>
+
+                  <a 
+                    href={`https://wa.me/91${ADMIN_PHONE}?text=${encodeURIComponent(`Hello Admin, I am ${owner?.name}, owner of the electronics store. I have successfully transferred the subscription amount of ₹${calculatedAmount} for this month. \n\nStore ID: ${owner?._id}\n\nPlease verify and activate my node.`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setIsRenewalModalOpen(false)}
+                    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-xl text-[10px] font-black uppercase italic tracking-widest shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 border border-emerald-400/30"
+                  >
+                    <span>💬 అడ్మిన్‌కి వాట్సాప్ చేయి / Send via WhatsApp</span>
+                  </a>
+                </div>
               </div>
-              <a href={`upi://pay?pa=${SUDARA_UPI_ID}&pn=Sudara%20Hub&am=${calculatedAmount}&cu=INR`} className="bg-emerald-500 hover:bg-emerald-600 px-6 py-3 rounded-xl text-[10px] font-black uppercase italic tracking-widest text-white shadow-lg">
-                Pay Now
-              </a>
-            </div>
+            </motion.div>
           </div>
-
-          {/* వాట్సాప్ ద్వారా నిర్ధారణ పంపే బటన్ */}
-          <div className="bg-purple-50 p-6 rounded-[2rem] border border-purple-200 text-center space-y-3">
-            <p className="text-[10px] font-bold text-slate-700 uppercase leading-relaxed tracking-wider">
-              💳 UPI ద్వారా రూ. <span className="text-emerald-600 font-black">₹{calculatedAmount}</span> విజయవంతంగా బదిలీ చేసిన తర్వాత, <span className="text-purple-600">పేమెంట్ స్క్రీన్‌షాట్‌ను</span> నేరుగా అడ్మిన్ వాట్సాప్‌కి షేర్ చేయండి. తక్షణమే మీ నోడ్ వెరిఫై చేయబడుతుంది! 🚀
-            </p>
-
-            <a 
-              href={`https://wa.me/91${ADMIN_PHONE}?text=${encodeURIComponent(`Hello Admin, I am ${owner?.name}, owner of the clothing store. I have successfully transferred the subscription amount of ₹${calculatedAmount} for this month. \n\nStore ID: ${owner?._id}\n\nPlease verify and activate my node.`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setIsRenewalModalOpen(false)}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl text-[10px] font-black uppercase italic tracking-widest shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95"
-            >
-              <span>💬 అడ్మిన్‌కి వాట్సాప్ చేయి / Send via WhatsApp</span>
-            </a>
-          </div>
-        </div>
-      </motion.div>
-    </div>
-  )}
-</AnimatePresence>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

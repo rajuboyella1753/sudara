@@ -11,7 +11,7 @@ export default function Navbar() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
 
-useEffect(() => {
+  useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", handleScroll);
 
@@ -47,26 +47,28 @@ useEffect(() => {
   ];
 
   return (
-    /* 🚀 RAJU FIX: Background with subtle Blue/Indigo tint */
+    /* 🚀 RAJU FIX: Background with Sudara Deep Dark Blue / Cyan glow */
     <nav className={`fixed top-0 left-0 w-full z-[150] transition-all duration-500 ${
-      scrolled ? "bg-white/90 backdrop-blur-xl shadow-lg shadow-blue-900/5 py-3 border-b border-blue-50" : "bg-white/50 backdrop-blur-sm py-5"
+      scrolled 
+        ? "bg-[#05081c]/90 backdrop-blur-xl shadow-xl shadow-black/60 py-3 border-b border-[#131d47]" 
+        : "bg-[#05081c]/60 backdrop-blur-md py-5 border-b border-white/5"
     }`}>
       <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
         
         {/* 🏢 Logo Section */}
         <Link 
-  to="/" 
-  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
-  className="relative group flex items-center"
->
-  <img 
-    src="/SUDAR.png" 
-    alt="Sudara Logo"
-    className="h-7 md:h-10 w-auto object-contain transition-transform duration-500 group-hover:scale-105"
-    onError={(e) => (e.target.style.display = 'none')}
-  />
-  <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-indigo-600 transition-all duration-300 group-hover:w-full"></div>
-</Link>
+          to="/" 
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} 
+          className="relative group flex items-center"
+        >
+          <img 
+            src="/SUDAR.png" 
+            alt="Sudara Logo"
+            className="h-7 md:h-10 w-auto object-contain transition-transform duration-500 group-hover:scale-105"
+            onError={(e) => (e.target.style.display = 'none')}
+          />
+          <div className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-cyan-400 to-indigo-500 transition-all duration-300 group-hover:w-full"></div>
+        </Link>
 
         {/* 💻 Desktop Menu */}
         <div className="hidden lg:flex items-center space-x-10">
@@ -74,68 +76,71 @@ useEffect(() => {
             <Link 
               key={link.name}
               to={link.path} 
-              /* RAJU FIX: Hover state with Blue/Indigo */
-              className={`relative text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 hover:text-indigo-600 ${
-                location.pathname === link.path ? "text-indigo-600" : "text-slate-500"
+              /* RAJU FIX: Hover state with Cyan / Light Blue text */
+              className={`relative text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 hover:text-cyan-400 ${
+                location.pathname === link.path ? "text-cyan-400" : "text-slate-400"
               }`}
             >
               {link.name}
               {link.badge && (
                 /* Orange Badge */
-                <span className="absolute -top-3 -right-5 bg-orange-500 text-white text-[6px] px-1.5 py-0.5 rounded-full animate-pulse font-black">
+                <span className="absolute -top-3 -right-5 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[6px] px-1.5 py-0.5 rounded-full animate-pulse font-black shadow-md shadow-orange-500/40">
                   {link.badge}
                 </span>
               )}
             </Link>
           ))}
 
-          {/* 📲 Install App Button: Orange/Indigo styling */}
+          {/* 📲 Install App Button: Dark Navy & Cyan styling */}
           {showInstallBtn && (
             <button 
               onClick={handleInstallClick} 
-              className="flex items-center gap-2 bg-indigo-50 text-indigo-600 px-5 py-2.5 rounded-xl font-black text-[9px] uppercase italic border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+              className="flex items-center gap-2 bg-[#0e1638] text-cyan-300 px-5 py-2.5 rounded-xl font-black text-[9px] uppercase italic border border-cyan-500/30 hover:bg-gradient-to-r hover:from-blue-600 hover:to-indigo-600 hover:text-white transition-all shadow-sm active:scale-95"
             >
-              <Smartphone className="w-3 h-3" /> Get Sudara App
+              <Smartphone className="w-3 h-3 text-cyan-400" /> Get Sudara App
             </button>
           )}
 
           {!hideOwnerBtn && (
-            <Link to="/owner" className="relative group overflow-hidden bg-indigo-600 text-white px-8 py-3.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all hover:shadow-xl hover:shadow-indigo-500/30 active:scale-95">
+            <Link 
+              to="/owner" 
+              className="relative group overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-3.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all hover:shadow-xl hover:shadow-blue-500/30 active:scale-95 border border-cyan-400/30"
+            >
               <span className="relative z-10">Owner Login</span>
-              <div className="absolute inset-0 bg-orange-600 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-amber-600 translate-y-full group-hover:translate-y-0 transition-transform duration-500"></div>
             </Link>
           )}
         </div>
 
         {/* 📱 Mobile UI Styling */}
         <div className="flex items-center gap-3 lg:hidden">
-           {showInstallBtn && (
+          {showInstallBtn && (
             <button 
               onClick={handleInstallClick} 
-              className="bg-orange-600 text-white p-2.5 rounded-xl shadow-lg shadow-orange-200"
+              className="bg-gradient-to-r from-orange-500 to-amber-500 text-white p-2.5 rounded-xl shadow-lg shadow-orange-950/40"
             >
               <Smartphone className="w-5 h-5" />
             </button>
           )}
           <button 
-            className="relative w-11 h-11 flex flex-col justify-center items-center focus:outline-none bg-indigo-50 rounded-2xl border border-indigo-100"
+            className="relative w-11 h-11 flex flex-col justify-center items-center focus:outline-none bg-[#0a1033] rounded-2xl border border-[#1e2d69]"
             onClick={() => setOpen(!open)}
           >
-            <div className={`w-5 h-0.5 bg-indigo-900 transition-all duration-300 ${open ? "rotate-45 translate-y-1" : ""}`}></div>
-            <div className={`w-5 h-0.5 bg-orange-500 my-1 transition-all duration-300 ${open ? "opacity-0" : ""}`}></div>
-            <div className={`w-5 h-0.5 bg-indigo-900 transition-all duration-300 ${open ? "-rotate-45 -translate-y-1" : ""}`}></div>
+            <div className={`w-5 h-0.5 bg-cyan-400 transition-all duration-300 ${open ? "rotate-45 translate-y-1" : ""}`}></div>
+            <div className={`w-5 h-0.5 bg-amber-400 my-1 transition-all duration-300 ${open ? "opacity-0" : ""}`}></div>
+            <div className={`w-5 h-0.5 bg-cyan-400 transition-all duration-300 ${open ? "-rotate-45 -translate-y-1" : ""}`}></div>
           </button>
         </div>
       </div>
 
-      {/* 📱 Mobile Overlay Menu - Indigo/Orange styling */}
+      {/* 📱 Mobile Overlay Menu - Sudara Deep Navy & Accent styling */}
       <AnimatePresence>
         {open && (
           <motion.div 
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="lg:hidden bg-white border-t border-indigo-50 overflow-hidden shadow-2xl h-screen"
+            className="lg:hidden bg-[#05081c]/98 border-t border-[#131d47] overflow-hidden shadow-2xl h-screen backdrop-blur-2xl"
           >
             <div className="px-8 py-12 space-y-10">
               {navLinks.map((link, idx) => (
@@ -149,11 +154,11 @@ useEffect(() => {
                     onClick={() => setOpen(false)} 
                     to={link.path} 
                     className={`text-xl font-black uppercase tracking-[0.1em] flex justify-between items-center ${
-                      location.pathname === link.path ? "text-indigo-600" : "text-slate-800"
+                      location.pathname === link.path ? "text-cyan-400" : "text-slate-200"
                     }`}
                   >
                     {link.name}
-                    <div className={`w-2 h-2 rounded-full bg-orange-500 ${location.pathname === link.path ? "opacity-100" : "opacity-0"}`}></div>
+                    <div className={`w-2 h-2 rounded-full bg-amber-400 shadow-sm shadow-amber-400 ${location.pathname === link.path ? "opacity-100" : "opacity-0"}`}></div>
                   </Link>
                 </motion.div>
               ))}
@@ -167,7 +172,7 @@ useEffect(() => {
                   <Link 
                     onClick={() => setOpen(false)} 
                     to="/owner" 
-                    className="block bg-indigo-600 text-white text-center py-5 rounded-[1.8rem] text-xs font-black uppercase tracking-[0.25em] shadow-xl shadow-indigo-200"
+                    className="block bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-center py-5 rounded-[1.8rem] text-xs font-black uppercase tracking-[0.25em] shadow-xl shadow-blue-950/60 border border-cyan-400/30 active:scale-95"
                   >
                     Owner Login
                   </Link>

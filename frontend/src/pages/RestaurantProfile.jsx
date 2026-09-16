@@ -7,11 +7,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Heart, Share2, Clock, MapPin, Search, Camera, CreditCard, X, 
   PhoneCall, Plus, Minus, ShoppingBag, ShieldCheck, Copy, 
-  UtensilsCrossed, MessageSquare, Star, Send, Navigation,ShieldAlert,Building2,
-  User, CheckCircle2 ,Download
+  UtensilsCrossed, MessageSquare, Star, Send, Navigation, ShieldAlert, Building2,
+  User, CheckCircle2, Download
 } from "lucide-react";
 import VoiceAssistant from "../components/VoiceAssistant";
 import QRCode from 'qrcode';
+
 export default function RestaurantProfile() {
   const { id } = useParams();
   const [owner, setOwner] = useState(null);
@@ -181,7 +182,7 @@ const trackTestDriveClick = async () => {
   try {
     const today = getUniversalDate(); 
     await api.put(`/owner/track-analytics/${id}`, { 
-      action: "pre_order_click",
+      action: "pre_order_click", 
       date: today 
     });
   } catch (err) { console.log("Test drive track failed"); }
@@ -254,7 +255,7 @@ const openGoogleMaps = () => {
         window.open(`https://www.google.com/maps/search/?api=1&query=${owner.latitude},${owner.longitude}`, "_blank");
       },
       { 
-        enableHighAccuracy: true,
+        enableHighAccuracy: true, 
         timeout: 10000, 
         maximumAge: 0 
       }
@@ -610,7 +611,7 @@ const handleBookTestDrive = async () => {
       setLoading(true);
       const todayDate = getUniversalDate();
       await api.put(`/owner/track-analytics/${id}`, { 
-        action: "pre_order_click",
+        action: "pre_order_click", 
         date: todayDate 
       });
 
@@ -681,7 +682,7 @@ const groupedItems = useMemo(() => {
 
   if (loading && items.length === 0) {
   return (
-    <div className="h-screen bg-white flex items-center justify-center font-black animate-pulse text-blue-600 uppercase tracking-widest text-[10px]">
+    <div className="h-screen bg-[#05081c] flex items-center justify-center font-black animate-pulse text-cyan-400 uppercase tracking-widest text-[10px]">
       Scanning Menu...
     </div>
   );
@@ -689,8 +690,8 @@ const groupedItems = useMemo(() => {
 
 if (!owner || !owner.isApproved) {
   return (
-    <div className="h-screen w-full flex flex-col items-center justify-center bg-slate-950 text-white p-6 text-center select-none animate-fade-in">
-      <div className="w-16 h-16 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-center mb-6 shadow-2xl shadow-red-500/10">
+    <div className="h-screen w-full flex flex-col items-center justify-center bg-[#05081c] text-white p-6 text-center select-none animate-fade-in">
+      <div className="w-16 h-16 bg-red-500/10 border border-red-500/30 rounded-2xl flex items-center justify-center mb-6 shadow-2xl shadow-red-500/20">
         <ShieldAlert className="w-8 h-8 text-red-500 animate-pulse" />
       </div>
       
@@ -702,13 +703,13 @@ if (!owner || !owner.isApproved) {
         Node Address Inactive
       </p>
 
-      <div className="mt-6 p-5 bg-white/5 border border-white/10 rounded-2xl max-w-xs">
-        <p className="text-xs font-bold text-slate-400 leading-relaxed uppercase">
+      <div className="mt-6 p-5 bg-[#0e1638]/70 border border-[#1e2d69] rounded-2xl max-w-xs shadow-xl">
+        <p className="text-xs font-bold text-slate-300 leading-relaxed uppercase">
           ⚠️ ఈ రెస్టారెంట్ యొక్క డిజిటల్ మెనూ సర్వీస్ టెంపరరీగా <span className="text-red-400 font-black">SUSPENDED</span> చేయబడింది. దయచేసి క్యాష్ కౌంటర్ దగ్గర ఆర్డర్ ఇవ్వండి.
         </p>
       </div>
 
-      <p className="text-[8px] font-black uppercase text-slate-600 tracking-widest mt-12">
+      <p className="text-[8px] font-black uppercase text-slate-500 tracking-widest mt-12">
         Powered by Sudara.in | Hyperlocal Ecosystem
       </p>
     </div>
@@ -716,29 +717,29 @@ if (!owner || !owner.isApproved) {
 }
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 overflow-x-hidden selection:bg-blue-500/30">
-    <div className="sticky top-0 z-[100] bg-white border-b border-slate-100 shadow-sm w-full">
+    <div className="min-h-screen bg-[#05081c] text-slate-100 overflow-x-hidden selection:bg-cyan-500/30">
+    <div className="sticky top-0 z-[100] bg-[#070b24]/90 backdrop-blur-md border-b border-[#131d47] shadow-lg w-full">
       <Navbar />
     </div>
       
-    <div className="relative h-[350px] sm:h-[450px] md:h-[600px] flex items-center justify-center overflow-hidden bg-slate-900 w-full">
+    <div className="relative h-[350px] sm:h-[450px] md:h-[600px] flex items-center justify-center overflow-hidden bg-[#05081c] w-full">
       {owner?.hotelImage && (
         <img 
           src={owner.hotelImage} 
           loading="eager" 
-          className="absolute inset-0 w-full h-full object-cover opacity-50 md:opacity-40 blur-[0.1px]" 
+          className="absolute inset-0 w-full h-full object-cover opacity-40 md:opacity-30 blur-[0.1px]" 
           alt={owner?.name} 
         />
       )}
       
-      <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-[#FDFDFD]"></div>
-      <div className="absolute inset-0 bg-black/20"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-[#05081c]/70 via-transparent to-[#05081c]"></div>
+      <div className="absolute inset-0 bg-[#05081c]/40"></div>
 
       <div className="relative z-10 text-center px-4 w-full max-w-4xl flex flex-col items-center pt-20">
         <motion.h1 
           initial={{ opacity: 0, y: 15 }} 
           animate={{ opacity: 1, y: 0 }}
-          className="text-4xl sm:text-5xl md:text-5xl lg:text-6xl font-black italic uppercase tracking-tighter text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] leading-tight text-center"
+          className="text-4xl sm:text-5xl md:text-5xl lg:text-6xl font-black italic uppercase tracking-tighter text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.9)] leading-tight text-center"
         >
           {owner?.name}
         </motion.h1>
@@ -748,15 +749,15 @@ if (!owner || !owner.isApproved) {
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             transition={{ delay: 0.2 }}
-            className="text-white/95 font-black uppercase tracking-widest text-[8px] sm:text-[10px] bg-blue-600/40 backdrop-blur-lg px-4 py-1.5 rounded-full border border-white/20 shadow-xl"
+            className="text-white/95 font-black uppercase tracking-widest text-[8px] sm:text-[10px] bg-gradient-to-r from-blue-600/50 to-cyan-600/50 backdrop-blur-lg px-4 py-1.5 rounded-full border border-cyan-400/30 shadow-xl"
           >
             {owner?.collegeName} • {owner?.category === "Restaurant" ? "Exclusive Menu" : "Exclusive Products"}
           </motion.p>
 
           {owner?.category === 'Restaurant' && (
-            <div className="flex items-center gap-1.5 bg-amber-50/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-amber-100 shadow-sm">
-              <Star className="w-3 h-3 text-amber-500 fill-amber-500" />
-              <span className="text-[8px] sm:text-[9px] font-black uppercase text-amber-800 tracking-widest italic">
+            <div className="flex items-center gap-1.5 bg-[#0e173e]/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-amber-500/30 shadow-sm">
+              <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+              <span className="text-[8px] sm:text-[9px] font-black uppercase text-amber-300 tracking-widest italic">
                 {restaurantRating.label} ({restaurantRating.stars}⭐)
               </span>
             </div>
@@ -765,28 +766,28 @@ if (!owner || !owner.isApproved) {
 
         <div className="mt-8 md:mt-12 flex items-center justify-center gap-3 sm:gap-4">
           <motion.button 
-            whileTap={{ scale: 0.95 }}
+            whileTap={{ scale: 0.95 }} 
             onClick={openGoogleMaps}
-            className="flex items-center gap-2 sm:gap-3 bg-white px-6 py-3 md:px-10 md:py-5 rounded-full shadow-2xl hover:bg-blue-600 hover:text-white transition-all duration-300 group border border-white/30 shrink-0"
+            className="flex items-center gap-2 sm:gap-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-6 py-3 md:px-10 md:py-5 rounded-full shadow-2xl transition-all duration-300 group border border-cyan-400/40 shrink-0"
           >
-            <Navigation className="w-3.5 h-3.5 md:w-5 md:h-5 text-blue-600 group-hover:text-white animate-pulse" />
+            <Navigation className="w-3.5 h-3.5 md:w-5 md:h-5 text-cyan-300 group-hover:text-white animate-pulse" />
             <span className="text-[9px] md:text-xs font-black uppercase tracking-widest italic">
               {isRestaurant ? "Get Restaurant Route" : `Get ${owner?.category || "Store"} Route`}
             </span>
           </motion.button>
 
           <motion.button 
-            whileTap={{ scale: 0.9 }}
+            whileTap={{ scale: 0.9 }} 
             onClick={handleShare}
-            className="bg-white p-3.5 md:p-5 rounded-full shadow-2xl text-slate-900 border border-white/30 hover:bg-blue-600 hover:text-white transition-all shrink-0"
+            className="bg-[#0e1638] p-3.5 md:p-5 rounded-full shadow-2xl text-slate-200 border border-[#1e2d69] hover:border-cyan-400 hover:bg-[#15204f] transition-all shrink-0"
           >
-            <Share2 className="w-4 h-4 md:w-5 md:h-5" />
+            <Share2 className="w-4 h-4 md:w-5 md:h-5 text-cyan-400" />
           </motion.button>
 
           <motion.button 
-            whileTap={{ scale: 0.9 }}
+            whileTap={{ scale: 0.9 }} 
             onClick={toggleFavorite}
-            className="bg-white p-3.5 md:p-5 rounded-full shadow-2xl border border-white/30 group hover:bg-white transition-all shrink-0"
+            className="bg-[#0e1638] p-3.5 md:p-5 rounded-full shadow-2xl border border-[#1e2d69] hover:border-rose-400/40 group hover:bg-[#15204f] transition-all shrink-0"
           >
             <Heart className={`w-4 h-4 md:w-5 md:h-5 ${isFavorite ? 'text-red-500 fill-red-500' : 'text-slate-400 group-hover:text-red-500'}`} />
           </motion.button>
@@ -806,13 +807,13 @@ if (!owner || !owner.isApproved) {
             return (
               <motion.div 
                 initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-                className="mb-8 p-5 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 rounded-[2.5rem] shadow-xl shadow-orange-100 flex items-center gap-4 relative overflow-hidden border-2 border-white/20"
+                className="mb-8 p-5 bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700 rounded-[2.5rem] shadow-xl shadow-orange-950/40 flex items-center gap-4 relative overflow-hidden border border-amber-400/40"
               >
-                <div className="w-14 h-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-white shrink-0 shadow-inner">
+                <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center text-white shrink-0 shadow-inner border border-white/20">
                   <Star className="w-7 h-7 fill-white animate-pulse" />
                 </div>
                 <div className="min-w-0 z-10">
-                  <p className="text-[10px] font-black uppercase text-white/90 tracking-[0.2em] leading-none mb-2 italic">Live Special Alert</p>
+                  <p className="text-[10px] font-black uppercase text-amber-200 tracking-[0.2em] leading-none mb-2 italic">Live Special Alert</p>
                   <h3 className="text-xl font-black text-white italic leading-tight uppercase tracking-tighter">{owner.todaySpecial}</h3>
                 </div>
                 <UtensilsCrossed className="absolute -right-6 -bottom-6 w-32 h-32 text-white/10 -rotate-12" />
@@ -830,10 +831,10 @@ if (!owner || !owner.isApproved) {
               whileHover={{ scale: 1.05 }}
               className={`group px-5 py-2 rounded-full text-[9px] font-black uppercase tracking-[0.2em] italic flex items-center gap-2.5 border backdrop-blur-md shadow-sm transition-all duration-500 ${
                 owner?.busyStatus === 'High' || owner?.busyStatus === 'Busy' 
-                  ? 'bg-red-500/10 text-red-600 border-red-500/20' 
+                  ? 'bg-red-500/10 text-red-400 border-red-500/30' 
                   : owner?.busyStatus === 'Medium' 
-                  ? 'bg-orange-500/10 text-orange-600 border-orange-500/20'
-                  : 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+                  ? 'bg-orange-500/10 text-orange-400 border-orange-500/30' 
+                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
               }`}
             >
               <span className="relative flex h-2 w-2">
@@ -856,19 +857,19 @@ if (!owner || !owner.isApproved) {
 
         {owner?.interiorImages?.length > 0 && (
   <div className="space-y-4">
-    <div className="flex items-center gap-2 border-l-4 border-blue-600 pl-3">
-      <h3 className="text-[10px] sm:text-xs font-black uppercase text-slate-800 tracking-widest italic">Ambience & Showroom Interior</h3>
+    <div className="flex items-center gap-2 border-l-4 border-cyan-400 pl-3">
+      <h3 className="text-[10px] sm:text-xs font-black uppercase text-slate-200 tracking-widest italic">Ambience & Showroom Interior</h3>
     </div>
     <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 scrollbar-hide">
       {owner.interiorImages.map((img, idx) => (
-        <img key={idx} src={img} loading="lazy" onClick={() => setSelectedImg(img)} className="w-60 sm:w-72 h-40 sm:h-48 object-cover rounded-[1.5rem] sm:rounded-[2rem] border shadow-sm shrink-0 cursor-zoom-in" alt="" />
+        <img key={idx} src={img} loading="lazy" onClick={() => setSelectedImg(img)} className="w-60 sm:w-72 h-40 sm:h-48 object-cover rounded-[1.5rem] sm:rounded-[2rem] border border-[#1e2d69] shadow-sm shrink-0 cursor-zoom-in hover:border-cyan-400 transition-all" alt="" />
       ))}
     </div>
   </div>
 )}
 
         {showTracking && (
-          <div className="mt-8 p-6 bg-white border-2 border-dashed border-slate-200 rounded-[2.5rem]">
+          <div className="mt-8 p-6 bg-[#0a1033] border-2 border-dashed border-[#1e2d69] rounded-[2.5rem]">
             <p className="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest italic text-center">
               Track Your Order Status 📦
             </p>
@@ -878,32 +879,32 @@ if (!owner || !owner.isApproved) {
                 type="text" 
                 id="customerSdrId"
                 placeholder="Enter Your Tracking ID (e.g. SDR564)" 
-                className="bg-slate-50 p-4 rounded-2xl text-xs font-bold outline-none border focus:border-blue-400 uppercase text-center"
+                className="bg-[#0e1638] p-4 rounded-2xl text-xs font-bold outline-none border border-[#1e2d69] focus:border-cyan-400 text-white uppercase text-center"
               />
               
               <button 
                 onClick={handleTrackOrder}
                 disabled={isTrackingLoading}
-                className="bg-slate-900 text-white px-6 py-4 rounded-2xl text-[10px] font-black uppercase italic shadow-lg active:scale-95 transition-all"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-6 py-4 rounded-2xl text-[10px] font-black uppercase italic shadow-lg active:scale-95 transition-all border border-cyan-400/30"
               >
                 {isTrackingLoading ? "Scanning Status..." : "Check Status 🔍"} 
               </button>
             </div>
 
             {placedOrderId && (
-              <div className="mb-4 p-5 bg-emerald-50 border-2 border-emerald-100 rounded-[2rem] text-center mt-4">
-                <p className="text-[10px] font-black text-emerald-600 uppercase">Your Order ID</p>
-                <p className="text-2xl font-black text-slate-900 mt-1">{placedOrderId}</p>
+              <div className="mb-4 p-5 bg-emerald-950/40 border-2 border-emerald-500/40 rounded-[2rem] text-center mt-4">
+                <p className="text-[10px] font-black text-emerald-400 uppercase">Your Order ID</p>
+                <p className="text-2xl font-black text-white mt-1">{placedOrderId}</p>
               </div>
             )}
 
             {orderStatus && (
-              <div className="mt-4 p-5 bg-blue-50 rounded-2xl border border-blue-100 text-center space-y-2">
-                <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Current Status</p>
-                <p className="text-xl font-black text-blue-600 uppercase italic animate-pulse">
+              <div className="mt-4 p-5 bg-[#0e1638] rounded-2xl border border-cyan-500/30 text-center space-y-2">
+                <p className="text-[9px] font-black text-cyan-400 uppercase tracking-widest">Current Status</p>
+                <p className="text-xl font-black text-cyan-300 uppercase italic animate-pulse">
                   🚀 {orderStatus}
                 </p>
-                <p className="text-[9px] font-bold text-slate-500 uppercase">
+                <p className="text-[9px] font-bold text-slate-400 uppercase">
                   (ఓనర్ స్టేటస్ మార్చిన వెంటనే ఇక్కడ లైవ్‌లో అప్‌డేట్ అవుతుంది)
                 </p>
               </div>
@@ -915,7 +916,7 @@ if (!owner || !owner.isApproved) {
              <motion.div 
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              className="mt-4 p-6 bg-gradient-to-br from-slate-900 to-indigo-950 text-white rounded-[2rem] text-center shadow-xl border-2 border-amber-400/40 relative overflow-hidden"
+              className="mt-4 p-6 bg-gradient-to-br from-[#0c1236] to-[#141b4d] text-white rounded-[2rem] text-center shadow-xl border-2 border-amber-400/40 relative overflow-hidden"
              >
               <div className="absolute -right-6 -bottom-6 w-20 h-20 bg-amber-400/10 rounded-full blur-xl pointer-events-none"></div>
               <p className="text-[8px] font-black uppercase tracking-[0.2em] text-amber-400 italic leading-none mb-1">Sudara Premium Protocol</p>
@@ -931,17 +932,17 @@ if (!owner || !owner.isApproved) {
           </div>
         )}
 
-        <div className="bg-slate-50 border-l-4 border-amber-500 p-4 rounded-2xl mb-6 flex items-start gap-3">
-          <Camera className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-          <p className="text-[9px] sm:text-[10px] font-bold text-slate-500 leading-relaxed uppercase italic">
-            <span className="text-amber-600 font-black">Note:</span> These images are for representation only. Also Sudara is not responsible for any {isRestaurant ? "food" : "product"} related issues in this {isRestaurant ? "restaurant" : "store"}; full responsibility is taken by the {isRestaurant ? "Restaurant" : "Store"} owner only, we are just connectors.
+        <div className="bg-[#0a1033] border-l-4 border-amber-500 p-4 rounded-2xl mb-6 flex items-start gap-3 border border-[#1e2d69]">
+          <Camera className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+          <p className="text-[9px] sm:text-[10px] font-bold text-slate-300 leading-relaxed uppercase italic">
+            <span className="text-amber-400 font-black">Note:</span> These images are for representation only. Also Sudara is not responsible for any {isRestaurant ? "food" : "product"} related issues in this {isRestaurant ? "restaurant" : "store"}; full responsibility is taken by the {isRestaurant ? "Restaurant" : "Store"} owner only, we are just connectors.
           </p>
         </div>
 
-        <div className="sticky top-16 sm:top-20 z-30 bg-white/95 py-2 border-b space-y-3 sm:space-y-4 backdrop-blur-md">
+        <div className="sticky top-16 sm:top-20 z-30 bg-[#05081c]/95 py-2 border-b border-[#131d47] space-y-3 sm:space-y-4 backdrop-blur-md">
           <div className="relative">
-            <input type="text" placeholder="Search dish..." value={itemSearch} onChange={(e) => setItemSearch(e.target.value)} className="w-full bg-slate-50 border py-2.5 sm:py-3 px-10 rounded-full text-[10px] sm:text-xs font-bold outline-none" />
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-3.5 h-3.5 sm:w-4 h-4" />
+            <input type="text" placeholder="Search dish..." value={itemSearch} onChange={(e) => setItemSearch(e.target.value)} className="w-full bg-[#0a1033] border border-[#1e2d69] py-2.5 sm:py-3 px-10 rounded-full text-[10px] sm:text-xs font-bold outline-none text-white focus:border-cyan-400 transition-all placeholder:text-slate-500" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-400 w-3.5 h-3.5 sm:w-4 h-4" />
           </div>
           
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
@@ -949,11 +950,11 @@ if (!owner || !owner.isApproved) {
               const isSelected = filter === cat;
               let btnStyles = "";
               if (cat === "Veg") {
-                btnStyles = isSelected ? "bg-green-600 text-white border-green-600 shadow-md" : "bg-white text-green-600 border-green-200 hover:bg-green-50";
+                btnStyles = isSelected ? "bg-emerald-600 text-white border-emerald-400 shadow-md shadow-emerald-950/40" : "bg-[#0a1033] text-emerald-400 border-emerald-500/30 hover:bg-[#101b4d]";
               } else if (cat === "Non-Veg") {
-                btnStyles = isSelected ? "bg-red-600 text-white border-red-600 shadow-md" : "bg-white text-red-600 border-red-200 hover:bg-red-50";
+                btnStyles = isSelected ? "bg-rose-600 text-white border-rose-400 shadow-md shadow-rose-950/40" : "bg-[#0a1033] text-rose-400 border-rose-500/30 hover:bg-[#101b4d]";
               } else {
-                btnStyles = isSelected ? "bg-slate-900 text-white border-slate-900 shadow-md" : "bg-white text-slate-500 border-slate-200 hover:bg-slate-50";
+                btnStyles = isSelected ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-cyan-400 shadow-md shadow-blue-950/40" : "bg-[#0a1033] text-slate-300 border-[#1e2d69] hover:bg-[#101b4d]";
               }
 
               return (
@@ -963,14 +964,14 @@ if (!owner || !owner.isApproved) {
                 >
                   {cat === "All" && (
                      <div className="flex -space-x-1">
-                       <div className="w-1.5 h-1.5 rounded-full bg-green-500 border border-white"></div>
-                       <div className="w-1.5 h-1.5 rounded-full bg-red-500 border border-white"></div>
+                       <div className="w-1.5 h-1.5 rounded-full bg-green-500 border border-[#05081c]"></div>
+                       <div className="w-1.5 h-1.5 rounded-full bg-red-500 border border-[#05081c]"></div>
                      </div>
                   )}
-                  {cat === "Veg" && <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-green-500'}`}></div>}
-                  {cat === "Non-Veg" && <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-red-500'}`}></div>}
+                  {cat === "Veg" && <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-emerald-400'}`}></div>}
+                  {cat === "Non-Veg" && <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-rose-400'}`}></div>}
                   {cat !== "All" && cat !== "Veg" && cat !== "Non-Veg" && (
-                     <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-blue-500'}`}></div>
+                     <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-cyan-400'}`}></div>
                   )}
                   {cat}
                 </button>
@@ -982,27 +983,27 @@ if (!owner || !owner.isApproved) {
             <button 
               onClick={() => setActiveSubCat("All")} 
               className={`px-3 sm:px-4 py-1.5 rounded-xl text-[8px] sm:text-[9px] font-black uppercase border shrink-0 transition-all ${
-                activeSubCat === "All" ? "bg-blue-600 text-white shadow-md" : "bg-slate-50 text-slate-400 border-slate-100"
+                activeSubCat === "All" ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-cyan-400 shadow-md" : "bg-[#0a1033] text-slate-400 border-[#1e2d69] hover:text-slate-200"
               }`}
             >
               {isRestaurant ? "All Menu" : "All Items"}
             </button>
             {availableSubCats.map(sub => (
-              <button key={sub} onClick={() => setActiveSubCat(sub)} className={`px-3 sm:px-4 py-1.5 rounded-xl text-[8px] sm:text-[9px] font-black uppercase border shrink-0 transition-all ${activeSubCat === sub ? "bg-blue-600 text-white shadow-md" : "bg-slate-50 text-slate-400 border-slate-100"}`}>{sub}</button>
+              <button key={sub} onClick={() => setActiveSubCat(sub)} className={`px-3 sm:px-4 py-1.5 rounded-xl text-[8px] sm:text-[9px] font-black uppercase border shrink-0 transition-all ${activeSubCat === sub ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-cyan-400 shadow-md" : "bg-[#0a1033] text-slate-400 border-[#1e2d69] hover:text-slate-200"}`}>{sub}</button>
             ))}
           </div>
         </div>
 
         <div className="max-h-[800px] overflow-y-auto pr-1 space-y-8 scrollbar-custom pb-12">
           {Object.keys(groupedItems).length === 0 ? (
-            <div className="text-center py-12 text-slate-400 font-bold uppercase text-xs">
+            <div className="text-center py-12 text-slate-500 font-bold uppercase text-xs">
               No items found
             </div>
           ) : (
             Object.entries(groupedItems).map(([categoryName, catItems]) => (
               <div key={categoryName} className="space-y-3">
-                <div className="flex items-center justify-between border-l-4 border-blue-600 pl-3">
-                  <h3 className="text-xs sm:text-sm font-black uppercase text-slate-900 tracking-wider italic">
+                <div className="flex items-center justify-between border-l-4 border-cyan-400 pl-3">
+                  <h3 className="text-xs sm:text-sm font-black uppercase text-slate-100 tracking-wider italic">
                     {categoryName}
                   </h3>
                   <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
@@ -1015,49 +1016,49 @@ if (!owner || !owner.isApproved) {
   isRestaurant ? (
     <div 
       key={item._id} 
-      className="w-full bg-white p-3 rounded-[1.5rem] border border-slate-100 flex items-center justify-between gap-3 shadow-sm"
+      className="w-full bg-[#0a1033] p-3 rounded-[1.5rem] border border-[#1e2d69] flex items-center justify-between gap-3 shadow-md hover:border-cyan-400/50 transition-all"
     >
       <div className="flex items-center gap-3 min-w-0 flex-1">
         <div className="relative shrink-0">
-          <img src={item.image || `https://ui-avatars.com/api/?name=${item.name}`} loading="lazy" className="w-14 h-14 rounded-xl object-cover border shadow-2xs" alt="" />
-          <div className={`absolute -top-1 -left-1 w-2.5 h-2.5 rounded-full border-2 border-white ${item.category === 'Veg' ? 'bg-green-500' : 'bg-red-500'}`}></div>
+          <img src={item.image || `https://ui-avatars.com/api/?name=${item.name}`} loading="lazy" className="w-14 h-14 rounded-xl object-cover border border-[#1e2d69] shadow-2xs" alt="" />
+          <div className={`absolute -top-1 -left-1 w-2.5 h-2.5 rounded-full border-2 border-[#0a1033] ${item.category === 'Veg' ? 'bg-green-500' : 'bg-red-500'}`}></div>
         </div>
         <div className="min-w-0 flex-1">
-          <h4 className="font-black uppercase text-[10px] sm:text-[11px] italic text-slate-800 leading-tight truncate">{item.name}</h4>
-          <p className="text-sm font-black text-blue-600 italic mt-0.5">₹{item.price}</p>
+          <h4 className="font-black uppercase text-[10px] sm:text-[11px] italic text-slate-100 leading-tight truncate">{item.name}</h4>
+          <p className="text-sm font-black text-cyan-400 italic mt-0.5">₹{item.price}</p>
         </div>
       </div>
-      <div className="flex flex-col items-center gap-1 bg-slate-50 p-1 rounded-xl border shrink-0">
-        <button onClick={() => addToCart(item)} className="p-1"><Plus className="w-3.5 h-3.5 text-slate-700" /></button>
-        <span className="text-[10px] font-black min-w-[12px] text-center">{cart[item._id]?.qty || 0}</span>
-        <button onClick={() => removeFromCart(item)} className="p-1"><Minus className="w-3.5 h-3.5 text-slate-400" /></button>
+      <div className="flex flex-col items-center gap-1 bg-[#05081c] p-1 rounded-xl border border-[#1e2d69] shrink-0">
+        <button onClick={() => addToCart(item)} className="p-1 text-slate-200 hover:text-cyan-400"><Plus className="w-3.5 h-3.5" /></button>
+        <span className="text-[10px] font-black min-w-[12px] text-center text-white">{cart[item._id]?.qty || 0}</span>
+        <button onClick={() => removeFromCart(item)} className="p-1 text-slate-400 hover:text-rose-400"><Minus className="w-3.5 h-3.5" /></button>
       </div>
     </div>
   ) : (
     <div 
       key={item._id} 
-      className="w-full bg-white p-4 rounded-[2rem] border border-slate-200/80 shadow-xs hover:shadow-md transition-all flex flex-col justify-between"
+      className="w-full bg-[#0a1033] p-4 rounded-[2rem] border border-[#1e2d69] shadow-md hover:shadow-xl hover:border-cyan-400/50 transition-all flex flex-col justify-between"
     >
       <div>
-        <div className="relative w-full h-44 sm:h-48 bg-slate-900 rounded-[1.8rem] overflow-hidden mb-3 flex items-center justify-center border border-slate-100">
+        <div className="relative w-full h-44 sm:h-48 bg-[#05081c] rounded-[1.8rem] overflow-hidden mb-3 flex items-center justify-center border border-[#1e2d69]">
           <img src={item.image || `https://ui-avatars.com/api/?name=${item.name}`} loading="lazy" className="w-full h-full object-cover hover:scale-105 transition-all duration-500" alt={item.name} />
-          <span className="absolute top-3 right-3 bg-slate-900/95 text-white text-[8px] font-black uppercase px-2.5 py-1 rounded-lg">
+          <span className="absolute top-3 right-3 bg-[#05081c]/95 text-cyan-300 border border-cyan-500/30 text-[8px] font-black uppercase px-2.5 py-1 rounded-lg">
             {item.subCategory || "Hub"}
           </span>
         </div>
 
-        <h4 className="font-black uppercase text-xs text-slate-900 truncate mb-1">{item.name}</h4>
+        <h4 className="font-black uppercase text-xs text-slate-100 truncate mb-1">{item.name}</h4>
 
         {/* ఆటోమొబైల్ అయితే మైలేజ్ & ఫ్యూయెల్ ట్యాగ్ */}
         {item.category === "Automobile" && (
           <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
             {item.mileageOrRange && (
-              <span className="text-[8px] font-bold bg-amber-50 text-amber-800 px-2 py-0.5 rounded border border-amber-200">
+              <span className="text-[8px] font-bold bg-amber-950/40 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30">
                 ⚡ మైలేజ్: {item.mileageOrRange}
               </span>
             )}
             {item.fuelType && (
-              <span className="text-[8px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded">
+              <span className="text-[8px] font-bold bg-[#0e1638] text-slate-300 px-2 py-0.5 rounded border border-[#1e2d69]">
                 ⛽ {item.fuelType}
               </span>
             )}
@@ -1066,7 +1067,7 @@ if (!owner || !owner.isApproved) {
 
         {item.description && (
           <div className="max-h-12 overflow-y-auto scrollbar-none my-1 pr-1">
-            <p className="text-[9px] font-medium text-slate-500 leading-snug">{item.description}</p>
+            <p className="text-[9px] font-medium text-slate-400 leading-snug">{item.description}</p>
           </div>
         )}
 
@@ -1074,7 +1075,7 @@ if (!owner || !owner.isApproved) {
           <p className="text-[8px] font-black uppercase text-slate-400 tracking-wider">
             {item.category === "Automobile" ? "On-Road Price" : "Price"}
           </p>
-          <p className="text-sm font-black text-blue-600 italic">
+          <p className="text-sm font-black text-cyan-400 italic">
             ₹{item.price} {item.category === "Automobile" ? "Lakhs" : ""}
           </p>
           {item.category === "Automobile" && (
@@ -1085,25 +1086,25 @@ if (!owner || !owner.isApproved) {
         </div>
 {/* 💳 కేవలం ఆటోమొబైల్స్‌కి మాత్రమే లోన్ & EMI బాక్స్ కనిపించడానికి */}
 {item.category === "Automobile" && (item.downPayment || item.estimatedEMI) && (
-  <div className="bg-amber-50/60 p-3 rounded-2xl border border-amber-200/60 space-y-1.5 mt-2">
-    <p className="text-[9px] font-black uppercase text-amber-900 flex items-center justify-between">
+  <div className="bg-[#0e1638] p-3 rounded-2xl border border-amber-500/30 space-y-1.5 mt-2">
+    <p className="text-[9px] font-black uppercase text-amber-300 flex items-center justify-between">
       <span>💳 లోన్ & EMI ఆప్షన్:</span>
-      <span className="text-blue-600">₹{item.estimatedEMI}/నెల</span>
+      <span className="text-cyan-400">₹{item.estimatedEMI}/నెల</span>
     </p>
-    <p className="text-[8px] font-bold text-slate-600 flex justify-between">
+    <p className="text-[8px] font-bold text-slate-400 flex justify-between">
       <span>కనీస డౌన్‌పేమెంట్:</span>
-      <span className="text-slate-900 font-black">₹{item.downPayment}</span>
+      <span className="text-white font-black">₹{item.downPayment}</span>
     </p>
-    <p className="text-[8px] font-bold text-slate-600 flex justify-between">
+    <p className="text-[8px] font-bold text-slate-400 flex justify-between">
       <span>అర్హతగల కనీస సాలరీ:</span>
-      <span className="text-slate-900 font-black">₹{item.requiredSalary} / నెల</span>
+      <span className="text-white font-black">₹{item.requiredSalary} / నెల</span>
     </p>
   </div>
 )}
       </div>
 
       {/* యాక్షన్ & కంపారిజన్ బటన్స్ */}
-      <div className="mt-3 pt-2.5 border-t border-slate-100 space-y-2">
+      <div className="mt-3 pt-2.5 border-t border-[#1e2d69] space-y-2">
         <button 
           onClick={async () => {
             try {
@@ -1112,7 +1113,7 @@ if (!owner || !owner.isApproved) {
               setShowCompareModal(true);
             } catch (err) { alert("కంపారిజన్ డేటా అందుబాటులో లేదు! 🔄"); }
           }}
-          className="w-full py-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 border border-blue-200"
+          className="w-full py-2 bg-[#0e1638] hover:bg-[#15204f] text-cyan-300 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 border border-cyan-500/30"
         >
           <Search className="w-3 h-3" /> Compare Prices 📊
         </button>
@@ -1121,17 +1122,17 @@ if (!owner || !owner.isApproved) {
           {item.category === "Automobile" ? (
             <button 
               onClick={() => { setSelectedVehicle(item); setShowTestDriveModal(true); }}
-              className="w-full bg-slate-900 hover:bg-amber-600 text-white py-2 rounded-xl text-[9px] font-black uppercase transition-all shadow-sm active:scale-95"
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-amber-600 hover:to-amber-700 text-white py-2 rounded-xl text-[9px] font-black uppercase transition-all shadow-sm active:scale-95 border border-cyan-400/30"
             >
               🚗 Book Test Drive
             </button>
           ) : (
             <>
-              <span className="text-[8px] font-bold text-emerald-600 uppercase bg-emerald-50 px-2 py-0.5 rounded-md">In Stock</span>
-              <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border">
-                <button onClick={() => removeFromCart(item)} className="p-1 bg-white rounded-lg"><Minus className="w-2.5 h-2.5" /></button>
-                <span className="text-[11px] font-black min-w-[14px] text-center">{cart[item._id]?.qty || 0}</span>
-                <button onClick={() => addToCart(item)} className="p-1 bg-slate-900 text-white rounded-lg"><Plus className="w-2.5 h-2.5" /></button>
+              <span className="text-[8px] font-bold text-emerald-400 uppercase bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-500/30">In Stock</span>
+              <div className="flex items-center gap-1.5 bg-[#05081c] p-1 rounded-xl border border-[#1e2d69]">
+                <button onClick={() => removeFromCart(item)} className="p-1 bg-[#0a1033] text-slate-300 rounded-lg hover:text-rose-400"><Minus className="w-2.5 h-2.5" /></button>
+                <span className="text-[11px] font-black min-w-[14px] text-center text-white">{cart[item._id]?.qty || 0}</span>
+                <button onClick={() => addToCart(item)} className="p-1 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-500 hover:to-indigo-500"><Plus className="w-2.5 h-2.5" /></button>
               </div>
             </>
           )}
@@ -1146,33 +1147,33 @@ if (!owner || !owner.isApproved) {
           )}
         </div>
 
-        <div className="bg-slate-50 border border-slate-200 rounded-[2rem] p-5 sm:p-6 my-6 shadow-sm">
-          <div className="flex items-center gap-2 border-l-4 border-blue-600 pl-3 mb-4">
-            <h3 className="text-[10px] sm:text-xs font-black uppercase text-slate-800 tracking-widest italic">
+        <div className="bg-[#0a1033] border border-[#1e2d69] rounded-[2rem] p-5 sm:p-6 my-6 shadow-sm">
+          <div className="flex items-center gap-2 border-l-4 border-cyan-400 pl-3 mb-4">
+            <h3 className="text-[10px] sm:text-xs font-black uppercase text-slate-200 tracking-widest italic">
               {isRestaurant ? "Restaurant & Legal Details" : "Store & Legal Details"}
             </h3>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+            <div className="bg-[#0e1638] p-4 rounded-2xl border border-[#1e2d69] shadow-sm">
               <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">Owner Name</p>
-              <p className="text-xs font-black uppercase italic text-slate-800 truncate">
+              <p className="text-xs font-black uppercase italic text-slate-200 truncate">
                 {owner?.ownerName || owner?.name || "Sudara Partner"}
               </p>
             </div>
 
-            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+            <div className="bg-[#0e1638] p-4 rounded-2xl border border-[#1e2d69] shadow-sm">
               <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">
                 {isRestaurant ? "FSSAI License No" : "Business License No"}
               </p>
-              <p className="text-xs font-black uppercase tracking-wider text-blue-600 truncate">
+              <p className="text-xs font-black uppercase tracking-wider text-cyan-400 truncate">
                 {owner?.fssaiNumber && owner.fssaiNumber.trim() !== "" ? owner.fssaiNumber : "Not Provided"}
               </p>
             </div>
 
-            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+            <div className="bg-[#0e1638] p-4 rounded-2xl border border-[#1e2d69] shadow-sm">
               <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">GST Number</p>
-              <p className="text-xs font-black uppercase tracking-wider text-slate-800 truncate">
+              <p className="text-xs font-black uppercase tracking-wider text-slate-200 truncate">
                 {owner?.gstNumber && owner.gstNumber.trim() !== "" ? owner.gstNumber : "Not Provided"}
               </p>
             </div>
@@ -1181,33 +1182,33 @@ if (!owner || !owner.isApproved) {
       </div>
 
       <div className="order-1 lg:order-2 lg:col-span-4">
-        <div ref={orderSectionRef} className="bg-white p-4 rounded-2xl lg:sticky lg:top-32 shadow-lg border border-slate-100 scroll-mt-24">
+        <div ref={orderSectionRef} className="bg-[#0a1033] p-4 rounded-2xl lg:sticky lg:top-32 shadow-xl border border-[#1e2d69] scroll-mt-24">
           
           {isRestaurant ? (
             owner?.planType === "premium" ? (
               <>
                 {Object.values(cart).length > 0 && (
-                  <div className="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-100">
-                    <span className="text-[9px] font-black uppercase text-blue-600 italic tracking-widest">Order Summary</span>
+                  <div className="mb-4 p-3 rounded-xl bg-[#0e1638] border border-[#1e2d69]">
+                    <span className="text-[9px] font-black uppercase text-cyan-400 italic tracking-widest">Order Summary</span>
                     <div className="space-y-1.5 my-3 max-h-40 overflow-y-auto scrollbar-hide">
                       {Object.values(cart).map((i) => (
-                        <div key={i._id || i.name} className="flex justify-between text-[10px] font-bold italic text-slate-600">
+                        <div key={i._id || i.name} className="flex justify-between text-[10px] font-bold italic text-slate-300">
                           <span>{i.qty} x {i.name}</span>
                           <span>₹{i.price * i.qty}</span>
                         </div>
                       ))}
                     </div>
-                    <div className="border-t border-blue-100 pt-3 space-y-1">
-                      <div className="flex justify-between text-[10px] font-bold text-slate-500">
+                    <div className="border-t border-[#1e2d69] pt-3 space-y-1">
+                      <div className="flex justify-between text-[10px] font-bold text-slate-400">
                         <span>Subtotal:</span> <span>₹{calculateTotal.itemsTotal.toFixed(2)}</span>
                       </div>
-                      <div className="flex justify-between text-[10px] font-bold text-slate-500">
+                      <div className="flex justify-between text-[10px] font-bold text-slate-400">
                         <span>GST ({owner?.gstPercentage}%):</span> <span>₹{calculateTotal.gstAmount.toFixed(2)}</span>
                       </div>
-                      <div className="flex justify-between text-[10px] font-bold text-slate-500">
+                      <div className="flex justify-between text-[10px] font-bold text-slate-400">
                         <span>Extra:</span> <span>₹{calculateTotal.extraCharges.toFixed(2)}</span>
                       </div>
-                      <div className="border-t border-blue-100 pt-3 flex justify-between text-sm font-black italic text-blue-600">
+                      <div className="border-t border-[#1e2d69] pt-3 flex justify-between text-sm font-black italic text-cyan-400">
                         <span>Pay Total:</span> <span>₹{calculateTotal.finalTotal.toFixed(2)}</span>
                       </div>
                     </div>
@@ -1224,16 +1225,16 @@ if (!owner || !owner.isApproved) {
                         trackPostOrderClick(); 
                         setShowInstantModal(true);
                       }}
-                      className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] flex items-center justify-between transition-all border bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-200/80 shadow-sm cursor-pointer"
+                      className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] flex items-center justify-between transition-all border bg-amber-950/30 hover:bg-amber-950/50 text-amber-300 border-amber-500/40 shadow-sm cursor-pointer"
                       type="button"
                     >
                       <div className="flex items-center gap-2.5">
-                        <div className="p-1.5 bg-amber-100/60 rounded-lg">
-                          <MessageSquare className="w-3.5 h-3.5 text-amber-700" />
+                        <div className="p-1.5 bg-amber-900/50 rounded-lg">
+                          <MessageSquare className="w-3.5 h-3.5 text-amber-400" />
                         </div>
                         <span>Post-Book (At Restaurant)</span>
                       </div>
-                      <span className="text-[9px] font-medium text-amber-700 bg-amber-100/50 px-2 py-0.5 rounded-md">Dine-in</span>
+                      <span className="text-[9px] font-medium text-amber-300 bg-amber-900/40 px-2 py-0.5 rounded-md border border-amber-500/30">Dine-in</span>
                     </motion.button>
                   )}
 
@@ -1244,15 +1245,15 @@ if (!owner || !owner.isApproved) {
                       if (totalAmount > 0) { setShowOnlineOrderModal(true); } 
                       else { alert("Please select items first! 🥘"); }
                     }}
-                    className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-200/80 shadow-sm flex items-center justify-between transition-all"
+                    className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] bg-emerald-950/30 hover:bg-emerald-950/50 text-emerald-300 border border-emerald-500/40 shadow-sm flex items-center justify-between transition-all"
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="p-1.5 bg-emerald-100/60 rounded-lg">
-                        <ShoppingBag className="w-3.5 h-3.5 text-emerald-700" />
+                      <div className="p-1.5 bg-emerald-900/50 rounded-lg">
+                        <ShoppingBag className="w-3.5 h-3.5 text-emerald-400" />
                       </div>
                       <span>Order Online (Direct)</span>
                     </div>
-                    <span className="text-[9px] font-medium text-emerald-700 bg-emerald-100/50 px-2 py-0.5 rounded-md">Instant</span>
+                    <span className="text-[9px] font-medium text-emerald-300 bg-emerald-900/40 px-2 py-0.5 rounded-md border border-emerald-500/30">Instant</span>
                   </motion.button>
 
                   {owner?.isPreBookEnabled && (
@@ -1264,16 +1265,16 @@ if (!owner || !owner.isApproved) {
                         else { alert("Select items first! 🥘"); }
                       }}
                       className={`w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] flex items-center justify-between transition-all border ${
-                        totalAmount > 0 ? 'bg-purple-50 hover:bg-purple-100 text-purple-900 border-purple-200/80 shadow-sm' : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                        totalAmount > 0 ? 'bg-indigo-950/40 hover:bg-indigo-950/60 text-indigo-300 border-indigo-500/40 shadow-sm' : 'bg-[#0e1638] text-slate-500 border-[#1e2d69] cursor-not-allowed'
                       }`}
                     >
                       <div className="flex items-center gap-2.5">
-                        <div className="p-1.5 bg-purple-100/60 rounded-lg">
-                          <CreditCard className="w-3.5 h-3.5 text-purple-700" />
+                        <div className="p-1.5 bg-indigo-900/50 rounded-lg">
+                          <CreditCard className="w-3.5 h-3.5 text-indigo-400" />
                         </div>
                         <span>{totalAmount > 0 ? "Pre-Book & Pay Advance" : "Select Items to Pre-Book"}</span>
                       </div>
-                      {totalAmount > 0 && <span className="text-[9px] font-medium text-purple-700 bg-purple-100/50 px-2 py-0.5 rounded-md">Secure</span>}
+                      {totalAmount > 0 && <span className="text-[9px] font-medium text-indigo-300 bg-indigo-900/40 px-2 py-0.5 rounded-md border border-indigo-500/30">Secure</span>}
                     </motion.button>
                   )}
 
@@ -1281,39 +1282,39 @@ if (!owner || !owner.isApproved) {
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={handleCallAction}  
-                    className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200/80 shadow-sm flex items-center justify-between transition-all"
+                    className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] bg-blue-950/40 hover:bg-blue-950/60 text-cyan-300 border border-cyan-500/40 shadow-sm flex items-center justify-between transition-all"
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="p-1.5 bg-blue-100/60 rounded-lg">
-                        <PhoneCall className="w-3.5 h-3.5 text-blue-700" />
+                      <div className="p-1.5 bg-blue-900/50 rounded-lg">
+                        <PhoneCall className="w-3.5 h-3.5 text-cyan-400" />
                       </div>
                       <span>Call to Owner</span>
                     </div>
-                    <span className="text-[9px] font-medium text-blue-700 bg-blue-100/50 px-2 py-0.5 rounded-md">Direct</span>
+                    <span className="text-[9px] font-medium text-cyan-300 bg-blue-900/40 px-2 py-0.5 rounded-md border border-cyan-500/30">Direct</span>
                   </motion.button>
                   
                   <button 
                    onClick={() => setShowTracking(true)}
-                   className="w-full mt-2 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center justify-center gap-2 border"
+                   className="w-full mt-2 py-3 bg-[#0e1638] hover:bg-[#15204f] text-slate-300 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center justify-center gap-2 border border-[#1e2d69]"
                   >
-                   <Search className="w-3.5 h-3.5" /> Track Existing Order 🔍
+                   <Search className="w-3.5 h-3.5 text-cyan-400" /> Track Existing Order 🔍
                   </button>
                 </div>
               </>
             ) : (
               <div className="text-center py-6">
-                <div className="bg-amber-50 text-amber-800 p-5 rounded-[2rem] border border-amber-200/60 mb-5">
-                  <UtensilsCrossed className="w-8 h-8 text-amber-600 mx-auto mb-3 animate-pulse" />
+                <div className="bg-[#0e1638] text-amber-300 p-5 rounded-[2rem] border border-amber-500/30 mb-5">
+                  <UtensilsCrossed className="w-8 h-8 text-amber-400 mx-auto mb-3 animate-pulse" />
                   <p className="text-[11px] font-black uppercase tracking-wider leading-relaxed">
                     Digital Menu Active ✅
                   </p>
-                  <p className="text-[9px] font-bold text-slate-500 uppercase mt-2 leading-relaxed">
+                  <p className="text-[9px] font-bold text-slate-400 uppercase mt-2 leading-relaxed">
                     Online ordering via phone is restricted for this node. Please look at the prices and order directly to server.
                   </p>
                 </div>
                 <button  
                   onClick={handleCallAction}  
-                  className="w-full py-4 rounded-xl font-black uppercase text-[10px] bg-blue-600 text-white shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all"
+                  className="w-full py-4 rounded-xl font-black uppercase text-[10px] bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all border border-cyan-400/30"
                 >
                   <PhoneCall className="w-4 h-4" /> Call for Inquiries
                 </button>
@@ -1321,21 +1322,21 @@ if (!owner || !owner.isApproved) {
             )
           ) : (
             <div>
-              <div className="mb-4 p-3 rounded-xl bg-blue-50 border border-blue-100">
-                <span className="text-[9px] font-black uppercase text-blue-600 italic tracking-widest">Cart Summary ({owner?.category})</span>
+              <div className="mb-4 p-3 rounded-xl bg-[#0e1638] border border-[#1e2d69]">
+                <span className="text-[9px] font-black uppercase text-cyan-400 italic tracking-widest">Cart Summary ({owner?.category})</span>
                 <div className="space-y-1.5 my-3 max-h-40 overflow-y-auto scrollbar-hide">
                   {Object.values(cart).length === 0 ? (
-                    <p className="text-[10px] text-slate-400 italic">No items selected yet.</p>
+                    <p className="text-[10px] text-slate-500 italic">No items selected yet.</p>
                   ) : (
                     Object.values(cart).map((i) => (
-                      <div key={i._id || i.name} className="flex justify-between text-[10px] font-bold italic text-slate-600">
+                      <div key={i._id || i.name} className="flex justify-between text-[10px] font-bold italic text-slate-300">
                         <span>{i.qty} x {i.name}</span>
                         <span>₹{i.price * i.qty}</span>
                       </div>
                     ))
                   )}
                 </div>
-                <div className="border-t border-blue-100 pt-3 flex justify-between text-sm font-black italic text-blue-600">
+                <div className="border-t border-[#1e2d69] pt-3 flex justify-between text-sm font-black italic text-cyan-400">
                   <span>Total:</span> <span>₹{totalAmount}</span>
                 </div>
               </div>
@@ -1350,16 +1351,16 @@ if (!owner || !owner.isApproved) {
                       }
                       setShowStoreOrderModal(true);
                     }}
-                    className="w-full mt-2 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black uppercase text-[11px] tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+                    className="w-full mt-2 py-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-black uppercase text-[11px] tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
                   >
                     <ShoppingBag className="w-4 h-4" /> Place Direct Order 🚀
                   </button>
 
                   <button 
                      onClick={() => setShowTracking(true)}
-                     className="w-full mt-2 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center justify-center gap-2 border"
+                     className="w-full mt-2 py-3 bg-[#0e1638] hover:bg-[#15204f] text-slate-300 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center justify-center gap-2 border border-[#1e2d69]"
                   >
-                     <Search className="w-3.5 h-3.5" /> Track Existing Order 🔍
+                     <Search className="w-3.5 h-3.5 text-cyan-400" /> Track Existing Order 🔍
                   </button>
                 </>
               )}
@@ -1369,7 +1370,7 @@ if (!owner || !owner.isApproved) {
                   trackCallInterest();
                   window.location.href = `tel:${owner?.phone}`;
                 }}
-                className="w-full mt-2 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black uppercase text-[11px] tracking-widest shadow-md active:scale-95 transition-all flex items-center justify-center gap-2"
+                className="w-full mt-2 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-black uppercase text-[11px] tracking-widest shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 border border-cyan-400/30"
               >
                 <PhoneCall className="w-4 h-4" /> Call to Owner 📞
               </button>
@@ -1385,12 +1386,12 @@ if (!owner || !owner.isApproved) {
         initial={{ opacity: 0 }} 
         animate={{ opacity: 1 }} 
         exit={{ opacity: 0 }} 
-        className="fixed inset-0 z-[300] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4"
+        className="fixed inset-0 z-[300] bg-[#05081c]/90 backdrop-blur-md flex items-center justify-center p-4"
       >
-        <div className="bg-white w-full max-w-[400px] rounded-[2.5rem] p-6 shadow-2xl relative text-slate-900">
+        <div className="bg-[#0a1033] w-full max-w-[400px] rounded-[2.5rem] p-6 shadow-2xl relative text-white border border-[#1e2d69]">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-black uppercase italic text-slate-900">Dine-in Table Order 🪑</h3>
-            <button onClick={() => setShowInstantModal(false)} className="p-2 bg-slate-100 rounded-full text-slate-600"><X className="w-4 h-4"/></button>
+            <h3 className="text-xl font-black uppercase italic text-white">Dine-in Table Order 🪑</h3>
+            <button onClick={() => setShowInstantModal(false)} className="p-2 bg-[#0e1638] rounded-full text-slate-300 hover:text-white border border-[#1e2d69]"><X className="w-4 h-4"/></button>
           </div>
           <p className="text-[9px] font-bold text-slate-400 uppercase mb-4 tracking-wider">మీ పేరు మరియు టేబుల్ నంబర్ ఇవ్వండి</p>
           
@@ -1400,20 +1401,20 @@ if (!owner || !owner.isApproved) {
               placeholder="మీ పూర్తి పేరు / Full Name" 
               value={customerName} 
               onChange={(e) => setCustomerName(e.target.value)} 
-              className="w-full bg-slate-50 border-2 border-slate-100 p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-blue-500"
+              className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-cyan-400 text-white placeholder:text-slate-500"
             />
             <input 
               type="text" 
               placeholder="టేబుల్ నంబర్ / Table Number (e.g. 4)" 
               value={selectedTable} 
               onChange={(e) => setSelectedTable(e.target.value)} 
-              className="w-full bg-slate-50 border-2 border-slate-100 p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-blue-500"
+              className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-cyan-400 text-white placeholder:text-slate-500"
             />
 
             <button 
               onClick={handleInstantOrder}
               disabled={loading}
-              className="w-full py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl transition-all active:scale-95"
+              className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl transition-all active:scale-95 border border-cyan-400/30"
             >
               {loading ? "పంపుతోంది..." : "Place Table Order 🍲"}
             </button>
@@ -1430,12 +1431,12 @@ if (!owner || !owner.isApproved) {
         initial={{ opacity: 0 }} 
         animate={{ opacity: 1 }} 
         exit={{ opacity: 0 }} 
-        className="fixed inset-0 z-[300] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4"
+        className="fixed inset-0 z-[300] bg-[#05081c]/90 backdrop-blur-md flex items-center justify-center p-4"
       >
-        <div className="bg-white w-full max-w-[400px] rounded-[2.5rem] p-6 shadow-2xl relative text-slate-900">
+        <div className="bg-[#0a1033] w-full max-w-[400px] rounded-[2.5rem] p-6 shadow-2xl relative text-white border border-[#1e2d69]">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-black uppercase italic text-slate-900">Direct Online Order 🛍️</h3>
-            <button onClick={() => setShowOnlineOrderModal(false)} className="p-2 bg-slate-100 rounded-full text-slate-600"><X className="w-4 h-4"/></button>
+            <h3 className="text-xl font-black uppercase italic text-white">Direct Online Order 🛍️</h3>
+            <button onClick={() => setShowOnlineOrderModal(false)} className="p-2 bg-[#0e1638] rounded-full text-slate-300 hover:text-white border border-[#1e2d69]"><X className="w-4 h-4"/></button>
           </div>
           <p className="text-[9px] font-bold text-slate-400 uppercase mb-4 tracking-wider">మీ డెలివరీ వివరాలు నమోదు చేయండి</p>
           
@@ -1445,21 +1446,21 @@ if (!owner || !owner.isApproved) {
               placeholder="మీ పూర్తి పేరు / Full Name" 
               value={onlineOrderData.name} 
               onChange={(e) => setOnlineOrderData({...onlineOrderData, name: e.target.value})} 
-              className="w-full bg-slate-50 border-2 border-slate-100 p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-blue-500"
+              className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-cyan-400 text-white placeholder:text-slate-500"
             />
             <input 
               type="text" 
               placeholder="ఫోన్ నంబర్ / Mobile Number" 
               value={onlineOrderData.phone} 
               onChange={(e) => setOnlineOrderData({...onlineOrderData, phone: e.target.value})} 
-              className="w-full bg-slate-50 border-2 border-slate-100 p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-blue-500"
+              className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-cyan-400 text-white placeholder:text-slate-500"
             />
             <input 
               type="text" 
               placeholder="డెలివరీ అడ్రస్ / Delivery Address" 
               value={onlineOrderData.address} 
               onChange={(e) => setOnlineOrderData({...onlineOrderData, address: e.target.value})} 
-              className="w-full bg-slate-50 border-2 border-slate-100 p-3.5 rounded-2xl text-xs font-bold outline-none"
+              className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-cyan-400 text-white placeholder:text-slate-500"
             />
 
             <button 
@@ -1511,7 +1512,7 @@ if (!owner || !owner.isApproved) {
                 }
               }}
               disabled={loading}
-              className="w-full py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl transition-all active:scale-95"
+              className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl transition-all active:scale-95 border border-cyan-400/30"
             >
               {loading ? "పంపుతోంది..." : "Confirm & Send Order 🚀"}
             </button>
@@ -1527,15 +1528,15 @@ if (!owner || !owner.isApproved) {
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }} 
-            className="fixed inset-0 z-[350] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4"
+            className="fixed inset-0 z-[350] bg-[#05081c]/90 backdrop-blur-md flex items-center justify-center p-4"
           >
-            <div className="bg-white w-full max-w-[400px] rounded-[2.5rem] p-6 shadow-2xl relative text-slate-900">
+            <div className="bg-[#0a1033] w-full max-w-[400px] rounded-[2.5rem] p-6 shadow-2xl relative text-white border border-[#1e2d69]">
               <div className="flex justify-between items-center mb-4">
                 <div>
-                  <h3 className="text-lg font-black uppercase italic text-slate-900">Book Test Drive 🚗</h3>
-                  <p className="text-[10px] text-blue-600 font-bold uppercase">{selectedVehicle?.name}</p>
+                  <h3 className="text-lg font-black uppercase italic text-white">Book Test Drive 🚗</h3>
+                  <p className="text-[10px] text-cyan-400 font-bold uppercase">{selectedVehicle?.name}</p>
                 </div>
-                <button onClick={() => setShowTestDriveModal(false)} className="p-2 bg-slate-100 rounded-full text-slate-600"><X className="w-4 h-4"/></button>
+                <button onClick={() => setShowTestDriveModal(false)} className="p-2 bg-[#0e1638] rounded-full text-slate-300 hover:text-white border border-[#1e2d69]"><X className="w-4 h-4"/></button>
               </div>
 
               <div className="space-y-4">
@@ -1549,7 +1550,7 @@ if (!owner || !owner.isApproved) {
       placeholder="ఉదా: రాజ్ కుమార్ / Enter Name" 
       value={testDriveData.name} 
       onChange={(e) => setTestDriveData({...testDriveData, name: e.target.value})} 
-      className="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl text-xs font-bold outline-none focus:border-amber-600 transition-all text-slate-900 shadow-inner"
+      className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-4 rounded-2xl text-xs font-bold outline-none focus:border-amber-400 transition-all text-white placeholder:text-slate-500 shadow-inner"
     />
   </div>
 
@@ -1563,20 +1564,20 @@ if (!owner || !owner.isApproved) {
       placeholder="9876543210" 
       value={testDriveData.phone} 
       onChange={(e) => setTestDriveData({...testDriveData, phone: e.target.value})} 
-      className="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl text-xs font-bold outline-none focus:border-amber-600 transition-all text-slate-900 shadow-inner"
+      className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-4 rounded-2xl text-xs font-bold outline-none focus:border-amber-400 transition-all text-white placeholder:text-slate-500 shadow-inner"
     />
   </div>
 
   {/* Test Drive Date Input */}
   <div className="space-y-1 text-left">
-    <label className="text-[9px] font-black uppercase text-amber-600 block px-1 tracking-wider font-black">
+    <label className="text-[9px] font-black uppercase text-amber-400 block px-1 tracking-wider font-black">
       📅 టెస్ట్ డ్రైవ్ తేదీ / Test Drive Date
     </label>
     <input 
       type="date" 
       value={testDriveData.date} 
       onChange={(e) => setTestDriveData({...testDriveData, date: e.target.value})} 
-      className="w-full bg-slate-50 border-2 border-slate-100 p-4 rounded-2xl text-xs font-bold outline-none focus:border-amber-600 transition-all text-slate-900 shadow-inner cursor-pointer"
+      className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-4 rounded-2xl text-xs font-bold outline-none focus:border-amber-400 transition-all text-white shadow-inner cursor-pointer"
     />
   </div>
 
@@ -1584,7 +1585,7 @@ if (!owner || !owner.isApproved) {
   <button 
     onClick={handleBookTestDrive}
     disabled={loading}
-    className="w-full mt-2 py-4 bg-slate-900 hover:bg-amber-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl transition-all active:scale-95 disabled:bg-slate-300"
+    className="w-full mt-2 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl transition-all active:scale-95 disabled:bg-slate-700 border border-cyan-400/30"
   >
     {loading ? "బుక్ అవుతోంది..." : "Confirm Test Drive ✅"}
   </button>
@@ -1596,7 +1597,7 @@ if (!owner || !owner.isApproved) {
     <AnimatePresence>
       {selectedImg && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[150] bg-black/90 backdrop-blur-lg flex items-center justify-center p-4" onClick={() => setSelectedImg(null)}>
-          <motion.img initial={{ scale: 0.8 }} animate={{ scale: 1 }} src={selectedImg} className="max-w-full max-h-[80vh] rounded-2xl shadow-2xl" />
+          <motion.img initial={{ scale: 0.8 }} animate={{ scale: 1 }} src={selectedImg} className="max-w-full max-h-[80vh] rounded-2xl shadow-2xl border border-white/10" />
           <button className="absolute top-6 right-6 text-white bg-white/10 p-3 rounded-full backdrop-blur-md"><X /></button>
         </motion.div>
       )}
@@ -1608,10 +1609,10 @@ if (!owner || !owner.isApproved) {
           initial={{ opacity: 0, y: 50 }} 
           animate={{ opacity: 1, y: 0 }} 
           exit={{ opacity: 0, y: 50 }}
-          className="fixed bottom-24 right-4 z-[200] bg-slate-900 text-white p-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/20"
+          className="fixed bottom-24 right-4 z-[200] bg-[#0a1033] text-white p-4 rounded-2xl shadow-2xl flex items-center gap-3 border border-[#1e2d69]"
         >
           <div>
-            <p className="text-xs font-black uppercase italic">
+            <p className="text-xs font-black uppercase italic text-cyan-300">
               {isRestaurant ? "Hungry? 🍔" : `Need ${owner?.category || "Items"}? ⚡`}
             </p>
             <p className="text-[9px] text-slate-400 uppercase">
@@ -1629,7 +1630,7 @@ if (!owner || !owner.isApproved) {
                 window.scrollTo({ top: 500, behavior: "smooth" });
               }
             }}
-            className="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2.5 rounded-xl text-[10px] font-black uppercase italic tracking-wider shadow-lg active:scale-95 transition-all"
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-4 py-2.5 rounded-xl text-[10px] font-black uppercase italic tracking-wider shadow-lg active:scale-95 transition-all border border-cyan-400/30"
           >
             {isRestaurant ? "Show Menu 👇" : "View Stock 👇"}
           </button>
@@ -1647,20 +1648,20 @@ if (!owner || !owner.isApproved) {
           initial={{ opacity: 0 }} 
           animate={{ opacity: 1 }} 
           exit={{ opacity: 0 }} 
-          className="fixed inset-0 z-[300] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 sm:p-6"
+          className="fixed inset-0 z-[300] bg-[#05081c]/90 backdrop-blur-md flex items-center justify-center p-4 sm:p-6"
         >
           <div className="absolute inset-0" onClick={() => setShowOrderForm(false)}></div>
           <motion.div 
             initial={{ scale: 0.9, opacity: 0, y: 30 }} 
             animate={{ scale: 1, opacity: 1, y: 0 }} 
-            exit={{ scale: 0.9, opacity: 0, y: 30 }}
-            className="relative bg-white w-full max-w-[420px] rounded-[2.5rem] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] overflow-hidden border border-slate-100 flex flex-col"
+            exit={{ scale: 0.9, opacity: 0, y: 30 }} 
+            className="relative bg-[#0a1033] w-full max-w-[420px] rounded-[2.5rem] shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)] overflow-hidden border border-[#1e2d69] flex flex-col text-white"
           >
-            <div className="bg-slate-900 px-8 py-10 text-white relative">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/20 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+            <div className="bg-[#070b24] px-8 py-10 text-white relative border-b border-[#1e2d69]">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-600/20 rounded-full -mr-16 -mt-16 blur-3xl"></div>
               <div className="relative z-10">
                 <h2 className="text-2xl font-black italic uppercase tracking-tighter leading-none">
-                  Confirm <span className="text-blue-400">Order</span>
+                  Confirm <span className="text-cyan-400">Order</span>
                 </h2>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-2 italic">Sudara Hub Transmission</p>
               </div>
@@ -1679,35 +1680,35 @@ if (!owner || !owner.isApproved) {
 
             <div className="p-6 sm:p-8 space-y-6 overflow-y-auto max-h-[70vh] scrollbar-hide">
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-blue-50 border border-blue-100 p-4 rounded-[1.8rem] text-center shadow-sm">
-                  <p className="text-[9px] font-black text-blue-400 uppercase mb-1">Pay Advance</p>
-                  <p className="text-2xl font-black text-blue-700 italic tracking-tighter">₹{halfAmount}</p>
+                <div className="bg-[#0e1638] border border-cyan-500/30 p-4 rounded-[1.8rem] text-center shadow-sm">
+                  <p className="text-[9px] font-black text-cyan-400 uppercase mb-1">Pay Advance</p>
+                  <p className="text-2xl font-black text-cyan-300 italic tracking-tighter">₹{halfAmount}</p>
                 </div>
-                <div className="bg-slate-50 border border-slate-100 p-4 rounded-[1.8rem] text-center shadow-sm">
+                <div className="bg-[#0e1638] border border-[#1e2d69] p-4 rounded-[1.8rem] text-center shadow-sm">
                   <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Pay Later</p>
-                  <p className="text-2xl font-black text-slate-900 italic tracking-tighter">₹{halfAmount}</p>
+                  <p className="text-2xl font-black text-slate-100 italic tracking-tighter">₹{halfAmount}</p>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div className="relative group">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-cyan-400 transition-colors" />
                   <input 
                     type="text" 
                     placeholder="Full Name" 
                     value={orderData.name} 
                     onChange={(e)=>setOrderData({...orderData, name:e.target.value})} 
-                    className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-[11px] font-bold outline-none focus:bg-white focus:border-blue-500 transition-all shadow-inner" 
+                    className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-4 pl-12 rounded-2xl text-[11px] font-bold outline-none focus:border-cyan-400 text-white placeholder:text-slate-500 transition-all shadow-inner" 
                   />
                 </div>
                 
                 <div className="relative group">
-                  <UtensilsCrossed className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-600 transition-colors z-10" />
+                  <UtensilsCrossed className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-cyan-400 transition-colors z-10" />
                   <div className="relative">
                     <select 
                       value={deliveryType} 
                       onChange={(e) => setDeliveryType(e.target.value)}
-                      className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-[11px] font-black uppercase outline-none focus:bg-white focus:border-blue-500 transition-all shadow-inner appearance-none cursor-pointer text-slate-700"
+                      className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-4 pl-12 rounded-2xl text-[11px] font-black uppercase outline-none focus:border-cyan-400 text-slate-200 transition-all shadow-inner appearance-none cursor-pointer"
                       style={{ fontSize: '13px' }}
                     >
                       <option value="Take Away">📦 Take Away (Parcel)</option>
@@ -1728,7 +1729,7 @@ if (!owner || !owner.isApproved) {
                       placeholder="Number of People" 
                       value={orderData.peopleCount} 
                       onChange={(e) => setOrderData({...orderData, peopleCount: e.target.value})}
-                      className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-[11px] font-bold outline-none focus:bg-white focus:border-blue-500 transition-all shadow-inner" 
+                      className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-4 pl-12 rounded-2xl text-[11px] font-bold outline-none focus:border-cyan-400 text-white placeholder:text-slate-500 transition-all shadow-inner" 
                     />
                   </div>
                 )}
@@ -1738,7 +1739,7 @@ if (!owner || !owner.isApproved) {
                   <select 
                     value={orderData.arrivalTime} 
                     onChange={(e) => setOrderData({...orderData, arrivalTime: e.target.value})}
-                    className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-[11px] font-black outline-none focus:bg-white focus:border-blue-500 transition-all shadow-inner"
+                    className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-4 pl-12 rounded-2xl text-[11px] font-black outline-none focus:border-cyan-400 text-slate-200 transition-all shadow-inner"
                   >
                     <option value="">-- Select Arrival Time --</option>
                     {[
@@ -1756,7 +1757,7 @@ if (!owner || !owner.isApproved) {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="relative group">
-                    <CheckCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-emerald-600 transition-colors" />
+                    <CheckCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-emerald-400 transition-colors" />
                     <input 
                       type="number" 
                       maxLength="5"
@@ -1767,7 +1768,7 @@ if (!owner || !owner.isApproved) {
                           setOrderData({...orderData, txId: e.target.value})
                         }
                       }} 
-                      className="w-full bg-slate-50 border-2 border-slate-50 p-4 pl-12 rounded-2xl text-[10px] font-bold outline-none focus:bg-white focus:border-emerald-500 transition-all shadow-inner" 
+                      className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-4 pl-12 rounded-2xl text-[10px] font-bold outline-none focus:border-emerald-400 text-white placeholder:text-slate-500 transition-all shadow-inner" 
                     />
                   </div>
                 </div>
@@ -1776,12 +1777,12 @@ if (!owner || !owner.isApproved) {
               <div className="pt-2">
                 <button 
                   onClick={handleConfirmOrder} 
-                  className="w-full py-5 bg-slate-900 hover:bg-black text-white rounded-[2rem] font-black uppercase text-[11px] tracking-[0.2em] italic flex items-center justify-center gap-3 shadow-2xl transition-all active:scale-95"
+                  className="w-full py-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-[2rem] font-black uppercase text-[11px] tracking-[0.2em] italic flex items-center justify-center gap-3 shadow-2xl transition-all active:scale-95 border border-cyan-400/30"
                 >
                   <Send className="w-4 h-4" /> Book Food
                 </button>
                 <p className="mt-5 text-[8px] font-black text-slate-400 uppercase text-center italic tracking-widest leading-relaxed px-4">
-                  * Order verified after <span className="text-slate-900">₹{halfAmount}</span> advance is confirmed.
+                  * Order verified after <span className="text-cyan-400">₹{halfAmount}</span> advance is confirmed.
                 </p>
               </div>
             </div>
@@ -1797,12 +1798,12 @@ if (!owner || !owner.isApproved) {
           initial={{ opacity: 0 }} 
           animate={{ opacity: 1 }} 
           exit={{ opacity: 0 }} 
-          className="fixed inset-0 z-[300] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4"
+          className="fixed inset-0 z-[300] bg-[#05081c]/90 backdrop-blur-md flex items-center justify-center p-4"
         >
-          <div className="bg-white w-full max-w-[400px] rounded-[2.5rem] p-6 shadow-2xl relative text-slate-900">
+          <div className="bg-[#0a1033] w-full max-w-[400px] rounded-[2.5rem] p-6 shadow-2xl relative text-white border border-[#1e2d69]">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-black uppercase italic text-slate-900">Direct Store Order</h3>
-              <button onClick={() => setShowStoreOrderModal(false)} className="p-2 bg-slate-100 rounded-full text-slate-600"><X className="w-4 h-4"/></button>
+              <h3 className="text-xl font-black uppercase italic text-white">Direct Store Order</h3>
+              <button onClick={() => setShowStoreOrderModal(false)} className="p-2 bg-[#0e1638] rounded-full text-slate-300 hover:text-white border border-[#1e2d69]"><X className="w-4 h-4"/></button>
             </div>
             <p className="text-[9px] font-bold text-slate-400 uppercase mb-4 tracking-wider">మీ వివరాలు నమోదు చేయండి, ఓనర్‌కి ఆర్డర్ వెళ్తుంది</p>
             
@@ -1812,27 +1813,27 @@ if (!owner || !owner.isApproved) {
                 placeholder="మీ పూర్తి పేరు / Full Name" 
                 value={storeOrderData.name} 
                 onChange={(e) => setStoreOrderData({...storeOrderData, name: e.target.value})} 
-                className="w-full bg-slate-50 border-2 border-slate-100 p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-blue-500"
+                className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-cyan-400 text-white placeholder:text-slate-500"
               />
               <input 
                 type="text" 
                 placeholder="ఫోన్ నంబర్ / Mobile Number" 
                 value={storeOrderData.phone} 
                 onChange={(e) => setStoreOrderData({...storeOrderData, phone: e.target.value})} 
-                className="w-full bg-slate-50 border-2 border-slate-100 p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-blue-500"
+                className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-cyan-400 text-white placeholder:text-slate-500"
               />
               <input 
                 type="text" 
                 placeholder="డెలివరీ అడ్రస్ / Delivery Address (Hostel/Room/Area)" 
                 value={storeOrderData.address} 
                 onChange={(e) => setStoreOrderData({...storeOrderData, address: e.target.value})} 
-                className="w-full bg-slate-50 border-2 border-slate-100 p-3.5 rounded-2xl text-xs font-bold outline-none"
+                className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-cyan-400 text-white placeholder:text-slate-500"
               />
 
               <button 
                 onClick={handleStoreDirectOrder}
                 disabled={loading}
-                className="w-full py-4 bg-slate-900 hover:bg-black text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl transition-all active:scale-95"
+                className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl transition-all active:scale-95 border border-cyan-400/30"
               >
                 {loading ? "పంపుతోంది..." : "Confirm & Send Order 🚀"}
               </button>
@@ -1848,45 +1849,45 @@ if (!owner || !owner.isApproved) {
           initial={{ opacity: 0 }} 
           animate={{ opacity: 1 }} 
           exit={{ opacity: 0 }} 
-          className="fixed inset-0 z-[250] bg-slate-900/95 backdrop-blur-xl flex items-center justify-center p-4 sm:p-6"
+          className="fixed inset-0 z-[250] bg-[#05081c]/95 backdrop-blur-xl flex items-center justify-center p-4 sm:p-6"
         >
           <motion.div 
             initial={{ scale: 0.9, y: 30 }} 
             animate={{ scale: 1, y: 0 }} 
-            className="bg-white w-full max-w-sm md:max-w-md rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl relative"
+            className="bg-[#0a1033] w-full max-w-sm md:max-w-md rounded-[2rem] sm:rounded-[2.5rem] overflow-hidden shadow-2xl relative border border-[#1e2d69] text-white"
           >
-            <div className="bg-slate-50 px-6 sm:px-8 py-4 border-b border-slate-100 flex justify-between items-center">
-              <span className="text-[9px] sm:text-[11px] font-black uppercase text-blue-600 italic">Secure Payment</span>
+            <div className="bg-[#070b24] px-6 sm:px-8 py-4 border-b border-[#1e2d69] flex justify-between items-center">
+              <span className="text-[9px] sm:text-[11px] font-black uppercase text-cyan-400 italic">Secure Payment</span>
               <div className="flex gap-1.5">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className={`w-3 sm:w-5 h-1 rounded-full ${i <= 2 ? 'bg-blue-600' : 'bg-slate-200'}`}></div>
+                  <div key={i} className={`w-3 sm:w-5 h-1 rounded-full ${i <= 2 ? 'bg-cyan-400' : 'bg-slate-700'}`}></div>
                 ))}
               </div>
             </div>
 
             <div className="p-6 sm:p-8 text-center max-h-[80vh] overflow-y-auto scrollbar-hide">
               <div className="mb-6 sm:mb-8">
-                <h3 className="text-lg sm:text-2xl font-black uppercase italic text-slate-900 mb-2">Step 1: Confirm First 📞</h3>
-                <p className="text-[10px] sm:text-xs font-bold text-slate-500 uppercase leading-relaxed px-2">
-                  Call <span className="text-blue-600 underline">{owner?.name}</span> to check food availability and please dont pay before confirmation.
+                <h3 className="text-lg sm:text-2xl font-black uppercase italic text-white mb-2">Step 1: Confirm First 📞</h3>
+                <p className="text-[10px] sm:text-xs font-bold text-slate-300 uppercase leading-relaxed px-2">
+                  Call <span className="text-cyan-400 underline">{owner?.name}</span> to check food availability and please dont pay before confirmation.
                 </p>
                 <button 
                   onClick={handleCallAction} 
-                  className="mt-4 w-full py-3.5 sm:py-4 bg-blue-600 text-white rounded-xl font-black uppercase text-[10px] sm:text-xs flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all"
+                  className="mt-4 w-full py-3.5 sm:py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-black uppercase text-[10px] sm:text-xs flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all border border-cyan-400/30"
                 >
                   <PhoneCall className="w-4 h-4" /> Call Owner
                 </button>
               </div>
-              <div className="w-full h-px bg-slate-100 my-6 relative">
-                <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-3 text-[8px] sm:text-[10px] font-black text-slate-300 uppercase italic">And Then</span>
+              <div className="w-full h-px bg-[#1e2d69] my-6 relative">
+                <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#0a1033] px-3 text-[8px] sm:text-[10px] font-black text-slate-400 uppercase italic">And Then</span>
               </div>
 
               <div className="mb-6 sm:mb-8 text-center">
-                <div className="bg-slate-900 rounded-[2rem] p-5 sm:p-7 text-white shadow-2xl border-t-4 border-blue-500">
-                  <p className="text-[10px] sm:text-[11px] font-black uppercase text-blue-400 mb-4 text-center tracking-widest">Secure Transfer Protocol</p>
+                <div className="bg-[#05081c] rounded-[2rem] p-5 sm:p-7 text-white shadow-2xl border-t-4 border-cyan-400 border border-[#1e2d69]">
+                  <p className="text-[10px] sm:text-[11px] font-black uppercase text-cyan-400 mb-4 text-center tracking-widest">Secure Transfer Protocol</p>
                   
-                  <div className="bg-white/5 p-4 rounded-2xl border border-white/10 mb-5">
-                    <span className="text-[8px] sm:text-[9px] text-white/40 block mb-2 uppercase tracking-widest font-black text-left">1. Copy Payment Number</span>
+                  <div className="bg-[#0e1638] p-4 rounded-2xl border border-[#1e2d69] mb-5">
+                    <span className="text-[8px] sm:text-[9px] text-white/50 block mb-2 uppercase tracking-widest font-black text-left">1. Copy Payment Number</span>
                     <h2 className="text-lg sm:text-2xl font-black tracking-tight flex items-center justify-between gap-2">
                       <span className="truncate">{payTarget}</span>
                       <button 
@@ -1896,7 +1897,7 @@ if (!owner || !owner.isApproved) {
                           navigator.clipboard.writeText(finalNumber);
                           alert(`Number Copied: ${finalNumber} ✅\nNow click 'Open Payment App'`);
                         }}
-                        className="p-2.5 sm:p-3 bg-blue-600 rounded-xl active:scale-90 shadow-lg flex items-center gap-2 shrink-0"
+                        className="p-2.5 sm:p-3 bg-cyan-600 hover:bg-cyan-500 rounded-xl active:scale-90 shadow-lg flex items-center gap-2 shrink-0 transition-all text-white"
                       >
                         <Copy className="w-4 h-4" />
                         <span className="text-[9px] sm:text-[10px] uppercase font-black">Copy</span>
@@ -1905,7 +1906,7 @@ if (!owner || !owner.isApproved) {
                   </div>
 
                   <div className="mb-5">
-                     <span className="text-[8px] sm:text-[9px] text-white/40 block mb-2 uppercase tracking-widest font-black text-center italic">2. Launch & Paste</span>
+                     <span className="text-[8px] sm:text-[9px] text-white/50 block mb-2 uppercase tracking-widest font-black text-center italic">2. Launch & Paste</span>
                      <button 
                        onClick={() => {
                          window.location.href = "phonepe://pay"; 
@@ -1920,13 +1921,13 @@ if (!owner || !owner.isApproved) {
                   </div>
 
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center text-[11px] sm:text-xs border-b border-white/5 pb-2">
-                      <span className="text-white/50 italic font-bold">Advance Amount:</span>
-                      <span className="font-black text-blue-400 text-xl sm:text-2xl italic">₹{halfAmount}</span>
+                    <div className="flex justify-between items-center text-[11px] sm:text-xs border-b border-[#1e2d69] pb-2">
+                      <span className="text-white/60 italic font-bold">Advance Amount:</span>
+                      <span className="font-black text-cyan-400 text-xl sm:text-2xl italic">₹{halfAmount}</span>
                     </div>
                     
-                    <div className="bg-blue-500/10 p-3 rounded-xl border border-blue-500/20">
-                      <p className="text-[8px] sm:text-[10px] text-blue-200 font-bold leading-tight italic text-center uppercase">
+                    <div className="bg-cyan-950/40 p-3 rounded-xl border border-cyan-500/30">
+                      <p className="text-[8px] sm:text-[10px] text-cyan-200 font-bold leading-tight italic text-center uppercase">
                         Steps: Copy Number ➔ Click Open App ➔ Paste in 'To Mobile Number' ➔ Pay ₹{halfAmount}
                       </p>
                     </div>
@@ -1934,12 +1935,12 @@ if (!owner || !owner.isApproved) {
                 </div>
               </div>
 
-              <div className="bg-orange-50 border border-orange-100 p-4 rounded-2xl mb-6">
-                <div className="flex items-center gap-2 mb-1.5 justify-center text-orange-600">
+              <div className="bg-orange-950/40 border border-orange-500/30 p-4 rounded-2xl mb-6">
+                <div className="flex items-center gap-2 mb-1.5 justify-center text-orange-400">
                   <ShieldCheck className="w-4 h-4" />
                   <span className="text-[10px] sm:text-xs font-black uppercase italic">Step 3: Copy ID</span>
                 </div>
-                <p className="text-[9px] sm:text-[11px] font-bold text-orange-700 leading-tight uppercase italic px-2">
+                <p className="text-[9px] sm:text-[11px] font-bold text-orange-200 leading-tight uppercase italic px-2">
                   Paste <span className="underline decoration-2">Last 5 Digits</span> of Txn ID in form.
                 </p>
               </div>
@@ -1950,13 +1951,13 @@ if (!owner || !owner.isApproved) {
                     setShowPayWarning(false);
                     setShowOrderForm(true);
                   }} 
-                  className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase text-[11px] sm:text-xs tracking-widest shadow-2xl active:scale-95 transition-all"
+                  className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl font-black uppercase text-[11px] sm:text-xs tracking-widest shadow-2xl active:scale-95 transition-all border border-cyan-400/30"
                 >
                   I Paid, Continue
                 </button>
                 <button 
                   onClick={() => setShowPayWarning(false)} 
-                  className="text-[10px] sm:text-xs font-black uppercase text-slate-400 hover:text-red-500 transition-colors tracking-widest"
+                  className="text-[10px] sm:text-xs font-black uppercase text-slate-400 hover:text-red-400 transition-colors tracking-widest"
                 >
                   Cancel Payment
                 </button>
@@ -1981,23 +1982,23 @@ if (!owner || !owner.isApproved) {
             onClick={() => {
               orderSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
             }}
-            className="w-full bg-slate-950 text-white p-4 rounded-2xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.4)] flex items-center justify-between border border-white/10 pointer-events-auto active:scale-95 transition-all"
+            className="w-full bg-[#070b24]/95 backdrop-blur-md text-white p-4 rounded-2xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.8)] flex items-center justify-between border border-cyan-400/30 pointer-events-auto active:scale-95 transition-all"
             type="button"
           >
             <div className="flex items-center gap-3 text-left">
-              <div className="bg-blue-600 p-2.5 rounded-xl text-white relative">
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-2.5 rounded-xl text-white relative">
                 <ShoppingBag className="w-4 h-4" />
-                <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-slate-950 animate-bounce">
+                <span className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-[#05081c] animate-bounce">
                   {Object.values(cart).reduce((acc, curr) => acc + curr.qty, 0)}
                 </span>
               </div>
               <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider leading-none">Order / Book Now</p>
-                <p className="text-sm font-black text-white italic mt-1 leading-none">Total: ₹{totalAmount}</p>
+                <p className="text-sm font-black text-cyan-400 italic mt-1 leading-none">Total: ₹{totalAmount}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 text-blue-400 font-black text-[10px] uppercase tracking-widest bg-white/5 py-2 px-4 rounded-xl border border-white/5">
+            <div className="flex items-center gap-1.5 text-cyan-300 font-black text-[10px] uppercase tracking-widest bg-white/5 py-2 px-4 rounded-xl border border-white/10">
               <span>View Order Details</span>
               <Plus className="w-3 h-3 rotate-45" />
             </div>
@@ -2011,16 +2012,16 @@ if (!owner || !owner.isApproved) {
       initial={{ opacity: 0 }} 
       animate={{ opacity: 1 }} 
       exit={{ opacity: 0 }} 
-      className="fixed inset-0 z-[400] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 sm:p-6"
+      className="fixed inset-0 z-[400] bg-[#05081c]/85 backdrop-blur-md flex items-center justify-center p-4 sm:p-6"
     >
       <motion.div 
         initial={{ scale: 0.95, y: 20 }} 
         animate={{ scale: 1, y: 0 }} 
         exit={{ scale: 0.95, y: 20 }}
-        className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl relative text-slate-900 max-h-[85vh] flex flex-col overflow-hidden border border-slate-100"
+        className="bg-[#0a1033] w-full max-w-2xl rounded-[2.5rem] shadow-2xl relative text-white max-h-[85vh] flex flex-col overflow-hidden border border-[#1e2d69]"
       >
         {/* Modal Header */}
-        <div className="px-6 sm:px-8 py-6 bg-slate-900 text-white flex justify-between items-center relative">
+        <div className="px-6 sm:px-8 py-6 bg-[#070b24] text-white flex justify-between items-center relative border-b border-[#1e2d69]">
           <div>
             <span className="text-[9px] font-black uppercase tracking-[0.25em] text-amber-400 italic">Sudara Matrix Intelligence</span>
             <h3 className="text-xl sm:text-2xl font-black uppercase italic tracking-tighter mt-0.5">Price Comparison Matrix 📊</h3>
@@ -2034,9 +2035,9 @@ if (!owner || !owner.isApproved) {
         </div>
         
         {/* Modal Content */}
-        <div className="p-6 sm:p-8 overflow-y-auto space-y-4 scrollbar-custom bg-slate-50/50 flex-1">
+        <div className="p-6 sm:p-8 overflow-y-auto space-y-4 scrollbar-custom bg-[#05081c]/50 flex-1">
           {comparisonData.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-3xl border border-dashed border-slate-200">
+            <div className="text-center py-12 bg-[#0e1638] rounded-3xl border border-dashed border-[#1e2d69]">
               <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">ఈ ఐటమ్ వేరే స్టోర్స్‌లో అందుబాటులో లేదు.</p>
             </div>
           ) : (
@@ -2051,37 +2052,37 @@ if (!owner || !owner.isApproved) {
                 return (
                   <div 
                     key={idx} 
-                    className="bg-white p-5 sm:p-6 rounded-[2rem] border border-slate-200/80 shadow-xs hover:shadow-md transition-all flex flex-col gap-4 relative overflow-hidden group"
+                    className="bg-[#0e1638] p-5 sm:p-6 rounded-[2rem] border border-[#1e2d69] shadow-sm hover:border-cyan-400/50 transition-all flex flex-col gap-4 relative overflow-hidden group"
                   >
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                       {/* Left: Store Info */}
                       <div className="space-y-1.5 min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="bg-amber-50 text-amber-800 border border-amber-200 text-[8px] font-black uppercase px-2.5 py-1 rounded-md">
+                          <span className="bg-amber-950/40 text-amber-300 border border-amber-500/30 text-[8px] font-black uppercase px-2.5 py-1 rounded-md">
                             {badgeText}
                           </span>
                           {compItem.isAvailable ? (
-                            <span className="bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase px-2.5 py-1 rounded-md">
+                            <span className="bg-emerald-950/40 text-emerald-400 border border-emerald-500/30 text-[8px] font-black uppercase px-2.5 py-1 rounded-md">
                               In Stock ✅
                             </span>
                           ) : (
-                            <span className="bg-rose-50 text-rose-600 text-[8px] font-black uppercase px-2.5 py-1 rounded-md">
+                            <span className="bg-rose-950/40 text-rose-400 border border-rose-500/30 text-[8px] font-black uppercase px-2.5 py-1 rounded-md">
                               Out of Stock ❌
                             </span>
                           )}
                         </div>
 
-                        <h4 className="font-black text-sm sm:text-base uppercase text-slate-900 tracking-tight truncate">
+                        <h4 className="font-black text-sm sm:text-base uppercase text-slate-100 tracking-tight truncate">
                           {compItem.showroomName}
                         </h4>
                         
                         <p className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
-                          <MapPin className="w-3 h-3 text-amber-500 shrink-0" /> {compItem.location || "Local Area"}
+                          <MapPin className="w-3 h-3 text-amber-400 shrink-0" /> {compItem.location || "Local Area"}
                         </p>
                       </div>
 
                       {/* Right: Pricing Box */}
-                      <div className="w-full sm:w-auto bg-slate-900 text-white p-4 rounded-2xl flex sm:flex-col justify-between items-center sm:items-end shrink-0 shadow-inner">
+                      <div className="w-full sm:w-auto bg-[#070b24] text-white p-4 rounded-2xl flex sm:flex-col justify-between items-center sm:items-end shrink-0 border border-[#1e2d69] shadow-inner">
                         <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">{priceLabel}</span>
                         <span className="text-xl sm:text-2xl font-black italic text-amber-400 tracking-tighter mt-0.5">
                         ₹{compItem.price} {compItem.category?.toLowerCase() === "automobile" ? "Lakhs" : ""}
@@ -2094,9 +2095,9 @@ if (!owner || !owner.isApproved) {
                       onClick={() => {
                         window.location.href = `/restaurant/${compItem.ownerId}`;
                       }}
-                      className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all"
+                      className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all border border-cyan-400/30"
                     >
-                      <Building2 className="w-4 h-4" /> {visitButtonText}
+                      <Building2 className="w-4 h-4 text-cyan-300" /> {visitButtonText}
                     </button>
                   </div>
                 );
@@ -2106,7 +2107,7 @@ if (!owner || !owner.isApproved) {
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 bg-white border-t border-slate-100 text-center">
+        <div className="p-4 bg-[#070b24] border-t border-[#1e2d69] text-center">
           <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">
             Sudara Hub • Hyperlocal Price Comparison Engine
           </p>
@@ -2127,7 +2128,7 @@ if (!owner || !owner.isApproved) {
           onClick={() => {
             counterPrintButtonRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
           }}
-          className="w-full bg-slate-950 text-white p-4 rounded-2xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.4)] flex items-center justify-between border border-white/10 pointer-events-auto active:scale-95 transition-all"
+          className="w-full bg-[#070b24]/95 backdrop-blur-md text-white p-4 rounded-2xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.8)] flex items-center justify-between border border-cyan-400/30 pointer-events-auto active:scale-95 transition-all"
         >
           <div className="flex items-center gap-3">
             <div className="bg-emerald-600 p-2.5 rounded-xl text-white">
@@ -2138,7 +2139,7 @@ if (!owner || !owner.isApproved) {
               <p className="text-sm font-black text-white italic">{Object.keys(counterCart).length} Items Selected</p>
             </div>
           </div>
-          <div className="text-blue-400 font-black text-[10px] uppercase bg-white/5 py-2 px-4 rounded-xl border border-white/5">
+          <div className="text-cyan-300 font-black text-[10px] uppercase bg-white/5 py-2 px-4 rounded-xl border border-white/10">
             Go to Print
           </div>
         </button>
