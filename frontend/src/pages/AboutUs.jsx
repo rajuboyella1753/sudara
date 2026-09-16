@@ -86,18 +86,18 @@ const About = () => {
           <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-orange-600/10 blur-[140px] -z-10 rounded-full animate-pulse delay-700 pointer-events-none" />
           
           <div className="max-w-7xl mx-auto px-6 text-center relative z-10">
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }}>
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#0a1033] text-cyan-300 rounded-full font-black uppercase text-[10px] tracking-widest mb-8 border border-cyan-500/30 shadow-md">
-                <Activity className="w-3 h-3 text-cyan-400 animate-bounce" /> Unified Hyperlocal Protocol v2.0
-              </div>
-              <h1 className="text-5xl sm:text-7xl md:text-[8rem] font-black italic uppercase tracking-tighter leading-[0.85] mb-8 text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)]">
-                How <span className="text-cyan-400">Sudara Hub</span> <br/> <span className="text-orange-500">Works.</span>
-              </h1>
-              <p className="text-slate-400 font-medium text-sm md:text-lg max-w-2xl mx-auto leading-relaxed italic">
-                Bridging the gap between consumers and local businesses across food, fashion, electronics, groceries, and automobiles.
-              </p>
-            </motion.div>
-          </div>
+  <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }}>
+    <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#0a1033] text-cyan-300 rounded-full font-black uppercase text-[10px] tracking-widest mb-8 border border-cyan-500/30 shadow-md">
+      <Activity className="w-3 h-3 text-cyan-400 animate-bounce" /> About Sudara Ecosystem
+    </div>
+    <h1 className="text-5xl sm:text-7xl md:text-[8rem] font-black italic uppercase tracking-tighter leading-[0.85] mb-8 text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)]">
+      About <span className="text-cyan-400">Sudara</span> <br/> <span className="text-orange-500">Hub.</span>
+    </h1>
+    <p className="text-slate-400 font-medium text-sm md:text-lg max-w-2xl mx-auto leading-relaxed italic">
+      The next-generation Easy discovery matrix uniting communities, local merchants, and regional businesses across Andhra Pradesh.
+    </p>
+  </motion.div>
+</div>
         </section>
 
         {/* --- 👑 FOUNDER & VISIONARY SECTION --- */}

@@ -62,7 +62,7 @@ export default function Navbar() {
           className="relative group flex items-center"
         >
           <img 
-            src="/SUDAR.png" 
+            src="/sudara.png" 
             alt="Sudara Logo"
             className="h-7 md:h-10 w-auto object-contain transition-transform duration-500 group-hover:scale-105"
             onError={(e) => (e.target.style.display = 'none')}
