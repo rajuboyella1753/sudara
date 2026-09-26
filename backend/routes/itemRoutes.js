@@ -1,5 +1,6 @@
 import express from "express";
 import Item from "../models/item.js";
+import Owner from "../models/owner.js";
 import { upload } from '../config/uploadMiddleware.js';
 import Order from "../models/Order.js";
 const router = express.Router();
@@ -214,6 +215,238 @@ router.get("/master-catalog", async (req, res) => {
   } catch (err) {
     console.error("Master catalog fetch error:", err.message);
     res.status(500).json({ message: "Master catalog fetch failed" });
+  }
+});
+// ======================================================
+// 🍽️ RESTAURANT MASTER CATALOG - DEBUG VERSION
+// Existing master-catalog ni touch cheyyakunda separate route
+// ======================================================
+
+router.get("/restaurant-master-catalog", async (req, res) => {
+  try {
+    const { ownerId } = req.query;
+
+    console.log("\n");
+    console.log("==================================================");
+    console.log("🍽️ RESTAURANT MASTER CATALOG REQUEST");
+    console.log("==================================================");
+
+    console.log("📥 Query ownerId:", ownerId);
+    console.log("📥 Query ownerId type:", typeof ownerId);
+
+    // --------------------------------------------------
+    // STEP 1: ALL OWNERS
+    // --------------------------------------------------
+
+    const allOwners = await Owner.find({})
+      .select("_id name ownerName category")
+      .lean();
+
+    console.log("\n");
+    console.log("👥 STEP 1 - TOTAL OWNERS:", allOwners.length);
+
+    if (allOwners.length === 0) {
+      console.log("❌ NO OWNERS FOUND IN DATABASE");
+    }
+
+    allOwners.forEach((owner, index) => {
+      console.log(`👤 OWNER ${index + 1}:`, {
+        id: String(owner._id),
+        name: owner.ownerName || owner.name,
+        category: owner.category,
+        categoryType: typeof owner.category
+      });
+    });
+
+    // --------------------------------------------------
+    // STEP 2: RESTAURANT OWNERS
+    // --------------------------------------------------
+
+    const restaurantOwners = allOwners.filter((owner) => {
+      const category = String(owner.category || "")
+        .trim()
+        .toLowerCase();
+
+      return category === "restaurant";
+    });
+
+    console.log("\n");
+    console.log(
+      "🍽️ STEP 2 - RESTAURANT OWNERS:",
+      restaurantOwners.length
+    );
+
+    restaurantOwners.forEach((owner, index) => {
+      console.log(`🍽️ RESTAURANT OWNER ${index + 1}:`, {
+        id: String(owner._id),
+        name: owner.ownerName || owner.name,
+        category: owner.category
+      });
+    });
+
+    if (restaurantOwners.length === 0) {
+      console.log(
+        "❌ STOP: DATABASE LO RESTAURANT CATEGORY OWNER DORAKALEDU"
+      );
+
+      return res.status(200).json([]);
+    }
+
+    // --------------------------------------------------
+    // STEP 3: RESTAURANT OWNER IDs
+    // --------------------------------------------------
+
+    const restaurantOwnerIds = restaurantOwners.map(
+      (owner) => owner._id
+    );
+
+    console.log("\n");
+    console.log("🆔 STEP 3 - RESTAURANT OWNER IDS:");
+
+    restaurantOwnerIds.forEach((id) => {
+      console.log("   →", String(id));
+    });
+
+    // --------------------------------------------------
+    // STEP 4: FIND ITEMS BELONGING TO RESTAURANT OWNERS
+    // --------------------------------------------------
+
+    const restaurantItems = await Item.find({
+      ownerId: {
+        $in: restaurantOwnerIds
+      }
+    })
+      .populate(
+        "ownerId",
+        "_id name ownerName category"
+      )
+      .lean();
+
+    console.log("\n");
+    console.log(
+      "🍛 STEP 4 - RESTAURANT ITEMS FOUND:",
+      restaurantItems.length
+    );
+
+    if (restaurantItems.length === 0) {
+      console.log(
+        "❌ RESTAURANT OWNERS UNNARU KANI VALLA ITEMS DATABASE LO LEVU"
+      );
+
+      // Extra check:
+      console.log("\n🔎 CHECKING ALL ITEMS:");
+
+      const allItems = await Item.find({})
+        .select("_id name price category subCategory ownerId")
+        .lean();
+
+      console.log(
+        "📦 TOTAL ITEMS IN DATABASE:",
+        allItems.length
+      );
+
+      allItems.forEach((item, index) => {
+        console.log(`📦 ITEM ${index + 1}:`, {
+          id: String(item._id),
+          name: item.name,
+          price: item.price,
+          category: item.category,
+          subCategory: item.subCategory,
+          ownerId: item.ownerId
+            ? String(item.ownerId)
+            : null
+        });
+      });
+    }
+
+    // --------------------------------------------------
+    // STEP 5: PRINT EVERY RESTAURANT ITEM
+    // --------------------------------------------------
+
+    restaurantItems.forEach((item, index) => {
+      console.log(`🍽️ ITEM ${index + 1}:`, {
+        id: String(item._id),
+        name: item.name,
+        price: item.price,
+        itemCategory: item.category,
+        subCategory: item.subCategory,
+
+        ownerId: item.ownerId
+          ? String(item.ownerId._id)
+          : null,
+
+        ownerName: item.ownerId
+          ? item.ownerId.ownerName || item.ownerId.name
+          : null,
+
+        ownerCategory: item.ownerId
+          ? item.ownerId.category
+          : null
+      });
+    });
+
+    // --------------------------------------------------
+    // STEP 6: REMOVE CURRENT OWNER
+    // --------------------------------------------------
+
+    const finalItems = restaurantItems.filter((item) => {
+      if (!ownerId) return true;
+
+      const itemOwnerId = item.ownerId?._id;
+
+      return String(itemOwnerId) !== String(ownerId);
+    });
+
+    console.log("\n");
+    console.log(
+      "🚫 CURRENT OWNER EXCLUDED:",
+      ownerId
+    );
+
+    console.log(
+      "✅ STEP 6 - FINAL ITEMS TO FRONTEND:",
+      finalItems.length
+    );
+
+    finalItems.forEach((item, index) => {
+      console.log(`✅ FINAL ITEM ${index + 1}:`, {
+        id: String(item._id),
+        name: item.name,
+        price: item.price,
+        owner: item.ownerId
+          ? item.ownerId.ownerName || item.ownerId.name
+          : null
+      });
+    });
+
+    console.log("\n");
+    console.log("📤 SENDING ITEMS TO FRONTEND...");
+    console.log("📤 RESPONSE COUNT:", finalItems.length);
+    console.log("==================================================");
+    console.log("\n");
+
+    return res.status(200).json(finalItems);
+
+  } catch (err) {
+
+    console.log("\n");
+    console.log("==================================================");
+    console.log("❌ RESTAURANT MASTER CATALOG ERROR");
+    console.log("==================================================");
+
+    console.error(err);
+
+    console.log("Message:", err.message);
+    console.log("Stack:", err.stack);
+
+    console.log("==================================================");
+    console.log("\n");
+
+    return res.status(500).json({
+      success: false,
+      message: "Restaurant master catalog fetch failed",
+      error: err.message
+    });
   }
 });
 /* 7. ADD ITEM FROM MASTER CATALOG */

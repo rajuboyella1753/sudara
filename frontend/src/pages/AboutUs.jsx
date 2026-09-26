@@ -86,85 +86,118 @@ const About = () => {
           <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-orange-600/10 blur-[140px] -z-10 rounded-full animate-pulse delay-700 pointer-events-none" />
           
           <div className="max-w-7xl mx-auto px-6 text-center relative z-10">
-  <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }}>
-    <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#0a1033] text-cyan-300 rounded-full font-black uppercase text-[10px] tracking-widest mb-8 border border-cyan-500/30 shadow-md">
-      <Activity className="w-3 h-3 text-cyan-400 animate-bounce" /> About Sudara Ecosystem
-    </div>
-    <h1 className="text-5xl sm:text-7xl md:text-[8rem] font-black italic uppercase tracking-tighter leading-[0.85] mb-8 text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)]">
-      About <span className="text-cyan-400">Sudara</span> <br/> <span className="text-orange-500">Hub.</span>
-    </h1>
-    <p className="text-slate-400 font-medium text-sm md:text-lg max-w-2xl mx-auto leading-relaxed italic">
-      The next-generation Easy discovery matrix uniting communities, local merchants, and regional businesses across Andhra Pradesh.
-    </p>
-  </motion.div>
-</div>
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }}>
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#0a1033] text-cyan-300 rounded-full font-black uppercase text-[10px] tracking-widest mb-8 border border-cyan-500/30 shadow-md">
+                <Activity className="w-3 h-3 text-cyan-400 animate-bounce" /> About Sudara Ecosystem
+              </div>
+              <h1 className="text-5xl sm:text-7xl md:text-[8rem] font-black italic uppercase tracking-tighter leading-[0.85] mb-8 text-white drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)]">
+                About <span className="text-cyan-400">Sudara</span> <br/> <span className="text-orange-500">Hub.</span>
+              </h1>
+              <p className="text-slate-400 font-medium text-sm md:text-lg max-w-2xl mx-auto leading-relaxed italic">
+                The next-generation Easy discovery matrix uniting communities, local merchants, and regional businesses across Andhra Pradesh.
+              </p>
+            </motion.div>
+          </div>
         </section>
 
         {/* --- 👑 FOUNDER & VISIONARY SECTION --- */}
-        <section className="max-w-7xl mx-auto px-6 py-20 md:py-32">
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="bg-[#0a1033] text-white rounded-[3rem] md:rounded-[4rem] p-8 md:p-20 relative overflow-hidden shadow-2xl border border-[#1e2d69]"
-          >
-            <div className="absolute top-0 right-0 p-40 bg-blue-600/15 blur-[120px] rounded-full pointer-events-none"></div>
-            <div className="absolute bottom-0 left-0 p-40 bg-orange-600/15 blur-[120px] rounded-full pointer-events-none"></div>
+<section className="max-w-7xl mx-auto px-6 py-20 md:py-32">
+  <motion.div
+    initial={{ opacity: 0, y: 30 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true }}
+    className="bg-[#0a1033] text-white rounded-[3rem] md:rounded-[4rem] p-8 md:p-20 relative overflow-hidden shadow-2xl border border-[#1e2d69]"
+  >
+    <div className="absolute top-0 right-0 p-40 bg-blue-600/15 blur-[120px] rounded-full pointer-events-none"></div>
+    <div className="absolute bottom-0 left-0 p-40 bg-orange-600/15 blur-[120px] rounded-full pointer-events-none"></div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
-              <div className="lg:col-span-5 flex justify-center">
-                <div className="relative group">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-orange-500 rounded-[2.5rem] blur opacity-40 group-hover:opacity-80 transition duration-500"></div>
-                  <div className="relative w-64 h-64 md:w-80 md:h-80 rounded-[2.5rem] overflow-hidden border-2 border-cyan-400/30 shadow-2xl bg-[#05081c] flex items-center justify-center">
-                    {/* 1. బ్యాక్‌గ్రౌండ్‌లో అదే ఫోటో బ్లర్ అయి నిండుగా కనిపిస్తుంది */}
-                    <img 
-                      src="/Raju.jpg" 
-                      alt="" 
-                      className="absolute inset-0 w-full h-full object-cover filter blur-md opacity-40 scale-110" 
-                    />
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
 
-                    {/* 2. ఒరిజినల్ ఫోటో మధ్యలో నీట్‌గా కూర్చుంటుంది */}
-                    <img 
-                      src="/Raju.jpg" 
-                      alt="Boyella Raju - Founder & CEO" 
-                      className="relative z-10 w-full h-full object-contain group-hover:scale-105 transition-transform duration-500" 
-                    />
-                  </div>
-                </div>
-              </div>
+      {/* IMAGE */}
+      <div className="lg:col-span-5 flex justify-center">
+        <div className="relative group">
 
-              <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#0e1638] rounded-full border border-cyan-500/30 text-[10px] font-black uppercase tracking-widest text-cyan-300">
-                  <Sparkles className="w-3.5 h-3.5 text-cyan-400" /> Leadership & Transparency
-                </div>
-                
-                <h2 className="text-3xl md:text-5xl font-black italic uppercase tracking-tighter leading-tight text-white">
-                  Meet the Founder & CEO
-                </h2>
-                
-                <div className="space-y-2">
-                  <h3 className="text-2xl md:text-3xl font-black text-orange-400 italic">Boyella Raju (BSR)</h3>
-                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Full-Stack Developer & Startup Founder</p>
-                </div>
+          <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-orange-500 rounded-[2.5rem] blur opacity-40 group-hover:opacity-80 transition duration-500"></div>
 
-                <p className="text-slate-300 text-sm md:text-base leading-relaxed italic font-medium">
-                  "At Sudara Hub, transparency and trust are our highest protocols. By maintaining direct connections between consumers and local merchants with 0% commissions, we ensure complete fairness. Absolute transparency is my personal guarantee to every user and business owner on our network."
-                </p>
+          <div className="relative w-64 h-64 md:w-80 md:h-80 rounded-[2.5rem] overflow-hidden border-2 border-cyan-400/30 shadow-2xl bg-[#05081c] flex items-center justify-center">
 
-                <div className="pt-2 flex flex-wrap justify-center lg:justify-start gap-4">
-                  <div className="px-5 py-2.5 bg-[#0e1638] rounded-2xl border border-[#1e2d69] text-center">
-                    <p className="text-[8px] font-black uppercase text-slate-400 tracking-widest">Ecosystem</p>
-                    <p className="text-xs font-black text-cyan-300 italic">Hyperlocal Matrix</p>
-                  </div>
-                  <div className="px-5 py-2.5 bg-[#0e1638] rounded-2xl border border-[#1e2d69] text-center">
-                    <p className="text-[8px] font-black uppercase text-slate-400 tracking-widest">Base State</p>
-                    <p className="text-xs font-black text-white italic">Andhra Pradesh, India</p>
-                  </div>
-                </div>
-              </div>
+            {/* Background Glow Image */}
+            <img
+              src="/SUDAR.png"
+              alt=""
+              className="absolute inset-0 w-full h-full object-contain p-8 filter blur-md opacity-25 scale-110"
+            />
+
+            {/* Main Logo/Image */}
+            <div className="relative z-10 w-full h-full flex items-center justify-center p-8 md:p-10">
+              <img
+                src="/SUDAR.png"
+                alt="Sudara"
+                className="w-full h-full object-contain brightness-0 invert group-hover:scale-105 transition-transform duration-500"
+              />
             </div>
-          </motion.div>
-        </section>
+
+          </div>
+        </div>
+      </div>
+
+      {/* VISION CONTENT */}
+      <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
+
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#0e1638] rounded-full border border-cyan-500/30 text-[10px] font-black uppercase tracking-widest text-cyan-300">
+          <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+          Leadership & Transparency
+        </div>
+
+        <h2 className="text-3xl md:text-5xl font-black italic uppercase tracking-tighter leading-tight text-white">
+          Our Vision
+        </h2>
+
+        <div className="space-y-2">
+          <h3 className="text-2xl md:text-3xl font-black text-orange-400 italic">
+            Wisdom of God's Grace
+          </h3>
+
+          <p className="text-xs font-black text-slate-400 uppercase tracking-widest">
+            Vision • Wisdom • Service • Transparency
+          </p>
+        </div>
+
+        <p className="text-slate-300 text-sm md:text-base leading-relaxed italic font-medium">
+          "Our vision is to build a trusted and transparent local ecosystem
+          where people can easily discover what they need and connect directly
+          with genuine local businesses. We believe that every meaningful
+          journey begins with wisdom, humility and God's grace. With that
+          wisdom, we aim to serve people, empower local businesses and build
+          technology that creates real value for communities."
+        </p>
+
+        <div className="pt-2 flex flex-wrap justify-center lg:justify-start gap-4">
+
+          <div className="px-5 py-2.5 bg-[#0e1638] rounded-2xl border border-[#1e2d69] text-center">
+            <p className="text-[8px] font-black uppercase text-slate-400 tracking-widest">
+              Ecosystem
+            </p>
+            <p className="text-xs font-black text-cyan-300 italic">
+              Hyperlocal Matrix
+            </p>
+          </div>
+
+          <div className="px-5 py-2.5 bg-[#0e1638] rounded-2xl border border-[#1e2d69] text-center">
+            <p className="text-[8px] font-black uppercase text-slate-400 tracking-widest">
+              Base State
+            </p>
+            <p className="text-xs font-black text-white italic">
+              Andhra Pradesh, India
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </motion.div>
+</section>
 
         {/* --- 🛒 MULTI-INDUSTRY VERTICALS HIGHLIGHT --- */}
         <section className="bg-[#070b24] border-y border-[#131d47] py-16">
@@ -224,7 +257,7 @@ const About = () => {
           </motion.div>
         </section>
 
-        {/* --- 💎 100% DIRECT SETTLEMENT & ZERO COMMISSION PROTOCOL --- */}
+        {/* --- 💎 EASY DISCOVERY & DIRECT SETTLEMENT PROTOCOL --- */}
         <section className="max-w-7xl mx-auto px-6 mb-24 md:mb-36">
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
@@ -241,9 +274,9 @@ const About = () => {
             </div>
               
             <div className="text-center lg:text-left relative z-10">
-              <h2 className="text-3xl md:text-6xl font-black uppercase italic tracking-tighter mb-6 leading-tight">Zero Commissions & <span className="text-cyan-400">Direct Settlement</span></h2>
+              <h2 className="text-3xl md:text-6xl font-black uppercase italic tracking-tighter mb-6 leading-tight">Easy Discovery & <span className="text-cyan-400">Direct Settlement</span></h2>
               <p className="text-slate-300 text-base md:text-xl leading-relaxed italic opacity-90 max-w-3xl">
-                Transparency is our core principle. <strong>Sudara Hub charges 0% commission on orders.</strong> Payments and inquiries flow directly to local business owners, ensuring customers pay fair local prices and merchants keep 100% of their revenue.
+                Transparency is our core principle. <strong>Sudara Hub enables easy discovery for every business.</strong> Payments and inquiries flow directly to local business owners, ensuring customers pay fair local prices and merchants keep 100% of their revenue.
               </p>
             </div>
           </motion.div>

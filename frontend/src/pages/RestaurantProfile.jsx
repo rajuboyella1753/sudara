@@ -1147,38 +1147,66 @@ if (!owner || !owner.isApproved) {
           )}
         </div>
 
-        <div className="bg-[#0a1033] border border-[#1e2d69] rounded-[2rem] p-5 sm:p-6 my-6 shadow-sm">
-          <div className="flex items-center gap-2 border-l-4 border-cyan-400 pl-3 mb-4">
-            <h3 className="text-[10px] sm:text-xs font-black uppercase text-slate-200 tracking-widest italic">
-              {isRestaurant ? "Restaurant & Legal Details" : "Store & Legal Details"}
-            </h3>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-[#0e1638] p-4 rounded-2xl border border-[#1e2d69] shadow-sm">
-              <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">Owner Name</p>
-              <p className="text-xs font-black uppercase italic text-slate-200 truncate">
-                {owner?.ownerName || owner?.name || "Sudara Partner"}
-              </p>
-            </div>
+        {/* Owner / Legal Details */}
+{(
+  owner?.ownerName ||
+  owner?.name ||
+  owner?.fssaiNumber?.trim() ||
+  owner?.gstNumber?.trim()
+) && (
+  <div className="bg-[#0a1033] border border-[#1e2d69] rounded-[2rem] p-5 sm:p-6 my-6 shadow-sm">
 
-            <div className="bg-[#0e1638] p-4 rounded-2xl border border-[#1e2d69] shadow-sm">
-              <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">
-                {isRestaurant ? "FSSAI License No" : "Business License No"}
-              </p>
-              <p className="text-xs font-black uppercase tracking-wider text-cyan-400 truncate">
-                {owner?.fssaiNumber && owner.fssaiNumber.trim() !== "" ? owner.fssaiNumber : "Not Provided"}
-              </p>
-            </div>
+    <div className="flex items-center gap-2 border-l-4 border-cyan-400 pl-3 mb-4">
+      <h3 className="text-[10px] sm:text-xs font-black uppercase text-slate-200 tracking-widest italic">
+        {isRestaurant ? "Restaurant & Legal Details" : "Store & Legal Details"}
+      </h3>
+    </div>
 
-            <div className="bg-[#0e1638] p-4 rounded-2xl border border-[#1e2d69] shadow-sm">
-              <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">GST Number</p>
-              <p className="text-xs font-black uppercase tracking-wider text-slate-200 truncate">
-                {owner?.gstNumber && owner.gstNumber.trim() !== "" ? owner.gstNumber : "Not Provided"}
-              </p>
-            </div>
-          </div>
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+      {/* Owner Name */}
+      {(owner?.ownerName || owner?.name) && (
+        <div className="bg-[#0e1638] p-4 rounded-2xl border border-[#1e2d69] shadow-sm">
+          <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">
+            Owner Name
+          </p>
+
+          <p className="text-xs font-black uppercase italic text-slate-200 truncate">
+            {owner?.ownerName || owner?.name}
+          </p>
         </div>
+      )}
+
+      {/* FSSAI / Business License */}
+      {owner?.fssaiNumber?.trim() && (
+        <div className="bg-[#0e1638] p-4 rounded-2xl border border-[#1e2d69] shadow-sm">
+          <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">
+            {isRestaurant ? "FSSAI License No" : "Business License No"}
+          </p>
+
+          <p className="text-xs font-black uppercase tracking-wider text-cyan-400 truncate">
+            {owner.fssaiNumber}
+          </p>
+        </div>
+      )}
+
+      {/* GST Number */}
+      {owner?.gstNumber?.trim() && (
+        <div className="bg-[#0e1638] p-4 rounded-2xl border border-[#1e2d69] shadow-sm">
+          <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">
+            GST Number
+          </p>
+
+          <p className="text-xs font-black uppercase tracking-wider text-slate-200 truncate">
+            {owner.gstNumber}
+          </p>
+        </div>
+      )}
+
+    </div>
+  </div>
+)}
+
       </div>
 
       <div className="order-1 lg:order-2 lg:col-span-4">

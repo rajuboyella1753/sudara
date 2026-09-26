@@ -31,7 +31,7 @@ export default function Footer() {
             </Link>
             
             <p className="text-slate-400 font-medium leading-relaxed text-xs sm:text-sm max-w-md">
-              Empowering users with seamless access to nearby local businesses. One platform for every local business — built for speed, transparency, and trust in every community. Developed with passion by <span className="text-white font-black italic">Raju Boyella (BSR)</span>.
+              Empowering users with seamless access to nearby local businesses. One platform for every local business — built for speed, transparency, and trust in every community. Developed with passion by <span className="text-white font-black italic">Sudara</span>.
             </p>
 
             <div className="pt-2 flex items-center gap-3">
@@ -150,7 +150,7 @@ export default function Footer() {
           
           <div className="flex items-center gap-2 bg-[#0a1033] px-5 py-2.5 rounded-full border border-[#1e2d69] shadow-inner">
             <span className="text-[9px] font-black uppercase tracking-widest text-slate-300 italic flex items-center gap-2">
-              Designed with <Heart className="w-3.5 h-3.5 text-orange-500 fill-orange-500 animate-pulse" /> by Raju Boyella (BSR)
+              Designed with <Heart className="w-3.5 h-3.5 text-orange-500 fill-orange-500 animate-pulse" /> by Sudara
             </span>
           </div>
         </div>

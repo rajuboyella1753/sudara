@@ -76,7 +76,11 @@ import { useEffect, useState, useMemo, useRef } from "react";
   const [isCopied, setIsCopied] = useState(false);
   const [counterCart, setCounterCart] = useState({});
   const SUDARA_UPI_ID = "sudara@ptyes";
-
+  const [masterCatalog, setMasterCatalog] = useState([]);
+const [isMasterModal, setIsMasterModal] = useState(false);
+const [masterSearch, setMasterSearch] = useState("");
+const [masterLoading, setMasterLoading] = useState(false);
+// const [loading, setLoading] = useState(false);
   // 👑 రాజు మంత్లీ సబ్‌స్క్రిప్షన్ క్యాలిక్యులేటర్ (డిస్కౌంట్ లేకుండా పక్కా 100% అమౌంట్ లాజిక్)
   const calculatedAmount = useMemo(() => {
     const baseRate = selectedPlanType === "premium" ? 999 : 499;
@@ -189,7 +193,176 @@ useEffect(() => {
     setLoading(false);
   }
 };
+const fetchRestaurantMasterCatalog = async () => {
+  console.log("\n");
+  console.log("==============================================");
+  console.log("🍽️ FRONTEND: FETCH RESTAURANT MASTER START");
+  console.log("==============================================");
 
+  try {
+    setMasterLoading(true);
+
+    console.log("👤 Current owner object:", owner);
+
+    console.log(
+      "👤 Current owner ID:",
+      owner?._id
+    );
+
+    console.log(
+      "👤 Current owner category:",
+      owner?.category
+    );
+
+    const url =
+      `/items/restaurant-master-catalog?ownerId=${owner?._id}`;
+
+    console.log("🌐 API URL:", url);
+
+    const res = await api.get(url);
+
+    console.log("\n");
+    console.log("✅ FRONTEND: API RESPONSE RECEIVED");
+
+    console.log(
+      "📊 Response status:",
+      res.status
+    );
+
+    console.log(
+      "📦 Response data:",
+      res.data
+    );
+
+    console.log(
+      "📦 Response data type:",
+      typeof res.data
+    );
+
+    console.log(
+      "📦 Is Array:",
+      Array.isArray(res.data)
+    );
+
+    if (Array.isArray(res.data)) {
+
+      console.log(
+        "🍽️ TOTAL RESTAURANT MASTER ITEMS:",
+        res.data.length
+      );
+
+      res.data.forEach((item, index) => {
+        console.log(`🍛 MASTER ITEM ${index + 1}:`, {
+          id: item._id,
+          name: item.name,
+          price: item.price,
+          category: item.category,
+          subCategory: item.subCategory,
+          ownerId: item.ownerId?._id,
+          ownerName:
+            item.ownerId?.ownerName ||
+            item.ownerId?.name,
+          ownerCategory: item.ownerId?.category
+        });
+      });
+
+      setMasterCatalog(res.data);
+
+    } else {
+
+      console.error(
+        "❌ Backend response ARRAY kaadu:",
+        res.data
+      );
+
+      setMasterCatalog([]);
+    }
+
+  } catch (err) {
+
+    console.error("\n");
+    console.error("==============================================");
+    console.error("❌ FRONTEND: RESTAURANT MASTER API ERROR");
+    console.error("==============================================");
+
+    console.error(
+      "Error message:",
+      err.message
+    );
+
+    console.error(
+      "Response status:",
+      err.response?.status
+    );
+
+    console.error(
+      "Response data:",
+      err.response?.data
+    );
+
+    console.error(
+      "Request URL:",
+      err.config?.url
+    );
+
+    console.error(
+      "Full error:",
+      err
+    );
+
+    setMasterCatalog([]);
+
+  } finally {
+
+    setMasterLoading(false);
+
+    console.log(
+      "🏁 FRONTEND: FETCH RESTAURANT MASTER END"
+    );
+
+    console.log("==============================================");
+    console.log("\n");
+  }
+};
+const handleAddRestaurantFromMaster = async (masterItem) => {
+  try {
+    setMasterLoading(true);
+
+    const payload = {
+      ownerId: owner._id,
+      name: masterItem.name,
+      category: "Restaurant",
+      subCategory: masterItem.subCategory || "Biryanis",
+      price: masterItem.price || 0,
+      description: masterItem.description || "",
+      image: masterItem.image || "",
+      isAvailable: true
+    };
+
+    const res = await api.post(
+      "/items/add-from-master",
+      payload
+    );
+
+    // Immediate UI update
+    setItems(prev => [res.data, ...prev]);
+
+    alert(`"${masterItem.name}" Kitchen లో add అయింది! ✅`);
+
+  } catch (err) {
+    console.error(
+      "Master Import Error:",
+      err.response?.data || err.message
+    );
+
+    alert(
+      err.response?.data?.message ||
+      "Master item add అవ్వలేదు."
+    );
+  } finally {
+    setMasterLoading(false);
+  }
+};
     // --- Logic Functions (First Code Original) ---
     const optimizeImage = (file, callback) => {
       const reader = new FileReader();
@@ -397,7 +570,57 @@ const handleCounterPrint = async () => {
         setSending(false);
     }
   };
+const fetchMasterCatalog = async () => {
+  try {
+    const res = await api.get(
+      `/items/master-catalog?category=Restaurant`
+    );
 
+    setMasterCatalog(
+      Array.isArray(res.data) ? res.data : []
+    );
+  } catch (err) {
+    console.error("Failed to fetch restaurant master catalog:", err);
+    setMasterCatalog([]);
+  }
+};
+const handleAddFromMaster = async (masterItem) => {
+  try {
+    setLoading(true);
+
+    const payload = {
+      ownerId: owner._id,
+      name: masterItem.name,
+      category: "Restaurant",
+      subCategory: masterItem.subCategory || "General",
+      price: masterItem.price || 0,
+      description: masterItem.description || "",
+      image: masterItem.image || "",
+      isAvailable: true
+    };
+
+    await api.post("/items/add-from-master", payload);
+
+    await fetchProducts(owner._id);
+
+    alert(
+      `"${masterItem.name}" మీ restaurant menu లో successfully add అయింది! ✅`
+    );
+
+  } catch (err) {
+    console.error(
+      "Import from master error:",
+      err.response?.data || err
+    );
+
+    alert(
+      err.response?.data?.message ||
+      "Master Catalog నుండి item import కాలేదు."
+    );
+  } finally {
+    setLoading(false);
+  }
+};
   const handleServed = async (orderObj) => {
     if (!window.confirm("Mark as Served?")) return;
 
@@ -1022,33 +1245,213 @@ const dailyStats = {
 >
   <Bell className={`w-4 h-4 ${isAlertActive ? 'fill-emerald-400' : ''}`} />
 </button>
-    {/* 1. స్టిక్కీ హెడర్ (Add Dish & Search) */}
-    <section className="bg-[#05081c] pb-4 pt-2 sticky top-0 z-50 border-b border-[#131d47]/50">
-      <div className="flex justify-between items-end mb-4">
-        <h2 className="text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-white">Kitchen</h2>
-        <button onClick={() => setIsAddingItem(true)} className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-6 py-3 rounded-2xl font-black text-[10px] uppercase italic flex items-center gap-2 shadow-lg active:scale-95 transition-all border border-cyan-400/30">
-          <Plus className="w-4 h-4" /> Add New Dish
+{/* 1. Responsive Sticky Kitchen Header */}
+<section className="sticky top-0 z-50 bg-[#05081c]/95 backdrop-blur-xl border-b border-[#131d47]/70">
+
+  <div className="w-full px-1 sm:px-2 py-3">
+
+    {/* Top Row */}
+    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+
+      {/* Title */}
+      <div className="flex items-center justify-between lg:justify-start">
+        <div>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black italic uppercase tracking-tighter text-white">
+            Kitchen
+          </h2>
+
+          <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 mt-1">
+            Manage your dishes
+          </p>
+        </div>
+      </div>
+
+
+      {/* Actions */}
+      <div className="grid grid-cols-2 sm:flex gap-2 w-full lg:w-auto">
+
+        {/* Add New Dish */}
+        <button
+          onClick={() => setIsAddingItem(true)}
+          className="
+            flex-1 sm:flex-none
+            min-h-[46px]
+            px-4 sm:px-5
+            py-3
+            rounded-2xl
+            bg-gradient-to-r from-blue-600 to-indigo-600
+            hover:from-blue-500 hover:to-indigo-500
+            text-white
+            border border-cyan-400/30
+            shadow-lg shadow-blue-900/20
+            active:scale-[0.97]
+            transition-all
+            flex items-center justify-center
+            gap-2
+            font-black
+            text-[9px] sm:text-[10px]
+            uppercase
+            italic
+            whitespace-nowrap
+          "
+        >
+          <Plus className="w-4 h-4 shrink-0" />
+          <span>Add New Dish</span>
         </button>
+
+
+        {/* Import From Master */}
+        <button
+          onClick={async () => {
+            console.log("📦 IMPORT FROM MASTER CLICKED");
+
+            setIsMasterModal(true);
+
+            await fetchRestaurantMasterCatalog();
+          }}
+          className="
+            flex-1 sm:flex-none
+            min-h-[46px]
+            px-4 sm:px-5
+            py-3
+            rounded-2xl
+            bg-[#0e1638]
+            hover:bg-[#131d47]
+            text-cyan-300
+            hover:text-cyan-200
+            border border-cyan-400/30
+            shadow-lg shadow-cyan-950/10
+            active:scale-[0.97]
+            transition-all
+            flex items-center justify-center
+            gap-2
+            font-black
+            text-[9px] sm:text-[10px]
+            uppercase
+            italic
+            whitespace-nowrap
+          "
+        >
+          <span className="text-sm">📦</span>
+          <span>Import from Master</span>
+        </button>
+
       </div>
-      <div className="relative w-full sm:w-80">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400" />
-        <input type="text" placeholder="Search dish..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} className="w-full bg-[#0a1033] border border-[#1e2d69] p-4 pl-11 rounded-2xl text-[11px] font-bold shadow-inner text-white placeholder:text-slate-500 outline-none focus:border-cyan-400 transition-all" />
+    </div>
+
+
+    {/* Search */}
+    <div className="mt-3 w-full">
+
+      <div className="relative w-full">
+
+        <Search
+          className="
+            absolute
+            left-4
+            top-1/2
+            -translate-y-1/2
+            w-4 h-4
+            text-cyan-400
+            pointer-events-none
+          "
+        />
+
+        <input
+          type="text"
+          placeholder="Search dish..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="
+            w-full
+            h-[46px]
+            bg-[#0a1033]
+            border border-[#1e2d69]
+            hover:border-[#29408f]
+            focus:border-cyan-400
+            rounded-2xl
+            pl-11
+            pr-4
+            text-[11px]
+            sm:text-xs
+            font-bold
+            text-white
+            placeholder:text-slate-500
+            outline-none
+            shadow-inner
+            transition-all
+          "
+        />
+
       </div>
-    </section>
-{/* బిల్లు ప్రింట్ సెక్షన్ (ఇది ఇప్పుడు పైన ఉంటుంది) */}
-<div ref={counterPrintButtonRef} className="bg-[#0a1033] p-6 rounded-3xl shadow-md mb-6 border border-emerald-500/30">
-  <h3 className="font-black uppercase italic mb-4 text-emerald-400">Counter Order Cart</h3>
-  <select id="counterPayMode" className="w-full p-3 bg-[#0e1638] border border-[#1e2d69] rounded-xl text-[10px] font-bold uppercase text-white outline-none focus:border-cyan-400">
-    <option value="CASH">💵 CASH</option>
-    <option value="ONLINE/UPI">📱 ONLINE/UPI</option>
-  </select>
-  <button 
-    onClick={handleCounterPrint} 
-    className="w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-2xl font-black uppercase mt-4 active:scale-95 transition-all border border-emerald-400/30 shadow-lg"
+
+    </div>
+
+  </div>
+
+</section>
+{/* Bill Print Section - Show only when items are selected */}
+{Object.keys(counterCart).length > 0 && (
+  <div
+    ref={counterPrintButtonRef}
+    className="
+      bg-[#0a1033]
+      p-5 sm:p-6
+      rounded-3xl
+      shadow-md
+      mb-6
+      border border-emerald-500/30
+      transition-all
+    "
   >
-    Print Bill & Reset
-  </button>
-</div>
+    <h3 className="font-black uppercase italic mb-4 text-emerald-400">
+      Counter Order Cart
+    </h3>
+
+    <select
+      id="counterPayMode"
+      className="
+        w-full
+        p-3
+        bg-[#0e1638]
+        border border-[#1e2d69]
+        rounded-xl
+        text-[10px]
+        font-bold
+        uppercase
+        text-white
+        outline-none
+        focus:border-cyan-400
+        transition-all
+      "
+    >
+      <option value="CASH">💵 CASH</option>
+      <option value="ONLINE/UPI">📱 ONLINE/UPI</option>
+    </select>
+
+    <button
+      onClick={handleCounterPrint}
+      className="
+        w-full
+        bg-emerald-600
+        hover:bg-emerald-500
+        text-white
+        py-4
+        rounded-2xl
+        font-black
+        uppercase
+        mt-4
+        active:scale-95
+        transition-all
+        border border-emerald-400/30
+        shadow-lg
+      "
+    >
+      Print Bill & Reset
+    </button>
+  </div>
+  )}
+
     {/* 2. ఫిల్టర్ బటన్స్ */}
     <div className="space-y-4 mb-6">
       {/* Category (Veg/Non-Veg) */}
@@ -1065,47 +1468,354 @@ const dailyStats = {
       </div>
     </div>
 
-    {/* 3. హారిజాంటల్ స్క్రోలింగ్ ఐటమ్స్ */}
-    <section className="space-y-6 pb-10">
-      {allCategories.map((cat) => {
-        // ఇక్కడ filteredItems ని వాడుతున్నాం, సో ఫిల్టర్స్ కచ్చితంగా పనిచేస్తాయి
-        const categoryItems = filteredItems.filter(i => (i.subCategory || "Biryanis") === cat);
-        if (categoryItems.length === 0) return null;
+{/* 3. HORIZONTAL SCROLLING ITEMS */}
+<section className="space-y-6 pb-8">
 
-        return (
-          <div key={cat} className="space-y-2">
-            <h3 className="text-sm font-black uppercase italic text-cyan-400 pl-2">{cat}</h3>
-            <div className="flex gap-4 overflow-x-auto pb-4 px-2 scrollbar-hide">
-              {categoryItems.map(i => (
-                <div key={i._id} className="min-w-[160px] w-[160px] bg-[#0a1033] p-3 rounded-[2rem] border border-[#1e2d69] shadow-sm shrink-0 transition-transform hover:scale-[1.02] hover:border-cyan-400/40">
-                  <div className="aspect-square rounded-[1.5rem] overflow-hidden mb-3 bg-[#05081c] border border-[#1e2d69]">
-                    <img src={i.image} className="w-full h-full object-cover" alt={i.name} />
-                  </div>
-                  <h4 className="font-black text-[10px] uppercase truncate text-white">{i.name}</h4>
-                  <p className="text-[9px] text-cyan-400 uppercase font-bold">{i.category}</p>
-                  <p className="text-xs font-black text-amber-300 mt-1">₹{i.price}</p>
-                  
-                  <div className="flex flex-col gap-2 mt-3">
-                    <button onClick={() => setCounterCart(prev => ({ ...prev, [i._id]: (prev[i._id] || 0) + 1 }))} className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2 rounded-xl text-[9px] font-black uppercase border border-cyan-400/30">Add</button>
-                    <button onClick={() => setCounterCart(prev => {
-        const newCart = { ...prev };
-        if (newCart[i._id] > 0) newCart[i._id] -= 1;
-        if (newCart[i._id] === 0) delete newCart[i._id];
-        return newCart;
-    })} className="px-3 bg-rose-950/40 border border-rose-500/30 text-rose-400 rounded-xl text-[9px] font-black uppercase">Remove</button>
-                    <div className="flex gap-1">
-                      <button onClick={() => api.put(`/items/update-availability/${i._id}`, { isAvailable: !i.isAvailable }).then(res => setItems(prev => prev.map(it => it._id === i._id ? res.data : it)))} className={`flex-1 py-2 rounded-xl text-[8px] font-black uppercase border ${i.isAvailable ? 'text-emerald-400 bg-emerald-950/40 border-emerald-500/30' : 'text-rose-400 bg-rose-950/40 border-rose-500/30'}`}>{i.isAvailable ? 'Live' : 'Sold'}</button>
-                      <button onClick={() => { setForm({ ...i }); setEditItemId(i._id); setIsEditingItem(true); }} className="px-3 bg-[#0e1638] text-slate-300 border border-[#1e2d69] rounded-xl text-[8px] font-black">Edit</button>
-                      <button onClick={async () => { if(window.confirm("Remove?")) { await api.delete(`/items/delete/${i._id}`); setItems(items.filter(it => it._id !== i._id)); } }} className="px-3 bg-rose-950/50 text-rose-400 border border-rose-500/30 rounded-xl text-[8px] font-black"><Trash2 className="w-3 h-3"/></button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+  {allCategories.map((cat) => {
+
+    const categoryItems = filteredItems.filter(
+      i => (i.subCategory || "Biryanis") === cat
+    );
+
+    if (categoryItems.length === 0) return null;
+
+    return (
+      <div key={cat} className="space-y-2">
+
+        {/* Category Header */}
+        <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-2">
+            <span className="w-1 h-4 rounded-full bg-cyan-400" />
+
+            <h3 className="text-xs sm:text-sm font-black uppercase italic text-cyan-400">
+              {cat}
+            </h3>
           </div>
-        );
-      })}
-    </section>
+
+          <span className="text-[8px] font-bold uppercase text-slate-500">
+            {categoryItems.length} Items
+          </span>
+        </div>
+
+
+        {/* Horizontal Scroll */}
+        <div className="flex gap-3 overflow-x-auto pb-3 px-1 scrollbar-hide snap-x">
+
+          {categoryItems.map(i => (
+
+            <div
+              key={i._id}
+              className="
+                group
+                min-w-[145px]
+                w-[145px]
+                sm:min-w-[155px]
+                sm:w-[155px]
+                bg-[#0a1033]
+                rounded-[1.25rem]
+                border border-[#1e2d69]
+                overflow-hidden
+                shrink-0
+                snap-start
+                shadow-md
+                hover:border-cyan-400/50
+                transition-all
+                duration-200
+              "
+            >
+
+              {/* IMAGE */}
+              <div
+                className="
+                  relative
+                  w-full
+                  h-[130px]
+                  sm:h-[140px]
+                  bg-[#05081c]
+                  overflow-hidden
+                "
+              >
+                <img
+                  src={i.image}
+                  alt={i.name}
+                  className="
+                    w-full
+                    h-full
+                    object-cover
+                    block
+                    transition-transform
+                    duration-300
+                    group-hover:scale-105
+                  "
+                />
+
+                {/* Availability */}
+                <div className="absolute top-2 left-2">
+                  <span
+                    className={`
+                      px-2
+                      py-0.5
+                      rounded-full
+                      backdrop-blur-md
+                      text-[7px]
+                      font-black
+                      uppercase
+                      border
+                      ${
+                        i.isAvailable
+                          ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/30"
+                          : "bg-rose-950/80 text-rose-300 border-rose-500/30"
+                      }
+                    `}
+                  >
+                    {i.isAvailable ? "Live" : "Sold"}
+                  </span>
+                </div>
+              </div>
+
+
+              {/* CONTENT */}
+              <div className="p-2.5">
+
+                {/* Name */}
+                <h4
+                  className="
+                    text-[9px]
+                    sm:text-[10px]
+                    font-black
+                    uppercase
+                    text-white
+                    truncate
+                    leading-tight
+                  "
+                  title={i.name}
+                >
+                  {i.name}
+                </h4>
+
+                {/* Category */}
+                <p className="
+                  text-[7px]
+                  text-cyan-400
+                  uppercase
+                  font-bold
+                  truncate
+                  mt-0.5
+                ">
+                  {i.category}
+                </p>
+
+
+                {/* Price + Quantity */}
+                <div className="flex items-center justify-between mt-1.5">
+
+                  <p className="
+                    text-sm
+                    font-black
+                    text-amber-300
+                  ">
+                    ₹{i.price}
+                  </p>
+
+                  {counterCart[i._id] > 0 && (
+                    <span className="
+                      min-w-[21px]
+                      h-[21px]
+                      px-1
+                      rounded-full
+                      bg-blue-600
+                      text-white
+                      flex
+                      items-center
+                      justify-center
+                      text-[7px]
+                      font-black
+                    ">
+                      ×{counterCart[i._id]}
+                    </span>
+                  )}
+
+                </div>
+
+
+                {/* ADD / REMOVE */}
+                <div className="grid grid-cols-2 gap-1.5 mt-2">
+
+                  <button
+                    onClick={() =>
+                      setCounterCart(prev => ({
+                        ...prev,
+                        [i._id]: (prev[i._id] || 0) + 1
+                      }))
+                    }
+                    className="
+                      h-7
+                      rounded-lg
+                      bg-gradient-to-r
+                      from-blue-600
+                      to-indigo-600
+                      text-white
+                      text-[7px]
+                      font-black
+                      uppercase
+                      border
+                      border-cyan-400/30
+                      active:scale-95
+                      transition-all
+                    "
+                  >
+                    ADD
+                  </button>
+
+
+                  <button
+                    onClick={() =>
+                      setCounterCart(prev => {
+                        const newCart = { ...prev };
+
+                        if (newCart[i._id] > 0) {
+                          newCart[i._id] -= 1;
+                        }
+
+                        if (newCart[i._id] === 0) {
+                          delete newCart[i._id];
+                        }
+
+                        return newCart;
+                      })
+                    }
+                    className="
+                      h-7
+                      rounded-lg
+                      bg-rose-950/40
+                      text-rose-400
+                      text-[7px]
+                      font-black
+                      uppercase
+                      border
+                      border-rose-500/30
+                      active:scale-95
+                      transition-all
+                    "
+                  >
+                    REMOVE
+                  </button>
+
+                </div>
+
+
+                {/* LIVE / EDIT / DELETE */}
+                <div className="grid grid-cols-[1fr_auto_auto] gap-1 mt-1.5">
+
+                  {/* Live / Sold */}
+                  <button
+                    onClick={() =>
+                      api
+                        .put(
+                          `/items/update-availability/${i._id}`,
+                          {
+                            isAvailable: !i.isAvailable
+                          }
+                        )
+                        .then(res =>
+                          setItems(prev =>
+                            prev.map(it =>
+                              it._id === i._id
+                                ? res.data
+                                : it
+                            )
+                          )
+                        )
+                    }
+                    className={`
+                      h-6
+                      rounded-md
+                      text-[7px]
+                      font-black
+                      uppercase
+                      border
+                      ${
+                        i.isAvailable
+                          ? "text-emerald-400 bg-emerald-950/40 border-emerald-500/30"
+                          : "text-rose-400 bg-rose-950/40 border-rose-500/30"
+                      }
+                    `}
+                  >
+                    {i.isAvailable ? "Live" : "Sold"}
+                  </button>
+
+
+                  {/* Edit */}
+                  <button
+                    onClick={() => {
+                      setForm({ ...i });
+                      setEditItemId(i._id);
+                      setIsEditingItem(true);
+                    }}
+                    className="
+                      h-6
+                      px-2
+                      rounded-md
+                      bg-[#0e1638]
+                      text-slate-300
+                      border
+                      border-[#1e2d69]
+                      text-[7px]
+                      font-black
+                      uppercase
+                    "
+                  >
+                    Edit
+                  </button>
+
+
+                  {/* Delete */}
+                  <button
+                    onClick={async () => {
+                      if (window.confirm("Remove?")) {
+                        await api.delete(
+                          `/items/delete/${i._id}`
+                        );
+
+                        setItems(
+                          items.filter(
+                            it => it._id !== i._id
+                          )
+                        );
+                      }
+                    }}
+                    className="
+                      h-6
+                      w-6
+                      flex
+                      items-center
+                      justify-center
+                      rounded-md
+                      bg-rose-950/40
+                      text-rose-400
+                      border
+                      border-rose-500/30
+                    "
+                    title="Delete item"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          ))}
+
+        </div>
+
+      </div>
+    );
+  })}
+
+</section>
     
   </div>
 )}
@@ -2207,6 +2917,153 @@ const dailyStats = {
     </div>
   )}
         </AnimatePresence>
+        <AnimatePresence>
+  {isMasterModal && (
+    <div className="fixed inset-0 z-[999] bg-[#05081c]/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        className="bg-[#0a1033] w-full max-w-3xl rounded-[2rem] sm:rounded-[2.5rem] border border-[#1e2d69] shadow-2xl relative max-h-[90vh] flex flex-col overflow-hidden"
+      >
+
+        {/* HEADER */}
+        <div className="p-5 sm:p-7 border-b border-[#1e2d69] shrink-0">
+
+          <button
+            onClick={() => {
+              setIsMasterModal(false);
+              setMasterSearch("");
+            }}
+            className="absolute top-5 right-5 sm:top-6 sm:right-6 bg-[#0e1638] p-2.5 rounded-full text-slate-400 hover:text-white border border-[#1e2d69]"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          <div className="pr-12">
+            <h3 className="text-2xl sm:text-3xl font-black italic uppercase text-white">
+              📦 Restaurant Master Catalog
+            </h3>
+
+            <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+              Existing restaurant menu items
+            </p>
+          </div>
+
+          {/* SEARCH */}
+          <div className="relative mt-5">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400" />
+
+            <input
+              type="text"
+              placeholder="Search menu items..."
+              value={masterSearch}
+              onChange={(e) => setMasterSearch(e.target.value)}
+              className="w-full bg-[#05081c] border border-[#1e2d69] p-4 pl-11 rounded-2xl text-sm font-bold text-white outline-none focus:border-cyan-400 placeholder:text-slate-500"
+            />
+          </div>
+
+        </div>
+
+        {/* ITEMS */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+
+          {masterLoading ? (
+
+            <div className="py-16 text-center">
+              <div className="animate-spin w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full mx-auto" />
+              <p className="text-[10px] text-slate-400 font-bold uppercase mt-4">
+                Loading restaurant items...
+              </p>
+            </div>
+
+          ) : (
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+              {masterCatalog
+  .filter(
+    (item) =>
+      item.ownerId?.category?.toLowerCase() === "restaurant" &&
+      item.name
+        ?.toLowerCase()
+        .includes(masterSearch.toLowerCase())
+  )
+                .map((item) => (
+
+                  <div
+                    key={item._id}
+                    className="bg-[#0e1638] border border-[#1e2d69] rounded-2xl p-3 flex items-center gap-3 hover:border-cyan-400/40 transition-all"
+                  >
+
+                    {/* IMAGE */}
+                    <img
+                      src={
+                        item.image ||
+                        `https://ui-avatars.com/api/?name=${encodeURIComponent(item.name || "Food")}`
+                      }
+                      alt={item.name}
+                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover bg-white shrink-0 border border-[#1e2d69]"
+                    />
+
+                    {/* DETAILS */}
+                    <div className="min-w-0 flex-1">
+
+                      <h4 className="font-black text-sm uppercase text-white truncate">
+                        {item.name}
+                      </h4>
+
+                      <p className="text-[9px] text-cyan-400 font-bold uppercase mt-1">
+                        {item.subCategory || "Restaurant"}
+                      </p>
+
+                      <p className="text-sm font-black text-amber-300 mt-1">
+                        ₹{item.price || 0}
+                      </p>
+
+                    </div>
+
+                    {/* ADD */}
+                    <button
+                      onClick={() =>
+                        handleAddRestaurantFromMaster(item)
+                      }
+                      disabled={masterLoading}
+                      className="shrink-0 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-3 py-2.5 rounded-xl text-[9px] font-black uppercase border border-cyan-400/30 active:scale-95 transition-all"
+                    >
+                      + Add
+                    </button>
+
+                  </div>
+
+                ))}
+
+            </div>
+
+          )}
+
+          {!masterLoading &&
+            masterCatalog.filter((item) =>
+              item.name
+                ?.toLowerCase()
+                .includes(masterSearch.toLowerCase())
+            ).length === 0 && (
+
+              <div className="py-16 text-center">
+                <p className="text-slate-400 text-xs font-bold uppercase">
+                  No restaurant items found
+                </p>
+              </div>
+
+            )}
+
+        </div>
+
+      </motion.div>
+    </div>
+  )}
+</AnimatePresence>
       {Object.keys(counterCart).length > 0 && (
   <motion.div
     initial={{ opacity: 0, y: 100 }}
