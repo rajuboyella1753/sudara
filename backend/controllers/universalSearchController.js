@@ -40,14 +40,27 @@ export const searchUniversalItems = async ({
 
     const cleanQuery = String(query).trim();
 
+    // User query empty అయితే DB search చేయము
     if (!cleanQuery) {
         return [];
     }
 
-    const escapedQuery = cleanQuery.replace(
-        /[.*+?^${}()|[\]\\]/g,
-        "\\$&"
-    );
+    // ======================================================
+    // SEARCH WORDS
+    // Example:
+    // "chicken biryani"
+    // -> chicken
+    // -> biryani
+    // ======================================================
+
+    const searchWords = cleanQuery
+        .split(/\s+/)
+        .map(word => word.trim())
+        .filter(Boolean);
+
+    // ======================================================
+    // BASE FILTER
+    // ======================================================
 
     const itemFilter = {
         $and: [
@@ -56,89 +69,126 @@ export const searchUniversalItems = async ({
                     { isMaster: false },
                     { isMaster: { $exists: false } }
                 ]
-            },
-            {
-                $or: [
-                    {
-                        name: {
-                            $regex: escapedQuery,
-                            $options: "i"
-                        }
-                    },
-                    {
-                        description: {
-                            $regex: escapedQuery,
-                            $options: "i"
-                        }
-                    },
-                    {
-                        category: {
-                            $regex: escapedQuery,
-                            $options: "i"
-                        }
-                    },
-                    {
-                        subCategory: {
-                            $regex: escapedQuery,
-                            $options: "i"
-                        }
-                    }
-                ]
             }
         ]
     };
 
+    // ======================================================
+    // ITEM SEARCH
+    //
+    // Every search word must exist in at least one of:
+    // name
+    // description
+    // category
+    // subCategory
+    //
+    // Example:
+    // "chicken biryani"
+    //
+    // chicken -> found
+    // biryani -> found
+    //
+    // Only then item is returned.
+    // ======================================================
 
-// ======================================================
-// PRICE
-// ======================================================
+    searchWords.forEach(word => {
 
-    if (minPrice !== null && minPrice !== undefined) {
+        const escapedWord = word.replace(
+            /[.*+?^${}()|[\]\\]/g,
+            "\\$&"
+        );
+
+        itemFilter.$and.push({
+            $or: [
+                {
+                    name: {
+                        $regex: escapedWord,
+                        $options: "i"
+                    }
+                },
+                {
+                    description: {
+                        $regex: escapedWord,
+                        $options: "i"
+                    }
+                },
+                {
+                    category: {
+                        $regex: escapedWord,
+                        $options: "i"
+                    }
+                },
+                {
+                    subCategory: {
+                        $regex: escapedWord,
+                        $options: "i"
+                    }
+                }
+            ]
+        });
+
+    });
+
+
+    // ======================================================
+    // PRICE FILTER
+    // ======================================================
+
+    if (
+        minPrice !== null &&
+        minPrice !== undefined
+    ) {
+
         itemFilter.price = {
             $gte: Number(minPrice)
         };
+
     }
 
-    if (maxPrice !== null && maxPrice !== undefined) {
+
+    if (
+        maxPrice !== null &&
+        maxPrice !== undefined
+    ) {
+
         itemFilter.price = {
             ...(itemFilter.price || {}),
             $lte: Number(maxPrice)
         };
+
     }
 
 
-// ======================================================
-// CATEGORY
-// ======================================================
-
-// if (category) {
-//     itemFilter.category = {
-//         $regex: String(category),
-//         $options: "i"
-//     };
-// }
-
-
-// ======================================================
-// SUB CATEGORY
-// ======================================================
+    // ======================================================
+    // SUB CATEGORY
+    // ======================================================
 
     if (subCategory) {
+
         itemFilter.subCategory = {
             $regex: String(subCategory),
             $options: "i"
         };
+
     }
 
 
-// ======================================================
-// AVAILABILITY
-// ======================================================
+    // ======================================================
+    // AVAILABILITY
+    // ======================================================
 
     if (availability === true) {
+
         itemFilter.isAvailable = true;
+
     }
 
+
+    // ======================================================
+    // DATABASE SEARCH
+    // ======================================================
+
+    console.log("🔎 SUDARA DB SEARCH:", cleanQuery);
 
     let items = await Item.find(itemFilter)
         .populate(
@@ -148,63 +198,89 @@ export const searchUniversalItems = async ({
         .lean();
 
 
-// ======================================================
-// REMOVE ITEMS WITHOUT OWNER
-// ======================================================
-
-    items = items.filter(
-        item => item.ownerId && item.ownerId._id
+    console.log(
+        `🔎 DB SEARCH RESULT: ${items.length} items found`
     );
 
 
-// ======================================================
-// STATE FILTER
-// ======================================================
+    // ======================================================
+    // REMOVE ITEMS WITHOUT OWNER
+    // ======================================================
+
+    items = items.filter(
+        item =>
+            item.ownerId &&
+            item.ownerId._id
+    );
+
+
+    // ======================================================
+    // STATE FILTER
+    // ======================================================
 
     if (
         state &&
         String(state).trim() !== "" &&
-        String(state).trim().toLowerCase() !== "all"
+        String(state)
+            .trim()
+            .toLowerCase() !== "all"
     ) {
+
         const requestedState = String(state)
             .trim()
             .toLowerCase();
 
         items = items.filter(item => {
+
             const ownerState =
-                item.ownerId?.state?.trim().toLowerCase() || "";
+                item.ownerId?.state
+                    ?.trim()
+                    .toLowerCase() || "";
 
             return ownerState === requestedState;
+
         });
+
     }
 
 
-// ======================================================
-// DISTRICT FILTER
-// ======================================================
+    // ======================================================
+    // DISTRICT FILTER
+    // ======================================================
 
     if (
         district &&
         String(district).trim() !== "" &&
-        String(district).trim().toLowerCase() !== "select" &&
-        String(district).trim().toLowerCase() !== "all"
-    ) {
-        const requestedDistrict = String(district)
+        String(district)
             .trim()
-            .toLowerCase();
+            .toLowerCase() !== "select" &&
+        String(district)
+            .trim()
+            .toLowerCase() !== "all"
+    ) {
+
+        const requestedDistrict =
+            String(district)
+                .trim()
+                .toLowerCase();
 
         items = items.filter(item => {
+
             const ownerDistrict =
-                item.ownerId?.district?.trim().toLowerCase() || "";
+                item.ownerId?.district
+                    ?.trim()
+                    .toLowerCase() || "";
 
             return ownerDistrict === requestedDistrict;
+
         });
+
     }
 
 
-// ======================================================
-// FOOD TYPE FILTER
-// ======================================================
+    // ======================================================
+    // FOOD TYPE FILTER
+    // ======================================================
 
     if (foodType) {
 
@@ -231,27 +307,34 @@ export const searchUniversalItems = async ({
     }
 
 
-// ======================================================
-// BUSINESS CATEGORY FILTER
-// ======================================================
+    // ======================================================
+    // BUSINESS CATEGORY FILTER
+    // ======================================================
 
     if (category) {
-        const requestedCategory = String(category)
-            .trim()
-            .toLowerCase();
+
+        const requestedCategory =
+            String(category)
+                .trim()
+                .toLowerCase();
 
         items = items.filter(item => {
+
             const ownerCategory =
-                item.ownerId?.category?.trim().toLowerCase() || "";
+                item.ownerId?.category
+                    ?.trim()
+                    .toLowerCase() || "";
 
             return ownerCategory === requestedCategory;
+
         });
+
     }
 
 
-// ======================================================
-// LOCATION
-// ======================================================
+    // ======================================================
+    // LOCATION
+    // ======================================================
 
     const hasLocation =
         latitude !== null &&
@@ -259,27 +342,35 @@ export const searchUniversalItems = async ({
         longitude !== null &&
         longitude !== undefined &&
         Number.isFinite(Number(latitude)) &&
-        Number.isFinite(Number(longitude)); 
+        Number.isFinite(Number(longitude));
 
-    console.log("🔥 SEARCH CONTROLLER LOCATION:", {
-        latitude,
-        longitude,
-        hasLocation
-    });
+
+    console.log(
+        "🔥 SEARCH LOCATION:",
+        {
+            latitude,
+            longitude,
+            hasLocation
+        }
+    );
+
 
     const userLat = Number(latitude);
     const userLng = Number(longitude);
+
 
     items = items.map(item => {
 
         const owner = item.ownerId;
 
-        const ownerLat = Number(owner.latitude);
-        const ownerLng = Number(owner.longitude);
+        const ownerLat =
+            Number(owner.latitude);
+
+        const ownerLng =
+            Number(owner.longitude);
 
         let distanceKm = null;
 
-        console.log("🔥 DISTANCE INITIAL:", distanceKm);
 
         if (
             hasLocation &&
@@ -289,16 +380,16 @@ export const searchUniversalItems = async ({
             ownerLng !== 0
         ) {
 
-            console.log("🔥 CALCULATING DISTANCE");
-
-            distanceKm = calculateDistanceKm(
-                userLat,
-                userLng,
-                ownerLat,
-                ownerLng
-            );
+            distanceKm =
+                calculateDistanceKm(
+                    userLat,
+                    userLng,
+                    ownerLat,
+                    ownerLng
+                );
 
         }
+
 
         return {
             ...item,
@@ -308,9 +399,9 @@ export const searchUniversalItems = async ({
     });
 
 
-// ======================================================
-// MAX DISTANCE
-// ======================================================
+    // ======================================================
+    // MAX DISTANCE
+    // ======================================================
 
     if (
         maxDistanceKm !== null &&
@@ -318,7 +409,8 @@ export const searchUniversalItems = async ({
         hasLocation
     ) {
 
-        const maxDistance = Number(maxDistanceKm);
+        const maxDistance =
+            Number(maxDistanceKm);
 
         items = items.filter(item =>
             item.distanceKm !== null &&
@@ -328,9 +420,9 @@ export const searchUniversalItems = async ({
     }
 
 
-// ======================================================
-// SORTING
-// ======================================================
+    // ======================================================
+    // SORTING
+    // ======================================================
 
     if (sort === "price_asc") {
 
@@ -341,6 +433,7 @@ export const searchUniversalItems = async ({
 
     }
 
+
     if (sort === "price_desc") {
 
         items.sort((a, b) =>
@@ -350,33 +443,46 @@ export const searchUniversalItems = async ({
 
     }
 
+
     if (sort === "rating_desc") {
 
         items.sort((a, b) =>
-            Number(b.ownerId?.averageRating || 0) -
-            Number(a.ownerId?.averageRating || 0)
+            Number(
+                b.ownerId?.averageRating || 0
+            ) -
+            Number(
+                a.ownerId?.averageRating || 0
+            )
         );
 
     }
+
 
     if (sort === "distance_asc") {
 
         items.sort((a, b) => {
 
-            if (a.distanceKm === null) return 1;
+            if (a.distanceKm === null) {
+                return 1;
+            }
 
-            if (b.distanceKm === null) return -1;
+            if (b.distanceKm === null) {
+                return -1;
+            }
 
-            return a.distanceKm - b.distanceKm;
+            return (
+                a.distanceKm -
+                b.distanceKm
+            );
 
         });
 
     }
 
 
-// ======================================================
-// RESULT FORMAT
-// ======================================================
+    // ======================================================
+    // FINAL RESULT
+    // ======================================================
 
     return items.map(item => {
 
@@ -408,19 +514,26 @@ export const searchUniversalItems = async ({
                     owner.name ||
                     owner.ownerName,
 
-                category: owner.category,
+                category:
+                    owner.category,
 
-                phone: owner.phone,
+                phone:
+                    owner.phone,
 
-                address: owner.address,
+                address:
+                    owner.address,
 
-                district: owner.district,
+                district:
+                    owner.district,
 
-                collegeName: owner.collegeName,
+                collegeName:
+                    owner.collegeName,
 
-                latitude: owner.latitude,
+                latitude:
+                    owner.latitude,
 
-                longitude: owner.longitude,
+                longitude:
+                    owner.longitude,
 
                 isStoreOpen:
                     owner.isStoreOpen,
@@ -457,7 +570,10 @@ export const searchUniversalItems = async ({
 // NORMAL UNIVERSAL SEARCH API
 // ======================================================
 
-export const universalSearch = async (req, res) => {
+export const universalSearch = async (
+    req,
+    res
+) => {
 
     try {
 
@@ -471,25 +587,67 @@ export const universalSearch = async (req, res) => {
             availability,
             category,
             subCategory,
+            foodType,
+            state = "All",
+            district = "Select",
             sort = "relevance"
         } = req.body || {};
 
 
-        const results = await searchUniversalItems({
+        console.log(
+            "🔎 SUDARA SEARCH REQUEST:",
+            {
+                query,
+                state,
+                district,
+                category,
+                subCategory,
+                foodType
+            }
+        );
 
-            query,
-            minPrice,
-            maxPrice,
-            maxDistanceKm,
-            latitude,
-            longitude,
-            availability,
-            category,
-            subCategory,
-            sort
 
-        });
+        // ==================================================
+        // DIRECT DATABASE SEARCH
+        // NO GEMINI
+        // NO AI
+        // ==================================================
 
+        const results =
+            await searchUniversalItems({
+
+                query,
+
+                minPrice,
+
+                maxPrice,
+
+                maxDistanceKm,
+
+                latitude,
+
+                longitude,
+
+                availability,
+
+                category,
+
+                subCategory,
+
+                foodType,
+
+                state,
+
+                district,
+
+                sort
+
+            });
+
+
+        // ==================================================
+        // RESPONSE
+        // ==================================================
 
         return res.json({
 
@@ -499,7 +657,8 @@ export const universalSearch = async (req, res) => {
 
             search: {
 
-                query: String(query).trim(),
+                query:
+                    String(query).trim(),
 
                 minPrice:
                     minPrice ?? null,
@@ -508,7 +667,22 @@ export const universalSearch = async (req, res) => {
                     maxPrice ?? null,
 
                 maxDistanceKm:
-                    maxDistanceKm ?? null
+                    maxDistanceKm ?? null,
+
+                state,
+
+                district,
+
+                category:
+                    category ?? null,
+
+                subCategory:
+                    subCategory ?? null,
+
+                foodType:
+                    foodType ?? null,
+
+                sort
 
             },
 
@@ -519,9 +693,10 @@ export const universalSearch = async (req, res) => {
     } catch (error) {
 
         console.error(
-            "Universal Search Error:",
+            "❌ Universal Search Error:",
             error
         );
+
 
         return res.status(500).json({
 

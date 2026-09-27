@@ -119,13 +119,14 @@ export default function Home() {
     setAiSearched(true);
 
     try {
-      const response = await api.post("/search/universal-ai", {
-        query,
-        state: selectedState,
-        district: selectedDistrict,
-        latitude: userCoords?.lat ?? null,
-        longitude: userCoords?.lng ?? null,
-      });
+      const response = await api.post("/search/universal", {
+      query,
+      category: selectedHubType,
+      state: selectedState,
+      district: selectedDistrict,
+      latitude: userCoords?.lat ?? null,
+      longitude: userCoords?.lng ?? null,
+    });
 
       console.log("🤖 SUDARA AI SEARCH:", response.data);
 

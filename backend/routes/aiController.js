@@ -1,9 +1,13 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+
 import {
   searchUniversalItems
 } from "../controllers/universalSearchController.js";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+const genAI = new GoogleGenerativeAI(
+  process.env.GEMINI_API_KEY
+);
 
 
 // ======================================================
@@ -12,6 +16,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 export const processVoiceOrder = async (req, res) => {
   try {
+
     const { transcript, menuItems } = req.body;
 
     const model = genAI.getGenerativeModel({
@@ -48,421 +53,227 @@ export const processVoiceOrder = async (req, res) => {
       }
     `;
 
-    const result = await model.generateContent(prompt);
+    const result =
+      await model.generateContent(prompt);
 
-    let responseText = result.response
-      .text()
-      .replace(/```json|```/g, "")
-      .trim();
+    let responseText =
+      result.response
+        .text()
+        .replace(/```json|```/g, "")
+        .trim();
 
-    const parsedData = JSON.parse(responseText);
+    const parsedData =
+      JSON.parse(responseText);
 
     res.json(parsedData);
 
   } catch (error) {
-    console.error("AI Error:", error);
+
+    console.error(
+      "AI Error:",
+      error
+    );
 
     res.status(500).json({
       error: "AI logic failed ra Raju!"
     });
+
   }
 };
-const generateUniversalSearchAI = async (prompt) => {
-  const models = [
-    "gemini-3.6-flash",
-    "gemini-3.5-flash-lite"
-  ];
 
-  let lastError = null;
-
-  for (const modelName of models) {
-    try {
-      console.log(`🤖 Sudara AI trying model: ${modelName}`);
-
-      const model = genAI.getGenerativeModel({
-        model: modelName
-      });
-
-      const result = await model.generateContent(prompt);
-
-      console.log(`✅ Sudara AI success: ${modelName}`);
-
-      return result;
-
-    } catch (error) {
-      lastError = error;
-
-      console.error(
-        `❌ Sudara AI failed with ${modelName}:`,
-        error?.message || error
-      );
-
-      // Small delay before trying fallback
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    }
-  }
-
-  throw lastError;
-};
 
 // ======================================================
-// SUDARA UNIVERSAL SEARCH AI
+// SUDARA UNIVERSAL SEARCH
+// ======================================================
+//
+// IMPORTANT:
+//
+// Normal search does NOT use Gemini.
+//
+// User
+//   ↓
+// parseUniversalSearch()
+//   ↓
+// searchUniversalItems()
+//   ↓
+// MongoDB
+//   ↓
+// Results
+//
+// Gemini is ONLY used above for Voice Order AI.
 // ======================================================
 
-export const parseUniversalSearch = async (req, res) => {
+export const parseUniversalSearch = async (
+  req,
+  res
+) => {
+
   try {
 
-   const {
-  query,
-  state = "All",
-  district = "Select"
-} = req.body || {};
+    const {
+      query = "",
 
-    // --------------------------------------------------
+      minPrice = null,
+
+      maxPrice = null,
+
+      maxDistanceKm = null,
+
+      latitude = null,
+
+      longitude = null,
+
+      availability = null,
+
+      category = null,
+
+      subCategory = null,
+
+      foodType = null,
+
+      state = "All",
+
+      district = "Select",
+
+      sort = "relevance"
+
+    } = req.body || {};
+
+
+    // ==================================================
     // VALIDATE QUERY
-    // --------------------------------------------------
+    // ==================================================
 
-    if (!query || !query.trim()) {
+    const cleanQuery =
+      String(query).trim();
+
+
+    if (!cleanQuery) {
+
       return res.status(400).json({
+
         success: false,
-        message: "Search query is required."
+
+        message:
+          "Search query is required."
+
       });
+
     }
 
 
-    // --------------------------------------------------
-    // GEMINI MODEL
-    // --------------------------------------------------
+    // ==================================================
+    // DIRECT DATABASE SEARCH
+    // ==================================================
 
-   
+    console.log(
+      "🔎 SUDARA DIRECT DB SEARCH:",
+      {
+        query: cleanQuery,
+        minPrice,
+        maxPrice,
+        maxDistanceKm,
+        latitude,
+        longitude,
+        availability,
+        category,
+        subCategory,
+        foodType,
+        state,
+        district,
+        sort
+      }
+    );
 
 
-    // --------------------------------------------------
-    // AI SEARCH UNDERSTANDING PROMPT
-    // --------------------------------------------------
+    const results =
+      await searchUniversalItems({
 
-    const prompt = `
-You are "Sudara AI", a universal search understanding system.
+        query: cleanQuery,
 
-Sudara allows users to search for products, food, shops,
-services and other items using natural language.
+        minPrice,
 
-User query:
-"${query}"
+        maxPrice,
 
-Your job is ONLY to understand the user's query and convert it
-into structured JSON.
+        maxDistanceKm,
 
-IMPORTANT RULES:
+        latitude,
 
-1. Understand Telugu, English and Telugu-English mixed language.
+        longitude,
 
-2. Extract ONLY what the user actually asks.
+        availability,
 
-3. NEVER invent price, distance, location, category,
-   food type or any other constraint.
+        category,
 
-4. "itemQuery" must contain the actual item/product/service
-   the user wants.
+        subCategory,
 
-5. Ignore conversational words such as:
-   "naku",
-   "kavali",
-   "ekkada",
-   "dorukutundi",
-   "cheppu",
-   "want",
-   "please",
-   "kavali ani",
-   "ekkada dorukutundi".
+        foodType,
 
-6. "under ₹250" or "₹250 lopu" means:
-   maxPrice = 250
+        state,
 
-7. "above ₹100" or "₹100 paina" means:
-   minPrice = 100
+        district,
 
-8. "cheap", "cheap ga", "takkuva price",
-   "thakkuva rate" means:
-   sort = "price_asc"
+        sort
 
-9. "expensive", "costly", "ekkuva price"
-   means:
-   sort = "price_desc"
+      });
 
-10. "best rated", "top rated", "manchi rating"
-    means:
-    sort = "rating_desc"
 
-11. "nearby", "near me", "daggarlo",
-    "daggara" means:
-    useUserLocation = true
+    // ==================================================
+    // CHECK RESULT
+    // ==================================================
 
-12. "within 5 km", "5 km lopu",
-    "within 3 km", etc. means:
-    maxDistanceKm = the mentioned number
+    console.log(
+      `🔎 SUDARA DB RESULT: ${results.length} items found`
+    );
 
-    AND
 
-    useUserLocation = true
-
-13. If the user asks for currently available,
-    available now, open now, currently open:
-
-    availability = true
-
-14. If the user specifically asks for Veg:
-    foodType = "Veg"
-
-15. If the user specifically asks for Non-Veg:
-    foodType = "Non-Veg"
-
-16. If the user specifically asks for Both:
-    foodType = "Both"
-
-17. If no value is mentioned,
-    keep that value null.
-
-18. Do NOT invent a location.
-
-19. Do NOT invent a price.
-
-20. Do NOT invent a category.
-
-21. Do NOT invent distance.
-
-22. Return ONLY valid JSON.
-
-23. Do NOT explain anything outside JSON.
-
-
-Return EXACTLY this structure:
-
-{
-  "intent": "search",
-  "itemQuery": null,
-  "ownerQuery": null,
-  "category": null,
-  "subCategory": null,
-  "minPrice": null,
-  "maxPrice": null,
-  "foodType": null,
-  "availability": null,
-  "sort": "relevance",
-  "maxDistanceKm": null,
-  "useUserLocation": false
-}
-
-
-EXAMPLES:
-
-
-User:
-"naku chicken biryani kavali"
-
-Output:
-
-{
-  "intent": "search",
-  "itemQuery": "chicken biryani",
-  "ownerQuery": null,
-  "category": null,
-  "subCategory": null,
-  "minPrice": null,
-  "maxPrice": null,
-  "foodType": null,
-  "availability": null,
-  "sort": "relevance",
-  "maxDistanceKm": null,
-  "useUserLocation": false
-}
-
-
-User:
-"₹250 lopu mutton biryani kavali"
-
-Output:
-
-{
-  "intent": "search",
-  "itemQuery": "mutton biryani",
-  "ownerQuery": null,
-  "category": null,
-  "subCategory": null,
-  "minPrice": null,
-  "maxPrice": 250,
-  "foodType": null,
-  "availability": null,
-  "sort": "relevance",
-  "maxDistanceKm": null,
-  "useUserLocation": false
-}
-
-
-User:
-"nearby chicken biryani"
-
-Output:
-
-{
-  "intent": "search",
-  "itemQuery": "chicken biryani",
-  "ownerQuery": null,
-  "category": null,
-  "subCategory": null,
-  "minPrice": null,
-  "maxPrice": null,
-  "foodType": null,
-  "availability": null,
-  "sort": "relevance",
-  "maxDistanceKm": null,
-  "useUserLocation": true
-}
-
-
-User:
-"5 km lopu chicken biryani"
-
-Output:
-
-{
-  "intent": "search",
-  "itemQuery": "chicken biryani",
-  "ownerQuery": null,
-  "category": null,
-  "subCategory": null,
-  "minPrice": null,
-  "maxPrice": null,
-  "foodType": null,
-  "availability": null,
-  "sort": "relevance",
-  "maxDistanceKm": 5,
-  "useUserLocation": true
-}
-
-
-User:
-"cheap chicken biryani"
-
-Output:
-
-{
-  "intent": "search",
-  "itemQuery": "chicken biryani",
-  "ownerQuery": null,
-  "category": null,
-  "subCategory": null,
-  "minPrice": null,
-  "maxPrice": null,
-  "foodType": null,
-  "availability": null,
-  "sort": "price_asc",
-  "maxDistanceKm": null,
-  "useUserLocation": false
-}
-
-
-User:
-"best rated chicken biryani nearby"
-
-Output:
-
-{
-  "intent": "search",
-  "itemQuery": "chicken biryani",
-  "ownerQuery": null,
-  "category": null,
-  "subCategory": null,
-  "minPrice": null,
-  "maxPrice": null,
-  "foodType": null,
-  "availability": null,
-  "sort": "rating_desc",
-  "maxDistanceKm": null,
-  "useUserLocation": true
-}
-`;
-
-
-    // --------------------------------------------------
-    // CALL GEMINI
-    // --------------------------------------------------
-
-const result = await generateUniversalSearchAI(prompt);
-
-    let responseText = result.response
-      .text()
-      .replace(/```json|```/g, "")
-      .trim();
-
-
-    // --------------------------------------------------
-    // PARSE AI JSON
-    // --------------------------------------------------
-
-    const parsedData = JSON.parse(responseText);
-
-
-    // --------------------------------------------------
-    // LOCATION DEBUG
-    // --------------------------------------------------
-
-    console.log("AI SEARCH DEBUG:", {
-      originalQuery: query,
-      useUserLocation: parsedData.useUserLocation,
-      maxDistanceKm: parsedData.maxDistanceKm,
-      latitude: req.body.latitude,
-      longitude: req.body.longitude
-    });
-
-
-    // --------------------------------------------------
-    // SEARCH DATABASE
-    // --------------------------------------------------
-
-    const results = await searchUniversalItems({
-
-      query: parsedData.itemQuery || "",
-
-      minPrice: parsedData.minPrice,
-
-      maxPrice: parsedData.maxPrice,
-
-      maxDistanceKm: parsedData.useUserLocation
-        ? parsedData.maxDistanceKm
-        : null,
-
-    latitude: req.body.latitude,
-    longitude: req.body.longitude,
-
-      availability: parsedData.availability,
-
-      category: parsedData.category,
-
-      subCategory: parsedData.subCategory,
-
-      foodType: parsedData.foodType,
-
-      sort: parsedData.sort,
-      state,
-      district
-
-    });
-
-
-    // --------------------------------------------------
+    // ==================================================
     // RESPONSE
-    // --------------------------------------------------
+    // ==================================================
 
     return res.json({
 
       success: true,
 
-      originalQuery: query,
+      originalQuery:
+        cleanQuery,
 
-      search: parsedData,
+      search: {
 
-      count: results.length,
+        query:
+          cleanQuery,
+
+        minPrice:
+          minPrice ?? null,
+
+        maxPrice:
+          maxPrice ?? null,
+
+        maxDistanceKm:
+          maxDistanceKm ?? null,
+
+        availability:
+          availability ?? null,
+
+        category:
+          category ?? null,
+
+        subCategory:
+          subCategory ?? null,
+
+        foodType:
+          foodType ?? null,
+
+        state,
+
+        district,
+
+        sort
+
+      },
+
+      count:
+        results.length,
 
       results
 
@@ -472,19 +283,23 @@ const result = await generateUniversalSearchAI(prompt);
   } catch (error) {
 
     console.error(
-      "Universal Search AI Error:",
+      "❌ Direct Universal Search Error:",
       error
     );
+
 
     return res.status(500).json({
 
       success: false,
 
-      message: "Universal Search AI failed.",
+      message:
+        "Universal search failed.",
 
-      error: error.message
+      error:
+        error.message
 
     });
 
   }
+
 };

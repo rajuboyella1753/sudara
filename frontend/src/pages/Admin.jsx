@@ -7,7 +7,7 @@ import {
   ShieldCheck, CheckCircle, Building2, Phone, Users, 
   ShieldAlert, LogOut, Search, BarChart3, Store, X, 
   TrendingUp, Calendar, Activity, Star, MapPin, CreditCard,
-  ArrowUpRight, LayoutDashboard, Globe, Menu, Bell, Filter,
+  ArrowUpRight, LayoutDashboard, Globe, Menu, Bell, Filter, Home,
   ChevronRight, RefreshCw, Send, ShoppingBag, UtensilsCrossed, PhoneCall, Trash2, Car
 } from "lucide-react";
 
@@ -15,6 +15,7 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [owners, setOwners] = useState([]);
   const [loading, setLoading] = useState(true);
+  const homeCount = owners.length;
   const [activeTab, setActiveTab] = useState("analytics");
   const [searchTerm, setSearchTerm] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); 
@@ -265,23 +266,80 @@ const dailyTotals = filteredList.reduce((acc, res) => {
         </div>
         
         <nav className="flex-1 p-6 space-y-2">
-          {[
-            { id: 'analytics', label: 'Matrix Insights', icon: BarChart3 }, 
-            { id: 'approved', label: 'Verified Partners', icon: Store }, 
-            { id: 'pending', label: 'Pending Queue', icon: ShieldAlert }
-          ].map(tab => (
-            <button key={tab.id} onClick={() => { setActiveTab(tab.id); setIsSidebarOpen(false); }} className={`w-full flex items-center justify-between p-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 border ${activeTab === tab.id ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-cyan-400/50 shadow-lg shadow-blue-950/60' : 'bg-transparent text-slate-400 border-transparent hover:bg-[#0a1033] hover:text-slate-200'}`}>
-              <div className="flex items-center gap-3"><tab.icon className="w-4 h-4"/> {tab.label}</div>
-              {activeTab === tab.id && <ChevronRight className="w-3 h-3" />}
-            </button>
-          ))}
-          
-          <div className="pt-6 mt-6 border-t border-[#131d47]">
-              <button onClick={() => setIsBroadcasting(true)} className="w-full flex items-center gap-3 p-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all bg-amber-950/40 text-amber-300 border border-amber-500/30 hover:bg-amber-950/60 shadow-sm">
-                <Bell className="w-4 h-4 text-amber-400"/> System Broadcast
-              </button>
-          </div>
-        </nav>
+
+  {/* HOME
+  <button
+    onClick={() => {
+      setActiveTab("home");
+      setIsSidebarOpen(false);
+    }}
+    className={`w-full flex items-center justify-between p-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 border ${
+      activeTab === "home"
+        ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-cyan-400/50 shadow-lg shadow-blue-950/60"
+        : "bg-transparent text-slate-400 border-transparent hover:bg-[#0a1033] hover:text-slate-200"
+    }`}
+  >
+    <div className="flex items-center gap-3">
+      <Home className="w-4 h-4" />
+      Home
+    </div>
+
+    <div className="flex items-center gap-2">
+      {/* TOTAL BUSINESS COUNT */}
+      {/* <span className="min-w-[24px] h-6 px-2 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center">
+        {homeCount}
+      </span>
+
+      {activeTab === "home" && (
+        <ChevronRight className="w-3 h-3" />
+      )}
+    </div>
+  </button>  */}
+
+
+  {/* OTHER TABS */}
+  {[
+    { id: 'analytics', label: 'Matrix Insights', icon: BarChart3 },
+    { id: 'approved', label: 'Verified Partners', icon: Store },
+    { id: 'pending', label: 'Pending Queue', icon: ShieldAlert }
+  ].map(tab => (
+    <button
+      key={tab.id}
+      onClick={() => {
+        setActiveTab(tab.id);
+        setIsSidebarOpen(false);
+      }}
+      className={`w-full flex items-center justify-between p-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 border ${
+        activeTab === tab.id
+          ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-cyan-400/50 shadow-lg shadow-blue-950/60'
+          : 'bg-transparent text-slate-400 border-transparent hover:bg-[#0a1033] hover:text-slate-200'
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        <tab.icon className="w-4 h-4" />
+        {tab.label}
+      </div>
+
+      {activeTab === tab.id && (
+        <ChevronRight className="w-3 h-3" />
+      )}
+    </button>
+  ))}
+
+
+  <div className="pt-6 mt-6 border-t border-[#131d47]">
+
+    <button
+      onClick={() => setIsBroadcasting(true)}
+      className="w-full flex items-center gap-3 p-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all bg-amber-950/40 text-amber-300 border border-amber-500/30 hover:bg-amber-950/60 shadow-sm"
+    >
+      <Bell className="w-4 h-4 text-amber-400" />
+      System Broadcast
+    </button>
+
+  </div>
+
+</nav>
 
         <div className="p-6 border-t border-[#131d47]">
           <button onClick={() => navigate("/owner")} className="w-full flex items-center justify-center gap-3 p-4 rounded-2xl bg-[#0a1033] text-slate-400 hover:bg-red-950/50 hover:text-red-400 hover:border-red-500/40 transition-all font-black text-[10px] uppercase tracking-widest border border-[#1e2d69]"><LogOut className="w-4 h-4" /> Sign Out</button>
@@ -402,6 +460,7 @@ const dailyTotals = filteredList.reduce((acc, res) => {
         </header>
 
         <div className="p-4 lg:p-10 max-w-7xl mx-auto w-full pb-20">
+          
           {activeTab === "analytics" && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
               {/* 📊 DAILY SUMMARY TOTALS (DYNAMIC LABELS BASED ON CATEGORY) */}
