@@ -1,5 +1,5 @@
 import express from "express";
-import Owner from "../models/Owner.js";
+import Owner from "../models/owner.js";
 import Item from "../models/item.js";
 import admin from "firebase-admin";
 import { upload } from '../config/uploadMiddleware.js';

@@ -28,11 +28,34 @@ export default function OwnerLogin() {
   // 🚀 రెండవ యూజ్ ఎఫెక్ట్: ఆల్రెడీ లాగిన్ అయి అప్రూవ్ అయిన ఓనర్ ని నేరుగా డాష్ బోర్డ్ కి పంపడానికి
   // =========================================================================
   useEffect(() => {
-    const storedOwner = JSON.parse(localStorage.getItem("owner"));
-    if (storedOwner && storedOwner.isApproved) {
-        navigate("/owner/dashboard");
+  const storedOwner = JSON.parse(localStorage.getItem("owner"));
+
+  if (storedOwner && storedOwner.isApproved) {
+    const category = storedOwner.category;
+
+    if (!category || category === "Restaurant") {
+      navigate("/owner/dashboard");
+    } 
+    else if (category === "Electronics") {
+      navigate("/owner/electronics-dashboard");
+    } 
+    else if (category === "Clothing") {
+      navigate("/owner/clothing-dashboard");
+    } 
+    else if (category === "Grocery") {
+      navigate("/owner/grocery-dashboard");
+    } 
+    else if (category === "Automobile") {
+      navigate("/automobile/dashboard");
+    } 
+    else if (category === "Furniture") {
+      navigate("/furniture/dashboard");
+    } 
+    else {
+      navigate("/owner/dashboard");
     }
-  }, [navigate]);
+  }
+}, [navigate]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -58,63 +81,90 @@ export default function OwnerLogin() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setVerificationMessage(""); 
-    try {
-      const payload = {
-        email: form.email,
-        password: form.password,
-      };
+  e.preventDefault();
+  setVerificationMessage("");
 
-      const res = await api.post("/owner/login", payload);
-      
-      if (res.data.isAdmin) {
-        localStorage.setItem("isAdmin", "true"); 
-        navigate("/sudara-admin-control");
-        return;
-      }
+  try {
+    const payload = {
+      email: form.email,
+      password: form.password,
+    };
 
-      if (res.data.owner.isApproved) {
-        localStorage.setItem("owner", JSON.stringify(res.data.owner));
-        
-        const ownerCategory = res.data.owner.category;
-        
-        // 🎯 కేటగిరీని బట్టి కరెక్ట్ డాష్‌బోర్డ్‌కి రీడైరెక్ట్ చేసే లాజిక్
-        if (!ownerCategory || ownerCategory === "Restaurant") {
-          navigate("/owner/dashboard");
-        } 
-        else if (ownerCategory === "Electronics") {
-          navigate("/owner/electronics-dashboard");
-        } 
-        else if (ownerCategory === "Clothing") {
-          navigate("/owner/clothing-dashboard");
-        } 
-        else if (ownerCategory === "Grocery") {
-          navigate("/owner/grocery-dashboard");
-        } 
-        else if (ownerCategory === "Automobile") {
-          navigate("/automobile/dashboard"); // 🚗 ఆటోమొబైల్ షోరూమ్ డాష్‌బోర్డ్
-        } 
-        else if (ownerCategory === "Furniture") {
-          navigate("/furniture/dashboard"); // 🛋️ ఫర్నిచర్ హబ్ డాష్‌బోర్డ్
-        } 
-        else {
-          navigate("/owner/dashboard"); 
-        }
+    const res = await api.post("/owner/login", payload);
 
-      } else {
-        setVerificationMessage("Account pending admin approval! ⏳");
-      }
-    } catch (error) {
-      const errorData = error.response?.data;
-      if (errorData?.registeredDistrict) {
-        setVerificationMessage(`Wrong District! Registered with: ${errorData.registeredDistrict} ⚠️`);
-      } else {
-        setVerificationMessage(errorData?.message || "Login failed ❌");
-      }
+    // ==============================
+    // ADMIN LOGIN
+    // ==============================
+    if (res.data.isAdmin) {
+      localStorage.setItem("isAdmin", "true");
+      navigate("/sudara-admin-control");
+      return;
     }
-  };
 
+    // ==============================
+    // OWNER LOGIN
+    // ==============================
+    if (res.data.owner.isApproved) {
+      localStorage.setItem(
+        "owner",
+        JSON.stringify(res.data.owner)
+      );
+
+      const ownerCategory = res.data.owner.category;
+
+      // ==============================
+      // CATEGORY-WISE DASHBOARD
+      // ==============================
+
+      if (!ownerCategory || ownerCategory === "Restaurant") {
+        navigate("/owner/dashboard");
+      }
+
+      else if (ownerCategory === "Electronics") {
+        navigate("/owner/electronics-dashboard");
+      }
+
+      else if (ownerCategory === "Clothing") {
+        navigate("/owner/clothing-dashboard");
+      }
+
+      else if (ownerCategory === "Grocery") {
+        navigate("/owner/grocery-dashboard");
+      }
+
+      else if (ownerCategory === "Automobile") {
+        navigate("/automobile/dashboard");
+      }
+
+      else if (ownerCategory === "Furniture") {
+        navigate("/furniture/dashboard");
+      }
+
+      else {
+        // Unknown/new category
+        navigate("/owner/dashboard");
+      }
+
+    } else {
+      setVerificationMessage(
+        "Account pending admin approval! ⏳"
+      );
+    }
+
+  } catch (error) {
+    const errorData = error.response?.data;
+
+    if (errorData?.registeredDistrict) {
+      setVerificationMessage(
+        `Wrong District! Registered with: ${errorData.registeredDistrict} ⚠️`
+      );
+    } else {
+      setVerificationMessage(
+        errorData?.message || "Login failed ❌"
+      );
+    }
+  }
+};
   return (
     <div className="min-h-screen bg-[#05081c] text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200 overflow-x-hidden font-sans relative">
       <Navbar />

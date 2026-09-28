@@ -552,30 +552,52 @@ useEffect(() => {
 }, []);
 
 const handleInstantOrder = async () => {
-  if (!customerName.trim() || !selectedTable) {
-    return alert("దయచేసి మీ పేరు మరియు టేబుల్ నంబర్ ఇవ్వండి! 📝");
+  // 1. Customer name check
+  if (!customerName.trim()) {
+    return alert("దయచేసి మీ పేరు ఇవ్వండి! 📝");
+  }
+
+  // 2. Table number check
+  if (!selectedTable) {
+    return alert("దయచేసి టేబుల్ నంబర్ ఇవ్వండి! 🪑");
+  }
+
+  // 3. Items selection check
+  if (!cart || Object.keys(cart).length === 0) {
+    return alert("దయచేసి కనీసం ఒక item select చేయండి! 🍲");
   }
 
   try {
     setLoading(true);
-    const itemsTotal = Object.values(cart).reduce((acc, item) => acc + (item.price * item.qty), 0);
-    const gstPercent = Number(owner?.gstPercentage) || 0; 
+
+    const itemsTotal = Object.values(cart).reduce(
+      (acc, item) => acc + (item.price * item.qty),
+      0
+    );
+
+    const gstPercent = Number(owner?.gstPercentage) || 0;
     const extra = Number(owner?.extraCharges) || 0;
+
     const gstAmount = (itemsTotal * gstPercent) / 100;
     const finalTotal = itemsTotal + gstAmount + extra;
-    const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name}`);
-    const generatedSdrId = "SDR" + Math.floor(100 + Math.random() * 900);
-    
+
+    const itemList = Object.values(cart).map(
+      i => `${i.qty} x ${i.name}`
+    );
+
+    const generatedSdrId =
+      "SDR" + Math.floor(100 + Math.random() * 900);
+
     const payload = {
       restaurantId: id,
-      customerName: customerName,
+      customerName: customerName.trim(),
       tableNo: selectedTable,
       items: itemList,
       subTotal: Number(itemsTotal.toFixed(2)),
       gstAmount: Number(gstAmount.toFixed(2)),
       extraCharges: extra,
       totalAmount: Number(finalTotal.toFixed(2)),
-      orderType: "Post-book", 
+      orderType: "Post-book",
       deliveryType: "Book at Restaurant",
       arrivalTime: "Immediate",
       status: "Pending",
@@ -588,12 +610,17 @@ const handleInstantOrder = async () => {
       setPlacedOrderId(generatedSdrId);
       setShowTracking(true);
       setTrackedOrderType("Post-book");
-      alert(`ఆర్డర్ విజయవంతంగా పంపబడింది! 🍲\nమీ ట్రాకింగ్ ID: ${generatedSdrId}`);
-      setCart({}); 
+
+      alert(
+        `ఆర్డర్ విజయవంతంగా పంపబడింది! 🍲\nమీ ట్రాకింగ్ ID: ${generatedSdrId}`
+      );
+
+      setCart({});
       setShowInstantModal(false);
       setCustomerName("");
       setSelectedTable("");
     }
+
   } catch (err) {
     console.error("Post-Book Order Error:", err);
     alert("ఆర్డర్ విఫలమైంది! ❌");
@@ -823,52 +850,8 @@ if (!owner || !owner.isApproved) {
           return null;
         })()}
 
-        {isRestaurant && (
-          <div className="flex justify-center mt-3">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              whileHover={{ scale: 1.05 }}
-              className={`group px-5 py-2 rounded-full text-[9px] font-black uppercase tracking-[0.2em] italic flex items-center gap-2.5 border backdrop-blur-md shadow-sm transition-all duration-500 ${
-                owner?.busyStatus === 'High' || owner?.busyStatus === 'Busy' 
-                  ? 'bg-red-500/10 text-red-400 border-red-500/30' 
-                  : owner?.busyStatus === 'Medium' 
-                  ? 'bg-orange-500/10 text-orange-400 border-orange-500/30' 
-                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-              }`}
-            >
-              <span className="relative flex h-2 w-2">
-                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                  owner?.busyStatus === 'High' || owner?.busyStatus === 'Busy' ? 'bg-red-500' : 
-                  owner?.busyStatus === 'Medium' ? 'bg-orange-500' : 'bg-emerald-500'
-                }`}></span>
-                <span className={`relative inline-flex rounded-full h-2 w-2 ${
-                  owner?.busyStatus === 'High' || owner?.busyStatus === 'Busy' ? 'bg-red-500' : 
-                  owner?.busyStatus === 'Medium' ? 'bg-orange-500' : 'bg-emerald-500'
-                }`}></span>
-              </span>
-              <span className="opacity-90">Rush Level:</span>
-              <span className="text-[10px] tracking-tighter italic font-black">
-                {owner?.busyStatus || 'Normal'}
-              </span>
-            </motion.div>
-          </div>
-        )}
-
-        {owner?.interiorImages?.length > 0 && (
-  <div className="space-y-4">
-    <div className="flex items-center gap-2 border-l-4 border-cyan-400 pl-3">
-      <h3 className="text-[10px] sm:text-xs font-black uppercase text-slate-200 tracking-widest italic">Ambience & Showroom Interior</h3>
-    </div>
-    <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 scrollbar-hide">
-      {owner.interiorImages.map((img, idx) => (
-        <img key={idx} src={img} loading="lazy" onClick={() => setSelectedImg(img)} className="w-60 sm:w-72 h-40 sm:h-48 object-cover rounded-[1.5rem] sm:rounded-[2rem] border border-[#1e2d69] shadow-sm shrink-0 cursor-zoom-in hover:border-cyan-400 transition-all" alt="" />
-      ))}
-    </div>
-  </div>
-)}
-
-        {showTracking && (
+       
+{showTracking && (
           <div className="mt-8 p-6 bg-[#0a1033] border-2 border-dashed border-[#1e2d69] rounded-[2.5rem]">
             <p className="text-[10px] font-black uppercase text-slate-400 mb-4 tracking-widest italic text-center">
               Track Your Order Status 📦
@@ -931,6 +914,51 @@ if (!owner || !owner.isApproved) {
             )}
           </div>
         )}
+ {isRestaurant && (
+          <div className="flex justify-center mt-3">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              whileHover={{ scale: 1.05 }}
+              className={`group px-5 py-2 rounded-full text-[9px] font-black uppercase tracking-[0.2em] italic flex items-center gap-2.5 border backdrop-blur-md shadow-sm transition-all duration-500 ${
+                owner?.busyStatus === 'High' || owner?.busyStatus === 'Busy' 
+                  ? 'bg-red-500/10 text-red-400 border-red-500/30' 
+                  : owner?.busyStatus === 'Medium' 
+                  ? 'bg-orange-500/10 text-orange-400 border-orange-500/30' 
+                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+              }`}
+            >
+              <span className="relative flex h-2 w-2">
+                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                  owner?.busyStatus === 'High' || owner?.busyStatus === 'Busy' ? 'bg-red-500' : 
+                  owner?.busyStatus === 'Medium' ? 'bg-orange-500' : 'bg-emerald-500'
+                }`}></span>
+                <span className={`relative inline-flex rounded-full h-2 w-2 ${
+                  owner?.busyStatus === 'High' || owner?.busyStatus === 'Busy' ? 'bg-red-500' : 
+                  owner?.busyStatus === 'Medium' ? 'bg-orange-500' : 'bg-emerald-500'
+                }`}></span>
+              </span>
+              <span className="opacity-90">Rush Level:</span>
+              <span className="text-[10px] tracking-tighter italic font-black">
+                {owner?.busyStatus || 'Normal'}
+              </span>
+            </motion.div>
+          </div>
+        )}
+        {owner?.interiorImages?.length > 0 && (
+  <div className="space-y-4">
+    <div className="flex items-center gap-2 border-l-4 border-cyan-400 pl-3">
+      <h3 className="text-[10px] sm:text-xs font-black uppercase text-slate-200 tracking-widest italic">Ambience & Showroom Interior</h3>
+    </div>
+    <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-4 scrollbar-hide">
+      {owner.interiorImages.map((img, idx) => (
+        <img key={idx} src={img} loading="lazy" onClick={() => setSelectedImg(img)} className="w-60 sm:w-72 h-40 sm:h-48 object-cover rounded-[1.5rem] sm:rounded-[2rem] border border-[#1e2d69] shadow-sm shrink-0 cursor-zoom-in hover:border-cyan-400 transition-all" alt="" />
+      ))}
+    </div>
+  </div>
+)}
+
+        
 
         <div className="bg-[#0a1033] border-l-4 border-amber-500 p-4 rounded-2xl mb-6 flex items-start gap-3 border border-[#1e2d69]">
           <Camera className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
@@ -1244,67 +1272,78 @@ if (!owner || !owner.isApproved) {
                 )}
 
                 <div className="flex flex-col gap-2.5">
-                  {owner?.tableCount > 0 && (
-                    <motion.button  
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => {
-                        console.log("Post-book button clicked!"); // డిబగ్ చేయడానికి కన్సోల్ లాగ్
-                        trackPostOrderClick(); 
-                        setShowInstantModal(true);
-                      }}
-                      className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] flex items-center justify-between transition-all border bg-amber-950/30 hover:bg-amber-950/50 text-amber-300 border-amber-500/40 shadow-sm cursor-pointer"
-                      type="button"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div className="p-1.5 bg-amber-900/50 rounded-lg">
-                          <MessageSquare className="w-3.5 h-3.5 text-amber-400" />
-                        </div>
-                        <span>Post-Book (At Restaurant)</span>
-                      </div>
-                      <span className="text-[9px] font-medium text-amber-300 bg-amber-900/40 px-2 py-0.5 rounded-md border border-amber-500/30">Dine-in</span>
-                    </motion.button>
-                  )}
+                  {owner?.tableCount > 0 && Object.keys(cart || {}).length > 0 && (
+  <motion.button
+    whileHover={{ scale: 1.01 }}
+    whileTap={{ scale: 0.98 }}
+    onClick={() => {
+      console.log("Post-book button clicked!");
+      trackPostOrderClick();
+      setShowInstantModal(true);
+    }}
+    className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] flex items-center justify-between transition-all border bg-amber-950/30 hover:bg-amber-950/50 text-amber-300 border-amber-500/40 shadow-sm cursor-pointer"
+    type="button"
+  >
+    <div className="flex items-center gap-2.5">
+      <div className="p-1.5 bg-amber-900/50 rounded-lg">
+        <MessageSquare className="w-3.5 h-3.5 text-amber-400" />
+      </div>
 
-                  <motion.button  
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => {
-                      if (totalAmount > 0) { setShowOnlineOrderModal(true); } 
-                      else { alert("Please select items first! 🥘"); }
-                    }}
-                    className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] bg-emerald-950/30 hover:bg-emerald-950/50 text-emerald-300 border border-emerald-500/40 shadow-sm flex items-center justify-between transition-all"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="p-1.5 bg-emerald-900/50 rounded-lg">
-                        <ShoppingBag className="w-3.5 h-3.5 text-emerald-400" />
-                      </div>
-                      <span>Order Online (Direct)</span>
-                    </div>
-                    <span className="text-[9px] font-medium text-emerald-300 bg-emerald-900/40 px-2 py-0.5 rounded-md border border-emerald-500/30">Instant</span>
-                  </motion.button>
+      <span>Post-Book (At Restaurant)</span>
+    </div>
 
-                  {owner?.isPreBookEnabled && (
-                    <motion.button  
-                      whileHover={totalAmount > 0 ? { scale: 1.01 } : {}}
-                      whileTap={totalAmount > 0 ? { scale: 0.98 } : {}}
-                      onClick={() => {
-                        if (totalAmount > 0) { trackPreOrderClick(); setShowPayWarning(true); } 
-                        else { alert("Select items first! 🥘"); }
-                      }}
-                      className={`w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] flex items-center justify-between transition-all border ${
-                        totalAmount > 0 ? 'bg-indigo-950/40 hover:bg-indigo-950/60 text-indigo-300 border-indigo-500/40 shadow-sm' : 'bg-[#0e1638] text-slate-500 border-[#1e2d69] cursor-not-allowed'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div className="p-1.5 bg-indigo-900/50 rounded-lg">
-                          <CreditCard className="w-3.5 h-3.5 text-indigo-400" />
-                        </div>
-                        <span>{totalAmount > 0 ? "Pre-Book & Pay Advance" : "Select Items to Pre-Book"}</span>
-                      </div>
-                      {totalAmount > 0 && <span className="text-[9px] font-medium text-indigo-300 bg-indigo-900/40 px-2 py-0.5 rounded-md border border-indigo-500/30">Secure</span>}
-                    </motion.button>
-                  )}
+    <span className="text-[9px] font-medium text-amber-300 bg-amber-900/40 px-2 py-0.5 rounded-md border border-amber-500/30">
+      Dine-in
+    </span>
+  </motion.button>
+)}
+
+                  {totalAmount > 0 && (
+  <motion.button
+    whileHover={{ scale: 1.01 }}
+    whileTap={{ scale: 0.98 }}
+    onClick={() => {
+      setShowOnlineOrderModal(true);
+    }}
+    className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] bg-emerald-950/30 hover:bg-emerald-950/50 text-emerald-300 border border-emerald-500/40 shadow-sm flex items-center justify-between transition-all"
+  >
+    <div className="flex items-center gap-2.5">
+      <div className="p-1.5 bg-emerald-900/50 rounded-lg">
+        <ShoppingBag className="w-3.5 h-3.5 text-emerald-400" />
+      </div>
+
+      <span>Order Online (Direct)</span>
+    </div>
+
+    <span className="text-[9px] font-medium text-emerald-300 bg-emerald-900/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
+      Instant
+    </span>
+  </motion.button>
+)}
+
+                  {owner?.isPreBookEnabled && totalAmount > 0 && (
+  <motion.button
+    whileHover={{ scale: 1.01 }}
+    whileTap={{ scale: 0.98 }}
+    onClick={() => {
+      trackPreOrderClick();
+      setShowPayWarning(true);
+    }}
+    className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] flex items-center justify-between transition-all border bg-indigo-950/40 hover:bg-indigo-950/60 text-indigo-300 border-indigo-500/40 shadow-sm"
+  >
+    <div className="flex items-center gap-2.5">
+      <div className="p-1.5 bg-indigo-900/50 rounded-lg">
+        <CreditCard className="w-3.5 h-3.5 text-indigo-400" />
+      </div>
+
+      <span>Pre-Book & Pay Advance</span>
+    </div>
+
+    <span className="text-[9px] font-medium text-indigo-300 bg-indigo-900/40 px-2 py-0.5 rounded-md border border-indigo-500/30">
+      Secure
+    </span>
+  </motion.button>
+)}
 
                   <motion.button  
                     whileHover={{ scale: 1.01 }}
@@ -1440,12 +1479,24 @@ if (!owner || !owner.isApproved) {
             />
 
             <button 
-              onClick={handleInstantOrder}
-              disabled={loading}
-              className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl transition-all active:scale-95 border border-cyan-400/30"
-            >
-              {loading ? "పంపుతోంది..." : "Place Table Order 🍲"}
-            </button>
+  onClick={handleInstantOrder}
+  disabled={
+    loading ||
+    !customerName.trim() ||
+    !selectedTable ||
+    Object.keys(cart || {}).length === 0
+  }
+  className={`w-full py-4 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl transition-all border ${
+    loading ||
+    !customerName.trim() ||
+    !selectedTable ||
+    Object.keys(cart || {}).length === 0
+      ? "bg-slate-700 text-slate-500 border-slate-600 cursor-not-allowed opacity-60"
+      : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white border-cyan-400/30 active:scale-95"
+  }`}
+>
+  {loading ? "పంపుతోంది..." : "Place Table Order 🍲"}
+</button>
           </div>
         </div>
       </motion.div>
