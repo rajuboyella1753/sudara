@@ -3,6 +3,7 @@ import Navbar from "../components/Navbar";
 import { motion } from "framer-motion";
 import {
   Mail,
+  Phone,
   ArrowRight,
   Clock,
   ShieldCheck,
@@ -15,9 +16,11 @@ import {
 import Footer from "../components/Footer";
 
 const Contact = () => {
-  const contactInfo = {
-    email: "sudaraofficial703@gmail.com"
-  };
+ const contactInfo = {
+  email: "sudaraofficial703@gmail.com",
+  phone: "7569896128",
+  founder: "Boyella Solomon Raju"
+};
 
   return (
     <div className="min-h-screen bg-[#05081c] text-slate-100 flex flex-col font-sans overflow-x-hidden selection:bg-cyan-500/30 selection:text-cyan-200">
@@ -147,7 +150,45 @@ const Contact = () => {
               </div>
 
             </motion.a>
+{/* 📞 Founder Direct Contact Card */}
+<motion.a
+  whileHover={{ scale: 1.01, x: 4 }}
+  whileTap={{ scale: 0.99 }}
+  href={`tel:${contactInfo.phone}`}
+  className="group flex items-center justify-between bg-[#0a1033] p-6 md:p-8 rounded-[2rem] border border-[#1e2d69] hover:border-emerald-400/60 hover:bg-[#0e1638] hover:shadow-xl hover:shadow-emerald-950/20 transition-all duration-300 shadow-md"
+>
+  <div className="flex items-center gap-5 md:gap-8 overflow-hidden">
 
+    <div className="shrink-0 w-14 h-14 md:w-18 md:h-18 bg-emerald-950/40 border border-emerald-500/30 rounded-2xl flex items-center justify-center text-emerald-400 shadow-inner group-hover:bg-gradient-to-r group-hover:from-emerald-600 group-hover:to-teal-600 group-hover:text-white transition-all duration-300">
+      <Phone className="w-7 h-7 md:w-9 md:h-9" />
+    </div>
+
+    <div className="overflow-hidden">
+
+      <span className="text-[9px] md:text-[10px] font-black text-emerald-400 uppercase italic tracking-widest block mb-1">
+        Founder Direct Contact
+      </span>
+
+      <p className="text-white font-black italic text-sm md:text-xl tracking-tight">
+        {contactInfo.founder}
+      </p>
+
+      <p className="text-emerald-300 font-bold text-sm md:text-base tracking-wide mt-1">
+        {contactInfo.phone}
+      </p>
+
+      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+        Sudara Founder • Owner & Merchant Support
+      </p>
+
+    </div>
+  </div>
+
+  <div className="shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full border border-[#1e2d69] bg-[#05081c] flex items-center justify-center group-hover:bg-emerald-950/60 group-hover:border-emerald-400/50 group-hover:rotate-45 transition-all">
+    <ArrowRight className="text-slate-400 group-hover:text-emerald-300 transition-colors w-5 h-5" />
+  </div>
+
+</motion.a>
             {/* 🚨 Supreme Grievance / Complaint Directive Card */}
             <div className="bg-[#0a1033] border-2 border-orange-500/40 p-6 md:p-8 rounded-[2rem] shadow-lg space-y-4">
 

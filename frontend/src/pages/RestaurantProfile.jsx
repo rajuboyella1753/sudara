@@ -117,7 +117,15 @@ const handleDirectPay = () => {
 };
 const handleCallAction = () => {
   trackCallInterest();
-  setShowCallPopup(true); 
+
+  const phone = owner?.phone?.toString().trim();
+
+  if (!phone) {
+    alert("Owner phone number not available!");
+    return;
+  }
+
+  window.location.href = `tel:${phone}`;
 };
 
 const trackPreOrderClick = async () => {
