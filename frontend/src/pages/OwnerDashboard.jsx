@@ -1822,60 +1822,64 @@ const dailyStats = {
 
 {/* PAGE 2: LIVE ORDERS (Responsive Grid UI - Full Access) */}
 {activeTab === "live-orders" && (() => {
-  // 1. అన్ని కేటగిరీల రియల్-టైమ్ కౌంట్స్ లెక్కించే లాజిక్
-  const counts = {
-    all: orders.length,
-    preParcel: orders.filter(o => {
-      const type = (o?.orderType || "").toLowerCase();
-      const del = (o?.deliveryType || "").toLowerCase();
-      return (type.includes("pre")) && (del.includes("take") || del.includes("parcel"));
-    }).length,
-    preDine: orders.filter(o => {
-      const type = (o?.orderType || "").toLowerCase();
-      const del = (o?.deliveryType || "").toLowerCase();
-      return (type.includes("pre")) && (!del.includes("take") && !del.includes("parcel"));
-    }).length,
-    post: orders.filter(o => {
-      const type = (o?.orderType || "").toLowerCase();
-      return type.includes("post") || type === "";
-    }).length,
-    online: orders.filter(o => (o?.orderType || "").toLowerCase().includes("online")).length,
-    accepted: orders.filter(o => (o?.status || "").toLowerCase() === "accepted").length,
-    preparing: orders.filter(o => (o?.status || "").toLowerCase() === "preparing").length,
-  };
+// 1. రకం మరియు స్టేటస్ కౌంట్స్ పక్కాగా లెక్కించే లాజిక్ (Case-insensitive & Safe)
+const counts = {
+  all: orders.length,
+  preParcel: orders.filter(o => {
+    const t = (o?.orderType || "").toLowerCase();
+    const d = (o?.deliveryType || "").toLowerCase();
+    return t.includes("pre") && (d.includes("take") || d.includes("parcel"));
+  }).length,
+  preDine: orders.filter(o => {
+    const t = (o?.orderType || "").toLowerCase();
+    const d = (o?.deliveryType || "").toLowerCase();
+    return t.includes("pre") && !d.includes("take") && !d.includes("parcel");
+  }).length,
+  post: orders.filter(o => {
+    const t = (o?.orderType || "").toLowerCase();
+    return t.includes("post") || t === "" || !t; // పోస్ట్ బుకింగ్ ఎప్పుడూ మిస్ అవ్వదు
+  }).length,
+  online: orders.filter(o => (o?.orderType || "").toLowerCase().includes("online")).length,
+  
+  // స్టేటస్ కౌంట్స్
+  preparing: orders.filter(o => (o?.status || "").toLowerCase() === "preparing").length,
+  accepted: orders.filter(o => (o?.status || "").toLowerCase() === "accepted").length,
+  delivery: orders.filter(o => (o?.status || "").toLowerCase().includes("delivery")).length,
+};
 
-  // 2. ఆర్డర్ ఫిల్టరింగ్ (Order Type + Search)
-  const displayedOrders = orders.filter(order => {
-    const s = searchTerm ? searchTerm.toLowerCase().trim() : "";
-    const nameMatch = (order?.customerName || "").toLowerCase().includes(s);
-    const txnMatch = (order?.txnId || "").toLowerCase().includes(s);
-    const idMatch = (order?.sudaraId || "").toLowerCase().includes(s);
-    const tableMatch = (order?.tableNo || "").toLowerCase().includes(s);
-    const matchesSearch = !s || nameMatch || txnMatch || idMatch || tableMatch;
+// 2. డిస్‌ప్లే ఫిల్టరింగ్ లాజిక్
+const displayedOrders = orders.filter(order => {
+  const s = searchTerm ? searchTerm.toLowerCase().trim() : "";
+  const nameMatch = (order?.customerName || "").toLowerCase().includes(s);
+  const txnMatch = (order?.txnId || "").toLowerCase().includes(s);
+  const idMatch = (order?.sudaraId || "").toLowerCase().includes(s);
+  const tableMatch = (order?.tableNo || "").toLowerCase().includes(s);
+  const matchesSearch = !s || nameMatch || txnMatch || idMatch || tableMatch;
 
-    const type = (order?.orderType || "").toLowerCase().trim();
-    const del = (order?.deliveryType || "").toLowerCase().trim();
-    const st = (order?.status || "").toLowerCase().trim();
+  const t = (order?.orderType || "").toLowerCase().trim();
+  const d = (order?.deliveryType || "").toLowerCase().trim();
+  const st = (order?.status || "pending").toLowerCase().trim();
 
-    let matchesType = true;
-    if (orderTypeFilter === "Pre-Parcel") {
-      matchesType = type.includes("pre") && (del.includes("take") || del.includes("parcel"));
-    } else if (orderTypeFilter === "Pre-Dine") {
-      matchesType = type.includes("pre") && (!del.includes("take") && !del.includes("parcel"));
-    } else if (orderTypeFilter === "Pre-book") {
-      matchesType = type.includes("pre");
-    } else if (orderTypeFilter === "Post-book") {
-      matchesType = type.includes("post") || type === "";
-    } else if (orderTypeFilter === "Online-Order") {
-      matchesType = type.includes("online");
-    } else if (orderTypeFilter === "Accepted") {
-      matchesType = st === "accepted";
-    } else if (orderTypeFilter === "Preparing") {
-      matchesType = st === "preparing";
-    }
+  let matchesFilter = true;
 
-    return matchesSearch && matchesType;
-  });
+  if (orderTypeFilter === "Pre-Parcel") {
+    matchesFilter = t.includes("pre") && (d.includes("take") || d.includes("parcel"));
+  } else if (orderTypeFilter === "Pre-Dine") {
+    matchesFilter = t.includes("pre") && !d.includes("take") && !d.includes("parcel");
+  } else if (orderTypeFilter === "Post-book") {
+    matchesFilter = t.includes("post") || t === "" || !t;
+  } else if (orderTypeFilter === "Online-Order") {
+    matchesFilter = t.includes("online");
+  } else if (orderTypeFilter === "Preparing") {
+    matchesFilter = st === "preparing";
+  } else if (orderTypeFilter === "Accepted") {
+    matchesFilter = st === "accepted";
+  } else if (orderTypeFilter === "Out for Delivery") {
+    matchesFilter = st.includes("delivery");
+  }
+
+  return matchesSearch && matchesFilter;
+});
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
@@ -1918,90 +1922,97 @@ const dailyStats = {
         />
       </div>
 
-{/* 🚀 క్లీన్ వైట్ కార్డ్ - ఆర్డర్ టైప్ & స్టేటస్ స్మార్ట్ ఫిల్టర్లు */}
-      <div className="w-full bg-white/95 rounded-2xl p-3 sm:p-4 shadow-xl border border-slate-200/80 space-y-3">
-        
-        {/* ROW 1: ఆర్డర్ చానెల్స్ / టైప్స్ (Booking Feeds) */}
-        <div className="flex flex-col gap-1.5">
-          <span className="text-[9px] font-black uppercase tracking-wider text-slate-500">
-            Order Channels
-          </span>
-          <div className="flex flex-wrap items-center gap-2">
-            {[
-              { id: "All", label: "All Feeds", count: counts.all, color: "bg-slate-900 text-white" },
-              { id: "Pre-Parcel", label: "Pre-Book (Parcel) 📦", count: counts.preParcel, color: "bg-amber-600 text-white" },
-              { id: "Pre-Dine", label: "Pre-Book (Dine-In) 🪑", count: counts.preDine, color: "bg-indigo-600 text-white" },
-              { id: "Post-book", label: "Post-Orders 🍽️", count: counts.post, color: "bg-blue-600 text-white" },
-              { id: "Online-Order", label: "Online Orders 🛵", count: counts.online, color: "bg-teal-600 text-white" },
-            ].map(tab => {
-              const isActive = orderTypeFilter === tab.id;
-              return (
-                <button 
-                  key={tab.id} 
-                  type="button" 
-                  onClick={() => setOrderTypeFilter(tab.id)} 
-                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border flex items-center gap-2 shadow-sm ${
-                    isActive 
-                      ? `${tab.color} border-transparent shadow-md scale-102` 
-                      : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 hover:text-slate-900'
-                  }`}
-                >
-                  <span>{tab.label}</span>
-                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-black ${
-                    isActive ? 'bg-white/20 text-white' : 'bg-white text-slate-800 border border-slate-300'
-                  }`}>
-                    {tab.count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+{/* 🚀 క్లీన్ వైట్ కార్డ్ - ఆర్డర్ ఛానెల్స్ & కిచెన్ వర్క్‌ఫ్లో ఫిల్టర్లు */}
+<div className="w-full bg-white rounded-2xl p-3 sm:p-4 shadow-xl border border-slate-200 space-y-3 mb-6">
+  
+  {/* ROW 1: ఆర్డర్ చానెల్స్ (Booking Feeds - Parcel, Dine-In, Post, Online) */}
+  <div className="flex flex-col gap-1.5">
+    <div className="flex items-center justify-between">
+      <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+        📦 Booking Channels
+      </span>
+      <span className="text-[9px] font-bold text-slate-400 uppercase">
+        Filter by source
+      </span>
+    </div>
+    
+    <div className="flex flex-wrap items-center gap-2">
+      {[
+        { id: "All", label: "All Feeds", count: counts.all, color: "bg-slate-900 text-white" },
+        { id: "Pre-Parcel", label: "Pre-Book (Parcel) 📦", count: counts.preParcel, color: "bg-amber-600 text-white" },
+        { id: "Pre-Dine", label: "Pre-Book (Dine-In) 🪑", count: counts.preDine, color: "bg-indigo-600 text-white" },
+        { id: "Post-book", label: "Post-Orders 🍽️", count: counts.post, color: "bg-blue-600 text-white" },
+        { id: "Online-Order", label: "Online Orders 🛵", count: counts.online, color: "bg-teal-600 text-white" },
+      ].map(tab => {
+        const isActive = orderTypeFilter === tab.id;
+        return (
+          <button 
+            key={tab.id} 
+            type="button" 
+            onClick={() => setOrderTypeFilter(tab.id)} 
+            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border flex items-center gap-2 shadow-sm ${
+              isActive 
+                ? `${tab.color} border-transparent shadow-md scale-102` 
+                : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 hover:text-slate-900'
+            }`}
+          >
+            <span>{tab.label}</span>
+            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black ${
+              isActive ? 'bg-white/20 text-white' : 'bg-white text-slate-800 border border-slate-300'
+            }`}>
+              {tab.count}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  </div>
 
-        {/* విభజన గీత */}
-        <div className="w-full h-px bg-slate-200"></div>
+  {/* విభజన గీత */}
+  <div className="w-full h-px bg-slate-200"></div>
 
-        {/* ROW 2: లైవ్ కిచెన్ & డెలివరీ స్టేటస్ (Kitchen Workflow) */}
-        <div className="flex flex-col gap-1.5">
-          <span className="text-[9px] font-black uppercase tracking-wider text-slate-500">
-            Kitchen & Delivery Status
-          </span>
-          <div className="flex flex-wrap items-center gap-2">
-            {[
-              { id: "Preparing", label: "Preparing 🔥", count: counts.preparing, color: "bg-orange-600 text-white" },
-              { id: "Accepted", label: "Accepted ✅", count: counts.accepted, color: "bg-cyan-700 text-white" },
-              { 
-                id: "Out for Delivery", 
-                label: "Out for Delivery 🛵", 
-                count: orders.filter(o => (o?.status || "").toLowerCase().includes("delivery")).length, 
-                color: "bg-purple-600 text-white" 
-              },
-            ].map(tab => {
-              const isActive = orderTypeFilter === tab.id;
-              return (
-                <button 
-                  key={tab.id} 
-                  type="button" 
-                  onClick={() => setOrderTypeFilter(tab.id)} 
-                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border flex items-center gap-2 shadow-sm ${
-                    isActive 
-                      ? `${tab.color} border-transparent shadow-md scale-102` 
-                      : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 hover:text-slate-900'
-                  }`}
-                >
-                  <span>{tab.label}</span>
-                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-black ${
-                    isActive ? 'bg-white/20 text-white' : 'bg-white text-slate-800 border border-slate-300'
-                  }`}>
-                    {tab.count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+  {/* ROW 2: లైవ్ కిచెన్ స్టేటస్ (Accepted, Preparing, Out for Delivery) */}
+  <div className="flex flex-col gap-1.5">
+    <div className="flex items-center justify-between">
+      <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+        🔥 Kitchen & Delivery Status
+      </span>
+      <span className="text-[9px] font-bold text-slate-400 uppercase">
+        Live progress
+      </span>
+    </div>
+    
+    <div className="flex flex-wrap items-center gap-2">
+      {[
+        { id: "Preparing", label: "Preparing 🔥", count: counts.preparing, color: "bg-orange-600 text-white" },
+        { id: "Accepted", label: "Accepted ✅", count: counts.accepted, color: "bg-cyan-700 text-white" },
+        { id: "Out for Delivery", label: "Out for Delivery 🛵", count: counts.delivery, color: "bg-purple-600 text-white" },
+      ].map(tab => {
+        const isActive = orderTypeFilter === tab.id;
+        return (
+          <button 
+            key={tab.id} 
+            type="button" 
+            onClick={() => setOrderTypeFilter(tab.id)} 
+            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border flex items-center gap-2 shadow-sm ${
+              isActive 
+                ? `${tab.color} border-transparent shadow-md scale-102` 
+                : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 hover:text-slate-900'
+            }`}
+          >
+            <span>{tab.label}</span>
+            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black ${
+              isActive ? 'bg-white/20 text-white' : 'bg-white text-slate-800 border border-slate-300'
+            }`}>
+              {tab.count}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  </div>
 
-      </div>
+</div>
 
       {/* ఆర్డర్ కార్డ్స్ గ్రిడ్ (నో ఎక్స్‌ట్రా స్పేస్ - క్లీన్ & కాంపాక్ట్) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
