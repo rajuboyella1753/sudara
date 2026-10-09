@@ -17,6 +17,7 @@ export default function RestaurantProfile() {
   const { id } = useParams();
   const [owner, setOwner] = useState(null);
   // const scrollContainerRef = useRef(null);
+  const menuSectionRef = useRef(null);
   const [items, setItems] = useState([]);
   const [filter, setFilter] = useState("All");
   const isRestaurant = !owner?.category || owner.category.toLowerCase() === "restaurant";
@@ -789,14 +790,14 @@ if (!owner || !owner.isApproved) {
             {owner?.collegeName} • {owner?.category === "Restaurant" ? "Exclusive Menu" : "Exclusive Products"}
           </motion.p>
 
-          {owner?.category === 'Restaurant' && (
+          {/* {owner?.category === 'Restaurant' && (
             <div className="flex items-center gap-1.5 bg-[#0e173e]/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-amber-500/30 shadow-sm">
               <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
               <span className="text-[8px] sm:text-[9px] font-black uppercase text-amber-300 tracking-widest italic">
                 {restaurantRating.label} ({restaurantRating.stars}⭐)
               </span>
             </div>
-          )}
+          )} */}
         </div>
 
         <div className="mt-8 md:mt-12 flex items-center justify-center gap-3 sm:gap-4">
@@ -975,7 +976,10 @@ if (!owner || !owner.isApproved) {
           </p>
         </div>
 
-        <div className="sticky top-16 sm:top-20 z-30 bg-[#05081c]/95 py-2 border-b border-[#131d47] space-y-3 sm:space-y-4 backdrop-blur-md">
+        <div 
+  ref={menuSectionRef} 
+  className="sticky top-16 sm:top-20 z-30 bg-[#05081c]/95 py-2 border-b border-[#131d47] space-y-3 sm:space-y-4 backdrop-blur-md scroll-mt-24"
+>
           <div className="relative">
             <input type="text" placeholder="Search dish..." value={itemSearch} onChange={(e) => setItemSearch(e.target.value)} className="w-full bg-[#0a1033] border border-[#1e2d69] py-2.5 sm:py-3 px-10 rounded-full text-[10px] sm:text-xs font-bold outline-none text-white focus:border-cyan-400 transition-all placeholder:text-slate-500" />
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-cyan-400 w-3.5 h-3.5 sm:w-4 h-4" />
@@ -1249,152 +1253,123 @@ if (!owner || !owner.isApproved) {
         <div ref={orderSectionRef} className="bg-[#0a1033] p-4 rounded-2xl lg:sticky lg:top-32 shadow-xl border border-[#1e2d69] scroll-mt-24">
           
           {isRestaurant ? (
-            owner?.planType === "premium" ? (
-              <>
-                {Object.values(cart).length > 0 && (
-                  <div className="mb-4 p-3 rounded-xl bg-[#0e1638] border border-[#1e2d69]">
-                    <span className="text-[9px] font-black uppercase text-cyan-400 italic tracking-widest">Order Summary</span>
-                    <div className="space-y-1.5 my-3 max-h-40 overflow-y-auto scrollbar-hide">
-                      {Object.values(cart).map((i) => (
-                        <div key={i._id || i.name} className="flex justify-between text-[10px] font-bold italic text-slate-300">
-                          <span>{i.qty} x {i.name}</span>
-                          <span>₹{i.price * i.qty}</span>
-                        </div>
-                      ))}
+            <>
+              {Object.values(cart).length > 0 && (
+                <div className="mb-4 p-3 rounded-xl bg-[#0e1638] border border-[#1e2d69]">
+                  <span className="text-[9px] font-black uppercase text-cyan-400 italic tracking-widest">Order Summary</span>
+                  <div className="space-y-1.5 my-3 max-h-40 overflow-y-auto scrollbar-hide">
+                    {Object.values(cart).map((i) => (
+                      <div key={i._id || i.name} className="flex justify-between text-[10px] font-bold italic text-slate-300">
+                        <span>{i.qty} x {i.name}</span>
+                        <span>₹{i.price * i.qty}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="border-t border-[#1e2d69] pt-3 space-y-1">
+                    <div className="flex justify-between text-[10px] font-bold text-slate-400">
+                      <span>Subtotal:</span> <span>₹{calculateTotal.itemsTotal.toFixed(2)}</span>
                     </div>
-                    <div className="border-t border-[#1e2d69] pt-3 space-y-1">
-                      <div className="flex justify-between text-[10px] font-bold text-slate-400">
-                        <span>Subtotal:</span> <span>₹{calculateTotal.itemsTotal.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between text-[10px] font-bold text-slate-400">
-                        <span>GST ({owner?.gstPercentage}%):</span> <span>₹{calculateTotal.gstAmount.toFixed(2)}</span>
-                      </div>
-                      <div className="flex justify-between text-[10px] font-bold text-slate-400">
-                        <span>Extra:</span> <span>₹{calculateTotal.extraCharges.toFixed(2)}</span>
-                      </div>
-                      <div className="border-t border-[#1e2d69] pt-3 flex justify-between text-sm font-black italic text-cyan-400">
-                        <span>Pay Total:</span> <span>₹{calculateTotal.finalTotal.toFixed(2)}</span>
-                      </div>
+                    <div className="flex justify-between text-[10px] font-bold text-slate-400">
+                      <span>GST ({owner?.gstPercentage}%):</span> <span>₹{calculateTotal.gstAmount.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-[10px] font-bold text-slate-400">
+                      <span>Extra:</span> <span>₹{calculateTotal.extraCharges.toFixed(2)}</span>
+                    </div>
+                    <div className="border-t border-[#1e2d69] pt-3 flex justify-between text-sm font-black italic text-cyan-400">
+                      <span>Pay Total:</span> <span>₹{calculateTotal.finalTotal.toFixed(2)}</span>
                     </div>
                   </div>
-                )}
+                </div>
+              )}
 
-                <div className="flex flex-col gap-2.5">
-                  {owner?.tableCount > 0 && Object.keys(cart || {}).length > 0 && (
-  <motion.button
-    whileHover={{ scale: 1.01 }}
-    whileTap={{ scale: 0.98 }}
-    onClick={() => {
-      console.log("Post-book button clicked!");
-      trackPostOrderClick();
-      setShowInstantModal(true);
-    }}
-    className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] flex items-center justify-between transition-all border bg-amber-950/30 hover:bg-amber-950/50 text-amber-300 border-amber-500/40 shadow-sm cursor-pointer"
-    type="button"
-  >
-    <div className="flex items-center gap-2.5">
-      <div className="p-1.5 bg-amber-900/50 rounded-lg">
-        <MessageSquare className="w-3.5 h-3.5 text-amber-400" />
-      </div>
-
-      <span>Post-Book (At Restaurant)</span>
-    </div>
-
-    <span className="text-[9px] font-medium text-amber-300 bg-amber-900/40 px-2 py-0.5 rounded-md border border-amber-500/30">
-      Dine-in
-    </span>
-  </motion.button>
-)}
-
-                  {totalAmount > 0 && (
-  <motion.button
-    whileHover={{ scale: 1.01 }}
-    whileTap={{ scale: 0.98 }}
-    onClick={() => {
-      setShowOnlineOrderModal(true);
-    }}
-    className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] bg-emerald-950/30 hover:bg-emerald-950/50 text-emerald-300 border border-emerald-500/40 shadow-sm flex items-center justify-between transition-all"
-  >
-    <div className="flex items-center gap-2.5">
-      <div className="p-1.5 bg-emerald-900/50 rounded-lg">
-        <ShoppingBag className="w-3.5 h-3.5 text-emerald-400" />
-      </div>
-
-      <span>Order Online (Direct)</span>
-    </div>
-
-    <span className="text-[9px] font-medium text-emerald-300 bg-emerald-900/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
-      Instant
-    </span>
-  </motion.button>
-)}
-
-                  {owner?.isPreBookEnabled && totalAmount > 0 && (
-  <motion.button
-    whileHover={{ scale: 1.01 }}
-    whileTap={{ scale: 0.98 }}
-    onClick={() => {
-      trackPreOrderClick();
-      setShowPayWarning(true);
-    }}
-    className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] flex items-center justify-between transition-all border bg-indigo-950/40 hover:bg-indigo-950/60 text-indigo-300 border-indigo-500/40 shadow-sm"
-  >
-    <div className="flex items-center gap-2.5">
-      <div className="p-1.5 bg-indigo-900/50 rounded-lg">
-        <CreditCard className="w-3.5 h-3.5 text-indigo-400" />
-      </div>
-
-      <span>Pre-Book & Pay Advance</span>
-    </div>
-
-    <span className="text-[9px] font-medium text-indigo-300 bg-indigo-900/40 px-2 py-0.5 rounded-md border border-indigo-500/30">
-      Secure
-    </span>
-  </motion.button>
-)}
-
-                  <motion.button  
+              <div className="flex flex-col gap-2.5">
+                {owner?.tableCount > 0 && Object.keys(cart || {}).length > 0 && (
+                  <motion.button
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={handleCallAction}  
-                    className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] bg-blue-950/40 hover:bg-blue-950/60 text-cyan-300 border border-cyan-500/40 shadow-sm flex items-center justify-between transition-all"
+                    onClick={() => {
+                      trackPostOrderClick();
+                      setShowInstantModal(true);
+                    }}
+                    className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] flex items-center justify-between transition-all border bg-amber-950/30 hover:bg-amber-950/50 text-amber-300 border-amber-500/40 shadow-sm cursor-pointer"
+                    type="button"
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="p-1.5 bg-blue-900/50 rounded-lg">
-                        <PhoneCall className="w-3.5 h-3.5 text-cyan-400" />
+                      <div className="p-1.5 bg-amber-900/50 rounded-lg">
+                        <MessageSquare className="w-3.5 h-3.5 text-amber-400" />
                       </div>
-                      <span>Call to Owner</span>
+                      <span>Post-Book (At Restaurant)</span>
                     </div>
-                    <span className="text-[9px] font-medium text-cyan-300 bg-blue-900/40 px-2 py-0.5 rounded-md border border-cyan-500/30">Direct</span>
+                    <span className="text-[9px] font-medium text-amber-300 bg-amber-900/40 px-2 py-0.5 rounded-md border border-amber-500/30">
+                      Dine-in
+                    </span>
                   </motion.button>
-                  
-                  <button 
-                   onClick={() => setShowTracking(true)}
-                   className="w-full mt-2 py-3 bg-[#0e1638] hover:bg-[#15204f] text-slate-300 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center justify-center gap-2 border border-[#1e2d69]"
+                )}
+
+                {totalAmount > 0 && (
+                  <motion.button
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setShowOnlineOrderModal(true)}
+                    className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] bg-emerald-950/30 hover:bg-emerald-950/50 text-emerald-300 border border-emerald-500/40 shadow-sm flex items-center justify-between transition-all"
                   >
-                   <Search className="w-3.5 h-3.5 text-cyan-400" /> Track Existing Order 🔍
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-6">
-                <div className="bg-[#0e1638] text-amber-300 p-5 rounded-[2rem] border border-amber-500/30 mb-5">
-                  <UtensilsCrossed className="w-8 h-8 text-amber-400 mx-auto mb-3 animate-pulse" />
-                  <p className="text-[11px] font-black uppercase tracking-wider leading-relaxed">
-                    Digital Menu Active ✅
-                  </p>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase mt-2 leading-relaxed">
-                    Online ordering via phone is restricted for this node. Please look at the prices and order directly to server.
-                  </p>
-                </div>
-                <button  
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-1.5 bg-emerald-900/50 rounded-lg">
+                        <ShoppingBag className="w-3.5 h-3.5 text-emerald-400" />
+                      </div>
+                      <span>Order Online (Direct)</span>
+                    </div>
+                    <span className="text-[9px] font-medium text-emerald-300 bg-emerald-900/40 px-2 py-0.5 rounded-md border border-emerald-500/30">
+                      Instant
+                    </span>
+                  </motion.button>
+                )}
+
+                {owner?.isPreBookEnabled && totalAmount > 0 && (
+                  <motion.button
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      trackPreOrderClick();
+                      setShowPayWarning(true);
+                    }}
+                    className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] flex items-center justify-between transition-all border bg-indigo-950/40 hover:bg-indigo-950/60 text-indigo-300 border-indigo-500/40 shadow-sm"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-1.5 bg-indigo-900/50 rounded-lg">
+                        <CreditCard className="w-3.5 h-3.5 text-indigo-400" />
+                      </div>
+                      <span>Pre-Book & Pay Advance</span>
+                    </div>
+                    <span className="text-[9px] font-medium text-indigo-300 bg-indigo-900/40 px-2 py-0.5 rounded-md border border-indigo-500/30">
+                      Secure
+                    </span>
+                  </motion.button>
+                )}
+
+                <motion.button  
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={handleCallAction}  
-                  className="w-full py-4 rounded-xl font-black uppercase text-[10px] bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg flex items-center justify-center gap-2 active:scale-95 transition-all border border-cyan-400/30"
+                  className="w-full py-3.5 px-4 rounded-xl font-semibold text-[11px] bg-blue-950/40 hover:bg-blue-950/60 text-cyan-300 border border-cyan-500/40 shadow-sm flex items-center justify-between transition-all"
                 >
-                  <PhoneCall className="w-4 h-4" /> Call for Inquiries
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-1.5 bg-blue-900/50 rounded-lg">
+                      <PhoneCall className="w-3.5 h-3.5 text-cyan-400" />
+                    </div>
+                    <span>Call to Owner</span>
+                  </div>
+                  <span className="text-[9px] font-medium text-cyan-300 bg-blue-900/40 px-2 py-0.5 rounded-md border border-cyan-500/30">Direct</span>
+                </motion.button>
+                
+                <button 
+                  onClick={() => setShowTracking(true)}
+                  className="w-full mt-2 py-3 bg-[#0e1638] hover:bg-[#15204f] text-slate-300 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all flex items-center justify-center gap-2 border border-[#1e2d69]"
+                >
+                  <Search className="w-3.5 h-3.5 text-cyan-400" /> Track Existing Order 🔍
                 </button>
               </div>
-            )
+            </>
           ) : (
             <div>
               <div className="mb-4 p-3 rounded-xl bg-[#0e1638] border border-[#1e2d69]">
@@ -1416,7 +1391,6 @@ if (!owner || !owner.isApproved) {
                 </div>
               </div>
 
-              {/* 🛑 ఇక్కడ ఆటోమొబైల్ కాకపోతేనే ఈ బటన్స్ కనిపిస్తాయి */}
               {owner?.category?.toLowerCase() !== "automobile" && (
                 <>
                   <button 
@@ -1690,7 +1664,7 @@ if (!owner || !owner.isApproved) {
       )}
     </AnimatePresence>
 
-    <AnimatePresence>
+<AnimatePresence>
       {showMenuPopup && isRestaurant && (
         <motion.div 
           initial={{ opacity: 0, y: 50 }} 
@@ -1708,16 +1682,14 @@ if (!owner || !owner.isApproved) {
           </div>
           
           <button  
+            type="button"
             onClick={() => {
               setShowMenuPopup(false);
-              const menuGridElement = document.querySelector('.grid.grid-cols-1.sm\\:grid-cols-2'); 
-              if (menuGridElement) {
-                menuGridElement.scrollIntoView({ behavior: "smooth", block: "start" });
-              } else {
-                window.scrollTo({ top: 500, behavior: "smooth" });
+              if (menuSectionRef.current) {
+                menuSectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
               }
             }}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-4 py-2.5 rounded-xl text-[10px] font-black uppercase italic tracking-wider shadow-lg active:scale-95 transition-all border border-cyan-400/30"
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-4 py-2.5 rounded-xl text-[10px] font-black uppercase italic tracking-wider shadow-lg active:scale-95 transition-all border border-cyan-400/30 cursor-pointer"
           >
             {isRestaurant ? "Show Menu 👇" : "View Stock 👇"}
           </button>
@@ -2056,9 +2028,9 @@ if (!owner || !owner.isApproved) {
     </AnimatePresence>
 
     <Footer />
-    
+{/* ఫ్లోటింగ్ బార్ - రిజిస్టర్ అయిన ప్రతి న్యూ నోడ్‌కి కార్ట్‌లో ఐటమ్స్ ఉంటే కనిపిస్తుంది */}
     <AnimatePresence>
-      {totalAmount > 0 && owner?.planType === "premium" && (
+      {totalAmount > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 100 }}
           animate={{ opacity: 1, y: 0 }}
