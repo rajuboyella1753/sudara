@@ -1182,13 +1182,13 @@ const dailyStats = {
         <Settings className="w-4 h-4 text-slate-400" /> Settings
       </button>
 
-      <button 
+      {/* <button 
         type="button" 
         onClick={() => setIsRenewalModalOpen(true)} 
         className="hidden lg:flex items-center gap-2 bg-gradient-to-r from-orange-600 to-amber-600 text-white px-4 py-2 rounded-xl font-black uppercase italic text-[9px] shadow-sm border border-orange-400/40 transition-all active:scale-90"
       >
         <QrCode className="w-4 h-4 text-amber-300" /> Renew Node
-      </button>
+      </button> */}
 
       {/* 🔴 CLOSE / LIVE బటన్ (మొబైల్ & డెస్క్‌టాప్ రెండింటిలోనూ హైలైట్ అవుతుంది) */}
       <button 
@@ -1820,288 +1820,458 @@ const dailyStats = {
   </div>
 )}
 
-    {/* PAGE 2: LIVE ORDERS (Responsive Grid UI - Full Access) */}
-              {activeTab === "live-orders" && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-                  <h2 className="text-4xl font-black italic uppercase text-white">
-                    Live<br/><span className="text-orange-400">Orders Feed</span>
-                  </h2>
-                  
-                  <div className="relative max-w-md">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400" />
-                    <input 
-                      type="text" 
-                      placeholder="Search by Name, Type (Pre/Post) or Txn ID..." 
-                      value={searchTerm} 
-                      onChange={(e) => setSearchTerm(e.target.value)} 
-                      className="w-full bg-[#0a1033] border border-[#1e2d69] p-4 pl-11 rounded-2xl text-xs font-bold outline-none shadow-sm text-white placeholder:text-slate-500 focus:border-cyan-400 transition-all"
-                    />
+{/* PAGE 2: LIVE ORDERS (Responsive Grid UI - Full Access) */}
+{activeTab === "live-orders" && (() => {
+  // 1. అన్ని కేటగిరీల రియల్-టైమ్ కౌంట్స్ లెక్కించే లాజిక్
+  const counts = {
+    all: orders.length,
+    preParcel: orders.filter(o => {
+      const type = (o?.orderType || "").toLowerCase();
+      const del = (o?.deliveryType || "").toLowerCase();
+      return (type.includes("pre")) && (del.includes("take") || del.includes("parcel"));
+    }).length,
+    preDine: orders.filter(o => {
+      const type = (o?.orderType || "").toLowerCase();
+      const del = (o?.deliveryType || "").toLowerCase();
+      return (type.includes("pre")) && (!del.includes("take") && !del.includes("parcel"));
+    }).length,
+    post: orders.filter(o => {
+      const type = (o?.orderType || "").toLowerCase();
+      return type.includes("post") || type === "";
+    }).length,
+    online: orders.filter(o => (o?.orderType || "").toLowerCase().includes("online")).length,
+    accepted: orders.filter(o => (o?.status || "").toLowerCase() === "accepted").length,
+    preparing: orders.filter(o => (o?.status || "").toLowerCase() === "preparing").length,
+  };
+
+  // 2. ఆర్డర్ ఫిల్టరింగ్ (Order Type + Search)
+  const displayedOrders = orders.filter(order => {
+    const s = searchTerm ? searchTerm.toLowerCase().trim() : "";
+    const nameMatch = (order?.customerName || "").toLowerCase().includes(s);
+    const txnMatch = (order?.txnId || "").toLowerCase().includes(s);
+    const idMatch = (order?.sudaraId || "").toLowerCase().includes(s);
+    const tableMatch = (order?.tableNo || "").toLowerCase().includes(s);
+    const matchesSearch = !s || nameMatch || txnMatch || idMatch || tableMatch;
+
+    const type = (order?.orderType || "").toLowerCase().trim();
+    const del = (order?.deliveryType || "").toLowerCase().trim();
+    const st = (order?.status || "").toLowerCase().trim();
+
+    let matchesType = true;
+    if (orderTypeFilter === "Pre-Parcel") {
+      matchesType = type.includes("pre") && (del.includes("take") || del.includes("parcel"));
+    } else if (orderTypeFilter === "Pre-Dine") {
+      matchesType = type.includes("pre") && (!del.includes("take") && !del.includes("parcel"));
+    } else if (orderTypeFilter === "Pre-book") {
+      matchesType = type.includes("pre");
+    } else if (orderTypeFilter === "Post-book") {
+      matchesType = type.includes("post") || type === "";
+    } else if (orderTypeFilter === "Online-Order") {
+      matchesType = type.includes("online");
+    } else if (orderTypeFilter === "Accepted") {
+      matchesType = st === "accepted";
+    } else if (orderTypeFilter === "Preparing") {
+      matchesType = st === "preparing";
+    }
+
+    return matchesSearch && matchesType;
+  });
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+      {/* టాప్ హెడర్ & ప్రీ-బుకింగ్ టోగుల్ */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-black italic uppercase text-white tracking-tight">
+            Live <span className="text-orange-400">Orders Feed</span>
+          </h2>
+          <p className="text-[9px] font-bold uppercase tracking-widest text-slate-400">
+            Real-time Kitchen Dispatch & Monitoring
+          </p>
+        </div>
+
+        <button 
+          onClick={togglePreBookStatus} 
+          className={`group flex items-center justify-center gap-2.5 px-4 py-2.5 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all active:scale-95 shadow-md border ${
+            owner?.isPreBookEnabled 
+              ? 'bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-400/40 shadow-emerald-950/40' 
+              : 'bg-rose-600 hover:bg-rose-500 text-white border-rose-400/40 shadow-rose-950/40'
+          }`}
+        >
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-white"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+          </span>
+          {owner?.isPreBookEnabled ? "Pre-Booking Enabled" : "Pre-Booking Disabled"}
+        </button>
+      </div>
+      
+      {/* సెర్చ్ బార్ */}
+      <div className="relative w-full max-w-md">
+        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400" />
+        <input 
+          type="text" 
+          placeholder="Search by Name, Table, Transaction ID  last 5 digits, or SDR ID..." 
+          value={searchTerm} 
+          onChange={(e) => setSearchTerm(e.target.value)} 
+          className="w-full bg-[#0a1033] border border-[#1e2d69] py-2.5 pl-10 pr-4 rounded-xl text-xs font-bold outline-none shadow-inner text-white placeholder:text-slate-500 focus:border-cyan-400 transition-all"
+        />
+      </div>
+
+{/* 🚀 క్లీన్ వైట్ కార్డ్ - ఆర్డర్ టైప్ & స్టేటస్ స్మార్ట్ ఫిల్టర్లు */}
+      <div className="w-full bg-white/95 rounded-2xl p-3 sm:p-4 shadow-xl border border-slate-200/80 space-y-3">
+        
+        {/* ROW 1: ఆర్డర్ చానెల్స్ / టైప్స్ (Booking Feeds) */}
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[9px] font-black uppercase tracking-wider text-slate-500">
+            Order Channels
+          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              { id: "All", label: "All Feeds", count: counts.all, color: "bg-slate-900 text-white" },
+              { id: "Pre-Parcel", label: "Pre-Book (Parcel) 📦", count: counts.preParcel, color: "bg-amber-600 text-white" },
+              { id: "Pre-Dine", label: "Pre-Book (Dine-In) 🪑", count: counts.preDine, color: "bg-indigo-600 text-white" },
+              { id: "Post-book", label: "Post-Orders 🍽️", count: counts.post, color: "bg-blue-600 text-white" },
+              { id: "Online-Order", label: "Online Orders 🛵", count: counts.online, color: "bg-teal-600 text-white" },
+            ].map(tab => {
+              const isActive = orderTypeFilter === tab.id;
+              return (
+                <button 
+                  key={tab.id} 
+                  type="button" 
+                  onClick={() => setOrderTypeFilter(tab.id)} 
+                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border flex items-center gap-2 shadow-sm ${
+                    isActive 
+                      ? `${tab.color} border-transparent shadow-md scale-102` 
+                      : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 hover:text-slate-900'
+                  }`}
+                >
+                  <span>{tab.label}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-black ${
+                    isActive ? 'bg-white/20 text-white' : 'bg-white text-slate-800 border border-slate-300'
+                  }`}>
+                    {tab.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* విభజన గీత */}
+        <div className="w-full h-px bg-slate-200"></div>
+
+        {/* ROW 2: లైవ్ కిచెన్ & డెలివరీ స్టేటస్ (Kitchen Workflow) */}
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[9px] font-black uppercase tracking-wider text-slate-500">
+            Kitchen & Delivery Status
+          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            {[
+              { id: "Preparing", label: "Preparing 🔥", count: counts.preparing, color: "bg-orange-600 text-white" },
+              { id: "Accepted", label: "Accepted ✅", count: counts.accepted, color: "bg-cyan-700 text-white" },
+              { 
+                id: "Out for Delivery", 
+                label: "Out for Delivery 🛵", 
+                count: orders.filter(o => (o?.status || "").toLowerCase().includes("delivery")).length, 
+                color: "bg-purple-600 text-white" 
+              },
+            ].map(tab => {
+              const isActive = orderTypeFilter === tab.id;
+              return (
+                <button 
+                  key={tab.id} 
+                  type="button" 
+                  onClick={() => setOrderTypeFilter(tab.id)} 
+                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border flex items-center gap-2 shadow-sm ${
+                    isActive 
+                      ? `${tab.color} border-transparent shadow-md scale-102` 
+                      : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 hover:text-slate-900'
+                  }`}
+                >
+                  <span>{tab.label}</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-black ${
+                    isActive ? 'bg-white/20 text-white' : 'bg-white text-slate-800 border border-slate-300'
+                  }`}>
+                    {tab.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+      </div>
+
+      {/* ఆర్డర్ కార్డ్స్ గ్రిడ్ (నో ఎక్స్‌ట్రా స్పేస్ - క్లీన్ & కాంపాక్ట్) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {displayedOrders.length === 0 ? (
+          <div className="col-span-full py-16 text-center text-slate-500 font-black uppercase italic bg-[#0a1033] rounded-3xl border border-dashed border-[#1e2d69]">
+            {searchTerm ? "No matching orders found ❌" : "No Active Orders in this view"}
+          </div>
+        ) : (
+          displayedOrders.map(order => {
+            const isPreBook = (order.orderType || "").toLowerCase().includes("pre");
+            const isParcel = (order.deliveryType || "").toLowerCase().includes("take") || (order.deliveryType || "").toLowerCase().includes("parcel");
+            const isDineIn = (order.deliveryType || "").toLowerCase().includes("restaurant") || (order.deliveryType || "").toLowerCase().includes("dine");
+
+            return (
+              <div 
+                key={order._id} 
+                className="bg-[#0a1033] p-4 rounded-2xl border border-[#1e2d69] shadow-sm flex flex-col justify-between hover:border-cyan-400/40 transition-all relative overflow-hidden"
+              >
+                {/* ఆర్డర్ టైప్ రిబ్బన్ */}
+                <div className={`absolute top-0 right-0 px-3 py-0.5 rounded-bl-xl text-[8px] font-black uppercase italic text-white ${
+                  isPreBook ? 'bg-purple-600' : order.orderType === 'Express-Route' ? 'bg-cyan-600' : 'bg-orange-500'
+                }`}>
+                  {order.orderType || 'Post-Order'}
+                </div>
+
+                <div>
+                  {/* టాప్: కస్టమర్ వివరాలు & టేబుల్ / పార్శిల్ బ్యాడ్జ్ */}
+                  <div className="flex justify-between items-start mb-2 pr-16">
+                    <div className="min-w-0">
+                      <p className="font-black uppercase italic text-base text-white leading-tight truncate">
+                        {order.customerName}
+                      </p>
+
+                      <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                        <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider ${
+                          isParcel 
+                            ? 'bg-amber-950/50 text-amber-300 border border-amber-500/40' 
+                            : isDineIn 
+                            ? 'bg-indigo-950/50 text-cyan-300 border border-indigo-500/40' 
+                            : 'bg-emerald-950/50 text-emerald-300 border border-emerald-500/40'
+                        }`}>
+                          {isParcel ? '📦 Parcel (Take Away)' : isDineIn ? '🪑 Dine-In (Restaurant)' : '🛍️ Direct Order'}
+                        </span>
+
+                        {isPreBook && (
+                          <span className="bg-amber-950/40 text-amber-300 text-[8px] font-black px-1.5 py-0.5 rounded uppercase border border-amber-500/40">
+                            👥 {order.peopleCount || 1}
+                          </span>
+                        )}
+                      </div>
+
+                      {order.sudaraId && (
+                        <p className="text-[9px] font-black text-cyan-300 mt-1 uppercase italic">
+                          ID: {order.sudaraId}
+                        </p>
+                      )}
+
+                      {order.orderType === "Pre-book" && order.arrivalTime && (
+                        <p className="text-[9px] font-black text-orange-400 uppercase mt-0.5 italic">
+                          🚗 Coming at: {order.arrivalTime}
+                        </p>
+                      )}
+
+                      {/* 📍 ఆన్‌లైన్ / కస్టమర్ పూర్తి అడ్రస్ & ఫోన్ నంబర్ డిస్‌ప్లే */}
+{order.customerAddress && (
+  <div className="mt-2 p-2 bg-[#070b24]/80 rounded-xl border border-cyan-500/20 text-left">
+    <p className="text-[8px] font-black uppercase text-cyan-400 tracking-wider flex items-center gap-1 mb-0.5">
+      📍 Delivery Address:
+    </p>
+    <p className="text-[10px] sm:text-[11px] font-bold text-slate-200 uppercase leading-relaxed break-words whitespace-normal">
+      {order.customerAddress}
+    </p>
+  </div>
+)}
+
+{order.customerPhone && (
+  <div className="mt-1 flex items-center gap-1.5 text-left">
+    <span className="text-[9px] font-black uppercase text-slate-400">📞 Phone:</span>
+    <a 
+      href={`tel:${order.customerPhone}`} 
+      className="text-[10px] font-black text-cyan-400 hover:underline tracking-wide"
+    >
+      {order.customerPhone}
+    </a>
+  </div>
+)}
+                    </div>
+
+                    {/* టేబుల్ నంబర్ డిస్‌ప్లే */}
+                    {order.deliveryType === "Book at Restaurant" && (
+                      <div className="bg-[#0e1638] px-3 py-1.5 rounded-xl text-center border border-cyan-500/30 shrink-0">
+                        <p className="text-[7px] font-black text-cyan-400 uppercase leading-none">Table</p>
+                        <p className="text-lg font-black text-cyan-300 leading-none mt-0.5">
+                          #{order.tableNo && order.tableNo !== "PRE" ? order.tableNo : "?"}
+                        </p>
+                        {(!order.tableNo || order.tableNo === "PRE") && (
+                          <button 
+                            onClick={() => handleAssignTable(order._id)} 
+                            className="mt-1 text-[7px] bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-1.5 py-0.5 rounded font-bold transition-all border border-cyan-400/30"
+                          >
+                            Assign
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
 
-                  <button 
-                    onClick={togglePreBookStatus} 
-                    className={`group relative flex items-center justify-center gap-3 w-full sm:w-auto px-6 py-3.5 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all active:scale-95 shadow-lg ${
-                      owner?.isPreBookEnabled 
-                        ? 'bg-emerald-600 hover:bg-emerald-500 text-white border border-emerald-400/40 shadow-emerald-950/40' 
-                        : 'bg-rose-600 hover:bg-rose-500 text-white border border-rose-400/40 shadow-rose-950/40'
-                    }`}
-                  >
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-white"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-                    </span>
-                    {owner?.isPreBookEnabled ? "Pre-Booking Enabled" : "Pre-Booking Disabled"}
-                  </button>
-
-                  {/* ఆర్డర్ టైప్ స్విచ్ బటన్స్ */}
-                  <div className="flex bg-[#0a1033] p-1 rounded-2xl border border-[#1e2d69] shadow-sm w-fit mt-3">
-                    {[
-                      { id: "All", label: "All Feeds" },
-                      { id: "Pre-book", label: "Pre-Bookings 🚗" },
-                      { id: "Post-book", label: "Post-Orders 🪑" },
-                      { id: "Online-Order", label: "Online Orders 📦" }
-                    ].map(tab => (
-                      <button 
-                        key={tab.id} 
-                        type="button" 
-                        onClick={() => setOrderTypeFilter(tab.id)} 
-                        className={`px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all border ${orderTypeFilter === tab.id ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-cyan-400/40 shadow-md' : 'text-slate-400 border-transparent hover:text-slate-200'}`}
-                      >
-                        {tab.label}
-                      </button>
+                  {/* ఐటమ్స్ లిస్ట్ (ఎక్కువ ఐటమ్స్ ఉంటే కార్డ్ లోపలే స్క్రోల్ అవుతాయి) */}
+                  <div className="max-h-24 overflow-y-auto scrollbar-thin bg-[#070b24]/60 p-2 rounded-xl border border-[#1e2d69] flex flex-wrap gap-1.5 my-2">
+                    {order.items.map((it, idx) => (
+                      <span key={idx} className="bg-[#0e1638] text-slate-200 px-2 py-1 rounded-lg text-[9px] font-black uppercase border border-[#1e2d69] italic">
+                        {it}
+                      </span>
                     ))}
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredOrders.length === 0 ? (
-                      <div className="col-span-full p-20 text-center text-slate-500 font-black uppercase italic bg-[#0a1033] rounded-[2.5rem] border border-dashed border-[#1e2d69]">
-                        {searchTerm ? "No matching results found ❌" : "No Active Orders"}
-                      </div>
-                    ) : (
-                      filteredOrders.map(order => (
-                        <div key={order._id} className="bg-[#0a1033] p-6 rounded-[2.5rem] border border-[#1e2d69] shadow-sm flex flex-col justify-between gap-4 hover:border-cyan-400/40 transition-all relative overflow-hidden">
-                          
-                          <div className={`absolute top-0 right-0 px-4 py-1 rounded-bl-2xl text-[8px] font-black uppercase italic text-white ${order.orderType === 'Pre-Order' ? 'bg-purple-600' : order.orderType === 'Express-Route' ? 'bg-cyan-600' : 'bg-orange-500'}`}>
-                            {order.orderType || 'Post-Order'}
-                          </div>
+                  {/* Express Route టైమర్ */}
+                  {order.orderType === 'Express-Route' && (
+                    <div className={`p-2 rounded-xl border mb-2 ${order.isDelayed ? 'bg-rose-950/40 border-rose-500/40' : 'bg-[#0e1638] border-cyan-500/30'}`}>
+                      <p className="text-[8px] font-black uppercase text-slate-400">
+                        {order.isDelayed ? '⚠️ CUSTOMER DELAYED' : '🕒 EXPRESS START TIME'}
+                      </p>
+                      <p className="text-xs font-black text-white mt-0.5">
+                        {new Date(order.scheduledStartTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                      </p>
+                    </div>
+                  )}
 
-                          <div>
-                            <div className="flex justify-between items-start mb-4">
-                              <div>
-                                <p className="font-black uppercase italic text-lg text-white leading-tight">
-                                  {order.customerName}
-                                </p>
-                                <div className="mt-1.5 flex items-center gap-2">
-                                  <span className={`px-2.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider ${
-                                    order.deliveryType === 'Take Away' 
-                                      ? 'bg-amber-950/50 text-amber-300 border border-amber-500/40' 
-                                      : order.deliveryType === 'Book at Restaurant' 
-                                      ? 'bg-indigo-950/50 text-cyan-300 border border-indigo-500/40'
-                                      : 'bg-emerald-950/50 text-emerald-300 border border-emerald-500/40'
-                                  }`}>
-                                    {order.deliveryType === 'Take Away' ? '📦 Parcel (Take Away)' : order.deliveryType === 'Book at Restaurant' ? '🪑 Dine-In (Restaurant)' : '🛍️ Direct Order'}
-                                  </span>
-                                </div>
-                                {order.customerAddress && (
-                                  <p className="text-[10px] font-bold text-slate-300 mt-1 uppercase">
-                                    📍 Address: {order.customerAddress}
-                                  </p>
-                                )}
-                                {order.customerPhone && (
-                                  <p className="text-[10px] font-bold text-cyan-400 mt-0.5 uppercase">
-                                    📞 Phone: {order.customerPhone}
-                                  </p>
-                                )}
+                  {/* ట్రాన్సాక్షన్ ఐడీ */}
+                  {order.txnId && (
+                    <div className="bg-emerald-950/30 p-2 rounded-xl border border-emerald-500/30 mb-2">
+                      <p className="text-[7px] font-black text-emerald-400 uppercase">Transaction ID  last 5 digits: <span className="text-emerald-300 font-bold">{order.txnId}</span></p>
+                    </div>
+                  )}
+                </div>
 
-                                {order.sudaraId && (
-                                  <div className="mt-1 flex gap-2 items-center">
-                                    <span className="bg-[#0e1638] text-cyan-300 text-[9px] font-black px-2 py-0.5 rounded border border-cyan-500/30 uppercase italic">
-                                      ID: {order.sudaraId}
-                                    </span>
-                                  </div>
-                                )}
-                                
-                                {order.orderType === "Pre-book" && (
-                                  <p className="text-[10px] font-black text-orange-400 uppercase mt-1 italic">
-                                    🚗 Coming at: {order.arrivalTime} 
-                                  </p>
-                                )}
-                              </div>
-
-                              {order.orderType === "Pre-book" && (
-                                <div className="flex gap-2 mt-2">
-                                  <span className="bg-amber-950/40 text-amber-300 text-[8px] font-black px-2 py-0.5 rounded-lg uppercase italic border border-amber-500/40">
-                                    👥 {order.peopleCount || 1}
-                                  </span>
-                                </div>
-                              )}
-
-                              {order.deliveryType === "Book at Restaurant" && (
-                                <div className="bg-[#0e1638] px-4 py-2 rounded-2xl text-center flex flex-col justify-center border border-cyan-500/20">
-                                  <p className="text-[8px] font-black text-cyan-400 uppercase leading-none">Table</p>
-                                  <p className="text-xl font-black text-cyan-300 leading-none mt-1">
-                                    # {order.tableNo !== "PRE" && order.tableNo ? order.tableNo : "?"}
-                                  </p>
-                                  {(!order.tableNo || order.tableNo === "PRE") && (
-                                    <button 
-                                      onClick={() => handleAssignTable(order._id)} 
-                                      className="mt-2 text-[8px] bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-2 py-1 rounded-lg font-bold hover:from-blue-500 hover:to-indigo-500 transition-all border border-cyan-400/30"
-                                    >
-                                      Assign Table
-                                    </button>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="flex flex-wrap gap-2 mb-4 max-h-24 overflow-y-auto scrollbar-hide p-1">
-                              {order.items.map((it, idx) => (
-                                <span key={idx} className="bg-[#0e1638] text-slate-200 px-3 py-1.5 rounded-2xl text-[10px] font-black uppercase border border-[#1e2d69] italic shrink-0">
-                                  {it}
-                                </span>
-                              ))}
-                            </div>
-
-                            {order.orderType === 'Express-Route' && (
-                              <div className={`mt-3 p-3 rounded-2xl border ${order.isDelayed ? 'bg-rose-950/40 border-rose-500/40 animate-pulse' : 'bg-[#0e1638] border-cyan-500/30'}`}>
-                                <div className="flex items-center gap-2">
-                                  <div className={`w-2 h-2 rounded-full ${order.isDelayed ? 'bg-rose-500' : 'bg-cyan-400'}`}></div>
-                                  <p className="text-[9px] font-black uppercase text-slate-400">
-                                    {order.isDelayed ? '⚠️ CUSTOMER DELAYED' : '🕒 EXPRESS START TIME'}
-                                  </p>
-                                </div>
-                                <p className="text-sm font-black text-white mt-1 tracking-tight">
-                                  {new Date(order.scheduledStartTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                </p>
-                              </div>
-                            )}
-
-                            {order.txnId && (
-                              <div className="bg-emerald-950/40 p-3 rounded-2xl border border-emerald-500/30 mb-4 mt-4">
-                                <p className="text-[8px] font-black text-emerald-400 uppercase">Transaction ID</p>
-                                <p className="text-[10px] font-bold text-emerald-300 break-all">{order.txnId}</p>
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="pt-4 border-t border-[#1e2d69] flex flex-col gap-4">
-                            <div className="flex items-center justify-between">
-                              <div className="pt-4 border-t border-[#1e2d69] mt-2 space-y-4 w-full">
-                                <div className="grid grid-cols-3 gap-2 text-center">
-                                  <div>
-                                    <p className="text-[8px] font-black text-slate-400 uppercase">Total</p>
-                                    <p className="text-sm font-black text-white">₹{order.totalAmount}</p>
-                                  </div>
-                                  {order.advancePaid > 0 && (
-                                    <div>
-                                      <p className="text-[8px] font-black text-orange-400 uppercase">Paid</p>
-                                      <p className="text-sm font-black text-orange-300">₹{order.advancePaid}</p>
-                                    </div>
-                                  )}
-                                  {order.advancePaid > 0 && (
-                                    <div>
-                                      <p className="text-[8px] font-black text-emerald-400 uppercase">Pending</p>
-                                      <p className="text-sm font-black text-emerald-300">₹{order.totalAmount - order.advancePaid}</p>
-                                    </div>
-                                  )}
-                                </div>
-
-                                {order.advancePaid > 0 && (
-                                  <div className="bg-[#0e1638] p-2 rounded-xl border border-[#1e2d69] flex items-center justify-between px-3">
-                                    <span className="text-[8px] font-black text-slate-400 uppercase">Balance Mode:</span>
-                                    <select 
-                                      id={`payMode-${order._id}`} 
-                                      className="bg-transparent text-[9px] font-black uppercase text-cyan-300 outline-none cursor-pointer"
-                                    >
-                                      <option value="CASH" className="bg-[#0a1033] text-white">💵 CASH</option>
-                                      <option value="ONLINE/UPI" className="bg-[#0a1033] text-white">📱 ONLINE / UPI</option>
-                                    </select>
-                                  </div>
-                                )}
-                              </div>
-
-                              <div className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase italic ${order.status === 'Preparing' ? 'bg-orange-950/40 text-orange-300 border border-orange-500/30' : 'bg-cyan-950/40 text-cyan-300 border border-cyan-500/30'}`}>
-                                {order.status || 'Pending'}
-                              </div>
-                            </div>
-
-                            <div className="flex flex-col gap-2 w-full pt-2">
-                              <div className="flex gap-2 w-full">
-                                <button 
-                                  onClick={() => updateOrderStatus(order._id, "Accepted")} 
-                                  className="flex-1 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-sm active:scale-95 transition-all border border-cyan-400/30"
-                                >
-                                  Accepted
-                                </button>
-                                <button 
-                                  onClick={() => updateOrderStatus(order._id, "Preparing")} 
-                                  className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-400 hover:to-amber-500 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-sm active:scale-95 transition-all border border-orange-400/30"
-                                >
-                                  Preparing
-                                </button>
-                              </div>
-
-                              {order.orderType === 'Online-Order' && (
-                                <div className="flex gap-2 w-full mt-1">
-                                  <button 
-                                    onClick={() => updateOrderStatus(order._id, "Out for Delivery")} 
-                                    className="flex-1 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-sm active:scale-95 transition-all border border-purple-400/30"
-                                  >
-                                    Out for Delivery 🛵
-                                  </button>
-                                  <button 
-                                    onClick={() => updateOrderStatus(order._id, "Delivered")} 
-                                    className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-lg active:scale-95 transition-all border border-emerald-400/30"
-                                  >
-                                    Delivered ✅
-                                  </button>
-                                </div>
-                              )}
-
-                              {!order.txnId && order.orderType === "Post-book" && (
-                                <div className="flex items-center justify-between bg-[#0e1638] p-2 rounded-xl border border-[#1e2d69] gap-2 mt-1">
-                                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider pl-1">Counter Pay Mode:</span>
-                                  <select 
-                                    id={`payMode-${order._id}`} 
-                                    className="p-1.5 bg-[#0a1033] border border-[#1e2d69] rounded-lg text-[9px] font-black text-cyan-300 uppercase outline-none focus:border-cyan-400" 
-                                    defaultValue="CASH"
-                                  >
-                                    <option value="CASH" className="bg-[#0a1033] text-white">💵 CASH</option>
-                                    <option value="ONLINE/UPI" className="bg-[#0a1033] text-white">📱 PHONEPE / UPI</option>
-                                  </select>
-                                </div>
-                              )}
-
-                              <div className="flex gap-2 w-full mt-1">
-                                <button 
-                                  type="button" 
-                                  onClick={() => {
-                                    const selectEl = document.getElementById(`payMode-${order._id}`);
-                                    const chosenMode = selectEl ? selectEl.value : "CASH";
-                                    handlePrintBill(order, chosenMode);
-                                  }} 
-                                  className="flex-1 py-3 bg-[#0e1638] hover:bg-[#141f4a] text-cyan-300 rounded-2xl text-[10px] font-black uppercase italic shadow-md active:scale-95 transition-all flex items-center justify-center gap-1.5 border border-cyan-500/30"
-                                >
-                                  <span>Print Bill</span> <span>🖨️</span>
-                                </button>
-
-                                {(order.orderType === 'Pre-book' || order.orderType === 'Post-book') && (
-                                  <button 
-                                    onClick={() => handleServed(order)} 
-                                    className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase italic shadow-lg active:scale-95 transition-all border border-emerald-400/30"
-                                  >
-                                    Served ✅
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          </div>
+                {/* అమౌంట్ & పేమెంట్ సమ్మరీ */}
+                <div className="pt-2 border-t border-[#1e2d69] space-y-2">
+                  <div className="grid grid-cols-3 gap-1 bg-[#0e1638] p-2 rounded-xl border border-[#1e2d69] text-center">
+                    <div>
+                      <p className="text-[7px] font-black text-slate-400 uppercase">Total</p>
+                      <p className="text-xs font-black text-white">₹{order.totalAmount}</p>
+                    </div>
+                    {order.advancePaid > 0 ? (
+                      <>
+                        <div>
+                          <p className="text-[7px] font-black text-orange-400 uppercase">Paid</p>
+                          <p className="text-xs font-black text-orange-300">₹{order.advancePaid}</p>
                         </div>
-                      ))
+                        <div>
+                          <p className="text-[7px] font-black text-emerald-400 uppercase">Pending</p>
+                          <p className="text-xs font-black text-emerald-300">₹{order.totalAmount - order.advancePaid}</p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="col-span-2 text-right pr-2 flex items-center justify-end">
+                        <span className="text-[8px] font-black text-slate-400 uppercase">Pay at Counter</span>
+                      </div>
                     )}
                   </div>
-                </motion.div>
-              )}
+
+                  {/* బ్యాలెన్స్ మోడ్ సెలెక్షన్ */}
+                  {order.advancePaid > 0 && (
+                    <div className="bg-[#0e1638] p-1.5 rounded-lg border border-[#1e2d69] flex items-center justify-between px-2">
+                      <span className="text-[7px] font-black text-slate-400 uppercase">Balance Mode:</span>
+                      <select 
+                        id={`payMode-${order._id}`} 
+                        className="bg-transparent text-[8px] font-black uppercase text-cyan-300 outline-none cursor-pointer"
+                      >
+                        <option value="CASH" className="bg-[#0a1033] text-white">💵 CASH</option>
+                        <option value="ONLINE/UPI" className="bg-[#0a1033] text-white">📱 ONLINE / UPI</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {/* కౌంటర్ పే మోడ్ (ఒకవేళ txnId లేకపోతే) */}
+                  {!order.txnId && order.orderType === "Post-book" && (
+                    <div className="flex items-center justify-between bg-[#0e1638] p-1.5 rounded-lg border border-[#1e2d69] px-2">
+                      <span className="text-[7px] font-black text-slate-400 uppercase">Pay Mode:</span>
+                      <select 
+                        id={`payMode-${order._id}`} 
+                        className="p-1 bg-[#0a1033] border border-[#1e2d69] rounded text-[8px] font-black text-cyan-300 uppercase outline-none" 
+                        defaultValue="CASH"
+                      >
+                        <option value="CASH" className="bg-[#0a1033] text-white">💵 CASH</option>
+                        <option value="ONLINE/UPI" className="bg-[#0a1033] text-white">📱 UPI</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {/* లైవ్ స్టేటస్ బ్యాడ్జ్ */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-[8px] font-black text-slate-400 uppercase">Status:</span>
+                    <span className={`px-2.5 py-0.5 rounded text-[8px] font-black uppercase italic ${
+                      order.status === 'Preparing' 
+                        ? 'bg-orange-950/40 text-orange-300 border border-orange-500/30' 
+                        : order.status === 'Accepted'
+                        ? 'bg-blue-950/40 text-cyan-300 border border-cyan-500/30'
+                        : 'bg-slate-800 text-slate-300 border border-slate-700'
+                    }`}>
+                      {order.status || 'Pending'}
+                    </span>
+                  </div>
+
+                  {/* యాక్షన్ బటన్స్ (Accepted / Preparing / Print Bill / Served) */}
+                  <div className="space-y-1.5 pt-1">
+                    <div className="flex gap-1.5 w-full">
+                      <button 
+                        onClick={() => updateOrderStatus(order._id, "Accepted")} 
+                        className="flex-1 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-[9px] font-black uppercase italic shadow-sm active:scale-95 transition-all border border-cyan-400/30"
+                      >
+                        Accepted
+                      </button>
+                      <button 
+                        onClick={() => updateOrderStatus(order._id, "Preparing")} 
+                        className="flex-1 py-2 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-400 hover:to-amber-500 text-white rounded-xl text-[9px] font-black uppercase italic shadow-sm active:scale-95 transition-all border border-orange-400/30"
+                      >
+                        Preparing
+                      </button>
+                    </div>
+
+                    {order.orderType === 'Online-Order' && (
+                      <div className="flex gap-1.5 w-full">
+                        <button 
+                          onClick={() => updateOrderStatus(order._id, "Out for Delivery")} 
+                          className="flex-1 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-[9px] font-black uppercase italic shadow-sm active:scale-95 transition-all border border-purple-400/30"
+                        >
+                          Out for Delivery 🛵
+                        </button>
+                        <button 
+                          onClick={() => updateOrderStatus(order._id, "Delivered")} 
+                          className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-[9px] font-black uppercase italic shadow-sm active:scale-95 transition-all border border-emerald-400/30"
+                        >
+                          Delivered ✅
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="flex gap-1.5 w-full">
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          const selectEl = document.getElementById(`payMode-${order._id}`);
+                          const chosenMode = selectEl ? selectEl.value : "CASH";
+                          handlePrintBill(order, chosenMode);
+                        }} 
+                        className="flex-1 py-2 bg-[#0e1638] hover:bg-[#141f4a] text-cyan-300 rounded-xl text-[9px] font-black uppercase italic shadow-sm active:scale-95 transition-all flex items-center justify-center gap-1 border border-cyan-500/30"
+                      >
+                        <span>Print Bill</span> <span>🖨️</span>
+                      </button>
+
+                      {(isPreBook || order.orderType === 'Post-book') && (
+                        <button 
+                          onClick={() => handleServed(order)} 
+                          className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-[9px] font-black uppercase italic shadow-sm active:scale-95 transition-all border border-emerald-400/30"
+                        >
+                          Served ✅
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+    </motion.div>
+  );
+})()}
 
 {/* PAGE 3: SALES REPORT (Direct Access - No Plan Restrictions) */}
   {activeTab === "sales-report" && (
@@ -2445,7 +2615,7 @@ const dailyStats = {
   </button>
                   <hr className="my-4 border-[#1e2d69]" />
                   <button onClick={() => { setIsMenuOpen(false); setIsShowingMatrix(true); }} className="flex items-center gap-4 p-4 rounded-2xl bg-[#0e1638] text-cyan-300 border border-cyan-500/30 font-bold uppercase italic text-xs"><BarChart3 className="w-5 h-5 text-cyan-400" /> Analytics Matrix</button>
-                  <button onClick={() => { setIsMenuOpen(false); setIsRenewalModalOpen(true); }} className="flex items-center gap-4 p-4 rounded-2xl bg-orange-950/40 text-orange-300 font-black uppercase italic text-xs border border-orange-500/40 shadow-sm"><QrCode className="w-5 h-5 text-orange-400" /> Renew Node</button>
+                  {/* <button onClick={() => { setIsMenuOpen(false); setIsRenewalModalOpen(true); }} className="flex items-center gap-4 p-4 rounded-2xl bg-orange-950/40 text-orange-300 font-black uppercase italic text-xs border border-orange-500/40 shadow-sm"><QrCode className="w-5 h-5 text-orange-400" /> Renew Node</button> */}
                   <button onClick={() => { setIsMenuOpen(false); setIsEditingProfile(true); }} className="flex items-center gap-4 p-4 rounded-2xl bg-[#0a1033] text-slate-200 font-bold uppercase italic text-xs border border-[#1e2d69]"><Settings className="w-5 h-5 text-slate-400" /> Hub Settings</button>
                   <button onClick={() => { localStorage.removeItem("owner"); navigate("/owner"); }} className="mt-10 p-4 rounded-2xl bg-rose-950/40 text-rose-400 border border-rose-500/40 font-bold uppercase italic text-xs"><LogOut className="w-5 h-5" /> Logout</button>
                 </div>

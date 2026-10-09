@@ -1054,26 +1054,38 @@ if (!owner || !owner.isApproved) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-3 pt-1 w-full">
   {catItems.map((item) => (
   isRestaurant ? (
-    <div 
-      key={item._id} 
-      className="w-full bg-[#0a1033] p-3 rounded-[1.5rem] border border-[#1e2d69] flex items-center justify-between gap-3 shadow-md hover:border-cyan-400/50 transition-all"
-    >
-      <div className="flex items-center gap-3 min-w-0 flex-1">
-        <div className="relative shrink-0">
-          <img src={item.image || `https://ui-avatars.com/api/?name=${item.name}`} loading="lazy" className="w-14 h-14 rounded-xl object-cover border border-[#1e2d69] shadow-2xs" alt="" />
-          <div className={`absolute -top-1 -left-1 w-2.5 h-2.5 rounded-full border-2 border-[#0a1033] ${item.category === 'Veg' ? 'bg-green-500' : 'bg-red-500'}`}></div>
-        </div>
-        <div className="min-w-0 flex-1">
-          <h4 className="font-black uppercase text-[10px] sm:text-[11px] italic text-slate-100 leading-tight truncate">{item.name}</h4>
-          <p className="text-sm font-black text-cyan-400 italic mt-0.5">₹{item.price}</p>
-        </div>
-      </div>
-      <div className="flex flex-col items-center gap-1 bg-[#05081c] p-1 rounded-xl border border-[#1e2d69] shrink-0">
-        <button onClick={() => addToCart(item)} className="p-1 text-slate-200 hover:text-cyan-400"><Plus className="w-3.5 h-3.5" /></button>
-        <span className="text-[10px] font-black min-w-[12px] text-center text-white">{cart[item._id]?.qty || 0}</span>
-        <button onClick={() => removeFromCart(item)} className="p-1 text-slate-400 hover:text-rose-400"><Minus className="w-3.5 h-3.5" /></button>
-      </div>
+<div 
+  key={item._id} 
+  className="w-full bg-[#0a1033] p-3 rounded-[1.5rem] border border-[#1e2d69] flex items-center justify-between gap-3 shadow-md hover:border-cyan-400/50 transition-all"
+>
+  <div className="flex items-center gap-3 min-w-0 flex-1">
+    <div className="relative shrink-0">
+      <img 
+        src={item.image || `https://ui-avatars.com/api/?name=${item.name}`} 
+        loading="lazy" 
+        className="w-14 h-14 rounded-xl object-cover border border-[#1e2d69] shadow-2xs" 
+        alt="" 
+      />
+      <div className={`absolute -top-1 -left-1 w-2.5 h-2.5 rounded-full border-2 border-[#0a1033] ${item.category === 'Veg' ? 'bg-green-500' : 'bg-red-500'}`}></div>
     </div>
+    <div className="min-w-0 flex-1">
+      <h4 
+        className="font-extrabold uppercase text-xs sm:text-sm text-white tracking-wide leading-snug break-words" 
+        title={item.name}
+      >
+        {item.name}
+      </h4>
+      <p className="text-base sm:text-lg font-black text-cyan-400 tracking-tight mt-1">
+        ₹ {item.price}
+      </p>
+    </div>
+  </div>
+  <div className="flex flex-col items-center gap-1 bg-[#05081c] p-1 rounded-xl border border-[#1e2d69] shrink-0">
+    <button onClick={() => addToCart(item)} className="p-1 text-slate-200 hover:text-cyan-400"><Plus className="w-3.5 h-3.5" /></button>
+    <span className="text-[10px] font-black min-w-[12px] text-center text-white">{cart[item._id]?.qty || 0}</span>
+    <button onClick={() => removeFromCart(item)} className="p-1 text-slate-400 hover:text-rose-400"><Minus className="w-3.5 h-3.5" /></button>
+  </div>
+</div>
   ) : (
     <div 
       key={item._id} 
@@ -1429,159 +1441,183 @@ if (!owner || !owner.isApproved) {
       </div>
     </main>
     {/* 🪑 1. POST-BOOK / DINE-IN INSTANT TABLE ORDER MODAL */}
-  <AnimatePresence>
-    {showInstantModal && (
+<AnimatePresence mode="wait">
+  {showInstantModal && (
+    <motion.div 
+      key="instant-modal-backdrop"
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      exit={{ opacity: 0 }} 
+      transition={{ duration: 0.15 }}
+      className="fixed inset-0 z-[300] bg-[#05081c]/90 flex items-center justify-center p-4"
+    >
       <motion.div 
-        initial={{ opacity: 0 }} 
-        animate={{ opacity: 1 }} 
-        exit={{ opacity: 0 }} 
-        className="fixed inset-0 z-[300] bg-[#05081c]/90 backdrop-blur-md flex items-center justify-center p-4"
+        key="instant-modal-card"
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        transition={{ duration: 0.15 }}
+        className="bg-[#0a1033] w-full max-w-[400px] rounded-[2.5rem] p-6 shadow-2xl relative text-white border border-[#1e2d69]"
       >
-        <div className="bg-[#0a1033] w-full max-w-[400px] rounded-[2.5rem] p-6 shadow-2xl relative text-white border border-[#1e2d69]">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-black uppercase italic text-white">Dine-in Table Order 🪑</h3>
-            <button onClick={() => setShowInstantModal(false)} className="p-2 bg-[#0e1638] rounded-full text-slate-300 hover:text-white border border-[#1e2d69]"><X className="w-4 h-4"/></button>
-          </div>
-          <p className="text-[9px] font-bold text-slate-400 uppercase mb-4 tracking-wider">మీ పేరు మరియు టేబుల్ నంబర్ ఇవ్వండి</p>
-          
-          <div className="space-y-4">
-            <input 
-              type="text" 
-              placeholder="మీ పూర్తి పేరు / Full Name" 
-              value={customerName} 
-              onChange={(e) => setCustomerName(e.target.value)} 
-              className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-cyan-400 text-white placeholder:text-slate-500"
-            />
-            <input 
-              type="text" 
-              placeholder="టేబుల్ నంబర్ / Table Number (e.g. 4)" 
-              value={selectedTable} 
-              onChange={(e) => setSelectedTable(e.target.value)} 
-              className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-cyan-400 text-white placeholder:text-slate-500"
-            />
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-black uppercase italic text-white">Dine-in Table Order 🪑</h3>
+          <button type="button" onClick={() => setShowInstantModal(false)} className="p-2 bg-[#0e1638] rounded-full text-slate-300 hover:text-white border border-[#1e2d69]">
+            <X className="w-4 h-4"/>
+          </button>
+        </div>
+        <p className="text-[9px] font-bold text-slate-400 uppercase mb-4 tracking-wider">మీ పేరు మరియు టేబుల్ నంబర్ ఇవ్వండి</p>
+        
+        <div className="space-y-4">
+          <input 
+            type="text" 
+            placeholder="మీ పూర్తి పేరు / Full Name" 
+            value={customerName} 
+            onChange={(e) => setCustomerName(e.target.value)} 
+            className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-cyan-400 text-white placeholder:text-slate-500"
+          />
+          <input 
+            type="text" 
+            placeholder="టేబుల్ నంబర్ / Table Number (e.g. 4)" 
+            value={selectedTable} 
+            onChange={(e) => setSelectedTable(e.target.value)} 
+            className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-cyan-400 text-white placeholder:text-slate-500"
+          />
 
-            <button 
-  onClick={handleInstantOrder}
-  disabled={
-    loading ||
-    !customerName.trim() ||
-    !selectedTable ||
-    Object.keys(cart || {}).length === 0
-  }
-  className={`w-full py-4 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl transition-all border ${
-    loading ||
-    !customerName.trim() ||
-    !selectedTable ||
-    Object.keys(cart || {}).length === 0
-      ? "bg-slate-700 text-slate-500 border-slate-600 cursor-not-allowed opacity-60"
-      : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white border-cyan-400/30 active:scale-95"
-  }`}
->
-  {loading ? "పంపుతోంది..." : "Place Table Order 🍲"}
-</button>
-          </div>
+          <button 
+            type="button"
+            onClick={handleInstantOrder}
+            disabled={
+              loading ||
+              !customerName.trim() ||
+              !selectedTable ||
+              Object.keys(cart || {}).length === 0
+            }
+            className={`w-full py-4 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl transition-all border ${
+              loading ||
+              !customerName.trim() ||
+              !selectedTable ||
+              Object.keys(cart || {}).length === 0
+                ? "bg-slate-700 text-slate-500 border-slate-600 cursor-not-allowed opacity-60"
+                : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white border-cyan-400/30 active:scale-95"
+            }`}
+          >
+            {loading ? "పంపుతోంది..." : "Place Table Order 🍲"}
+          </button>
         </div>
       </motion.div>
-    )}
-  </AnimatePresence>
+    </motion.div>
+  )}
+</AnimatePresence>
 
   {/* 🛒 2. ONLINE ORDER (DIRECT) MODAL */}
-  <AnimatePresence>
-    {showOnlineOrderModal && (
+<AnimatePresence mode="wait">
+  {showOnlineOrderModal && (
+    <motion.div 
+      key="online-order-modal-backdrop"
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      exit={{ opacity: 0 }} 
+      transition={{ duration: 0.15 }}
+      className="fixed inset-0 z-[300] bg-[#05081c]/90 flex items-center justify-center p-4"
+    >
       <motion.div 
-        initial={{ opacity: 0 }} 
-        animate={{ opacity: 1 }} 
-        exit={{ opacity: 0 }} 
-        className="fixed inset-0 z-[300] bg-[#05081c]/90 backdrop-blur-md flex items-center justify-center p-4"
+        key="online-order-modal-card"
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        transition={{ duration: 0.15 }}
+        className="bg-[#0a1033] w-full max-w-[400px] rounded-[2.5rem] p-6 shadow-2xl relative text-white border border-[#1e2d69]"
       >
-        <div className="bg-[#0a1033] w-full max-w-[400px] rounded-[2.5rem] p-6 shadow-2xl relative text-white border border-[#1e2d69]">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-black uppercase italic text-white">Direct Online Order 🛍️</h3>
-            <button onClick={() => setShowOnlineOrderModal(false)} className="p-2 bg-[#0e1638] rounded-full text-slate-300 hover:text-white border border-[#1e2d69]"><X className="w-4 h-4"/></button>
-          </div>
-          <p className="text-[9px] font-bold text-slate-400 uppercase mb-4 tracking-wider">మీ డెలివరీ వివరాలు నమోదు చేయండి</p>
-          
-          <div className="space-y-4">
-            <input 
-              type="text" 
-              placeholder="మీ పూర్తి పేరు / Full Name" 
-              value={onlineOrderData.name} 
-              onChange={(e) => setOnlineOrderData({...onlineOrderData, name: e.target.value})} 
-              className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-cyan-400 text-white placeholder:text-slate-500"
-            />
-            <input 
-              type="text" 
-              placeholder="ఫోన్ నంబర్ / Mobile Number" 
-              value={onlineOrderData.phone} 
-              onChange={(e) => setOnlineOrderData({...onlineOrderData, phone: e.target.value})} 
-              className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-cyan-400 text-white placeholder:text-slate-500"
-            />
-            <input 
-              type="text" 
-              placeholder="డెలివరీ అడ్రస్ / Delivery Address" 
-              value={onlineOrderData.address} 
-              onChange={(e) => setOnlineOrderData({...onlineOrderData, address: e.target.value})} 
-              className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-cyan-400 text-white placeholder:text-slate-500"
-            />
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-black uppercase italic text-white">Direct Online Order 🛍️</h3>
+          <button type="button" onClick={() => setShowOnlineOrderModal(false)} className="p-2 bg-[#0e1638] rounded-full text-slate-300 hover:text-white border border-[#1e2d69]">
+            <X className="w-4 h-4"/>
+          </button>
+        </div>
+        <p className="text-[9px] font-bold text-slate-400 uppercase mb-4 tracking-wider">మీ డెలివరీ వివరాలు నమోదు చేయండి</p>
+        
+        <div className="space-y-4">
+          <input 
+            type="text" 
+            placeholder="మీ పూర్తి పేరు / Full Name" 
+            value={onlineOrderData.name} 
+            onChange={(e) => setOnlineOrderData({...onlineOrderData, name: e.target.value})} 
+            className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-cyan-400 text-white placeholder:text-slate-500"
+          />
+          <input 
+            type="text" 
+            placeholder="ఫోన్ నంబర్ / Mobile Number" 
+            value={onlineOrderData.phone} 
+            onChange={(e) => setOnlineOrderData({...onlineOrderData, phone: e.target.value})} 
+            className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-cyan-400 text-white placeholder:text-slate-500"
+          />
+          <input 
+            type="text" 
+            placeholder="డెలివరీ అడ్రస్ / Delivery Address" 
+            value={onlineOrderData.address} 
+            onChange={(e) => setOnlineOrderData({...onlineOrderData, address: e.target.value})} 
+            className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-cyan-400 text-white placeholder:text-slate-500"
+          />
 
-            <button 
-              onClick={async () => {
-                if (!onlineOrderData.name || !onlineOrderData.phone || !onlineOrderData.address) {
-                  return alert("దయచేసి అన్ని వివరాలు నింపండి! 📝");
+          <button 
+            type="button"
+            onClick={async () => {
+              if (!onlineOrderData.name || !onlineOrderData.phone || !onlineOrderData.address) {
+                return alert("దయచేసి అన్ని వివరాలు నింపండి! 📝");
+              }
+              try {
+                setLoading(true);
+                const itemsTotal = Object.values(cart).reduce((acc, item) => acc + (item.price * item.qty), 0);
+                const gstPercent = Number(owner?.gstPercentage) || 0; 
+                const extra = Number(owner?.extraCharges) || 0;
+                const gstAmount = (itemsTotal * gstPercent) / 100;
+                const finalTotal = itemsTotal + gstAmount + extra;
+                const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name}`);
+                const generatedSdrId = "SDR" + Math.floor(100 + Math.random() * 900);
+
+                const payload = {
+                  restaurantId: id,
+                  customerName: onlineOrderData.name,
+                  customerPhone: onlineOrderData.phone,
+                  customerAddress: onlineOrderData.address,
+                  items: itemList,
+                  subTotal: Number(itemsTotal.toFixed(2)),
+                  gstAmount: Number(gstAmount.toFixed(2)),
+                  extraCharges: extra,
+                  totalAmount: Number(finalTotal.toFixed(2)),
+                  orderType: "Online-Order", 
+                  deliveryType: "Home Delivery",
+                  sudaraId: generatedSdrId,
+                  status: "Pending",
+                  paymentMode: "CASH"
+                };
+
+                const res = await api.post("/orders/add", payload);
+                if (res.data) {
+                  alert(`ఆర్డర్ విజయవంతంగా పంపబడింది! ✅\nట్రాకింగ్ ID: ${generatedSdrId}`);
+                  setPlacedOrderId(generatedSdrId);
+                  setShowTracking(true);
+                  setCart({});
+                  setShowOnlineOrderModal(false);
+                  setOnlineOrderData({ name: "", phone: "", address: "" });
                 }
-                try {
-                  setLoading(true);
-                  const itemsTotal = Object.values(cart).reduce((acc, item) => acc + (item.price * item.qty), 0);
-                  const gstPercent = Number(owner?.gstPercentage) || 0; 
-                  const extra = Number(owner?.extraCharges) || 0;
-                  const gstAmount = (itemsTotal * gstPercent) / 100;
-                  const finalTotal = itemsTotal + gstAmount + extra;
-                  const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name}`);
-                  const generatedSdrId = "SDR" + Math.floor(100 + Math.random() * 900);
-
-                  const payload = {
-                    restaurantId: id,
-                    customerName: onlineOrderData.name,
-                    customerPhone: onlineOrderData.phone,
-                    customerAddress: onlineOrderData.address,
-                    items: itemList,
-                    subTotal: Number(itemsTotal.toFixed(2)),
-                    gstAmount: Number(gstAmount.toFixed(2)),
-                    extraCharges: extra,
-                    totalAmount: Number(finalTotal.toFixed(2)),
-                    orderType: "Online-Order", 
-                    deliveryType: "Home Delivery",
-                    sudaraId: generatedSdrId,
-                    status: "Pending",
-                    paymentMode: "CASH"
-                  };
-
-                  const res = await api.post("/orders/add", payload);
-                  if (res.data) {
-                    alert(`ఆర్డర్ విజయవంతంగా పంపబడింది! ✅\nట్రాకింగ్ ID: ${generatedSdrId}`);
-                    setPlacedOrderId(generatedSdrId);
-                    setShowTracking(true);
-                    setCart({});
-                    setShowOnlineOrderModal(false);
-                    setOnlineOrderData({ name: "", phone: "", address: "" });
-                  }
-                } catch (err) {
-                  console.error("Online Order Error:", err);
-                  alert("ఆర్డర్ పంపడం విఫలమైంది. ❌");
-                } finally {
-                  setLoading(false);
-                }
-              }}
-              disabled={loading}
-              className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl transition-all active:scale-95 border border-cyan-400/30"
-            >
-              {loading ? "పంపుతోంది..." : "Confirm & Send Order 🚀"}
-            </button>
-          </div>
+              } catch (err) {
+                console.error("Online Order Error:", err);
+                alert("ఆర్డర్ పంపడం విఫలమైంది. ❌");
+              } finally {
+                setLoading(false);
+              }
+            }}
+            disabled={loading}
+            className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl transition-all active:scale-95 border border-cyan-400/30"
+          >
+            {loading ? "పంపుతోంది..." : "Confirm & Send Order 🚀"}
+          </button>
         </div>
       </motion.div>
-    )}
-  </AnimatePresence>
+    </motion.div>
+  )}
+</AnimatePresence>
 {/* 🚗 TEST DRIVE BOOKING MODAL */}
       <AnimatePresence>
         {showTestDriveModal && (
