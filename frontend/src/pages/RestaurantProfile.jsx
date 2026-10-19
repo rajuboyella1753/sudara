@@ -151,14 +151,14 @@ const handleStoreDirectOrder = async () => {
     const generatedSdrId = "SDR" + Math.floor(100 + Math.random() * 900);
     const todayDate = getUniversalDate();
     const payload = {
-      restaurantId: id, // ఇది బ్యాకెండ్ లో స్టోర్/వెండర్ ID కి మ్యాప్ అవుతుంది
+      restaurantId: id, 
       customerName: storeOrderData.name,
       customerPhone: storeOrderData.phone,
       customerAddress: storeOrderData.address,
       items: itemList,
       subTotal: Number(itemsTotal.toFixed(2)),
       totalAmount: Number(itemsTotal.toFixed(2)),
-      orderType: "Store-Direct-Order", // 👈 ఇది నాన్-రెస్టారెంట్ స్టోర్స్ కోసం ప్రత్యేకమైన టైప్
+      orderType: "Store-Direct-Order", 
       sudaraId: generatedSdrId,
       status: "Pending",
       paymentMode: "CASH",
@@ -168,8 +168,9 @@ const handleStoreDirectOrder = async () => {
     const res = await api.post("/orders/add", payload);
 
     if (res.data) {
+      // 🚀 ఇక్కడ "pre_order_click" బదులుగా "total_orders" అని పెడితేనే ఆన్‌లైన్ ఆర్డర్స్ కౌంట్ కరెక్ట్‌గా పడుతుంది
       await api.put(`/owner/track-analytics/${id}`, { 
-        action: "pre_order_click", 
+        action: "total_orders", 
         date: todayDate 
       });
       alert(`ఆర్డర్ విజయవంతంగా పంపబడింది! ✅\nమీ ట్రాకింగ్ ID: ${generatedSdrId}`);
@@ -1559,7 +1560,7 @@ if (!owner || !owner.isApproved) {
             className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-3.5 rounded-2xl text-xs font-bold outline-none focus:border-cyan-400 text-white placeholder:text-slate-500"
           />
 
-          <button 
+<button 
             type="button"
             onClick={async () => {
               if (!onlineOrderData.name || !onlineOrderData.phone || !onlineOrderData.address) {
@@ -1574,6 +1575,7 @@ if (!owner || !owner.isApproved) {
                 const finalTotal = itemsTotal + gstAmount + extra;
                 const itemList = Object.values(cart).map(i => `${i.qty} x ${i.name}`);
                 const generatedSdrId = "SDR" + Math.floor(100 + Math.random() * 900);
+                const todayDate = getUniversalDate();
 
                 const payload = {
                   restaurantId: id,
@@ -1594,6 +1596,12 @@ if (!owner || !owner.isApproved) {
 
                 const res = await api.post("/orders/add", payload);
                 if (res.data) {
+                  // 🚀 ఇక్కడ action ని "total_orders" అని ట్రాక్ చేస్తున్నాం (ఇదే మెయిన్ మార్పు)
+                  await api.put(`/owner/track-analytics/${id}`, { 
+                    action: "total_orders", 
+                    date: todayDate 
+                  });
+
                   alert(`ఆర్డర్ విజయవంతంగా పంపబడింది! ✅\nట్రాకింగ్ ID: ${generatedSdrId}`);
                   setPlacedOrderId(generatedSdrId);
                   setShowTracking(true);

@@ -2,8 +2,11 @@ import express from "express";
 import Owner from "../models/owner.js";
 import Item from "../models/item.js";
 import admin from "firebase-admin";
+import Order from "../models/Order.js";
+import TestDrive from "../models/TestDrive.js";
 import { upload } from '../config/uploadMiddleware.js';
 import { uploadImage } from '../utils/imageUpload.js';
+import nodemailer from "nodemailer";
 import mongoose from "mongoose";
 const router = express.Router();
 
@@ -20,15 +23,55 @@ router.get("/colleges", async (req, res) => {
 
 router.get("/all-owners", async (req, res) => {
   try {
-    
     const owners = await Owner.find({ isApproved: true })
-      .select("name hotelImage collegeName isStoreOpen latitude longitude category averageRating isApproved foodType state district")
+      .select("name hotelImage collegeName isStoreOpen latitude longitude category averageRating foodType state district analytics")
       .lean();
     
-    console.log(`✅ Approved Owners Found: ${owners.length}`);
-    res.status(200).json(owners);
+    const ownersWithCounts = await Promise.all(owners.map(async (owner) => {
+      const cat = (owner.category || "Restaurant").trim().toLowerCase();
+      let counts = { preBook: 0, postBook: 0, testDrives: 0, onlineOrders: 0, total: 0 };
+
+      const analyticsObj = owner.analytics instanceof Map 
+        ? Object.fromEntries(owner.analytics) 
+        : (owner.analytics || {});
+
+      let totalPre = 0;
+      let totalPost = 0;
+      let totalOnlineOrders = 0;
+
+      Object.values(analyticsObj).forEach(dayData => {
+        const d = dayData?._doc || dayData || {};
+        totalPre += Number(d.pre_order_click || 0);
+        totalPost += Number(d.post_order_click || 0);
+        totalOnlineOrders += Number(d.total_orders || 0); // 👈 ఇక్కడ total_orders ని పర్ఫెక్ట్ గా టోటల్ చేస్తున్నాం!
+      });
+
+      if (cat === "restaurant" || cat === "") {
+        counts.preBook = totalPre;
+        counts.postBook = totalPost;
+        counts.onlineOrders = totalOnlineOrders; // 👈 రెస్టారెంట్ అయితే online orders కౌంట్ ఇక్కడ అసైన్ అవుతుంది
+        counts.total = totalPre + totalPost + totalOnlineOrders;
+      } 
+      else if (cat.includes("automobile")) {
+        counts.testDrives = totalPre;
+        counts.total = totalPre;
+      } 
+      else {
+        const dbOrdersCount = await Order.countDocuments({ restaurantId: owner._id }).catch(() => 0);
+        counts.onlineOrders = dbOrdersCount > 0 ? dbOrdersCount : (totalOnlineOrders > 0 ? totalOnlineOrders : totalPre);
+        counts.total = counts.onlineOrders;
+      }
+
+      return {
+        ...owner,
+        activityCounts: counts
+      };
+    }));
+
+    res.status(200).json(ownersWithCounts);
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch owners" });
+    console.error("All owners fetch error:", err);
+    res.status(500).json({ message: "Failed to fetch owners with counts" });
   }
 });
 
@@ -73,7 +116,7 @@ router.post("/register", async (req, res) => {
       fssaiNumber: fssaiNumber || "",
       gstNumber: gstNumber || "", 
       category: cleanCategory, 
-      isApproved: false 
+      isApproved: true
     };
 
     // కేవలం రెస్టారెంట్ అయితేనే ఫుడ్ వివరాలు
@@ -150,22 +193,24 @@ router.get("/districts", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
-    // 🎯 Admin Login Check
-    if (email === "telugubiblequiz959@gmail.com" && password === "Raju1753@s") {
-      return res.json({ 
-        success: true, 
-        isAdmin: true, 
-        message: "Welcome Supreme BSR!" 
-      });
+    
+    if (email === "rajuboyella2003@sudara.in" && password === "Raju2003@") {
+      return res.json({ success: true, isAdmin: true, message: "Welcome Supreme BSR!" });
     } 
+
     const owner = await Owner.findOne({ email, password }).lean();
     if (!owner) {
       return res.status(401).json({ message: "Invalid Email or Password ❌" });
     }
+
+    // 🛡️ అడ్మిన్ కనుక యాక్సెస్ హోల్డ్ లో పెట్టినా లేదా సబ్‌స్క్రిప్షన్ ఎక్స్‌పైర్ అయి రివోక్ చేసినా ఇక్కడ ఆగిపోవాలి!
     if (owner.isApproved === false) {
-      return res.status(403).json({ message: "Account pending waiting for admin approval * మీ అకౌంట్ అప్రూవల్ కోసం పెండింగ్‌లో ఉంది... ⏳" });
+      return res.status(403).json({ 
+        message: "Access Revoked / Subscription Expired! Please contact Admin (7569896128) to renew your node. ⏳" 
+      });
     }
-    console.log(`✅ Owner Logged In: ${owner.name} (${owner.category || 'Restaurant'})`);
+
+    console.log(`✅ Owner Logged In: ${owner.name}`);
     res.json({ success: true, owner });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -757,6 +802,39 @@ router.get("/compare", async (req, res) => {
   } catch (err) {
     console.error("Comparison Error:", err);
     res.status(500).json({ message: "Failed to compare prices" });
+  }
+});
+// 📧 Nodemailer Transporter Setup (sudaraofficial703@gmail.com నుండి మెయిల్ వెళ్లడానికి)
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: "sudaraofficial703@gmail.com",
+    pass: "TCS iON" // ⚠️ ఇక్కడ నీ Gmail App Password (16-digit) లేదా పాస్‌వర్డ్ ఇవ్వు
+  }
+});
+
+// 🚀 Send Admin Mail Route
+router.post("/send-admin-mail", async (req, res) => {
+  try {
+    const { email, subject, message } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: "Recipient email is required!" });
+    }
+
+    const mailOptions = {
+      from: "sudaraofficial703@gmail.com",
+      to: email,
+      subject: subject || "Important Notice from Sudara Hub",
+      text: message
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({ success: true, message: "Email sent successfully from sudaraofficial703@gmail.com! 🚀" });
+  } catch (err) {
+    console.error("Mail send error:", err);
+    res.status(500).json({ success: false, message: "Failed to send email. Check SMTP settings." });
   }
 });
 export default router;

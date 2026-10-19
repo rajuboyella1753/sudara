@@ -6,14 +6,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   ShieldCheck, Mail, Lock, Building2, LayoutGrid, 
   ChevronDown, AlertCircle, MapPin, Zap, Globe, 
-  KeyRound, X 
-} from "lucide-react"; // 🚀 RAJU FIX: KeyRound and X ikkada add chesa
+  KeyRound, X, Eye, EyeOff 
+} from "lucide-react"; // 🚀 Eye & EyeOff ఐకాన్స్ ఇక్కడ యాడ్ చేశాం
 
 export default function OwnerLogin() {
   const navigate = useNavigate();
   const [dbDistricts, setDbDistricts] = useState([]); 
   const [verificationMessage, setVerificationMessage] = useState(""); 
   
+  // 🚀 పాస్‌వర్డ్ విజిబిలిటీ టోగుల్ చేయడానికి స్టేట్స్
+  const [showPassword, setShowPassword] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+
   // 🚀 RAJU FIX: Missing States define chesa ikkada
   const [isForgotModal, setIsForgotModal] = useState(false);
   const [resetData, setResetData] = useState({ email: "", newPassword: "" });
@@ -80,91 +84,54 @@ export default function OwnerLogin() {
     }
   };
 
-  const handleSubmit = async (e) => {
-  e.preventDefault();
-  setVerificationMessage("");
+const handleSubmit = async (e) => {
+    e.preventDefault();
+    setVerificationMessage("");
 
-  try {
-    const payload = {
-      email: form.email,
-      password: form.password,
-    };
+    try {
+      const payload = {
+        email: form.email,
+        password: form.password,
+      };
 
-    const res = await api.post("/owner/login", payload);
+      const res = await api.post("/owner/login", payload);
 
-    // ==============================
-    // ADMIN LOGIN
-    // ==============================
-    if (res.data.isAdmin) {
-      localStorage.setItem("isAdmin", "true");
-      navigate("/sudara-admin-control");
-      return;
-    }
+      // ==============================
+      // ADMIN LOGIN
+      // ==============================
+      if (res.data.isAdmin) {
+        localStorage.setItem("isAdmin", "true");
+        navigate("/sudara-admin-control");
+        return;
+      }
 
-    // ==============================
-    // OWNER LOGIN
-    // ==============================
-    if (res.data.owner.isApproved) {
-      localStorage.setItem(
-        "owner",
-        JSON.stringify(res.data.owner)
-      );
-
+      // ==============================
+      // OWNER LOGIN (Direct Access)
+      // ==============================
+      localStorage.setItem("owner", JSON.stringify(res.data.owner));
       const ownerCategory = res.data.owner.category;
-
-      // ==============================
-      // CATEGORY-WISE DASHBOARD
-      // ==============================
 
       if (!ownerCategory || ownerCategory === "Restaurant") {
         navigate("/owner/dashboard");
-      }
-
-      else if (ownerCategory === "Electronics") {
+      } else if (ownerCategory === "Electronics") {
         navigate("/owner/electronics-dashboard");
-      }
-
-      else if (ownerCategory === "Clothing") {
+      } else if (ownerCategory === "Clothing") {
         navigate("/owner/clothing-dashboard");
-      }
-
-      else if (ownerCategory === "Grocery") {
+      } else if (ownerCategory === "Grocery") {
         navigate("/owner/grocery-dashboard");
-      }
-
-      else if (ownerCategory === "Automobile") {
+      } else if (ownerCategory === "Automobile") {
         navigate("/automobile/dashboard");
-      }
-
-      else if (ownerCategory === "Furniture") {
+      } else if (ownerCategory === "Furniture") {
         navigate("/furniture/dashboard");
-      }
-
-      else {
-        // Unknown/new category
+      } else {
         navigate("/owner/dashboard");
       }
 
-    } else {
-      setVerificationMessage(
-        "Account pending admin approval! ⏳"
-      );
+    } catch (error) {
+      const errorData = error.response?.data;
+      setVerificationMessage(errorData?.message || "Login failed ❌");
     }
-
-  } catch (error) {
-    const errorData = error.response?.data;
-
-    if (errorData?.registeredDistrict) {
-      setVerificationMessage(
-        `Wrong District! Registered with: ${errorData.registeredDistrict} ⚠️`
-      );
-    } else {
-      setVerificationMessage(
-        errorData?.message || "Login failed ❌"
-      );
-    }
-  }
-};
+  };
   return (
     <div className="min-h-screen bg-[#05081c] text-slate-100 selection:bg-cyan-500/30 selection:text-cyan-200 overflow-x-hidden font-sans relative">
       <Navbar />
@@ -220,15 +187,27 @@ export default function OwnerLogin() {
                 </div>
               </div>
 
+              {/* 👁️ Password Input with Eye Toggle */}
               <div className="relative group">
                 <label className="text-[9px] font-black uppercase text-cyan-400 mb-1.5 ml-4 tracking-widest block">Password</label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-cyan-400 w-4 h-4 transition-colors" />
                   <input 
-                    type="password" name="password" placeholder="••••••••" 
-                    value={form.password} onChange={handleChange} required 
-                    className="w-full bg-[#0e1638] border-2 border-[#1e2d69] pl-12 pr-4 py-4 rounded-2xl focus:border-cyan-400 focus:bg-[#121c45] outline-none font-bold text-sm text-slate-100 placeholder:text-slate-500 transition-all shadow-inner" 
+                    type={showPassword ? "text" : "password"} 
+                    name="password" 
+                    placeholder="••••••••" 
+                    value={form.password} 
+                    onChange={handleChange} 
+                    required 
+                    className="w-full bg-[#0e1638] border-2 border-[#1e2d69] pl-12 pr-12 py-4 rounded-2xl focus:border-cyan-400 focus:bg-[#121c45] outline-none font-bold text-sm text-slate-100 placeholder:text-slate-500 transition-all shadow-inner" 
                   />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPassword(!showPassword)} 
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-cyan-400 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
                 {/* 🚀 RAJU ADDED: Reset Password Clicker */}
                 <div className="flex justify-end mt-2">
@@ -289,16 +268,24 @@ export default function OwnerLogin() {
                   />
                 </div>
 
+                {/* 👁️ Reset Password Input with Eye Toggle */}
                 <div className="relative group">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-orange-400 w-4 h-4 transition-colors" />
                   <input 
-                    type="password" 
+                    type={showResetPassword ? "text" : "password"} 
                     placeholder="NEW PASSWORD" 
                     required 
-                    className="w-full bg-[#0e1638] border border-[#1e2d69] p-4 pl-12 rounded-xl font-bold text-xs outline-none focus:border-orange-400 focus:bg-[#121c45] text-white placeholder:text-slate-500 transition-all shadow-inner" 
+                    className="w-full bg-[#0e1638] border border-[#1e2d69] p-4 pl-12 pr-12 rounded-xl font-bold text-xs outline-none focus:border-orange-400 focus:bg-[#121c45] text-white placeholder:text-slate-500 transition-all shadow-inner" 
                     value={resetData.newPassword} 
                     onChange={(e)=>setResetData({...resetData, newPassword: e.target.value})} 
                   />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowResetPassword(!showResetPassword)} 
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-orange-400 transition-colors"
+                  >
+                    {showResetPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
 
                 <button 

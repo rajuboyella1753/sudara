@@ -1296,12 +1296,12 @@ export default function ClothingDashboard() {
                   >
                     <Settings className="w-4 h-4 text-cyan-400" /> లాగిన్ వివరాలు & సర్టిఫికెట్ / Profile
                   </button>
-                  <button 
+                  {/* <button 
                     onClick={() => { setIsRenewalModalOpen(true); setIsSidebarOpen(false); }}
                     className="w-full flex items-center gap-3 p-4 bg-orange-950/40 hover:bg-orange-950/60 text-orange-300 rounded-2xl font-black uppercase text-xs tracking-wider transition-all border border-orange-500/40 shadow-sm"
                   >
                     <Settings className="w-4 h-4 text-orange-400" /> సబ్‌స్క్రిప్షన్ రెనెవల్ / Renew Node
-                  </button>
+                  </button> */}
 
                   <button 
                     onClick={() => { downloadQRCode(); setIsSidebarOpen(false); }}

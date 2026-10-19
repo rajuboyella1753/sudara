@@ -8,7 +8,7 @@ import {
   ShieldAlert, LogOut, Search, BarChart3, Store, X, 
   TrendingUp, Calendar, Activity, Star, MapPin, CreditCard,
   ArrowUpRight, LayoutDashboard, Globe, Menu, Bell, Filter, Home,
-  ChevronRight, RefreshCw, Send, ShoppingBag, UtensilsCrossed, PhoneCall, Trash2, Car
+  ChevronRight, RefreshCw, Send, ShoppingBag, UtensilsCrossed, PhoneCall, Trash2, Car, Mail
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -104,26 +104,53 @@ export default function AdminDashboard() {
     }
   };
 
-  const getRangeStats = (analytics) => {
-    if (!analytics) return { hits: 0, orders: 0, postOrders: 0, calls: 0 };
+  const getOwnerDailyStats = (analytics, dateStr) => {
+    if (!analytics) return { hits: 0, pre: 0, post: 0, onlineOrders: 0, calls: 0 };
     const analyticsObj = analytics instanceof Map ? Object.fromEntries(analytics) : analytics;
-    let stats = { hits: 0, orders: 0, postOrders: 0, calls: 0 };
+    
+    const [y, m, d] = dateStr.split('-');
+    const formats = [
+      dateStr,
+      `${Number(d)}/${Number(m)}/${y}`,
+      `${String(Number(d)).padStart(2,'0')}/${String(Number(m)).padStart(2,'0')}/${y}`
+    ];
+
+    let dayData = {};
+    for (const fmt of formats) {
+      if (analyticsObj[fmt]) {
+        dayData = analyticsObj[fmt]._doc || analyticsObj[fmt];
+        break;
+      }
+    }
+
+    return {
+      hits: Number(dayData.kitchen_entry || 0),
+      pre: Number(dayData.pre_order_click || 0),
+      post: Number(dayData.post_order_click || 0),
+      onlineOrders: Number(dayData.total_orders || 0),
+      calls: Number(dayData.call_click || 0)
+    };
+  };
+
+  const getRangeStats = (analytics) => {
+    if (!analytics) return { hits: 0, orders: 0, postOrders: 0, calls: 0, onlineOrders: 0 };
+    const analyticsObj = analytics instanceof Map ? Object.fromEntries(analytics) : analytics;
+    let stats = { hits: 0, orders: 0, postOrders: 0, calls: 0, onlineOrders: 0 };
     let current = new Date(startDate);
     let end = new Date(endDate);
     while (current <= end) {
-      const dKey = `${current.getDate()}/${current.getMonth() + 1}/${current.getFullYear()}`;
-      const rawData = analyticsObj[dKey] || {};
-      const dayData = rawData._doc || rawData;
-      stats.hits += Number(dayData.kitchen_entry || 0);
-      stats.orders += Number(dayData.pre_order_click || 0);
-      stats.postOrders += Number(dayData.post_order_click || 0); 
-      stats.calls += Number(dayData.call_click || 0);
+      const dStr = current.toISOString().split('T')[0];
+      const dayStats = getOwnerDailyStats(analyticsObj, dStr);
+      stats.hits += dayStats.hits;
+      stats.orders += dayStats.pre;
+      stats.postOrders += dayStats.post;
+      stats.onlineOrders += dayStats.onlineOrders;
+      stats.calls += dayStats.calls;
       current.setDate(current.getDate() + 1);
     }
     return stats;
   };
 
-  // 🎯 కేవలం ప్రీమియం మాత్రమే: రెస్టారెంట్ అయితే 999, మిగతా అన్ని కేటగిరీలకు 499
   const getSubscriptionStatus = (createdAt, nextBillingDate, category) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -152,17 +179,16 @@ export default function AdminDashboard() {
     return { status: "Payment Due", message: "Subscription Expired! ⚠️", isExpired: true, chargeAmount: actualFee, overdueText: overdueDays <= 0 ? "0 Days Overdue" : `${overdueDays} Days Overdue` };
   };
 
- const updateApprovalStatus = async (id, status) => {
-  try {
-    // 💡 ఇక్కడ isApproved తో పాటు planType కూడా premium అని పంపిస్తే ఆటోమేటిక్‌గా అప్‌డేట్ అవుతుంది
-    await api.put(`/owner/approve-owner/${id}`, { 
-      isApproved: status, 
-      planType: "premium",
-      billingStatus: "Active" 
-    });
-    setOwners(prev => prev.map(o => o._id === id ? { ...o, isApproved: status, planType: "premium", billingStatus: "Active" } : o));
-  } catch (err) { alert("Status Update Failed ❌"); }
-};
+  const updateApprovalStatus = async (id, status) => {
+    try {
+      await api.put(`/owner/approve-owner/${id}`, { 
+        isApproved: status, 
+        planType: "premium",
+        billingStatus: "Active" 
+      });
+      setOwners(prev => prev.map(o => o._id === id ? { ...o, isApproved: status, planType: "premium", billingStatus: "Active" } : o));
+    } catch (err) { alert("Status Update Failed ❌"); }
+  };
 
   const sendAdminBroadcast = async () => {
     if (!broadcastMsg.title || !broadcastMsg.body) return alert("Title and Body are required! 📢");
@@ -171,16 +197,16 @@ export default function AdminDashboard() {
       const payload = {
         title: broadcastMsg.title,
         body: broadcastMsg.body,
-        data: { url: "https://sudara.in" }
+        url: "https://sudara.in"
       };
       const res = await api.post("/owner/broadcast-to-all", payload);
-      if (res.data.success) {
-        alert(`🚀 System Alert Sent to Users!`);
+      if (res.data.success || res.status === 200) {
+        alert(`🚀 System Alert Sent Successfully to Users!`);
         setBroadcastMsg({ title: "", body: "" });
         setIsBroadcasting(false);
       }
     } catch (err) {
-      alert("Broadcast failed!");
+      alert("Broadcast failed! Check backend connection.");
     } finally {
       setSending(false);
     }
@@ -188,50 +214,44 @@ export default function AdminDashboard() {
 
   const filteredList = owners.filter(owner => {
     const isNotGeneral = owner.collegeName && owner.collegeName !== "General";
+    
     let matchesTab = true;
-    if (activeTab === "pending") matchesTab = !owner.isApproved;
-    else if (activeTab === "approved") matchesTab = owner.isApproved;
-    else if (activeTab === "analytics") matchesTab = owner.isApproved === true;
+    if (activeTab === "approved") {
+      matchesTab = owner.isApproved === true;
+    } else if (activeTab === "pending") {
+      matchesTab = owner.isApproved === false || !owner.isApproved;
+    }
 
     const matchesState = selectedState === "All" || owner.state === selectedState;
     const matchesDistrict = selectedDistrict === "All" || owner.district === selectedDistrict;
     const matchesCategory = selectedCategory === "All" || (owner.category || "Restaurant") === selectedCategory;
     const matchesSearch = (owner.name || "").toLowerCase().includes(searchTerm.toLowerCase());
+    
     return isNotGeneral && matchesTab && matchesState && matchesDistrict && matchesCategory && matchesSearch;
   });
 
-const dailyTotals = filteredList.reduce((acc, res) => {
-    const analyticsObj = res.analytics instanceof Map ? Object.fromEntries(res.analytics) : (res.analytics || {});
-    let hits = 0, pre = 0, post = 0, calls = 0;
-    
+  const dailyTotals = filteredList.reduce((acc, res) => {
+    let stats = { hits: 0, pre: 0, post: 0, onlineOrders: 0, calls: 0 };
     if (viewMode === "daily") {
-      const d = new Date(filterDate);
-      const key1 = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-      const key2 = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
-      const data1 = analyticsObj[key1] || {};
-      const data2 = analyticsObj[key2] || {};
-      hits = (data1.kitchen_entry || 0) + (data2.kitchen_entry || 0);
-      pre = (data1.pre_order_click || 0) + (data2.pre_order_click || 0) + (data1.store_order_count || 0); // 👈 ఆన్‌లైన్/స్టోర్ ఆర్డర్స్ కౌంట్ యాడ్ చేశాం
-      post = (data1.post_order_click || 0) + (data2.post_order_click || 0);
-      calls = (data1.call_click || 0) + (data2.call_click || 0);
+      stats = getOwnerDailyStats(res.analytics, filterDate);
     } else {
-      const s = getRangeStats(res.analytics);
-      hits = s.hits; pre = s.orders; post = s.postOrders; calls = s.calls;
+      stats = getRangeStats(res.analytics);
     }
     
-    acc.hits += hits;
-    acc.pre += pre;
-    acc.post += post;
-    acc.calls += calls;
+    acc.hits += stats.hits;
+    acc.pre += stats.pre;
+    acc.post += stats.post;
+    acc.onlineOrders += stats.onlineOrders;
+    acc.calls += stats.calls;
     return acc;
-  }, { hits: 0, pre: 0, post: 0, calls: 0 });
+  }, { hits: 0, pre: 0, post: 0, onlineOrders: 0, calls: 0 });
 
   if (loading) return (
     <div className="h-screen flex flex-col items-center justify-center bg-[#05081c] text-cyan-400 font-black px-6">
       <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
         <RefreshCw className="w-12 h-12 text-cyan-400" />
       </motion.div>
-      <p className="mt-6 tracking-[0.3em] uppercase text-[10px] text-slate-400 font-bold animate-pulse">Syncing Intel...</p>
+      <p className="mt-6 tracking-[0.3em] uppercase text-[10px] text-slate-400 font-bold animate-pulse">Syncing Matrix...</p>
     </div>
   );
 
@@ -266,80 +286,43 @@ const dailyTotals = filteredList.reduce((acc, res) => {
         </div>
         
         <nav className="flex-1 p-6 space-y-2">
+          {[
+            { id: 'analytics', label: 'Matrix Insights', icon: BarChart3 },
+            { id: 'approved', label: 'Verified Partners', icon: Store },
+            { id: 'pending', label: 'Pending Queue', icon: ShieldAlert }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setActiveTab(tab.id);
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between p-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 border ${
+                activeTab === tab.id
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-cyan-400/50 shadow-lg shadow-blue-950/60'
+                  : 'bg-transparent text-slate-400 border-transparent hover:bg-[#0a1033] hover:text-slate-200'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <tab.icon className="w-4 h-4" />
+                {tab.label}
+              </div>
+              {activeTab === tab.id && (
+                <ChevronRight className="w-3 h-3" />
+              )}
+            </button>
+          ))}
 
-  {/* HOME
-  <button
-    onClick={() => {
-      setActiveTab("home");
-      setIsSidebarOpen(false);
-    }}
-    className={`w-full flex items-center justify-between p-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 border ${
-      activeTab === "home"
-        ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-cyan-400/50 shadow-lg shadow-blue-950/60"
-        : "bg-transparent text-slate-400 border-transparent hover:bg-[#0a1033] hover:text-slate-200"
-    }`}
-  >
-    <div className="flex items-center gap-3">
-      <Home className="w-4 h-4" />
-      Home
-    </div>
-
-    <div className="flex items-center gap-2">
-      {/* TOTAL BUSINESS COUNT */}
-      {/* <span className="min-w-[24px] h-6 px-2 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center">
-        {homeCount}
-      </span>
-
-      {activeTab === "home" && (
-        <ChevronRight className="w-3 h-3" />
-      )}
-    </div>
-  </button>  */}
-
-
-  {/* OTHER TABS */}
-  {[
-    { id: 'analytics', label: 'Matrix Insights', icon: BarChart3 },
-    { id: 'approved', label: 'Verified Partners', icon: Store },
-    { id: 'pending', label: 'Pending Queue', icon: ShieldAlert }
-  ].map(tab => (
-    <button
-      key={tab.id}
-      onClick={() => {
-        setActiveTab(tab.id);
-        setIsSidebarOpen(false);
-      }}
-      className={`w-full flex items-center justify-between p-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all duration-300 border ${
-        activeTab === tab.id
-          ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-cyan-400/50 shadow-lg shadow-blue-950/60'
-          : 'bg-transparent text-slate-400 border-transparent hover:bg-[#0a1033] hover:text-slate-200'
-      }`}
-    >
-      <div className="flex items-center gap-3">
-        <tab.icon className="w-4 h-4" />
-        {tab.label}
-      </div>
-
-      {activeTab === tab.id && (
-        <ChevronRight className="w-3 h-3" />
-      )}
-    </button>
-  ))}
-
-
-  <div className="pt-6 mt-6 border-t border-[#131d47]">
-
-    <button
-      onClick={() => setIsBroadcasting(true)}
-      className="w-full flex items-center gap-3 p-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all bg-amber-950/40 text-amber-300 border border-amber-500/30 hover:bg-amber-950/60 shadow-sm"
-    >
-      <Bell className="w-4 h-4 text-amber-400" />
-      System Broadcast
-    </button>
-
-  </div>
-
-</nav>
+          <div className="pt-6 mt-6 border-t border-[#131d47]">
+            <button
+              onClick={() => setIsBroadcasting(true)}
+              className="w-full flex items-center gap-3 p-4 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all bg-amber-950/40 text-amber-300 border border-amber-500/30 hover:bg-amber-950/60 shadow-sm"
+            >
+              <Bell className="w-4 h-4 text-amber-400" />
+              System Broadcast
+            </button>
+          </div>
+        </nav>
 
         <div className="p-6 border-t border-[#131d47]">
           <button onClick={() => navigate("/owner")} className="w-full flex items-center justify-center gap-3 p-4 rounded-2xl bg-[#0a1033] text-slate-400 hover:bg-red-950/50 hover:text-red-400 hover:border-red-500/40 transition-all font-black text-[10px] uppercase tracking-widest border border-[#1e2d69]"><LogOut className="w-4 h-4" /> Sign Out</button>
@@ -373,7 +356,7 @@ const dailyTotals = filteredList.reduce((acc, res) => {
               <div className="min-w-0">
                 <h2 className="text-2xl lg:text-4xl font-black italic uppercase text-white tracking-tighter leading-none flex items-center gap-3">
                   <div className="w-2 h-8 bg-gradient-to-b from-cyan-400 to-blue-600 rounded-full hidden md:block"></div>
-                  {activeTab === 'analytics' ? 'Matrix' : 'Hub'} <span className="text-cyan-400">Partners</span>
+                  {activeTab === 'analytics' ? 'Matrix' : (activeTab === 'approved' ? 'Verified' : 'Pending')} <span className="text-cyan-400">Partners</span>
                 </h2>
                 {activeTab === 'analytics' && (
                   <div className="flex bg-[#0a1033] p-1 rounded-xl w-fit mt-4 border border-[#1e2d69]">
@@ -463,86 +446,47 @@ const dailyTotals = filteredList.reduce((acc, res) => {
           
           {activeTab === "analytics" && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-              {/* 📊 DAILY SUMMARY TOTALS (DYNAMIC LABELS BASED ON CATEGORY) */}
-<div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-  {(() => {
-    const isRestoCat = selectedCategory === "All" || selectedCategory === "Restaurant";
-    const isAutoCat = selectedCategory === "Automobile";
-    
-    const cards = [
-      { label: "Total Hits", val: dailyTotals.hits, color: "slate", icon: Activity, desc: "Page visits" },
-      { 
-        label: isRestoCat ? "Pre-Bookings" : (isAutoCat ? "Test Drives" : "Online Orders 🛍️"), 
-        val: dailyTotals.pre, 
-        color: "blue", 
-        icon: ShoppingBag, 
-        desc: isRestoCat ? "Pre-orders" : (isAutoCat ? "Booking requests" : "Direct store orders") 
-      },
-      { 
-        label: isRestoCat ? "Post-Bookings" : (isAutoCat ? "Showroom Visits" : "Catalog Views"), 
-        val: dailyTotals.post, 
-        color: "emerald", 
-        icon: UtensilsCrossed, 
-        desc: isRestoCat ? "Post-orders" : "Interactions" 
-      },
-      { label: "Total Calls", val: dailyTotals.calls, color: "orange", icon: PhoneCall, desc: "Call clicks" },
-    ];
-
-    const colorClasses = {
-      slate: { border: "border-[#1e2d69]", textHeader: "text-slate-400", textVal: "text-slate-200" },
-      blue: { border: "border-cyan-500/30", textHeader: "text-cyan-400", textVal: "text-cyan-300" },
-      emerald: { border: "border-emerald-500/30", textHeader: "text-emerald-400", textVal: "text-emerald-300" },
-      orange: { border: "border-orange-500/30", textHeader: "text-orange-400", textVal: "text-orange-300" },
-    };
-
-    return cards.map((s, i) => {
-      const cls = colorClasses[s.color] || colorClasses.slate;
-      return (
-        <div key={i} className={`bg-[#0a1033] border ${cls.border} rounded-[2rem] p-6 shadow-sm`}>
-          <p className={`text-[9px] font-black ${cls.textHeader} uppercase tracking-widest mb-1`}>{s.label}</p>
-          <p className={`text-4xl font-black italic ${cls.textVal}`}>{s.val}</p>
-          <p className="text-[8px] text-slate-400 uppercase mt-1">{s.desc}</p>
-        </div>
-      );
-    });
-  })()}
-</div>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+                {(() => {
+                  const isRestoCat = selectedCategory === "All" || selectedCategory === "Restaurant";
+                  const isAutoCat = selectedCategory === "Automobile";
+                  
+                  return [
+                    { label: "Total Hits", val: dailyTotals.hits, desc: "Page visits" },
+                    { label: isRestoCat ? "Pre-Bookings" : (isAutoCat ? "Test Drives" : "Online Orders 🛍️"), val: isRestoCat ? dailyTotals.pre : (isAutoCat ? dailyTotals.pre : dailyTotals.onlineOrders), desc: "Pre-orders/Requests" },
+                    { label: "Online Orders 🛍️", val: dailyTotals.onlineOrders, desc: "Direct home delivery" },
+                    { label: isRestoCat ? "Post-Bookings" : (isAutoCat ? "Showroom Visits" : "Catalog Views"), val: dailyTotals.post, desc: "Post-orders/Interactions" },
+                    { label: "Total Calls", val: dailyTotals.calls, desc: "Call clicks" },
+                  ].map((s, i) => (
+                    <div key={i} className="bg-[#0a1033] border border-[#1e2d69] rounded-[2rem] p-5 shadow-sm">
+                      <p className="text-[9px] font-black text-cyan-400 uppercase tracking-widest mb-1">{s.label}</p>
+                      <p className="text-3xl font-black italic text-white">{s.val}</p>
+                      <p className="text-[8px] text-slate-400 uppercase mt-1">{s.desc}</p>
+                    </div>
+                  ));
+                })()}
+              </div>
 
               <div className="hidden lg:block bg-[#0a1033] rounded-[2.5rem] border border-[#1e2d69] shadow-sm overflow-hidden">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-[#070b24] text-[10px] font-black uppercase text-slate-400 tracking-[0.25em] border-b border-[#131d47]">
-  <th className="p-8">Partner Node</th>
-  <th className="p-8 text-center">Hits</th>
-  <th className="p-8 text-center">{selectedCategory === "Automobile" ? "Test Drives" : (selectedCategory === "All" || selectedCategory === "Restaurant" ? "Pre-Book" : "Orders")}</th>
-  {/* <th className="p-8 text-center">{selectedCategory === "Automobile" ? "Showroom Visits" : (selectedCategory === "All" || selectedCategory === "Restaurant" ? "Post-Book" : "Interactions")}</th> */}
-  <th className="p-8 text-center">Calls</th>
-  <th className="p-8 text-right">Status</th>
-</tr>
+                      <th className="p-6">Partner Node</th>
+                      <th className="p-6 text-center">Hits</th>
+                      <th className="p-6 text-center">Pre-Book</th>
+                      <th className="p-6 text-center">Online Orders</th>
+                      <th className="p-6 text-center">Post-Book</th>
+                      <th className="p-6 text-center">Calls</th>
+                      <th className="p-6 text-right">Status</th>
+                    </tr>
                   </thead>
                   <tbody className="divide-y divide-[#131d47]">
                     {filteredList.map((res) => {
-                      const analyticsObj = res.analytics instanceof Map ? Object.fromEntries(res.analytics) : (res.analytics || {});
-                      let dHits = 0, dOrders = 0, dPostOrders = 0, dCalls = 0;
-
-                      if (viewMode === "daily") {
-                        const d = new Date(filterDate);
-                        const key1 = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-                        const key2 = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-                        const data1 = analyticsObj[key1] || {};
-                        const data2 = analyticsObj[key2] || {};
-                        dHits = (data1.kitchen_entry || 0) + (data2.kitchen_entry || 0);
-                        dOrders = (data1.pre_order_click || 0) + (data2.pre_order_click || 0);
-                        dPostOrders = (data1.post_order_click || 0) + (data2.post_order_click || 0);
-                        dCalls = (data1.call_click || 0) + (data2.call_click || 0);
-                      } else {
-                        const stats = getRangeStats(res.analytics);
-                        dHits = stats.hits; dOrders = stats.orders; dPostOrders = stats.postOrders; dCalls = stats.calls;
-                      }
+                      const stats = viewMode === "daily" ? getOwnerDailyStats(res.analytics, filterDate) : getRangeStats(res.analytics);
 
                       return (
                         <tr key={res._id} className="hover:bg-[#0e1638] transition-all">
-                          <td className="p-8">
+                          <td className="p-6">
                             <div className="flex items-center gap-4">
                               {res.hotelImage ? (
                                 <img src={res.hotelImage} className="w-12 h-12 rounded-xl object-cover border border-[#1e2d69]" alt="" />
@@ -557,13 +501,14 @@ const dailyTotals = filteredList.reduce((acc, res) => {
                               </div>
                             </div>
                           </td>
-                          <td className="p-8 text-center font-black text-lg text-slate-200">{dHits}</td>
-                          <td className="p-8 text-center font-black text-2xl text-cyan-400">{dOrders}</td>
-                          <td className="p-8 text-center font-black text-2xl text-emerald-400">{dPostOrders}</td>
-                          <td className="p-8 text-center font-black text-2xl text-orange-400">{dCalls}</td>
-                          <td className="p-8 text-right">
-                            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-[9px] font-black uppercase italic ${dHits > 0 ? 'bg-emerald-950/40 border border-emerald-500/30 text-emerald-300' : 'bg-[#0e1638] text-slate-400 border border-[#1e2d69]'}`}>
-                              {dHits > 0 ? 'Live Node' : 'Idle'}
+                          <td className="p-6 text-center font-black text-base text-slate-200">{stats.hits}</td>
+                          <td className="p-6 text-center font-black text-xl text-cyan-400">{stats.pre}</td>
+                          <td className="p-6 text-center font-black text-xl text-cyan-400">{stats.onlineOrders}</td>
+                          <td className="p-6 text-center font-black text-xl text-emerald-400">{stats.post}</td>
+                          <td className="p-6 text-center font-black text-xl text-orange-400">{stats.calls}</td>
+                          <td className="p-6 text-right">
+                            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase italic ${stats.hits > 0 ? 'bg-emerald-950/40 border border-emerald-500/30 text-emerald-300' : 'bg-[#0e1638] text-slate-400 border border-[#1e2d69]'}`}>
+                              {stats.hits > 0 ? 'Live' : 'Idle'}
                             </div>
                             {res.isApproved && (
                               <button type="button" onClick={() => {
@@ -582,224 +527,6 @@ const dailyTotals = filteredList.reduce((acc, res) => {
                   </tbody>
                 </table>
               </div>
-
-              {/* 📱 MOBILE/TABLET GRID VIEW */}
-              <div className="lg:hidden space-y-4 px-2 pb-20">
-                {filteredList.map((owner) => {
-                  const analyticsObj = owner.analytics instanceof Map ? Object.fromEntries(owner.analytics) : (owner.analytics || {});
-                  let dHits = 0, dOrders = 0, dPostOrders = 0, dCalls = 0;
-                  const sub = getSubscriptionStatus(owner.createdAt, owner.nextBillingDate, owner.category);
-
-                  if (viewMode === "daily") {
-                    const d = new Date(filterDate);
-                    const dayKey = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
-                    let dayData = owner.analytics instanceof Map ? owner.analytics.get(dayKey) || {} : analyticsObj[dayKey] || {};
-                    const finalData = dayData._doc || dayData;
-                    dHits = finalData.kitchen_entry || 0;
-                    dOrders = finalData.pre_order_click || 0;
-                    dPostOrders = finalData.post_order_click || 0;
-                    dCalls = finalData.call_click || 0;
-                  } else {
-                    const stats = getRangeStats(owner.analytics);
-                    dHits = stats.hits; dOrders = stats.orders; dPostOrders = stats.postOrders; dCalls = stats.calls;
-                  }
-
-                  const catLower = (owner.category || "").toLowerCase();
-  const isRestoMobile = catLower === "restaurant" || catLower === "" || catLower.includes("restaurant");
-  const isAutoMobile = catLower.includes("automobile");
-
-                  return (
-                    <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} key={owner._id} className="bg-[#0a1033] p-5 rounded-[2.5rem] border border-[#1e2d69] shadow-sm relative flex flex-col h-full overflow-hidden group">
-                      {activeTab === "approved" && sub.isExpired && (
-                        <div className="absolute top-0 left-0 w-full bg-rose-600 text-white text-[7px] font-black uppercase py-1 text-center z-10 animate-pulse">
-                          Monthly Due Pending (₹{sub.chargeAmount})
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between mb-5 mt-2">
-                        <div className="flex items-center gap-3">
-                          <div className="relative">
-                            {owner.hotelImage && !owner.hotelImage.includes('placeholder') ? (
-                              <img src={owner.hotelImage} className="w-12 h-12 rounded-2xl object-cover border-2 border-[#1e2d69]" alt="" />
-                            ) : (
-                              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#0e1638] to-[#141d45] flex items-center justify-center text-cyan-400 shrink-0 border-2 border-cyan-500/30 shadow-inner">
-                                <Store className="w-5 h-5" />
-                              </div>
-                            )}
-                            <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-[#0a1033] ${dHits > 0 ? 'bg-emerald-500' : 'bg-slate-600'}`}></div>
-                          </div>
-                          <div className="min-w-0">
-                            <h4 className="font-black text-[13px] uppercase italic text-slate-100 leading-tight truncate">{owner.name}</h4>
-                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest truncate">{owner.collegeName}</p>
-                          </div>
-                        </div>
-                        <div className={`px-3 py-1.5 rounded-xl text-[8px] font-black uppercase italic ${dHits > 0 ? 'bg-emerald-950/50 border border-emerald-500/40 text-emerald-300' : 'bg-[#0e1638] border border-[#1e2d69] text-slate-400'}`}>
-                          {dHits > 0 ? 'Live' : 'Idle'}
-                        </div>
-                      </div>
-
-                     {isRestoMobile ? (
-    <div className="grid grid-cols-4 gap-2 mb-4">
-      {[
-        { label: 'Hits', val: dHits },
-        { label: 'Pre-Book', val: dOrders },
-        { label: 'Post-Book', val: dPostOrders },
-        { label: 'Calls', val: dCalls }
-      ].map((stat, idx) => (
-        <div key={idx} className="bg-[#0e1638] p-3 rounded-2xl border border-[#1e2d69] text-center">
-          <p className="text-[7px] font-black text-slate-400 uppercase mb-1 tracking-tighter">{stat.label}</p>
-          <p className="text-sm font-black text-cyan-300 italic">{stat.val}</p>
-        </div>
-      ))}
-    </div>
-  ) : isAutoMobile ? (
-    <div className="grid grid-cols-3 gap-2 mb-4">
-      {[
-        { label: 'Hits', val: dHits },
-        { label: 'Test Drives', val: dOrders },
-        { label: 'Calls', val: dCalls }
-      ].map((stat, idx) => (
-        <div key={idx} className="bg-[#0e1638] p-3 rounded-2xl border border-[#1e2d69] text-center">
-          <p className="text-[7px] font-black text-slate-400 uppercase mb-1 tracking-tighter">{stat.label}</p>
-          <p className="text-sm font-black text-cyan-300 italic">{stat.val}</p>
-        </div>
-      ))}
-    </div>
-  ) : (
-    <div className="grid grid-cols-3 gap-2 mb-4">
-      {[
-        { label: 'Hits', val: dHits },
-        { label: 'Orders', val: dOrders },
-        { label: 'Calls', val: dCalls }
-      ].map((stat, idx) => (
-        <div key={idx} className="bg-[#0e1638] p-3 rounded-2xl border border-[#1e2d69] text-center">
-          <p className="text-[7px] font-black text-slate-400 uppercase mb-1 tracking-tighter">{stat.label}</p>
-          <p className="text-sm font-black text-cyan-300 italic">{stat.val}</p>
-        </div>
-      ))}
-    </div>
-  )}
-
-                      <div className="flex items-center gap-2 mb-4 px-1">
-                        <Calendar className="w-3 h-3 text-slate-400" />
-                        <span className="text-[9px] font-black text-slate-400 uppercase italic tracking-tighter">
-                          Registered: {owner?.createdAt ? new Date(owner.createdAt).toLocaleDateString('en-GB') : "New Entry"}
-                        </span>
-                      </div>
-
-                      {activeTab === "approved" && (() => {
-                        const displayAmount = sub.chargeAmount;
-                        return (
-                          <div className={`mb-4 p-4 rounded-2xl border transition-all duration-300 ${sub.isExpired ? 'bg-rose-950/30 border-rose-500/40 shadow-sm' : 'bg-emerald-950/30 border-emerald-500/40 shadow-sm'}`}>
-                            <div className="flex justify-between items-center gap-4">
-                              <div className="min-w-0 flex-1 w-full text-slate-100">
-                                <div className="flex items-center justify-between gap-2 mb-3">
-                                  <div className="flex flex-col gap-0.5">
-                                    <p className="text-[8px] font-black opacity-40 uppercase tracking-[0.25em] text-slate-400">System Protocol</p>
-                                    <h5 className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Node Status</h5>
-                                  </div>
-                                  <div className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border animate-pulse shadow-sm flex items-center gap-1 ${sub.isExpired ? 'bg-rose-950/60 border-rose-500/40 text-rose-300' : 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300'}`}>
-                                    <span className={`w-1.5 h-1.5 rounded-full ${sub.isExpired ? 'bg-rose-500' : 'bg-emerald-500'}`}></span>
-                                    {sub.isExpired ? 'Offline' : 'Active'}
-                                  </div>
-                                </div>
-
-                                <div className={`p-3 rounded-xl border bg-[#0e1638]/90 ${sub.isExpired ? 'border-rose-500/30' : 'border-emerald-500/30'}`}>
-                                  <span className={`text-xs font-black uppercase italic tracking-tight block ${sub.isExpired ? 'text-rose-400' : 'text-emerald-400'}`}>
-                                    {sub.message}
-                                  </span>
-                                  {!sub.isExpired && (
-                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wide mt-1">
-                                      • Fee: <span className="text-slate-200 font-black">₹{displayAmount}</span>
-                                    </p>
-                                  )}
-                                  {sub.isExpired && (
-                                    <div className="mt-2 pt-2 border-t border-rose-500/20 grid grid-cols-2 gap-2">
-                                      <div className="flex flex-col">
-                                        <span className="text-[6px] font-black uppercase text-slate-400">Timeline</span>
-                                        <span className="text-[9px] font-black text-rose-400">{sub.overdueText || "Expired"}</span>
-                                      </div>
-                                      <div className="flex flex-col">
-                                        <span className="text-[6px] font-black uppercase text-slate-400">Fee</span>
-                                        <span className="text-[9px] font-black text-slate-200">₹{displayAmount}</span>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-
-                              {sub.isExpired && (
-                                <button type="button" onClick={() => {
-                                  const merchantName = owner?.name || "Partner Merchant";
-                                  const ownerPhone = owner?.phone || "";
-                                  const message = `*🛡️ SUDARA HUB NETWORK - BILLING DEPT* \n---------------------------------------------\n*URGENT NOTICE: SUBSCRIPTION EXPIRY*\n\nDear *${merchantName}* Management,\n\nYour commercial merchant account subscription has *EXPIRED*.\n\n💸 • Pending Due Amount: *₹${sub.chargeAmount} / Month*\n📌 PhonePe Secure: *7569896128*\n\n_Sudara Trust & Safety Compliance Team_`;
-                                  window.open(`https://wa.me/${ownerPhone}?text=${encodeURIComponent(message)}`, '_blank');
-                                }} className="bg-rose-600 text-white p-3.5 rounded-2xl shadow-xl active:scale-95 transition-all duration-300 hover:bg-rose-700 border border-rose-500/30 shrink-0 flex items-center justify-center border-b-4 border-b-rose-800" title="Transmit Expiry Alert">
-                                  <Send className="w-4 h-4" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })()}
-{/* 🟢 RENEW CYCLE BUTTON (Direct 30 Days Extension by Admin) */}
-{activeTab === "approved" && (
-  <div className="flex gap-2 mb-4">
-    <button 
-      onClick={async () => {
-        try {
-          // 🎯 బ్యాక్‌ఎండ్ రౌట్ పర్‌ఫెక్ట్ గా హిట్ అవ్వడానికి /owner/update-billing/${owner._id} వాడాలి
-          const response = await api.put(`/owner/update-billing/${owner._id}`);
-          if (response.data.success) {
-            setOwners(prev => prev.map(o => o._id === owner._id ? response.data.owner : o));
-            alert("Subscription Renewed for 30 Days! 🚀");
-          }
-        } catch(err) { 
-          console.error("Billing update failed ❌", err); 
-          alert(err.response?.data?.message || "Billing update failed ❌ (Check backend route)");
-        }
-      }} 
-      className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[11px] uppercase tracking-wider rounded-2xl active:scale-95 transition-all shadow-md flex items-center justify-center gap-2 border border-emerald-400/30"
-    >
-      Renew 30 Days Cycle ✅
-    </button>
-  </div>
-)}
-
-                      <div className="flex items-center gap-3 bg-[#070b24] border border-[#1e2d69] p-4 rounded-2xl mt-auto mb-4 shadow-inner">
-                        <div className="w-8 h-8 bg-[#0e1638] rounded-xl flex items-center justify-center text-cyan-400 border border-cyan-500/20"><Phone className="w-4 h-4" /></div>
-                        <div className="flex flex-col">
-                          <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Partner Contact</span>
-                          <span className="text-[11px] font-black text-white tracking-wider uppercase leading-none">{owner.phone || "No Number"}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col gap-3.5 pt-4 border-t border-[#1e2d69] mt-2">
-                        {owner.isApproved && (
-                          <button type="button" onClick={() => {
-                            localStorage.setItem("owner", JSON.stringify(owner)); 
-                            if (socket) socket.disconnect();
-                            alert(`🛡️ OVERCOMING MATRIX: Entering ${owner.name} Node Control...`);
-                            navigate("/owner/dashboard"); 
-                          }} className="w-full mb-1 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-[10px] uppercase italic tracking-widest rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 border border-cyan-400/30 border-b-4 border-b-indigo-950">
-                            <LayoutDashboard className="w-4 h-4" /> Overcome Dashboard ⚔️
-                          </button>
-                        )}
-
-                        <div className="flex items-center gap-2.5 w-full">
-                          <button type="button" onClick={() => updateApprovalStatus(owner._id, !owner.isApproved)} className={`flex-1 py-3.5 rounded-2xl font-black text-[9px] uppercase italic tracking-widest transition-all shadow-sm active:scale-95 border-b-4 border-r inline-flex items-center justify-center gap-1.5 ${owner.isApproved ? 'bg-[#0e1638] border-[#1e2d69] text-rose-400 hover:bg-rose-950/40 border-b-rose-900' : 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-b-indigo-950 hover:from-blue-500 hover:to-indigo-500 border border-cyan-400/30'}`}>
-                            <span>{owner.isApproved ? '🛡️ Revoke Access' : '⚡ Verify Node'}</span>
-                          </button>
-
-                          <button type="button" onClick={() => deleteOwnerForever(owner._id, owner.name)} className="p-3.5 bg-rose-950/30 text-rose-400 rounded-2xl border border-rose-500/30 hover:bg-rose-600 hover:text-white transition-all active:scale-90 shadow-sm flex items-center justify-center border-b-4 border-b-rose-900 aspect-square" title="Delete Forever">
-                            <Trash2 className="w-4 h-4 stroke-[2.5]" /> 
-                          </button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
             </motion.div>
           )}
 
@@ -808,13 +535,8 @@ const dailyTotals = filteredList.reduce((acc, res) => {
               <AnimatePresence mode="popLayout">
                 {filteredList.map((owner) => {
                   const sub = getSubscriptionStatus(owner.createdAt, owner.nextBillingDate, owner.category);
-                  
-                  
-
-                  const catLowerCard = (owner.category || "").toLowerCase();
-                  const isRestoCard = catLowerCard === "restaurant" || catLowerCard === "" || catLowerCard.includes("restaurant");
-                  const isAutoCard = catLowerCard.includes("automobile");
                   const displayAmount = sub.chargeAmount;
+                  const ownerStats = viewMode === "daily" ? getOwnerDailyStats(owner.analytics, filterDate) : getRangeStats(owner.analytics);
 
                   return (
                     <motion.div layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} key={owner._id} className="bg-[#0a1033] p-5 lg:p-8 rounded-[2rem] border border-[#1e2d69] shadow-sm relative flex flex-col h-full overflow-hidden group">
@@ -824,7 +546,7 @@ const dailyTotals = filteredList.reduce((acc, res) => {
                         </div>
                       )}
 
-                      <div className="flex items-start gap-4 mb-6 mt-2">
+                      <div className="flex items-start gap-4 mb-4 mt-2">
                         <div className="relative shrink-0">
                           {owner.hotelImage ? (
                             <img src={owner.hotelImage} className="w-12 h-12 rounded-2xl object-cover border-2 border-[#1e2d69]" alt="" />
@@ -841,6 +563,30 @@ const dailyTotals = filteredList.reduce((acc, res) => {
                              <Building2 className="w-3 h-3" />
                              <p className="text-[8px] font-black uppercase tracking-widest truncate">{owner.collegeName}</p>
                           </div>
+                        </div>
+                      </div>
+
+                      {/* 📊 ప్రతి ఓనర్‌కి సపరేట్ కౌంట్స్ ఫీల్డ్స్ */}
+                      <div className="grid grid-cols-5 gap-1.5 mb-4">
+                        <div className="bg-[#0e1638] p-2 rounded-xl text-center border border-[#1e2d69]">
+                          <span className="text-[6px] font-black text-slate-400 uppercase block">Hits</span>
+                          <span className="text-sm font-black text-slate-200">{ownerStats.hits}</span>
+                        </div>
+                        <div className="bg-[#0e1638] p-2 rounded-xl text-center border border-cyan-500/30">
+                          <span className="text-[6px] font-black text-cyan-400 uppercase block">Pre</span>
+                          <span className="text-sm font-black text-cyan-300">{ownerStats.pre}</span>
+                        </div>
+                        <div className="bg-[#0e1638] p-2 rounded-xl text-center border border-cyan-500/30">
+                          <span className="text-[6px] font-black text-cyan-400 uppercase block">Online</span>
+                          <span className="text-sm font-black text-cyan-300">{ownerStats.onlineOrders}</span>
+                        </div>
+                        <div className="bg-[#0e1638] p-2 rounded-xl text-center border border-emerald-500/30">
+                          <span className="text-[6px] font-black text-emerald-400 uppercase block">Post</span>
+                          <span className="text-sm font-black text-emerald-300">{ownerStats.post}</span>
+                        </div>
+                        <div className="bg-[#0e1638] p-2 rounded-xl text-center border border-orange-500/30">
+                          <span className="text-[6px] font-black text-orange-400 uppercase block">Calls</span>
+                          <span className="text-sm font-black text-orange-300">{ownerStats.calls}</span>
                         </div>
                       </div>
 
@@ -909,7 +655,7 @@ const dailyTotals = filteredList.reduce((acc, res) => {
                         <button onClick={() => {
                           const merchantName = owner?.name || "Partner Merchant";
                           const ownerPhone = owner?.phone || "";
-                          const message = `*🛡️ SUDARA HUB NETWORK - BILLING DEPT* \n---------------------------------------------\n*URGENT NOTICE: SUBSCRIPTION EXPIRY*\n\nDear *${merchantName}* Management,\n\nYour commercial merchant account subscription has *EXPIRED*.\n\n💸 • Pending Due Amount: *₹${sub.chargeAmount} / Month*\n📌 PhonePe Secure: *7569896128*\n\n_Sudara Trust & Safety Compliance Team_`;
+                          const message = `*🛡️ SUDARA HUB NETWORK - BILLING DEPT* \n---------------------------------------------\n*URGENT NOTICE: SUBSCRIPTION EXPIRY*\n\nDear *${merchantName}* Management,\n\nYour commercial merchant account subscription has *EXPIRED*.\n\n💸 • Pending Due Amount: *₹{sub.chargeAmount} / Month*\n📌 PhonePe Secure: *7569896128*\n\n_Sudara Trust & Safety Compliance Team_`;
                           window.open(`https://wa.me/${ownerPhone}?text=${encodeURIComponent(message)}`, '_blank');
                         }} className="bg-rose-600 text-white p-3 rounded-2xl shadow-xl active:scale-95 transition-all duration-300 hover:bg-rose-700 flex items-center justify-center gap-2 border border-rose-500/30 shrink-0 mb-4">
                           <Send className="w-4 h-4" />
@@ -917,38 +663,60 @@ const dailyTotals = filteredList.reduce((acc, res) => {
                         </button>
                       )}
 
-{/* 🟢 RENEW CYCLE BUTTON (Direct 30 Days Extension by Admin) */}
-{activeTab === "approved" && (
-  <div className="flex gap-2 mb-4">
-    <button 
-      onClick={async () => {
-        try {
-          // 🎯 బ్యాక్‌ఎండ్ రౌట్ పర్‌ఫెక్ట్ గా హిట్ అవ్వడానికి /owner/update-billing/${owner._id} వాడాలి
-          const response = await api.put(`/owner/update-billing/${owner._id}`);
-          if (response.data.success) {
-            setOwners(prev => prev.map(o => o._id === owner._id ? response.data.owner : o));
-            alert("Subscription Renewed for 30 Days! 🚀");
-          }
-        } catch(err) { 
-          console.error("Billing update failed ❌", err); 
-          alert(err.response?.data?.message || "Billing update failed ❌ (Check backend route)");
-        }
-      }} 
-      className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[11px] uppercase tracking-wider rounded-2xl active:scale-95 transition-all shadow-md flex items-center justify-center gap-2 border border-emerald-400/30"
-    >
-      Renew 30 Days Cycle ✅
-    </button>
-  </div>
-)}
+                      {activeTab === "approved" && (
+                        <div className="flex gap-2 mb-4">
+                          <button 
+                            onClick={async () => {
+                              try {
+                                const response = await api.put(`/owner/update-billing/${owner._id}`);
+                                if (response.data.success) {
+                                  setOwners(prev => prev.map(o => o._id === owner._id ? response.data.owner : o));
+                                  alert("Subscription Renewed for 30 Days! 🚀");
+                                }
+                              } catch(err) { 
+                                console.error("Billing update failed ❌", err); 
+                                alert(err.response?.data?.message || "Billing update failed ❌");
+                              }
+                            }} 
+                            className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[11px] uppercase tracking-wider rounded-2xl active:scale-95 transition-all shadow-md flex items-center justify-center gap-2 border border-emerald-400/30"
+                          >
+                            Renew 30 Days Cycle ✅
+                          </button>
+                        </div>
+                      )}
 
-                      <div className="flex items-center gap-3 bg-[#070b24] border border-[#1e2d69] p-4 rounded-2xl mt-auto mb-4 shadow-inner">
-                        <div className="w-8 h-8 bg-[#0e1638] rounded-xl flex items-center justify-center text-cyan-400 border border-cyan-500/20">
-                          <Phone className="w-4 h-4" /> 
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Partner Contact</span>
-                          <span className="text-[11px] font-black text-white tracking-wider uppercase leading-none">{owner.phone || "No Number"}</span>
-                        </div>
+                      {/* 📧 Partner Contact & Direct Call / Mail Actions */}
+                      <div className="flex items-center justify-between bg-[#070b24] border border-[#1e2d69] p-4 rounded-2xl mt-auto mb-4 shadow-inner gap-3">
+                        <a 
+                          href={`tel:${owner.phone}`} 
+                          className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-80 transition-opacity cursor-pointer"
+                          title="Click to Call Partner"
+                        >
+                          <div className="w-10 h-10 bg-[#0e1638] rounded-xl flex items-center justify-center text-cyan-400 border border-cyan-500/20 shrink-0 shadow-sm">
+                            <Phone className="w-4 h-4" /> 
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Partner Contact</span>
+                            <span className="text-[11px] font-black text-white tracking-wider uppercase leading-none truncate">{owner.phone || "No Number"}</span>
+                          </div>
+                        </a>
+
+                        <button 
+                          onClick={() => {
+                            const ownerEmail = owner.email;
+                            if (!ownerEmail) {
+                              alert("This owner has no email address registered!");
+                              return;
+                            }
+                            const msg = prompt(`Enter message to send to ${owner.name}:`) || "";
+                            const mailtoLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${ownerEmail}&su=Important Notice from Sudara Hub Admin&body=${encodeURIComponent(msg)}`;
+                            window.open(mailtoLink, '_blank');
+                          }}
+                          className="p-3 bg-blue-600/20 hover:bg-blue-600 text-cyan-300 hover:text-white rounded-xl border border-blue-500/30 transition-all shadow-sm shrink-0 flex items-center justify-center aspect-square"
+                          title="Send Email via Gmail (sudaraofficial703@gmail.com)"
+                        >
+                          <Mail className="w-4 h-4" />
+                        </button>
                       </div>
 
                       <div className="flex flex-col gap-3.5 pt-4 border-t border-[#1e2d69] mt-2">

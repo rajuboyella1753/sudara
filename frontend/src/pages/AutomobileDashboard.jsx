@@ -190,6 +190,7 @@ export default function AutomobileDashboard() {
   };
 
   // రోజుల కౌంట్‌డౌన్ లాజిక్
+// 1. రోజుల కౌంట్‌డౌన్ లాజిక్ (AutomobileDashboard.jsx లో ఇది ఉండేలా చూసుకో)
   const daysRemaining = useMemo(() => {
     if (!owner?.nextBillingDate) return 0;
     const today = new Date();
@@ -582,6 +583,7 @@ export default function AutomobileDashboard() {
             </div>
 
             {/* 🏷️ పేరు మరియు సబ్‌స్క్రిప్షన్ రోజులు (డబుల్ డిస్‌ప్లే పోయేలా సింగిల్ బ్లాక్ లో సెట్ చేశాం) */}
+           {/* 🏷️ పేరు మరియు సబ్‌స్క్రిప్షన్ రోజులు */}
             <div className="min-w-0 flex flex-col justify-center">
               <h1 className="text-[10px] sm:text-xs md:text-sm font-black uppercase tracking-wider text-white truncate max-w-[110px] xs:max-w-[140px] sm:max-w-xs leading-tight">
                 {owner.name}
@@ -1493,12 +1495,12 @@ export default function AutomobileDashboard() {
                   >
                     <Settings className="w-4 h-4 text-cyan-400" /> సర్టిఫికెట్ & ప్రొఫైల్ / Profile
                   </button>
-                  <button 
+                  {/* <button 
                     onClick={() => { setIsRenewalModalOpen(true); setIsSidebarOpen(false); }}
                     className="w-full flex items-center gap-3 p-4 bg-orange-950/40 hover:bg-orange-950/60 text-orange-300 rounded-2xl font-black uppercase text-xs tracking-wider transition-all border border-orange-500/40 shadow-sm"
                   >
                     <Settings className="w-4 h-4 text-orange-400" /> సబ్‌స్క్రిప్షన్ రెనెవల్ / Renew Node
-                  </button>
+                  </button> */}
 
                   <button 
                     onClick={() => { downloadQRCode(); setIsSidebarOpen(false); }}

@@ -705,20 +705,70 @@ export default function Home() {
                           </div>
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-2 mb-6">
-                          <div className="flex items-center gap-1 bg-blue-500/10 text-blue-300 px-2.5 py-1 rounded-md border border-blue-400/20 shadow-sm">
-                            <MapPin className="w-3 h-3 text-orange-400" />
-                            <span className="text-[10px] font-black uppercase tracking-wider">
-                              {userCoords && res.latitude ? getDistance(userCoords.lat, userCoords.lng, res.latitude, res.longitude) : "Locate"}
-                            </span>
-                          </div>
-                          <span className="text-[9px] font-black text-slate-400 uppercase bg-slate-800/60 px-2.5 py-1 rounded-md border border-slate-700/50 italic">
-                            {res.district}
-                          </span>
-                          <span className="text-[9px] font-black text-blue-300 uppercase bg-blue-500/10 px-2.5 py-1 rounded-md border border-blue-400/20 italic">
-                            {res.collegeName}
-                          </span>
-                        </div>
+<div className="flex flex-col gap-2 mb-6">
+  {/* Row 1: Location, District & College Name */}
+  <div className="flex flex-wrap items-center gap-2">
+    <div className="flex items-center gap-1 bg-blue-500/10 text-blue-300 px-2.5 py-1 rounded-md border border-blue-400/20 shadow-sm">
+      <MapPin className="w-3 h-3 text-orange-400" />
+      <span className="text-[10px] font-black uppercase tracking-wider">
+        {userCoords && res.latitude ? getDistance(userCoords.lat, userCoords.lng, res.latitude, res.longitude) : "Locate"}
+      </span>
+    </div>
+    
+    <span className="text-[9px] font-black text-slate-400 uppercase bg-slate-800/60 px-2.5 py-1 rounded-md border border-slate-700/50 italic">
+      {res.district}
+    </span>
+
+    {res.collegeName && res.collegeName !== "General" && (
+      <span className="text-[9px] font-black text-blue-300 uppercase bg-blue-500/10 px-2.5 py-1 rounded-md border border-blue-400/20 italic">
+        {res.collegeName}
+      </span>
+    )}
+  </div>
+
+{/* Row 2: Dynamic Category Count Badges */}
+  <div className="flex flex-wrap items-center gap-2">
+    {(() => {
+      const cat = (res.category || "").trim().toLowerCase();
+      const counts = res.activityCounts || { preBook: 0, postBook: 0, testDrives: 0, onlineOrders: 0, total: 0 };
+
+      // 1. Restaurant Category (Pre-Books, Post-Books మరియు Online Orders)
+      if (cat === "restaurant" || cat === "") {
+        return (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="bg-amber-500/10 text-amber-300 px-2.5 py-1 rounded-md border border-amber-400/20 text-[9px] font-black uppercase">
+              🔥 {counts.preBook} Pre-Books
+            </span>
+            <span className="bg-blue-500/10 text-blue-300 px-2.5 py-1 rounded-md border border-blue-400/20 text-[9px] font-black uppercase">
+              🍽️ {counts.postBook} Post-Books
+            </span>
+            <span className="bg-emerald-500/10 text-emerald-300 px-2.5 py-1 rounded-md border border-emerald-400/20 text-[9px] font-black uppercase">
+              🛍️ {counts.onlineOrders || 0} Online Orders
+            </span>
+          </div>
+        );
+      } 
+      // 2. Automobile Category
+      else if (cat.includes("automobile")) {
+        return (
+          <span className="bg-orange-500/10 text-orange-300 px-2.5 py-1 rounded-md border border-orange-400/20 text-[9px] font-black uppercase">
+            🚗 {counts.testDrives} Test Drives
+          </span>
+        );
+      } 
+      // 3. Other Stores (Electronics, Clothing, Grocery, etc.)
+      else {
+        const displayOnlineCount = counts.onlineOrders || counts.total || 0;
+        return (
+          <span className="bg-emerald-500/10 text-emerald-300 px-2.5 py-1 rounded-md border border-emerald-400/20 text-[9px] font-black uppercase">
+            🛍️ {displayOnlineCount} Online Orders
+          </span>
+        );
+      }
+    })()}
+  </div>
+
+</div>
 
                         <div className="mt-auto">
                           <button 
