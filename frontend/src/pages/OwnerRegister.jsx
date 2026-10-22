@@ -22,6 +22,7 @@ export default function OwnerRegister() {
     email: "",
     password: "",
     category: "Restaurant",
+    customCategoryName: "",
     phone: "",
     whatsappNumber: "", 
     upiNumber: "",      
@@ -46,7 +47,8 @@ export default function OwnerRegister() {
   { label: "🛒 Groceries & Supermarket", value: "Grocery" },
   { label: "🛋️ Furniture & Living", value: "Furniture" },
   { label: "🔧 Services & Repairs", value: "Services" },
-  { label: "🏬 General Store", value: "General" }
+  { label: "🏬 General Store", value: "General" },
+  { label: "✨ Other / Custom Business", value: "Other" }
 ];
 
   const handleChange = (e) => {
@@ -69,6 +71,7 @@ export default function OwnerRegister() {
       email: form.email,
       password: form.password,
       category: form.category,
+      customCategoryName: form.category === "Other" ? form.customCategoryName : "",
       phone: form.phone,
       whatsappNumber: form.whatsappNumber || form.phone,
       upiNumber: form.upiNumber || form.phone,
@@ -141,7 +144,20 @@ export default function OwnerRegister() {
                   ))}
                 </select>
               </div>
-
+              {form.category === "Other" && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} className="space-y-2">
+                  <label className="text-[9px] font-black uppercase text-orange-400 ml-1 block">మీ సొంత బిజినెస్ కేటగిరీ పేరు రాయండి</label>
+                  <input 
+                    type="text" 
+                    name="customCategoryName" 
+                    required 
+                    placeholder="ఉదా: Plant Nursery / Book Stall" 
+                    value={form.customCategoryName} 
+                    onChange={handleChange} 
+                    className="w-full bg-[#0e1638] border-2 border-orange-500/40 px-4 py-3.5 rounded-2xl font-bold text-sm text-white outline-none" 
+                  />
+                </motion.div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="relative">
                   <label className="text-[9px] font-black uppercase text-slate-400 mb-1.5 ml-1 block">ఓనర్ పూర్తి పేరు</label>

@@ -91,6 +91,7 @@ router.post("/register", async (req, res) => {
       fssaiNumber,
       gstNumber,
       category,
+      customCategoryName,
       foodType,
       tableCount,
       todaySpecial
@@ -116,6 +117,7 @@ router.post("/register", async (req, res) => {
       fssaiNumber: fssaiNumber || "",
       gstNumber: gstNumber || "", 
       category: cleanCategory, 
+      customCategoryName: cleanCategory === "Other" ? (customCategoryName || "Custom Business") : "",
       isApproved: true
     };
 
@@ -142,7 +144,7 @@ router.post("/register", async (req, res) => {
 router.get("/admin-all-owners", async (req, res) => {
   try {
     const owners = await Owner.find({}) 
-    .select("name hotelImage collegeName isStoreOpen category averageRating isApproved phone upiID analytics state district createdAt nextBillingDate billingStatus pendingMonthsCount planType paymentReceipt requestedPlanDuration category")
+    .select("name email ownerName hotelImage collegeName isStoreOpen category averageRating isApproved phone upiID analytics state district createdAt nextBillingDate billingStatus pendingMonthsCount planType paymentReceipt requestedPlanDuration category")
     .lean();
     
     const enrichedOwners = owners.map(owner => {
@@ -472,32 +474,61 @@ router.put("/track-analytics/:id", async (req, res) => {
 });
 router.put("/track-sales/:id", async (req, res) => {
   const { date, amount, items, paymentMode } = req.body;
-  console.log("DEBUG: Received Payment Mode:", paymentMode);
   try {
-    const updatePath = `analytics.${date}`;
-    
- 
-    const modeKey = (paymentMode || 'CASH').toLowerCase() === 'cash' ? 'cash_sales' : 'upi_sales';
+    const owner = await Owner.findById(req.params.id);
+    if (!owner) return res.status(404).json({ message: "Owner not found" });
 
-    let itemUpdates = {};
-    if (items && Array.isArray(items)) {
-        items.forEach(itemStr => {
-           const itemName = itemStr.includes(' x ') ? itemStr.split(' x ')[1].trim() : itemStr;
-           itemUpdates[`${updatePath}.food_clicks.${itemName}`] = 1;
-        });
+    // 1. analytics Map సేఫ్టీ చెకింగ్
+    if (!owner.analytics) {
+      owner.analytics = new Map();
     }
 
-   
-    const updatedOwner = await Owner.findByIdAndUpdate(req.params.id, {
-      $inc: { 
-        [`${updatePath}.daily_revenue`]: amount,
-        [`${updatePath}.${modeKey}`]: amount, 
-        [`${updatePath}.total_orders`]: 1, 
-        ...itemUpdates 
-      }
-    }, { new: true });
+    const dayKey = date || `${new Date().getDate()}/${new Date().getMonth() + 1}/${new Date().getFullYear()}`;
+    
+    // 2. Map నుంచి డేటా తీసుకోవడం (లేదా డిఫాల్ట్ ఆబ్జెక్ట్ సెట్ చేయడం)
+    let dayData = owner.analytics.get(dayKey) || {
+      kitchen_entry: 0,
+      pre_order_click: 0,
+      post_order_click: 0,
+      call_click: 0,
+      daily_revenue: 0,
+      cash_sales: 0,
+      upi_sales: 0,
+      total_orders: 0,
+      food_clicks: new Map()
+    };
 
-    res.status(200).json(updatedOwner);
+    const modeKey = (paymentMode || 'CASH').toLowerCase() === 'cash' ? 'cash_sales' : 'upi_sales';
+    
+    // 3. వాల్యూస్ అప్‌డేట్ చేయడం
+    dayData.daily_revenue = (Number(dayData.daily_revenue) || 0) + Number(amount || 0);
+    dayData[modeKey] = (Number(dayData[modeKey]) || 0) + Number(amount || 0);
+    dayData.total_orders = (Number(dayData.total_orders) || 0) + 1;
+
+    // 4. ఐటమ్స్ / ఫుడ్ క్లిక్స్ ట్రాక్ చేయడం
+    if (items && Array.isArray(items)) {
+      if (!dayData.food_clicks) {
+        dayData.food_clicks = new Map();
+      }
+      items.forEach(itemStr => {
+         const itemName = itemStr.includes(' x ') ? itemStr.split(' x ')[1].trim() : itemStr;
+         const currentCount = dayData.food_clicks instanceof Map 
+           ? (dayData.food_clicks.get(itemName) || 0) 
+           : (dayData.food_clicks[itemName] || 0);
+           
+         if (dayData.food_clicks instanceof Map) {
+           dayData.food_clicks.set(itemName, currentCount + 1);
+         } else {
+           dayData.food_clicks[itemName] = currentCount + 1;
+         }
+      });
+    }
+
+    // 5. తిరిగి Map లోకి సేవ్ చేయడం
+    owner.analytics.set(dayKey, dayData);
+    await owner.save();
+
+    res.status(200).json({ success: true, owner });
   } catch (err) {
     console.error("Sales tracking failed:", err);
     res.status(500).json({ message: "Sales tracking failed", error: err.message });

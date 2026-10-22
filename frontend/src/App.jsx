@@ -15,6 +15,7 @@ import AdminDashboard from "./pages/Admin";
 import HowItWorks from "./pages/HowItWorks";
 import AutomobileDashboard from "./pages/AutomobileDashboard"; 
 import FurnitureDashboard from "./pages/FurnitureDashboard";
+import GenericDashboard from "./pages/GenericDashboard";
 function App() {
   return (
     <BrowserRouter>
@@ -32,6 +33,7 @@ function App() {
         <Route path="/owner/grocery-dashboard" element={<GroceryDashboard />} />
         <Route path="/automobile/dashboard" element={<AutomobileDashboard />} />
         <Route path="/furniture/dashboard" element={<FurnitureDashboard />} />
+        <Route path="/owner/generic-dashboard" element={<GenericDashboard />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/terms" element={<Terms />} />

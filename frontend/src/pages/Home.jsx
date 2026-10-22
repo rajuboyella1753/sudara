@@ -317,8 +317,8 @@ export default function Home() {
                 >
                   <option value="All">All Categories</option>
                   {Array.isArray(restaurants) && Array.from(new Set(restaurants.map(r => r.category))).filter(Boolean).map((type) => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
+                        <option key={type} value={type}>{type === "Other" ? "Other / Custom Business" : type}</option>
+                      ))}
                 </select>
                 <ChevronDown className="absolute right-4 sm:right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               </div>
@@ -789,6 +789,8 @@ export default function Home() {
                               ? "Enter Grocery Store"
                               : res.category?.trim().toLowerCase() === "services"
                               ? "Enter Service Center"
+                              : res.category?.trim().toLowerCase() === "other"
+                              ? `Enter ${res?.customCategoryName || res?.name || "Store"}`
                               : `Enter ${res.category || "Store"}`}
                           </button>
                         </div>

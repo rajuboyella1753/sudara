@@ -27,13 +27,13 @@ export default function RestaurantProfile() {
       const itemCats = [...new Set(items.map(i => i.category))].filter(Boolean);
       return [...new Set([...cats, ...itemCats])];
     } else if (owner?.category?.toLowerCase() === "automobile") {
-      // 🚗 ఆటోమొబైల్ అయితే ఫ్యూయల్ టైప్స్ ట్యాబ్స్ వస్తాయి
       return ["All", "Petrol", "Diesel", "Electric", "CNG"];
     } else {
-      const itemCats = [...new Set(items.map(i => i.category || i.subCategory))].filter(Boolean);
+      const itemCats = [...new Set(items.map(i => i.category || i.subCategory || i.customCategoryName))].filter(Boolean);
       return ["All", ...itemCats];
     }
   }, [items, isRestaurant, owner]);
+
   const orderSectionRef = useRef(null);
   const counterPrintButtonRef = useRef(null);
   const [activeSubCat, setActiveSubCat] = useState("All"); 
@@ -709,13 +709,13 @@ const searchFiltered = useMemo(() => {
 const groupedItems = useMemo(() => {
   const groups = {};
   availableItems.forEach(item => {
-    // 💡 ఇది సబ్-క్యాటగిరీ (Bikes/Cars/EV) లేదా కేటగిరీ బట్టి గ్రూప్ చేస్తుంది
-    const cat = item.subCategory || item.category || "General";
+    // 🚀 'Other' లేదా కస్టమ్ బిజినెస్ ఐటమ్స్ కి subCategory లేకపోయినా category/customCategory ద్వారా గ్రూప్ అవుతాయి
+    const cat = item.subCategory || item.category || owner?.customCategoryName || "General Hub Items";
     if (!groups[cat]) groups[cat] = [];
     groups[cat].push(item);
   });
   return groups;
-}, [availableItems]);
+}, [availableItems, owner]);
 
   if (loading && items.length === 0) {
   return (

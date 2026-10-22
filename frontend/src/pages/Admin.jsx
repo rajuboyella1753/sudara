@@ -211,7 +211,6 @@ export default function AdminDashboard() {
       setSending(false);
     }
   };
-
   const filteredList = owners.filter(owner => {
     const isNotGeneral = owner.collegeName && owner.collegeName !== "General";
     
@@ -224,7 +223,12 @@ export default function AdminDashboard() {
 
     const matchesState = selectedState === "All" || owner.state === selectedState;
     const matchesDistrict = selectedDistrict === "All" || owner.district === selectedDistrict;
-    const matchesCategory = selectedCategory === "All" || (owner.category || "Restaurant") === selectedCategory;
+    
+    // 🚀 ఇక్కడ మనం కేటగిరీని కేస్‌-సెన్సిటివ్ ప్రాబ్లమ్స్ లేకుండా క్లీన్‌గా మ్యాచ్ చేస్తున్నాం
+    const ownerCat = (owner.category || "Restaurant").trim().toLowerCase();
+    const filterCat = selectedCategory.trim().toLowerCase();
+    const matchesCategory = selectedCategory === "All" || ownerCat === filterCat;
+
     const matchesSearch = (owner.name || "").toLowerCase().includes(searchTerm.toLowerCase());
     
     return isNotGeneral && matchesTab && matchesState && matchesDistrict && matchesCategory && matchesSearch;
@@ -424,6 +428,7 @@ export default function AdminDashboard() {
                   <option value="Grocery" className="bg-[#0a1033] text-white">🛒 Groceries</option>
                   <option value="Automobile" className="bg-[#0a1033] text-white">🚗 Automobile Showroom</option>
                   <option value="Furniture" className="bg-[#0a1033] text-white">🛋️ Furniture & Living</option>
+                  <option value="Other" className="bg-[#0a1033] text-white">✨ Other / Custom Business</option>
                 </select>
                 <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 rotate-90 pointer-events-none" />
               </div>
@@ -685,39 +690,40 @@ export default function AdminDashboard() {
                         </div>
                       )}
 
-                      {/* 📧 Partner Contact & Direct Call / Mail Actions */}
-                      <div className="flex items-center justify-between bg-[#070b24] border border-[#1e2d69] p-4 rounded-2xl mt-auto mb-4 shadow-inner gap-3">
-                        <a 
-                          href={`tel:${owner.phone}`} 
-                          className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-80 transition-opacity cursor-pointer"
-                          title="Click to Call Partner"
-                        >
-                          <div className="w-10 h-10 bg-[#0e1638] rounded-xl flex items-center justify-center text-cyan-400 border border-cyan-500/20 shrink-0 shadow-sm">
-                            <Phone className="w-4 h-4" /> 
-                          </div>
-                          <div className="flex flex-col min-w-0">
-                            <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Partner Contact</span>
-                            <span className="text-[11px] font-black text-white tracking-wider uppercase leading-none truncate">{owner.phone || "No Number"}</span>
-                          </div>
-                        </a>
+{/* 💬 Partner Contact & Direct Call / WhatsApp Actions */}
+<div className="flex items-center justify-between bg-[#070b24] border border-[#1e2d69] p-4 rounded-2xl mt-auto mb-4 shadow-inner gap-3">
+  <a 
+    href={`tel:${owner.phone}`} 
+    className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-80 transition-opacity cursor-pointer"
+    title="Click to Call Partner"
+  >
+    <div className="w-10 h-10 bg-[#0e1638] rounded-xl flex items-center justify-center text-cyan-400 border border-cyan-500/20 shrink-0 shadow-sm">
+      <Phone className="w-4 h-4" /> 
+    </div>
+    <div className="flex flex-col min-w-0">
+      <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Partner Contact</span>
+      <span className="text-[11px] font-black text-white tracking-wider uppercase leading-none truncate">{owner.phone || "No Number"}</span>
+    </div>
+  </a>
 
-                        <button 
-                          onClick={() => {
-                            const ownerEmail = owner.email;
-                            if (!ownerEmail) {
-                              alert("This owner has no email address registered!");
-                              return;
-                            }
-                            const msg = prompt(`Enter message to send to ${owner.name}:`) || "";
-                            const mailtoLink = `https://mail.google.com/mail/?view=cm&fs=1&to=${ownerEmail}&su=Important Notice from Sudara Hub Admin&body=${encodeURIComponent(msg)}`;
-                            window.open(mailtoLink, '_blank');
-                          }}
-                          className="p-3 bg-blue-600/20 hover:bg-blue-600 text-cyan-300 hover:text-white rounded-xl border border-blue-500/30 transition-all shadow-sm shrink-0 flex items-center justify-center aspect-square"
-                          title="Send Email via Gmail (sudaraofficial703@gmail.com)"
-                        >
-                          <Mail className="w-4 h-4" />
-                        </button>
-                      </div>
+  {/* 🚀 డైరెక్ట్ వాట్సాప్ ఓపెన్ అయ్యే బటన్ (ప్రొంప్ట్ లేకుండానె) */}
+  <button 
+    onClick={() => {
+      const ownerPhone = owner?.phone?.toString().replace(/\D/g, '');
+      if (!ownerPhone) {
+        alert("ఈ ఓనర్ ఫోన్ నంబర్ అందుబాటులో లేదు! ❌");
+        return;
+      }
+      const defaultMsg = `Hello ${owner.name}, this is Sudara Hub Admin regarding your store subscription and updates.`;
+      const waLink = `https://wa.me/91${ownerPhone}?text=${encodeURIComponent(defaultMsg)}`;
+      window.open(waLink, '_blank');
+    }}
+    className="p-3 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white rounded-xl border border-emerald-500/30 transition-all shadow-sm shrink-0 flex items-center justify-center aspect-square"
+    title="Direct WhatsApp Message"
+  >
+    <Send className="w-4 h-4" />
+  </button>
+</div>
 
                       <div className="flex flex-col gap-3.5 pt-4 border-t border-[#1e2d69] mt-2">
                         {owner.isApproved && (

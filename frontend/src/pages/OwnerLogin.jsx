@@ -123,6 +123,8 @@ const handleSubmit = async (e) => {
         navigate("/automobile/dashboard");
       } else if (ownerCategory === "Furniture") {
         navigate("/furniture/dashboard");
+      } else if (ownerCategory === "Other") {
+        navigate("/owner/generic-dashboard"); 
       } else {
         navigate("/owner/dashboard");
       }

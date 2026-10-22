@@ -20,11 +20,12 @@ const ownerSchema = new mongoose.Schema(
         'Services', 
         'Automobile', 
         'Furniture', 
-        'General'
+        'General',
+        'Other'
       ], 
       default: 'Restaurant' 
     },
-
+    customCategoryName: { type: String, default: "" },
     profileImage: { type: String, default: "" },
     fssaiNumber: { type: String, default: "" },
     gstNumber: { type: String, default: "" },
