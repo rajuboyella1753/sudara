@@ -11,6 +11,7 @@ import {
   User, CheckCircle2, Download
 } from "lucide-react";
 import VoiceAssistant from "../components/VoiceAssistant";
+import { socket } from "../api/api-base";
 import QRCode from 'qrcode';
 
 export default function RestaurantProfile() {
@@ -45,7 +46,7 @@ export default function RestaurantProfile() {
   const [cart, setCart] = useState({}); 
   const [deliveryType, setDeliveryType] = useState("Take Away");
   const [showOrderForm, setShowOrderForm] = useState(false);
-  const [orderData, setOrderData] = useState({ name: "", phone: "", txId: "", arrivalTime: "" ,peopleCount: 1});
+  const [orderData, setOrderData] = useState({ name: "", phone: "", txScreenshot: "", arrivalTime: "" ,peopleCount: 1});
   const [showOnlineOrderModal, setShowOnlineOrderModal] = useState(false);
   const [onlineOrderData, setOnlineOrderData] = useState({ name: "", phone: "", address: "" });
   const [showPayWarning, setShowPayWarning] = useState(false); 
@@ -365,8 +366,14 @@ const getTodayDate = () => {
 }, [cart, owner]);
 
 const handleConfirmOrder = async () => {
-  if (!orderData.name || !orderData.txId || !orderData.arrivalTime) {
-    return alert("Please fill details! 📝");
+  // 🔍 కన్సోల్‌లో పక్కాగా వాల్యూస్ ప్రింట్ అయ్యేలా చూద్దాం
+  console.log("🚀 SUBMITTING ORDER DATA:", orderData);
+  console.log("1. Name Check:", !!orderData.name);
+  console.log("2. Screenshot Check:", !!orderData.txScreenshot);
+  console.log("3. Arrival Time Check:", !!orderData.arrivalTime);
+
+  if (!orderData.name || !orderData.txScreenshot || !orderData.arrivalTime) {
+    return alert("దయచేసి పేరు, వచ్చే సమయం (Arrival Time) మరియు పేమెంట్ స్క్రీన్‌షాట్ పూర్తిగా ఇవ్వండి! 📝");
   }
 
   try {
@@ -390,7 +397,7 @@ const handleConfirmOrder = async () => {
       extraCharges: Number(extraCharges),
       totalAmount: Number(finalAmount.toFixed(2)),
       advancePaid: Number(halfAmount),
-      txnId: orderData.txId,
+      paymentScreenshot: orderData.txScreenshot, // 👈 డేటాబేస్‌కి వెళ్తున్న బేస్-64 స్క్రీన్‌షాట్
       arrivalTime: orderData.arrivalTime,
       orderType: "Pre-book",
       sudaraId: sudaraId,
@@ -427,7 +434,6 @@ const handleConfirmOrder = async () => {
     setLoading(false);
   }
 };
-
 const handlePrintBill = async (orderObj, manualPaymentMethod = "CASH", ownerData = owner) => {
   try {
     const restaurantName = ownerData?.name?.toUpperCase() || "SUDARA PARTNER";
@@ -560,6 +566,37 @@ useEffect(() => {
   const table = urlParams.get('table');
   if (table) setSelectedTable(table);
 }, []);
+useEffect(() => {
+  if (!socket.connected) { 
+    socket.connect(); 
+  }
+
+  // 1. కస్టమర్ ఆర్డర్ పెట్టినప్పుడు రూమ్ లోకి జాయిన్ అవ్వడం
+  if (placedOrderId) {
+    socket.emit("join_customer_room", placedOrderId);
+  }
+
+  // 2. టేబుల్ అసైన్ అయినప్పుడు
+  const handleTableAssigned = (data) => {
+    setAssignedTable(data.tableNo);
+    alert(data.message);
+  };
+
+  // 3. 🚀 ఓనర్ స్టోర్ క్లోజ్/లైవ్ చేసినప్పుడు కస్టమర్ పేజీలో ఆటోమేటిక్‌గా అప్‌డేట్ అవ్వడానికి
+  const handleStatusUpdate = (data) => {
+    if (owner && owner._id === data.ownerId) {
+      setOwner(prev => ({ ...prev, isStoreOpen: data.isStoreOpen }));
+    }
+  };
+
+  socket.on("table_assigned", handleTableAssigned);
+  socket.on("store_status_updated", handleStatusUpdate);
+
+  return () => {
+    socket.off("table_assigned", handleTableAssigned);
+    socket.off("store_status_updated", handleStatusUpdate);
+  };
+}, [placedOrderId, owner]);
 
 const handleInstantOrder = async () => {
   // 1. Customer name check
@@ -1793,89 +1830,102 @@ if (!owner || !owner.isApproved) {
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="relative group">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-cyan-400 transition-colors" />
-                  <input 
-                    type="text" 
-                    placeholder="Full Name" 
-                    value={orderData.name} 
-                    onChange={(e)=>setOrderData({...orderData, name:e.target.value})} 
-                    className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-4 pl-12 rounded-2xl text-[11px] font-bold outline-none focus:border-cyan-400 text-white placeholder:text-slate-500 transition-all shadow-inner" 
-                  />
-                </div>
-                
-                <div className="relative group">
-                  <UtensilsCrossed className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-cyan-400 transition-colors z-10" />
-                  <div className="relative">
-                    <select 
-                      value={deliveryType} 
-                      onChange={(e) => setDeliveryType(e.target.value)}
-                      className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-4 pl-12 rounded-2xl text-[11px] font-black uppercase outline-none focus:border-cyan-400 text-slate-200 transition-all shadow-inner appearance-none cursor-pointer"
-                      style={{ fontSize: '13px' }}
-                    >
-                      <option value="Take Away">📦 Take Away (Parcel)</option>
-                      <option value="Book at Restaurant">🪑 Book at Restaurant (Dining)</option>
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <Plus className="w-3 h-3 text-slate-400 rotate-45" />
-                    </div>
-                  </div>
-                </div>
+           <div className="space-y-4">
+  <div className="relative group">
+    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-cyan-400 transition-colors" />
+    <input 
+      type="text" 
+      placeholder="Full Name (పూర్తి పేరు)" 
+      value={orderData.name} 
+      onChange={(e)=>setOrderData({...orderData, name:e.target.value})} 
+      className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-4 pl-12 rounded-2xl text-[11px] font-bold outline-none focus:border-cyan-400 text-white placeholder:text-slate-500 transition-all shadow-inner" 
+    />
+  </div>
+  
+  <div className="relative group">
+    <UtensilsCrossed className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-cyan-400 transition-colors z-10" />
+    <div className="relative">
+      <select 
+        value={deliveryType} 
+        onChange={(e) => setDeliveryType(e.target.value)}
+        className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-4 pl-12 rounded-2xl text-[11px] font-black uppercase outline-none focus:border-cyan-400 text-slate-200 transition-all shadow-inner appearance-none cursor-pointer"
+        style={{ fontSize: '13px' }}
+      >
+        <option value="Take Away">📦 Take Away (Parcel)</option>
+        <option value="Book at Restaurant">🪑 Book at Restaurant (Dining)</option>
+      </select>
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+        <Plus className="w-3 h-3 text-slate-400 rotate-45" />
+      </div>
+    </div>
+  </div>
 
-                {deliveryType === "Book at Restaurant" && (
-                  <div className="relative group">
-                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input 
-                      type="number" 
-                      min="1"
-                      placeholder="Number of People" 
-                      value={orderData.peopleCount} 
-                      onChange={(e) => setOrderData({...orderData, peopleCount: e.target.value})}
-                      className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-4 pl-12 rounded-2xl text-[11px] font-bold outline-none focus:border-cyan-400 text-white placeholder:text-slate-500 transition-all shadow-inner" 
-                    />
-                  </div>
-                )}
+  {deliveryType === "Book at Restaurant" && (
+    <div className="relative group">
+      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+      <input 
+        type="number" 
+        min="1"
+        placeholder="Number of People (ఎన్ని మంది)" 
+        value={orderData.peopleCount} 
+        onChange={(e) => setOrderData({...orderData, peopleCount: e.target.value})}
+        className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-4 pl-12 rounded-2xl text-[11px] font-bold outline-none focus:border-cyan-400 text-white placeholder:text-slate-500 transition-all shadow-inner" 
+      />
+    </div>
+  )}
 
-                <div className="relative group">
-                  <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <select 
-                    value={orderData.arrivalTime} 
-                    onChange={(e) => setOrderData({...orderData, arrivalTime: e.target.value})}
-                    className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-4 pl-12 rounded-2xl text-[11px] font-black outline-none focus:border-cyan-400 text-slate-200 transition-all shadow-inner"
-                  >
-                    <option value="">-- Select Arrival Time --</option>
-                    {[
-                      "00:00", "00:30", "01:00", "01:30", "02:00", "02:30", "03:00", "03:30",
-                      "04:00", "04:30", "05:00", "05:30", "06:00", "06:30", "07:00", "07:30",
-                      "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-                      "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30",
-                      "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30",
-                      "20:00", "20:30", "21:00", "21:30", "22:00", "22:30", "23:00", "23:30"
-                    ].map(time => (
-                      <option key={time} value={time}>{time}</option>
-                    ))}
-                  </select>
-                </div>
+  <div className="relative group">
+    <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+    <select 
+      value={orderData.arrivalTime} 
+      onChange={(e) => setOrderData({...orderData, arrivalTime: e.target.value})}
+      className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-4 pl-12 rounded-2xl text-[11px] font-black outline-none focus:border-cyan-400 text-slate-200 transition-all shadow-inner cursor-pointer"
+    >
+      <option value="">-- Select Arrival Time (వచ్చే సమయం) --</option>
+      {[
+        "00:00", "00:30", "01:00", "01:30", "02:00", "02:30", "03:00", "03:30",
+        "04:00", "04:30", "05:00", "05:30", "06:00", "06:30", "07:00", "07:30",
+        "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+        "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30",
+        "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30",
+        "20:00", "20:30", "21:00", "21:30", "22:00", "22:30", "23:00", "23:30"
+      ].map(time => (
+        <option key={time} value={time}>{time}</option>
+      ))}
+    </select>
+  </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="relative group">
-                    <CheckCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-emerald-400 transition-colors" />
-                    <input 
-                      type="number" 
-                      maxLength="5"
-                      placeholder="Txn ID (Last 5)" 
-                      value={orderData.txId} 
-                      onChange={(e) => {
-                        if (e.target.value.length <= 5) {
-                          setOrderData({...orderData, txId: e.target.value})
-                        }
-                      }} 
-                      className="w-full bg-[#0e1638] border-2 border-[#1e2d69] p-4 pl-12 rounded-2xl text-[10px] font-bold outline-none focus:border-emerald-400 text-white placeholder:text-slate-500 transition-all shadow-inner" 
-                    />
-                  </div>
-                </div>
-              </div>
+  {/* 📸 లగ్జరీ పేమెంట్ స్క్రీన్‌షాట్ అప్‌లోడ్ బాక్స్ */}
+  <div className="bg-[#0e1638] border-2 border-dashed border-[#1e2d69] p-4 rounded-2xl text-center relative hover:border-cyan-400/40 transition-all">
+    <input 
+      type="file" 
+      accept="image/*"
+      onChange={(e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = (event) => {
+            setOrderData({...orderData, txScreenshot: event.target.result});
+          };
+        }
+      }} 
+      className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+    />
+    {orderData.txScreenshot ? (
+      <div className="flex items-center justify-center gap-2 text-emerald-400">
+        <CheckCircle2 className="w-5 h-5" />
+        <span className="text-[10px] font-black uppercase tracking-wider">Screenshot Attached Successfully! ✅</span>
+      </div>
+    ) : (
+      <div className="flex flex-col items-center gap-1 text-slate-300">
+        <Camera className="w-5 h-5 text-cyan-400 animate-pulse" />
+        <span className="text-[10px] font-black uppercase tracking-wider text-cyan-300">Upload Payment Screenshot 📸</span>
+        <span className="text-[8px] text-slate-400 uppercase">Click here to browse payment proof</span>
+      </div>
+    )}
+  </div>
+</div>
 
               <div className="pt-2">
                 <button 

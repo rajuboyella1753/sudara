@@ -420,7 +420,21 @@ router.put("/remove-interior-image/:id", async (req, res) => {
 });
 router.put("/update-status/:id", async (req, res) => {
   try {
-    const updatedOwner = await Owner.findByIdAndUpdate(req.params.id, { isStoreOpen: req.body.isStoreOpen }, { new: true });
+    const updatedOwner = await Owner.findByIdAndUpdate(
+      req.params.id, 
+      { isStoreOpen: req.body.isStoreOpen }, 
+      { new: true }
+    );
+    
+    // 🚀 Socket.io ద్వారా కనెక్ట్ అయి ఉన్న అన్ని క్లైంట్స్ (యూజర్ల) కి పంపడం
+    const io = req.app.get("socketio");
+    if (io) {
+      io.emit("store_status_updated", { 
+        ownerId: updatedOwner._id, 
+        isStoreOpen: updatedOwner.isStoreOpen 
+      });
+    }
+
     res.json(updatedOwner);
   } catch (err) {
     res.status(500).json({ message: err.message });

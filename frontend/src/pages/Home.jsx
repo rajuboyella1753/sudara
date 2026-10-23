@@ -4,6 +4,7 @@ import Footer from "../components/Footer";
 import api from "../api/api-base"; 
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { socket } from "../api/api-base";
 import { 
   Search, 
   MapPin, 
@@ -231,7 +232,26 @@ export default function Home() {
 
     setFilteredRestaurants(result);
   }, [searchTerm, restaurants, userCoords, selectedState, selectedDistrict, selectedFoodType, selectedHubType, isTravelMode, source, destination]);
+// 🚀 లైవ్ స్టోర్ స్టేటస్ అప్‌డేట్ కోసం సాకెట్ లిన్నెర్
+  useEffect(() => {
+    if (!socket.connected) { 
+      socket.connect(); 
+    }
 
+    const handleStatusUpdate = (data) => {
+      // 1. అన్ని రెస్టారెంట్ల లిస్ట్ లో ఆ ఓనర్ స్టేటస్ అప్‌డేట్ చేయడం
+      setRestaurants(prev => prev.map(r => r._id === data.ownerId ? { ...r, isStoreOpen: data.isStoreOpen } : r));
+      
+      // 2. ఫిల్టర్ అయిన లిస్ట్ లో కూడా అప్‌డేట్ చేయడం
+      setFilteredRestaurants(prev => prev.map(r => r._id === data.ownerId ? { ...r, isStoreOpen: data.isStoreOpen } : r));
+    };
+
+    socket.on("store_status_updated", handleStatusUpdate);
+
+    return () => {
+      socket.off("store_status_updated", handleStatusUpdate);
+    };
+  }, []);
   const getDistance = (lat1, lon1, lat2, lon2) => {
     if (!lat1 || !lon1 || !lat2 || !lon2) return "---";
     const R = 6371; 
@@ -671,135 +691,151 @@ export default function Home() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <AnimatePresence>
-                {filteredRestaurants.map((res) => (
-                  <motion.div
-                    layout
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    key={res._id}
-                    className="group h-full"
-                    onClick={() =>
-                      res.isStoreOpen &&
-                      handleRestaurantClick(res._id)
-                    }
-                  >
-                    <div className="flex flex-col h-full bg-[#0D133D] rounded-[2rem] border border-slate-700/50 overflow-hidden hover:shadow-[0_30px_60px_-15px_rgba(37,99,235,0.25)] hover:border-blue-500/40 transition-all duration-500 cursor-pointer">
-                      <div className="relative aspect-[16/9] overflow-hidden">
-                        <img 
-                          src={res.hotelImage || "https://images.unsplash.com/photo-1517248135467-4c7ed9d42339?w=500"} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
-                          alt={res.name} 
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-70" />
-                      </div>
-
-                      <div className="p-6 flex flex-col flex-grow">
-                        <div className="flex justify-between items-start mb-4">
-                          <h3 className="text-xl font-black uppercase italic tracking-tighter text-white group-hover:text-blue-400 transition-colors leading-none truncate pr-2">
-                            {res.name}
-                          </h3>
-                          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-black text-[9px] uppercase tracking-tighter ${res.isStoreOpen ? 'bg-emerald-500/10 border-emerald-400/20 text-emerald-300' : 'bg-red-500/10 border-red-400/20 text-red-300'}`}>
-                            <div className={`w-1.5 h-1.5 rounded-full ${res.isStoreOpen ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
-                            {res.isStoreOpen ? 'LIVE' : 'CLOSED'}
-                          </div>
-                        </div>
-
-<div className="flex flex-col gap-2 mb-6">
-  {/* Row 1: Location, District & College Name */}
-  <div className="flex flex-wrap items-center gap-2">
-    <div className="flex items-center gap-1 bg-blue-500/10 text-blue-300 px-2.5 py-1 rounded-md border border-blue-400/20 shadow-sm">
-      <MapPin className="w-3 h-3 text-orange-400" />
-      <span className="text-[10px] font-black uppercase tracking-wider">
-        {userCoords && res.latitude ? getDistance(userCoords.lat, userCoords.lng, res.latitude, res.longitude) : "Locate"}
-      </span>
-    </div>
-    
-    <span className="text-[9px] font-black text-slate-400 uppercase bg-slate-800/60 px-2.5 py-1 rounded-md border border-slate-700/50 italic">
-      {res.district}
-    </span>
-
-    {res.collegeName && res.collegeName !== "General" && (
-      <span className="text-[9px] font-black text-blue-300 uppercase bg-blue-500/10 px-2.5 py-1 rounded-md border border-blue-400/20 italic">
-        {res.collegeName}
-      </span>
-    )}
-  </div>
-
-{/* Row 2: Dynamic Category Count Badges */}
-  <div className="flex flex-wrap items-center gap-2">
-    {(() => {
-      const cat = (res.category || "").trim().toLowerCase();
-      const counts = res.activityCounts || { preBook: 0, postBook: 0, testDrives: 0, onlineOrders: 0, total: 0 };
-
-      // 1. Restaurant Category (Pre-Books, Post-Books మరియు Online Orders)
-      if (cat === "restaurant" || cat === "") {
-        return (
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="bg-amber-500/10 text-amber-300 px-2.5 py-1 rounded-md border border-amber-400/20 text-[9px] font-black uppercase">
-              🔥 {counts.preBook} Pre-Books
-            </span>
-            <span className="bg-blue-500/10 text-blue-300 px-2.5 py-1 rounded-md border border-blue-400/20 text-[9px] font-black uppercase">
-              🍽️ {counts.postBook} Post-Books
-            </span>
-            <span className="bg-emerald-500/10 text-emerald-300 px-2.5 py-1 rounded-md border border-emerald-400/20 text-[9px] font-black uppercase">
-              🛍️ {counts.onlineOrders || 0} Online Orders
-            </span>
+  <AnimatePresence>
+    {filteredRestaurants.map((res) => (
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        key={res._id}
+        className="group h-full cursor-pointer"
+        onClick={() => {
+          if (res.isStoreOpen) {
+            handleRestaurantClick(res._id);
+          } else {
+            alert("ఈ స్టోర్ ప్రస్తుతం మూసివేయబడింది! ❌ (Store is Closed)");
+          }
+        }}
+      >
+        <div className="flex flex-col h-full bg-[#0D133D] rounded-[2rem] border border-slate-700/50 overflow-hidden hover:shadow-[0_30px_60px_-15px_rgba(37,99,235,0.25)] hover:border-blue-500/40 transition-all duration-500 cursor-pointer">
+          <div className="relative aspect-[16/9] overflow-hidden">
+            <img 
+              src={res.hotelImage || "https://images.unsplash.com/photo-1517248135467-4c7ed9d42339?w=500"} 
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+              alt={res.name} 
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-70" />
           </div>
-        );
-      } 
-      // 2. Automobile Category
-      else if (cat.includes("automobile")) {
-        return (
-          <span className="bg-orange-500/10 text-orange-300 px-2.5 py-1 rounded-md border border-orange-400/20 text-[9px] font-black uppercase">
-            🚗 {counts.testDrives} Test Drives
-          </span>
-        );
-      } 
-      // 3. Other Stores (Electronics, Clothing, Grocery, etc.)
-      else {
-        const displayOnlineCount = counts.onlineOrders || counts.total || 0;
-        return (
-          <span className="bg-emerald-500/10 text-emerald-300 px-2.5 py-1 rounded-md border border-emerald-400/20 text-[9px] font-black uppercase">
-            🛍️ {displayOnlineCount} Online Orders
-          </span>
-        );
-      }
-    })()}
-  </div>
 
-</div>
-
-                        <div className="mt-auto">
-                          <button 
-                            onClick={() => navigate(`/restaurant/${res._id}`)} 
-                            className="w-full mt-4 py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] font-black uppercase tracking-widest hover:from-blue-500 hover:to-violet-600 transition-all shadow-lg shadow-blue-950/40"
-                          >
-                            {res.category?.trim().toLowerCase() === "restaurant"
-                              ? "Enter Restaurant"
-                              : res.category?.trim().toLowerCase() === "automobile"
-                              ? "Enter Automobile Showroom"
-                              : res.category?.trim().toLowerCase() === "electronics"
-                              ? "Enter Electronics Store"
-                              : res.category?.trim().toLowerCase() === "clothing"
-                              ? "Enter Clothing Store"
-                              : res.category?.trim().toLowerCase() === "furniture"
-                              ? "Enter Furniture Hub"
-                              : res.category?.trim().toLowerCase() === "grocery"
-                              ? "Enter Grocery Store"
-                              : res.category?.trim().toLowerCase() === "services"
-                              ? "Enter Service Center"
-                              : res.category?.trim().toLowerCase() === "other"
-                              ? `Enter ${res?.customCategoryName || res?.name || "Store"}`
-                              : `Enter ${res.category || "Store"}`}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+          <div className="p-6 flex flex-col flex-grow">
+            <div className="flex justify-between items-start mb-4">
+              <h3 className="text-xl font-black uppercase italic tracking-tighter text-white group-hover:text-blue-400 transition-colors leading-none truncate pr-2">
+                {res.name}
+              </h3>
+              <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border font-black text-[9px] uppercase tracking-tighter ${res.isStoreOpen ? 'bg-emerald-500/10 border-emerald-400/20 text-emerald-300' : 'bg-red-500/10 border-red-400/20 text-red-300'}`}>
+                <div className={`w-1.5 h-1.5 rounded-full ${res.isStoreOpen ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
+                {res.isStoreOpen ? 'LIVE' : 'CLOSED'}
+              </div>
             </div>
+
+            <div className="flex flex-col gap-2 mb-6">
+              {/* Row 1: Location, District & College Name */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1 bg-blue-500/10 text-blue-300 px-2.5 py-1 rounded-md border border-blue-400/20 shadow-sm">
+                  <MapPin className="w-3 h-3 text-orange-400" />
+                  <span className="text-[10px] font-black uppercase tracking-wider">
+                    {userCoords && res.latitude ? getDistance(userCoords.lat, userCoords.lng, res.latitude, res.longitude) : "Locate"}
+                  </span>
+                </div>
+                
+                <span className="text-[9px] font-black text-slate-400 uppercase bg-slate-800/60 px-2.5 py-1 rounded-md border border-slate-700/50 italic">
+                  {res.district}
+                </span>
+
+                {res.collegeName && res.collegeName !== "General" && (
+                  <span className="text-[9px] font-black text-blue-300 uppercase bg-blue-500/10 px-2.5 py-1 rounded-md border border-blue-400/20 italic">
+                    {res.collegeName}
+                  </span>
+                )}
+              </div>
+
+              {/* Row 2: Dynamic Category Count Badges */}
+              <div className="flex flex-wrap items-center gap-2">
+                {(() => {
+                  const cat = (res.category || "").trim().toLowerCase();
+                  const counts = res.activityCounts || { preBook: 0, postBook: 0, testDrives: 0, onlineOrders: 0, total: 0 };
+
+                  if (cat === "restaurant" || cat === "") {
+                    return (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="bg-amber-500/10 text-amber-300 px-2.5 py-1 rounded-md border border-amber-400/20 text-[9px] font-black uppercase">
+                          🔥 {counts.preBook} Pre-Books
+                        </span>
+                        <span className="bg-blue-500/10 text-blue-300 px-2.5 py-1 rounded-md border border-blue-400/20 text-[9px] font-black uppercase">
+                          🍽️ {counts.postBook} Post-Books
+                        </span>
+                        <span className="bg-emerald-500/10 text-emerald-300 px-2.5 py-1 rounded-md border border-blue-400/20 text-[9px] font-black uppercase">
+                          🛍️ {counts.onlineOrders || 0} Online Orders
+                        </span>
+                      </div>
+                    );
+                  } 
+                  else if (cat.includes("automobile")) {
+                    return (
+                      <span className="bg-orange-500/10 text-orange-300 px-2.5 py-1 rounded-md border border-orange-400/20 text-[9px] font-black uppercase">
+                        🚗 {counts.testDrives} Test Drives
+                      </span>
+                    );
+                  } 
+                  else {
+                    const displayOnlineCount = counts.onlineOrders || counts.total || 0;
+                    return (
+                      <span className="bg-emerald-500/10 text-emerald-300 px-2.5 py-1 rounded-md border border-emerald-400/20 text-[9px] font-black uppercase">
+                        🛍️ {displayOnlineCount} Online Orders
+                      </span>
+                    );
+                  }
+                })()}
+              </div>
+            </div>
+
+            <div className="mt-auto">
+              <button 
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation(); // కార్డ్ క్లిక్ డబుల్ కాకుండా ఉండటానికి
+                  if (res.isStoreOpen) {
+                    navigate(`/restaurant/${res._id}`);
+                  } else {
+                    alert("ఈ స్టోర్ ప్రస్తుతం మూసివేయబడింది! ❌ (Store is Closed)");
+                  }
+                }}
+                disabled={!res.isStoreOpen}
+                className={`w-full mt-4 py-3.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg ${
+                  res.isStoreOpen 
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-violet-600 text-white shadow-blue-950/40 cursor-pointer' 
+                    : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-60'
+                }`}
+              >
+                {res.isStoreOpen ? (
+                  res.category?.trim().toLowerCase() === "restaurant"
+                    ? "Enter Restaurant"
+                    : res.category?.trim().toLowerCase() === "automobile"
+                    ? "Enter Automobile Showroom"
+                    : res.category?.trim().toLowerCase() === "electronics"
+                    ? "Enter Electronics Store"
+                    : res.category?.trim().toLowerCase() === "clothing"
+                    ? "Enter Clothing Store"
+                    : res.category?.trim().toLowerCase() === "furniture"
+                    ? "Enter Furniture Hub"
+                    : res.category?.trim().toLowerCase() === "grocery"
+                    ? "Enter Grocery Store"
+                    : res.category?.trim().toLowerCase() === "services"
+                    ? "Enter Service Center"
+                    : res.category?.trim().toLowerCase() === "other"
+                    ? `Enter ${res?.customCategoryName || res?.name || "Store"}`
+                    : `Enter ${res.category || "Store"}`
+                ) : (
+                  "Closed (మూసివేయబడింది) ❌"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    ))}
+  </AnimatePresence>
+</div>
           )
         )}
       </main>

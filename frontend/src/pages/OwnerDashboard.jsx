@@ -80,6 +80,7 @@ import { useEffect, useState, useMemo, useRef } from "react";
 const [isMasterModal, setIsMasterModal] = useState(false);
 const [masterSearch, setMasterSearch] = useState("");
 const [masterLoading, setMasterLoading] = useState(false);
+const [selectedScreenshot, setSelectedScreenshot] = useState(null);
 // const [loading, setLoading] = useState(false);
   // 👑 రాజు మంత్లీ సబ్‌స్క్రిప్షన్ క్యాలిక్యులేటర్ (డిస్కౌంట్ లేకుండా పక్కా 100% అమౌంట్ లాజిక్)
   const calculatedAmount = useMemo(() => {
@@ -1192,17 +1193,17 @@ const dailyStats = {
 
       {/* 🔴 CLOSE / LIVE బటన్ (మొబైల్ & డెస్క్‌టాప్ రెండింటిలోనూ హైలైట్ అవుతుంది) */}
       <button 
-        type="button" 
-        onClick={toggleShopStatus} 
-        className={`text-[9px] sm:text-[10px] font-black uppercase px-3.5 py-2.5 sm:px-4 sm:py-2.5 rounded-xl border italic shadow-sm transition-all active:scale-95 whitespace-nowrap ${
-          owner?.isStoreOpen 
-            ? 'bg-[#0a1033] border-rose-500/40 text-rose-400 hover:bg-rose-950/40' 
-            : 'bg-emerald-600 border-emerald-500 text-white hover:bg-emerald-500'
-        }`}
-      >
-        <span className="sm:hidden">{owner?.isStoreOpen ? 'Close' : 'Live'}</span>
-        <span className="hidden sm:inline">{owner?.isStoreOpen ? 'End Service' : 'Go Live'}</span>
-      </button>
+  type="button" 
+  onClick={toggleShopStatus} 
+  className={`text-[9px] font-black uppercase px-3 py-1.5 rounded-lg border italic shadow-sm transition-all active:scale-95 whitespace-nowrap flex items-center gap-1.5 ${
+    owner?.isStoreOpen 
+      ? 'bg-rose-950/40 border-rose-500/40 text-rose-400 hover:bg-rose-950/60' 
+      : 'bg-emerald-600 border-emerald-500 text-white hover:bg-emerald-500'
+  }`}
+>
+  <span className={`w-1.5 h-1.5 rounded-full ${owner?.isStoreOpen ? 'bg-rose-400 animate-pulse' : 'bg-white'}`}></span>
+  <span>{owner?.isStoreOpen ? 'Close Store' : 'Open Store'}</span>
+</button>
 
       {/* 🚪 లాగౌట్ బటన్ (ప్రతి స్క్రీన్ మీద ఎండ్ పాయింట్ లాక్!) */}
       <button 
@@ -1922,10 +1923,10 @@ const displayedOrders = orders.filter(order => {
         />
       </div>
 
-{/* 🚀 క్లీన్ వైట్ కార్డ్ - ఆర్డర్ ఛానెల్స్ & కిచెన్ వర్క్‌ఫ్లో ఫిల్టర్లు */}
+{/* 🚀 క్లీన్ వైట్ కార్డ్ - ఆర్డర్ ఛానెల్స్ & కిచెన్ వర్క్‌ఫ్లో సెలెక్ట్ ఆప్షన్స్ */}
 <div className="w-full bg-white rounded-2xl p-3 sm:p-4 shadow-xl border border-slate-200 space-y-3 mb-6">
   
-  {/* ROW 1: ఆర్డర్ చానెల్స్ (Booking Feeds - Parcel, Dine-In, Post, Online) */}
+  {/* ROW 1: ఆర్డర్ చానెల్స్ (Booking Feeds Dropdown) */}
   <div className="flex flex-col gap-1.5">
     <div className="flex items-center justify-between">
       <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
@@ -1936,42 +1937,25 @@ const displayedOrders = orders.filter(order => {
       </span>
     </div>
     
-    <div className="flex flex-wrap items-center gap-2">
-      {[
-        { id: "All", label: "All Feeds", count: counts.all, color: "bg-slate-900 text-white" },
-        { id: "Pre-Parcel", label: "Pre-Book (Parcel) 📦", count: counts.preParcel, color: "bg-amber-600 text-white" },
-        { id: "Pre-Dine", label: "Pre-Book (Dine-In) 🪑", count: counts.preDine, color: "bg-indigo-600 text-white" },
-        { id: "Post-book", label: "Post-Orders 🍽️", count: counts.post, color: "bg-blue-600 text-white" },
-        { id: "Online-Order", label: "Online Orders 🛵", count: counts.online, color: "bg-teal-600 text-white" },
-      ].map(tab => {
-        const isActive = orderTypeFilter === tab.id;
-        return (
-          <button 
-            key={tab.id} 
-            type="button" 
-            onClick={() => setOrderTypeFilter(tab.id)} 
-            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border flex items-center gap-2 shadow-sm ${
-              isActive 
-                ? `${tab.color} border-transparent shadow-md scale-102` 
-                : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 hover:text-slate-900'
-            }`}
-          >
-            <span>{tab.label}</span>
-            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black ${
-              isActive ? 'bg-white/20 text-white' : 'bg-white text-slate-800 border border-slate-300'
-            }`}>
-              {tab.count}
-            </span>
-          </button>
-        );
-      })}
+    <div className="relative">
+      <select 
+        value={["All", "Pre-Parcel", "Pre-Dine", "Post-book", "Online-Order"].includes(orderTypeFilter) ? orderTypeFilter : "All"} 
+        onChange={(e) => setOrderTypeFilter(e.target.value)}
+        className="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs font-black uppercase py-2.5 px-3 rounded-xl outline-none focus:border-blue-500 cursor-pointer shadow-sm"
+      >
+        <option value="All">All Feeds ({counts.all})</option>
+        <option value="Pre-Parcel">Pre-Book (Parcel) 📦 ({counts.preParcel})</option>
+        <option value="Pre-Dine">Pre-Book (Dine-In) 🪑 ({counts.preDine})</option>
+        <option value="Post-book">Post-Orders 🍽️ ({counts.post})</option>
+        <option value="Online-Order">Online Orders 🛵 ({counts.online})</option>
+      </select>
     </div>
   </div>
 
   {/* విభజన గీత */}
   <div className="w-full h-px bg-slate-200"></div>
 
-  {/* ROW 2: లైవ్ కిచెన్ స్టేటస్ (Accepted, Preparing, Out for Delivery) */}
+  {/* ROW 2: లైవ్ కిచెన్ స్టేటస్ (Kitchen & Delivery Status Dropdown) */}
   <div className="flex flex-col gap-1.5">
     <div className="flex items-center justify-between">
       <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">
@@ -1982,33 +1966,17 @@ const displayedOrders = orders.filter(order => {
       </span>
     </div>
     
-    <div className="flex flex-wrap items-center gap-2">
-      {[
-        { id: "Preparing", label: "Preparing 🔥", count: counts.preparing, color: "bg-orange-600 text-white" },
-        { id: "Accepted", label: "Accepted ✅", count: counts.accepted, color: "bg-cyan-700 text-white" },
-        { id: "Out for Delivery", label: "Out for Delivery 🛵", count: counts.delivery, color: "bg-purple-600 text-white" },
-      ].map(tab => {
-        const isActive = orderTypeFilter === tab.id;
-        return (
-          <button 
-            key={tab.id} 
-            type="button" 
-            onClick={() => setOrderTypeFilter(tab.id)} 
-            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border flex items-center gap-2 shadow-sm ${
-              isActive 
-                ? `${tab.color} border-transparent shadow-md scale-102` 
-                : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200 hover:text-slate-900'
-            }`}
-          >
-            <span>{tab.label}</span>
-            <span className={`px-2 py-0.5 rounded-full text-[9px] font-black ${
-              isActive ? 'bg-white/20 text-white' : 'bg-white text-slate-800 border border-slate-300'
-            }`}>
-              {tab.count}
-            </span>
-          </button>
-        );
-      })}
+    <div className="relative">
+      <select 
+        value={["Preparing", "Accepted", "Out for Delivery"].includes(orderTypeFilter) ? orderTypeFilter : ""} 
+        onChange={(e) => setOrderTypeFilter(e.target.value)}
+        className="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs font-black uppercase py-2.5 px-3 rounded-xl outline-none focus:border-blue-500 cursor-pointer shadow-sm"
+      >
+        <option value="" disabled>Select Kitchen Status...</option>
+        <option value="Preparing">Preparing 🔥 ({counts.preparing})</option>
+        <option value="Accepted">Accepted ✅ ({counts.accepted})</option>
+        <option value="Out for Delivery">Out for Delivery 🛵 ({counts.delivery})</option>
+      </select>
     </div>
   </div>
 
@@ -2121,13 +2089,30 @@ const displayedOrders = orders.filter(order => {
                   </div>
 
                   {/* ఐటమ్స్ లిస్ట్ (ఎక్కువ ఐటమ్స్ ఉంటే కార్డ్ లోపలే స్క్రోల్ అవుతాయి) */}
-                  <div className="max-h-24 overflow-y-auto scrollbar-thin bg-[#070b24]/60 p-2 rounded-xl border border-[#1e2d69] flex flex-wrap gap-1.5 my-2">
+                  {/* <div className="max-h-24 overflow-y-auto scrollbar-thin bg-[#070b24]/60 p-2 rounded-xl border border-[#1e2d69] flex flex-wrap gap-1.5 my-2">
                     {order.items.map((it, idx) => (
                       <span key={idx} className="bg-[#0e1638] text-slate-200 px-2 py-1 rounded-lg text-[9px] font-black uppercase border border-[#1e2d69] italic">
                         {it}
                       </span>
                     ))}
-                  </div>
+                  </div> */}
+                  {/* ఐటమ్స్ లిస్ట్ (ఇకపై ఓనర్‌కి అస్సలు మిస్ అవ్వకుండా సూపర్ హైలైట్ అవుతాయి!) */}
+<div className="bg-gradient-to-r from-amber-950/30 via-[#0e1638] to-[#070b24] p-3 rounded-2xl border border-amber-500/30 my-2 space-y-2 shadow-inner">
+  <p className="text-[8px] font-black text-amber-400 uppercase tracking-widest flex items-center gap-1">
+    <span>🍲</span> Ordered Menu Items (ఆర్డర్ చేసిన వంటకాలు):
+  </p>
+  <div className="flex flex-wrap gap-2">
+    {order.items.map((it, idx) => (
+      <span 
+        key={idx} 
+        className="bg-amber-500/20 text-amber-400 px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wide border border-amber-500/40 shadow-md italic flex items-center gap-1.5"
+      >
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+        {it}
+      </span>
+    ))}
+  </div>
+</div>
 
                   {/* Express Route టైమర్ */}
                   {order.orderType === 'Express-Route' && (
@@ -2142,11 +2127,26 @@ const displayedOrders = orders.filter(order => {
                   )}
 
                   {/* ట్రాన్సాక్షన్ ఐడీ */}
-                  {order.txnId && (
+                  {/* {order.txnId && (
                     <div className="bg-emerald-950/30 p-2 rounded-xl border border-emerald-500/30 mb-2">
                       <p className="text-[7px] font-black text-emerald-400 uppercase">Transaction ID  last 5 digits: <span className="text-emerald-300 font-bold">{order.txnId}</span></p>
                     </div>
-                  )}
+                  )} */}
+                  {/* 📸 కస్టమర్ అటాచ్ చేసిన పేమెంట్ స్క్రీన్‌షాట్ ఓనర్ చూసేలా */}
+{order.paymentScreenshot && (
+  <div className="bg-[#0e1638] p-2.5 rounded-xl border border-cyan-500/30 mb-2">
+    <p className="text-[8px] font-black text-cyan-400 uppercase mb-1.5 flex items-center gap-1">
+      📸 Payment Proof Screenshot:
+    </p>
+    <img 
+  src={order.paymentScreenshot} 
+  alt="Payment Proof" 
+  className="w-full h-36 object-contain rounded-lg bg-black/50 cursor-pointer border border-[#1e2d69] hover:border-cyan-400 transition-all"
+  onClick={() => setSelectedScreenshot(order.paymentScreenshot)} // 👈 ఇక్కడ state కి set చేస్తున్నాం
+  title="Click to view full image"
+/>
+  </div>
+)}
                 </div>
 
                 {/* అమౌంట్ & పేమెంట్ సమ్మరీ */}
@@ -3054,6 +3054,33 @@ const displayedOrders = orders.filter(order => {
     </div>
   )}
         </AnimatePresence>
+        {/* 📸 Payment Proof Zoom Modal */}
+<AnimatePresence>
+  {selectedScreenshot && (
+    <motion.div 
+      initial={{ opacity: 0 }} 
+      animate={{ opacity: 1 }} 
+      exit={{ opacity: 0 }} 
+      className="fixed inset-0 z-[500] bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
+      onClick={() => setSelectedScreenshot(null)}
+    >
+      <div className="relative max-w-lg w-full bg-[#0a1033] p-4 rounded-3xl border border-[#1e2d69] shadow-2xl flex flex-col items-center">
+        <button 
+          onClick={() => setSelectedScreenshot(null)} 
+          className="absolute top-4 right-4 p-2 bg-[#0e1638] text-white rounded-full hover:bg-rose-600 transition-all border border-[#1e2d69]"
+        >
+          <X className="w-5 h-5" />
+        </button>
+        <p className="text-xs font-black uppercase text-cyan-400 mb-3 tracking-wider">Payment Proof Full View</p>
+        <img 
+          src={selectedScreenshot} 
+          alt="Full Screenshot" 
+          className="max-h-[75vh] w-auto object-contain rounded-2xl border border-[#1e2d69]" 
+        />
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
         <AnimatePresence>
   {isMasterModal && (
     <div className="fixed inset-0 z-[999] bg-[#05081c]/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">

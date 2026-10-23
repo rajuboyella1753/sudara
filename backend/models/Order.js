@@ -12,6 +12,7 @@ const OrderSchema = new mongoose.Schema({
   totalAmount: Number,
   advancePaid: Number,
   txnId: String,
+  paymentScreenshot: { type: String, default: "" },
   subTotal: Number,
   gstAmount: Number,
   extraCharges: Number,
