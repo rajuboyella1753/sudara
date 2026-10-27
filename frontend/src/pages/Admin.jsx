@@ -706,20 +706,66 @@ export default function AdminDashboard() {
     </div>
   </a>
 
-  {/* 🚀 డైరెక్ట్ వాట్సాప్ ఓపెన్ అయ్యే బటన్ (ప్రొంప్ట్ లేకుండానె) */}
-  <button 
-    onClick={() => {
+<button 
+    onClick={async () => {
       const ownerPhone = owner?.phone?.toString().replace(/\D/g, '');
       if (!ownerPhone) {
         alert("ఈ ఓనర్ ఫోన్ నంబర్ అందుబాటులో లేదు! ❌");
         return;
       }
-      const defaultMsg = `Hello ${owner.name}, this is Sudara Hub Admin regarding your store subscription and updates.`;
-      const waLink = `https://wa.me/91${ownerPhone}?text=${encodeURIComponent(defaultMsg)}`;
+      
+      const merchantName = owner?.name || "Partner";
+      const cat = (owner.category || "").trim().toLowerCase();
+      const isRestaurant = cat === "restaurant" || cat === "" || cat.includes("restaurant");
+      const subFee = isRestaurant ? 999 : 499;
+
+      // 🚀 QR Code image ni clipboard loki copy chese logic
+      try {
+        const res = await fetch('/Upi_id.png');
+        if (!res.ok) throw new Error("Image fetch failed");
+        const blob = await res.blob();
+        await navigator.clipboard.write([
+          new ClipboardItem({ [blob.type]: blob })
+        ]);
+        alert("🖼️ QR Code Image Copy aindi! WhatsApp chat lo 'Ctrl+V' kotti direct ga paste cheyochu! ✅");
+      } catch (err) {
+        console.error("Clipboard error:", err);
+        alert("⚠️ QR Image copy avvaledu. Public folder lo 'Upi_id.png' సరైన పేరుతో ఉందో లేదో చెక్ చేయి.");
+      }
+
+      const upiDeepLink = `upi://pay?pa=sudara@ptyes&pn=SudaraHub&am=${subFee}&cu=INR`;
+
+      const message = `*🛡️ SUDARA HUB - SUBSCRIPTION RENEWAL NOTICE*
+---------------------------------------------
+Hello *${merchantName}*,
+
+Telugu: మీ గత నెల సబ్‌స్క్రిప్షన్ గడువు ముగిసింది. దయచేసి ఈ నెల సబ్‌స్క్రిప్షన్ (₹${subFee}) పునరుద్ధరించుకోండి.
+
+English: Your subscription for last month has expired. Please renew your subscription for this month.
+
+---------------------------------------------
+💰 *Monthly Subscription Fee:* ₹${subFee}
+📌 *UPI ID:* sudara@ptyes
+
+
+---------------------------------------------
+✨ *BENEFITS OF RENEWING / సబ్‌స్క్రిప్షన్ వల్ల లాభాలు:*
+
+1️⃣ *Direct Customer Discovery:* Customers can easily discover your shop/store in your local area.
+2️⃣ *Pre-Booking & Order Alerts:* Get real-time notifications when customers view your items or place orders.
+3️⃣ *Zero Commission:* 100% of your earnings stay with you—no heavy commissions.
+4️⃣ *Active Store Visibility:* Keep your store active on the Sudara Hub network without interruption.
+
+_Please complete the payment and send the screenshot here. / దయచేసి పేమెంట్ చేసి స్క్రీన్‌షాట్ పంపించండి._
+
+_Regards,_
+*Sudara Hub Trust & Safety Team*`;
+
+      const waLink = `https://wa.me/91${ownerPhone}?text=${encodeURIComponent(message)}`;
       window.open(waLink, '_blank');
     }}
     className="p-3 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white rounded-xl border border-emerald-500/30 transition-all shadow-sm shrink-0 flex items-center justify-center aspect-square"
-    title="Direct WhatsApp Message"
+    title="Send Renewal WhatsApp Message & Copy QR"
   >
     <Send className="w-4 h-4" />
   </button>
